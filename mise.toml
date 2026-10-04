@@ -1,0 +1,9 @@
+# Project toolchain — run `mise install` once; tools activate automatically in this folder.
+[tools]
+flutter = "3.47.6"
+java = "temurin-21"
+node = "22"
+ninja = "1.13.2"
+
+[env]
+ANDROID_HOME = "{{env.HOME}}/Android/Sdk"

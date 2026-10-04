@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>com.leccheck.app</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>LicenseRef-proprietary</project_license>
+  <name>LecCheck</name>
+  <summary>Track the lectures, practices and labs you attend</summary>
+  <description>
+    <p>Mark every class you attend during the semester and see your progress at a glance.
+    Works offline and syncs live between your phone and computer.</p>
+  </description>
+  <launchable type="desktop-id">com.leccheck.app.desktop</launchable>
+  <url type="homepage">https://github.com/Emanuel4100/LecCheck2</url>
+  <content_rating type="oars-1.1" />
+  <releases>
+    <release version="2.0.0" date="2026-10-04" />
+  </releases>
+</component>

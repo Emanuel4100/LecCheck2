@@ -1,0 +1,5 @@
+# Copy to .dev.vars for `wrangler dev` (never commit .dev.vars).
+DEV_AUTH=1
+JWT_SECRET=dev-only-secret-change-me-0123456789abcdef
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=

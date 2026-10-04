@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Name=LecCheck
+GenericName=Attendance tracker
+Comment=Track the lectures, practices and labs you attend
+Comment[he]=מעקב אחרי הרצאות, תרגולים ומעבדות שהשתתפת בהם
+Exec=leccheck
+Icon=com.leccheck.app
+Terminal=false
+Categories=Education;Office;
+Keywords=lecture;attendance;semester;university;schedule;
+StartupWMClass=com.leccheck.app

@@ -1,0 +1,451 @@
+{
+  "@@locale": "en",
+  "appTitle": "LecCheck",
+  "ok": "OK",
+  "cancel": "Cancel",
+  "save": "Save",
+  "delete": "Delete",
+  "undo": "Undo",
+  "edit": "Edit",
+  "add": "Add",
+  "done": "Done",
+  "close": "Close",
+  "next": "Next",
+  "back": "Back",
+  "skip": "Skip",
+  "remove": "Remove",
+  "search": "Search",
+  "optional": "Optional",
+  "today": "Today",
+  "tomorrow": "Tomorrow",
+  "yesterday": "Yesterday",
+  "settings": "Settings",
+  "navToday": "Today",
+  "navWeek": "Week",
+  "navCourses": "Courses",
+  "navStats": "Stats",
+  "typeLecture": "Lecture",
+  "typePractice": "Practice",
+  "typeLab": "Lab",
+  "typeOther": "Other",
+  "statusPending": "Pending",
+  "statusAttended": "Attended",
+  "statusWatched": "Watched recording",
+  "statusMissed": "Missed",
+  "statusSkipped": "Skipped",
+  "statusCanceled": "Canceled",
+  "statusCanceledHoliday": "No class",
+  "markAttended": "Attended",
+  "markMissed": "Missed",
+  "markWatched": "Watched",
+  "markSkipped": "Skipped",
+  "markCanceled": "Canceled",
+  "clearStatus": "Clear status",
+  "markedAs": "Marked as {status}",
+  "@markedAs": {
+    "placeholders": {
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "markedManyAs": "{count, plural, =1{1 session marked {status}} other{{count} sessions marked {status}}}",
+  "@markedManyAs": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "welcomeTitle": "Welcome to LecCheck",
+  "welcomeSubtitle": "Mark every lecture, practice and lab you attend, and see your semester at a glance.",
+  "continueAsGuest": "Continue without an account",
+  "guestNote": "Everything stays on this device. You can sign in later to sync.",
+  "signInWithGoogle": "Sign in with Google",
+  "signInSoon": "Sync arrives in an upcoming update.",
+  "semesterSetupTitle": "Set up your semester",
+  "semesterSetupSubtitle": "You can change all of this later in Settings.",
+  "semesterName": "Semester name",
+  "semesterDefaultName": "Semester A",
+  "startDate": "Start date",
+  "endDate": "End date",
+  "weekStartsOn": "Week starts on",
+  "visibleDays": "Days shown in the week view",
+  "semesterLength": "{weeks, plural, =1{1 week} other{{weeks} weeks}}",
+  "@semesterLength": {
+    "placeholders": {
+      "weeks": {
+        "type": "int"
+      }
+    }
+  },
+  "dateRangeError": "The end date must be after the start date.",
+  "createSemester": "Create semester",
+  "addFirstCoursesTitle": "Add your courses",
+  "addFirstCoursesSubtitle": "Add each course with its weekly lectures, practices and labs.",
+  "finishSetup": "Finish",
+  "weekOfTotal": "Week {week} of {total}",
+  "@weekOfTotal": {
+    "placeholders": {
+      "week": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "weekNumber": "Week {week}",
+  "@weekNumber": {
+    "placeholders": {
+      "week": {
+        "type": "int"
+      }
+    }
+  },
+  "beforeSemester": "Semester starts {date}",
+  "@beforeSemester": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "afterSemester": "Semester ended",
+  "nowLabel": "Now",
+  "nextLabel": "Next",
+  "startsIn": "Starts in {duration}",
+  "@startsIn": {
+    "placeholders": {
+      "duration": {
+        "type": "String"
+      }
+    }
+  },
+  "endsIn": "Ends in {duration}",
+  "@endsIn": {
+    "placeholders": {
+      "duration": {
+        "type": "String"
+      }
+    }
+  },
+  "durationHours": "{hours}h",
+  "@durationHours": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      }
+    }
+  },
+  "durationMinutes": "{minutes}m",
+  "@durationMinutes": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "durationHoursMinutes": "{hours}h {minutes}m",
+  "@durationHoursMinutes": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      },
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "noClassesToday": "No classes today",
+  "noUpcoming": "Nothing scheduled ahead",
+  "needsMarking": "Needs marking",
+  "needsMarkingCount": "{count, plural, =1{1 session} other{{count} sessions}}",
+  "@needsMarkingCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "allCaughtUp": "You're all caught up",
+  "allCaughtUpSubtitle": "Every past session has a status.",
+  "markAllAttended": "Mark all attended",
+  "todaySchedule": "Today's schedule",
+  "comingUp": "Coming up",
+  "allSessions": "All sessions",
+  "swipeHint": "Swipe right for attended, left for missed",
+  "openLink": "Open link",
+  "noSemesterTitle": "No semester yet",
+  "noSemesterBody": "Create a semester to start tracking.",
+  "addCourseFirst": "Add your courses to see your schedule here.",
+  "goToToday": "Go to today",
+  "jumpToDate": "Jump to date",
+  "dayOptions": "Day options",
+  "markNoClassDay": "No class this day",
+  "markNoClassDaySubtitle": "Cancels every session on this day. You can undo it any time.",
+  "restoreDay": "Restore classes",
+  "noClassReason": "Reason (optional)",
+  "noClassReasonHint": "Holiday, strike, exam day…",
+  "coursesTitle": "Courses",
+  "addCourse": "Add course",
+  "addOneTimeSession": "Add one-time session",
+  "noCoursesYet": "No courses yet",
+  "noCoursesSubtitle": "Add your first course with its weekly meetings.",
+  "nextSession": "Next: {when}",
+  "@nextSession": {
+    "placeholders": {
+      "when": {
+        "type": "String"
+      }
+    }
+  },
+  "noUpcomingSessions": "No upcoming sessions",
+  "attendancePercent": "{percent}% attended",
+  "@attendancePercent": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "canMissMore": "{count, plural, =0{Can't miss any more} =1{Can miss 1 more} other{Can miss {count} more}}",
+  "@canMissMore": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "requirementAtRisk": "Must attend all remaining",
+  "requirementFailed": "Requirement can't be met",
+  "requirementMet": "Requirement met",
+  "sessionsHistory": "Sessions",
+  "courseNotes": "Notes",
+  "courseLinks": "Links",
+  "courseWebsite": "Course website",
+  "lecturer": "Lecturer",
+  "courseCode": "Course code",
+  "newCourse": "New course",
+  "editCourse": "Edit course",
+  "courseName": "Course name",
+  "courseNameRequired": "Enter a course name",
+  "courseNotesHint": "Reading list, exam rules, grading…",
+  "courseColor": "Color",
+  "extraLinks": "Links",
+  "addLink": "Add link",
+  "linkTitle": "Title",
+  "linkUrl": "URL",
+  "meetingsSection": "Weekly schedule",
+  "addMeeting": "Add meeting",
+  "noMeetingsYet": "Add the lectures, practices and labs of this course.",
+  "weekly": "Weekly",
+  "oneTime": "One-time",
+  "everyOtherWeek": "Every other week",
+  "firstWeek": "First week",
+  "secondWeek": "Second week",
+  "weekday": "Day",
+  "date": "Date",
+  "startTime": "Start",
+  "endTime": "End",
+  "location": "Room / location",
+  "endAfterStartError": "End time must be after the start time",
+  "removeMeeting": "Remove meeting",
+  "meetingLinks": "Meeting links",
+  "requirementsSection": "Attendance requirement",
+  "requirementsHint": "Set a minimum attendance and LecCheck tells you how many sessions you can still miss.",
+  "addRequirement": "Add requirement",
+  "minAttendance": "Minimum attendance",
+  "appliesTo": "Applies to",
+  "allTypes": "All sessions",
+  "recordingsCount": "Watched recordings count as attended",
+  "discardChangesTitle": "Discard changes?",
+  "discardChangesBody": "Your edits to this course haven't been saved.",
+  "discard": "Discard",
+  "keepEditing": "Keep editing",
+  "deleteCourseTitle": "Delete this course?",
+  "deleteCourseBody": "Its meetings and all marked sessions will be removed. You can undo right after.",
+  "courseDeleted": "Course deleted",
+  "applyChangeTitle": "Apply this change to",
+  "applyAllWeeks": "All weeks",
+  "applyFromThisWeek": "From this week on",
+  "sessionDetails": "Session",
+  "status": "Status",
+  "sessionNotes": "Notes for this session",
+  "sessionNotesHint": "Topics, homework, reminders…",
+  "recordingLink": "Recording link",
+  "addRecordingLink": "Add recording link",
+  "thisWeekOnly": "This week only",
+  "moveSession": "Change date, time or room",
+  "resetChanges": "Undo changes for this week",
+  "movedLabel": "Changed this week",
+  "canceledByHolidayHint": "Canceled because of a no-class day",
+  "removeOneTime": "Remove this one-time session",
+  "statsTitle": "Stats",
+  "attendance": "Attendance",
+  "attendanceSubtitle": "Attended or watched, out of sessions you attended, watched or missed.",
+  "semesterProgress": "Semester progress",
+  "streak": "Streak",
+  "streakValue": "{count, plural, =1{1 session} other{{count} sessions}}",
+  "@streakValue": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "bestStreak": "Best: {count}",
+  "@bestStreak": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "toMark": "To mark",
+  "byCourse": "By course",
+  "byType": "By type",
+  "weeklyTrend": "Weekly attendance",
+  "statusMix": "Past sessions",
+  "catchUp": "Catch up on recordings",
+  "catchUpEmpty": "No missed sessions with a recording.",
+  "noDataYet": "Mark a few sessions to see stats here.",
+  "requirementsOverview": "Attendance requirements",
+  "account": "Account",
+  "guestMode": "Not signed in",
+  "guestModeSubtitle": "Your data is stored only on this device.",
+  "appearance": "Appearance",
+  "themeMode": "Mode",
+  "themeSystem": "System",
+  "themeLight": "Light",
+  "themeDark": "Dark",
+  "pureBlack": "Pure black",
+  "pureBlackSubtitle": "Darker dark mode for OLED screens",
+  "colorTheme": "Color theme",
+  "presetWallpaper": "Wallpaper",
+  "presetOcean": "Ocean",
+  "presetSunset": "Sunset",
+  "presetForest": "Forest",
+  "presetGrape": "Grape",
+  "presetRose": "Rose",
+  "presetMono": "Mono",
+  "language": "Language",
+  "languageSystem": "System default",
+  "time24h": "24-hour time",
+  "time24hSubtitle": "Show 14:30 instead of 2:30 PM",
+  "meetingNumbers": "Number sessions",
+  "meetingNumbersSubtitle": "Show #1, #2… for each course and type",
+  "semesterSection": "Semester",
+  "semesters": "Semesters",
+  "addSemester": "Add semester",
+  "editSemester": "Edit semester",
+  "deleteSemesterTitle": "Delete this semester?",
+  "deleteSemesterBody": "All its courses and marked sessions will be removed. You can undo right after.",
+  "semesterDeleted": "Semester deleted",
+  "activeSemester": "Active",
+  "noClassDays": "Holidays and no-class days",
+  "noClassDaysSubtitle": "Sessions on these dates show as canceled.",
+  "addNoClassRange": "Add dates",
+  "data": "Data",
+  "exportData": "Export backup",
+  "exportDataSubtitle": "Save a JSON file with all semesters",
+  "importData": "Import backup",
+  "importDataSubtitle": "Restore a LecCheck backup (including files from the old app)",
+  "importReplaceTitle": "Replace your data?",
+  "importReplaceBody": "Imported semesters are added; semesters with the same ID are replaced.",
+  "importDone": "{count, plural, =1{Imported 1 semester} other{Imported {count} semesters}}",
+  "@importDone": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "importFailed": "That file isn't a LecCheck backup.",
+  "exportDone": "Backup saved",
+  "about": "About",
+  "version": "Version",
+  "sourceCode": "Source code",
+  "signInFailed": "Couldn't sign in. Check your connection and try again.",
+  "devSignIn": "Developer sign-in",
+  "restoringData": "Restoring your data…",
+  "syncSynced": "Synced {time}",
+  "@syncSynced": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "justNow": "just now",
+  "syncSyncing": "Syncing…",
+  "syncConnecting": "Connecting…",
+  "syncOffline": "Offline — changes will sync later",
+  "syncPending": "{count, plural, =1{1 change waiting to sync} other{{count} changes waiting to sync}}",
+  "@syncPending": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "syncNotConfigured": "Sync isn't set up in this build.",
+  "syncNow": "Sync now",
+  "signOut": "Sign out",
+  "signOutTitle": "Sign out?",
+  "signOutBody": "Keep a copy of your data on this device?",
+  "keepData": "Keep on this device",
+  "removeData": "Remove from this device",
+  "signOutEverywhere": "Sign out on all devices",
+  "deleteCloudData": "Delete cloud data",
+  "deleteCloudTitle": "Delete your cloud data?",
+  "deleteCloudBody": "Your synced data will be removed from the server. This device keeps its copy.",
+  "replaceDataTitle": "Switch accounts?",
+  "replaceDataBody": "This device has data from another account. Signing in will replace it with this account's data.",
+  "replace": "Replace",
+  "syncHint": "Sign in to sync with your other devices. Free, and your data stays private to your account.",
+  "notifications": "Notifications",
+  "beforeClass": "Before class",
+  "beforeClassSubtitle": "A reminder with the room and link",
+  "afterClass": "After class: how was it?",
+  "afterClassSubtitle": "Mark attendance right from the notification",
+  "minutesShort": "{minutes} min",
+  "@minutesShort": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "testNotification": "Send a test notification",
+  "notificationsBlocked": "Notifications are blocked. Allow them in system settings.",
+  "notifyBeforeTitle": "{course} · {type} in {minutes} min",
+  "@notifyBeforeTitle": {
+    "placeholders": {
+      "course": {
+        "type": "String"
+      },
+      "type": {
+        "type": "String"
+      },
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "notifyAfterTitle": "How was {course}?",
+  "@notifyAfterTitle": {
+    "placeholders": {
+      "course": {
+        "type": "String"
+      }
+    }
+  },
+  "notifyTestTitle": "LecCheck reminders are on",
+  "notifyTestBody": "You'll get reminders like this before and after class.",
+  "channelBefore": "Before class",
+  "channelAfter": "After class"
+}

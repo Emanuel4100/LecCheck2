@@ -1,0 +1,54 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  app:
+    name: App (analyze + test)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.47.6
+          channel: stable
+          cache: true
+
+      - run: flutter pub get
+
+      - name: Drift code is up to date
+        run: |
+          dart run build_runner build --delete-conflicting-outputs
+          dart format lib/core/db/app_database.g.dart
+          git diff --exit-code -- lib/core/db/app_database.g.dart
+
+      - run: flutter analyze
+
+      - name: Tests (Israel timezone exercises the DST transitions)
+        run: flutter test
+        env:
+          TZ: Asia/Jerusalem
+
+  server:
+    name: Sync server (typecheck + test)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: server
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: server/package-lock.json
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test

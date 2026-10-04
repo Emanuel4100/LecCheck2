@@ -1,0 +1,451 @@
+{
+  "@@locale": "he",
+  "appTitle": "LecCheck",
+  "ok": "אישור",
+  "cancel": "ביטול",
+  "save": "שמירה",
+  "delete": "מחיקה",
+  "undo": "ביטול פעולה",
+  "edit": "עריכה",
+  "add": "הוספה",
+  "done": "סיום",
+  "close": "סגירה",
+  "next": "הבא",
+  "back": "חזרה",
+  "skip": "דילוג",
+  "remove": "הסרה",
+  "search": "חיפוש",
+  "optional": "אופציונלי",
+  "today": "היום",
+  "tomorrow": "מחר",
+  "yesterday": "אתמול",
+  "settings": "הגדרות",
+  "navToday": "היום",
+  "navWeek": "שבוע",
+  "navCourses": "קורסים",
+  "navStats": "סטטיסטיקה",
+  "typeLecture": "הרצאה",
+  "typePractice": "תרגול",
+  "typeLab": "מעבדה",
+  "typeOther": "אחר",
+  "statusPending": "ממתין",
+  "statusAttended": "נכח",
+  "statusWatched": "נצפה בהקלטה",
+  "statusMissed": "החסיר",
+  "statusSkipped": "דילג",
+  "statusCanceled": "מבוטל",
+  "statusCanceledHoliday": "אין שיעור",
+  "markAttended": "נכח",
+  "markMissed": "החסיר",
+  "markWatched": "צפייה",
+  "markSkipped": "דילג",
+  "markCanceled": "בוטל",
+  "clearStatus": "ניקוי סטטוס",
+  "markedAs": "סומן: {status}",
+  "@markedAs": {
+    "placeholders": {
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "markedManyAs": "{count, plural, =1{מפגש אחד סומן: {status}} =2{שני מפגשים סומנו: {status}} other{{count} מפגשים סומנו: {status}}}",
+  "@markedManyAs": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "welcomeTitle": "ברוכים הבאים ל-LecCheck",
+  "welcomeSubtitle": "סמנו כל הרצאה, תרגול ומעבדה שהייתם בהם, וראו את כל הסמסטר במבט אחד.",
+  "continueAsGuest": "המשך בלי חשבון",
+  "guestNote": "הכול נשמר במכשיר הזה. אפשר להתחבר בהמשך כדי לסנכרן.",
+  "signInWithGoogle": "התחברות עם Google",
+  "signInSoon": "סנכרון יגיע בעדכון הקרוב.",
+  "semesterSetupTitle": "הגדרת הסמסטר",
+  "semesterSetupSubtitle": "אפשר לשנות הכול אחר כך בהגדרות.",
+  "semesterName": "שם הסמסטר",
+  "semesterDefaultName": "סמסטר א׳",
+  "startDate": "תאריך התחלה",
+  "endDate": "תאריך סיום",
+  "weekStartsOn": "תחילת שבוע",
+  "visibleDays": "ימים בתצוגה השבועית",
+  "semesterLength": "{weeks, plural, =1{שבוע אחד} =2{שבועיים} other{{weeks} שבועות}}",
+  "@semesterLength": {
+    "placeholders": {
+      "weeks": {
+        "type": "int"
+      }
+    }
+  },
+  "dateRangeError": "תאריך הסיום חייב להיות אחרי תאריך ההתחלה.",
+  "createSemester": "יצירת סמסטר",
+  "addFirstCoursesTitle": "הוספת הקורסים",
+  "addFirstCoursesSubtitle": "הוסיפו כל קורס עם ההרצאות, התרגולים והמעבדות השבועיים שלו.",
+  "finishSetup": "סיום",
+  "weekOfTotal": "שבוע {week} מתוך {total}",
+  "@weekOfTotal": {
+    "placeholders": {
+      "week": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "weekNumber": "שבוע {week}",
+  "@weekNumber": {
+    "placeholders": {
+      "week": {
+        "type": "int"
+      }
+    }
+  },
+  "beforeSemester": "הסמסטר מתחיל ב-{date}",
+  "@beforeSemester": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "afterSemester": "הסמסטר הסתיים",
+  "nowLabel": "עכשיו",
+  "nextLabel": "הבא",
+  "startsIn": "מתחיל בעוד {duration}",
+  "@startsIn": {
+    "placeholders": {
+      "duration": {
+        "type": "String"
+      }
+    }
+  },
+  "endsIn": "מסתיים בעוד {duration}",
+  "@endsIn": {
+    "placeholders": {
+      "duration": {
+        "type": "String"
+      }
+    }
+  },
+  "durationHours": "{hours} ש׳",
+  "@durationHours": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      }
+    }
+  },
+  "durationMinutes": "{minutes} ד׳",
+  "@durationMinutes": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "durationHoursMinutes": "{hours} ש׳ {minutes} ד׳",
+  "@durationHoursMinutes": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      },
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "noClassesToday": "אין שיעורים היום",
+  "noUpcoming": "אין מפגשים מתוכננים",
+  "needsMarking": "ממתינים לסימון",
+  "needsMarkingCount": "{count, plural, =1{מפגש אחד} =2{שני מפגשים} other{{count} מפגשים}}",
+  "@needsMarkingCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "allCaughtUp": "הכול מעודכן",
+  "allCaughtUpSubtitle": "לכל מפגש שעבר יש סטטוס.",
+  "markAllAttended": "סימון כולם כנוכחות",
+  "todaySchedule": "הלו״ז של היום",
+  "comingUp": "בקרוב",
+  "allSessions": "כל המפגשים",
+  "swipeHint": "החלקה ימינה לנוכחות, שמאלה להיעדרות",
+  "openLink": "פתיחת קישור",
+  "noSemesterTitle": "אין עדיין סמסטר",
+  "noSemesterBody": "צרו סמסטר כדי להתחיל לעקוב.",
+  "addCourseFirst": "הוסיפו את הקורסים כדי לראות כאן את הלו״ז.",
+  "goToToday": "מעבר להיום",
+  "jumpToDate": "מעבר לתאריך",
+  "dayOptions": "אפשרויות יום",
+  "markNoClassDay": "אין שיעורים ביום הזה",
+  "markNoClassDaySubtitle": "מבטל את כל המפגשים ביום הזה. אפשר לבטל את זה בכל רגע.",
+  "restoreDay": "החזרת השיעורים",
+  "noClassReason": "סיבה (אופציונלי)",
+  "noClassReasonHint": "חג, שביתה, יום מבחן…",
+  "coursesTitle": "קורסים",
+  "addCourse": "הוספת קורס",
+  "addOneTimeSession": "הוספת מפגש חד-פעמי",
+  "noCoursesYet": "אין עדיין קורסים",
+  "noCoursesSubtitle": "הוסיפו את הקורס הראשון עם המפגשים השבועיים שלו.",
+  "nextSession": "הבא: {when}",
+  "@nextSession": {
+    "placeholders": {
+      "when": {
+        "type": "String"
+      }
+    }
+  },
+  "noUpcomingSessions": "אין מפגשים קרובים",
+  "attendancePercent": "{percent}% נוכחות",
+  "@attendancePercent": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "canMissMore": "{count, plural, =0{אי אפשר להחסיר יותר} =1{אפשר להחסיר עוד מפגש אחד} =2{אפשר להחסיר עוד שני מפגשים} other{אפשר להחסיר עוד {count} מפגשים}}",
+  "@canMissMore": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "requirementAtRisk": "חובה להגיע לכל המפגשים שנותרו",
+  "requirementFailed": "כבר אי אפשר לעמוד בדרישה",
+  "requirementMet": "הדרישה הושגה",
+  "sessionsHistory": "מפגשים",
+  "courseNotes": "הערות",
+  "courseLinks": "קישורים",
+  "courseWebsite": "אתר הקורס",
+  "lecturer": "מרצה",
+  "courseCode": "קוד קורס",
+  "newCourse": "קורס חדש",
+  "editCourse": "עריכת קורס",
+  "courseName": "שם הקורס",
+  "courseNameRequired": "יש להזין שם קורס",
+  "courseNotesHint": "רשימת קריאה, כללי מבחן, הרכב ציון…",
+  "courseColor": "צבע",
+  "extraLinks": "קישורים",
+  "addLink": "הוספת קישור",
+  "linkTitle": "כותרת",
+  "linkUrl": "כתובת",
+  "meetingsSection": "מערכת שבועית",
+  "addMeeting": "הוספת מפגש",
+  "noMeetingsYet": "הוסיפו את ההרצאות, התרגולים והמעבדות של הקורס.",
+  "weekly": "שבועי",
+  "oneTime": "חד-פעמי",
+  "everyOtherWeek": "פעם בשבועיים",
+  "firstWeek": "שבוע ראשון",
+  "secondWeek": "שבוע שני",
+  "weekday": "יום",
+  "date": "תאריך",
+  "startTime": "התחלה",
+  "endTime": "סיום",
+  "location": "חדר / מיקום",
+  "endAfterStartError": "שעת הסיום חייבת להיות אחרי שעת ההתחלה",
+  "removeMeeting": "הסרת המפגש",
+  "meetingLinks": "קישורים למפגש",
+  "requirementsSection": "דרישת נוכחות",
+  "requirementsHint": "הגדירו נוכחות מינימלית ו-LecCheck יגיד לכם כמה מפגשים עוד אפשר להחסיר.",
+  "addRequirement": "הוספת דרישה",
+  "minAttendance": "נוכחות מינימלית",
+  "appliesTo": "חל על",
+  "allTypes": "כל המפגשים",
+  "recordingsCount": "צפייה בהקלטה נחשבת כנוכחות",
+  "discardChangesTitle": "לבטל את השינויים?",
+  "discardChangesBody": "השינויים בקורס לא נשמרו.",
+  "discard": "ביטול שינויים",
+  "keepEditing": "להמשיך לערוך",
+  "deleteCourseTitle": "למחוק את הקורס?",
+  "deleteCourseBody": "המפגשים וכל הסימונים שלו יימחקו. אפשר לבטל מיד אחרי.",
+  "courseDeleted": "הקורס נמחק",
+  "applyChangeTitle": "להחיל את השינוי על",
+  "applyAllWeeks": "כל השבועות",
+  "applyFromThisWeek": "מהשבוע הזה והלאה",
+  "sessionDetails": "מפגש",
+  "status": "סטטוס",
+  "sessionNotes": "הערות למפגש זה",
+  "sessionNotesHint": "נושאים, שיעורי בית, תזכורות…",
+  "recordingLink": "קישור להקלטה",
+  "addRecordingLink": "הוספת קישור להקלטה",
+  "thisWeekOnly": "רק השבוע",
+  "moveSession": "שינוי תאריך, שעה או חדר",
+  "resetChanges": "ביטול השינויים לשבוע הזה",
+  "movedLabel": "שונה השבוע",
+  "canceledByHolidayHint": "בוטל בגלל יום ללא שיעורים",
+  "removeOneTime": "הסרת המפגש החד-פעמי",
+  "statsTitle": "סטטיסטיקה",
+  "attendance": "נוכחות",
+  "attendanceSubtitle": "נוכחות או צפייה, מתוך המפגשים שנכחתם, צפיתם או החסרתם.",
+  "semesterProgress": "התקדמות הסמסטר",
+  "streak": "רצף",
+  "streakValue": "{count, plural, =1{מפגש אחד} =2{שני מפגשים} other{{count} מפגשים}}",
+  "@streakValue": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "bestStreak": "שיא: {count}",
+  "@bestStreak": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "toMark": "לסימון",
+  "byCourse": "לפי קורס",
+  "byType": "לפי סוג",
+  "weeklyTrend": "נוכחות שבועית",
+  "statusMix": "מפגשים שעברו",
+  "catchUp": "השלמת הקלטות",
+  "catchUpEmpty": "אין מפגשים שהוחסרו ויש להם הקלטה.",
+  "noDataYet": "סמנו כמה מפגשים כדי לראות כאן נתונים.",
+  "requirementsOverview": "דרישות נוכחות",
+  "account": "חשבון",
+  "guestMode": "לא מחובר",
+  "guestModeSubtitle": "הנתונים נשמרים רק במכשיר הזה.",
+  "appearance": "מראה",
+  "themeMode": "מצב",
+  "themeSystem": "מערכת",
+  "themeLight": "בהיר",
+  "themeDark": "כהה",
+  "pureBlack": "שחור מלא",
+  "pureBlackSubtitle": "מצב כהה עמוק יותר למסכי OLED",
+  "colorTheme": "ערכת צבעים",
+  "presetWallpaper": "טפט",
+  "presetOcean": "אוקיינוס",
+  "presetSunset": "שקיעה",
+  "presetForest": "יער",
+  "presetGrape": "ענבים",
+  "presetRose": "ורד",
+  "presetMono": "מונו",
+  "language": "שפה",
+  "languageSystem": "ברירת המחדל של המערכת",
+  "time24h": "שעון 24 שעות",
+  "time24hSubtitle": "הצגת 14:30 במקום 2:30 PM",
+  "meetingNumbers": "מספור מפגשים",
+  "meetingNumbersSubtitle": "הצגת #1, #2… לכל קורס וסוג",
+  "semesterSection": "סמסטר",
+  "semesters": "סמסטרים",
+  "addSemester": "הוספת סמסטר",
+  "editSemester": "עריכת סמסטר",
+  "deleteSemesterTitle": "למחוק את הסמסטר?",
+  "deleteSemesterBody": "כל הקורסים והסימונים שלו יימחקו. אפשר לבטל מיד אחרי.",
+  "semesterDeleted": "הסמסטר נמחק",
+  "activeSemester": "פעיל",
+  "noClassDays": "חגים וימים ללא שיעורים",
+  "noClassDaysSubtitle": "מפגשים בתאריכים האלה יוצגו כמבוטלים.",
+  "addNoClassRange": "הוספת תאריכים",
+  "data": "נתונים",
+  "exportData": "ייצוא גיבוי",
+  "exportDataSubtitle": "שמירת קובץ JSON עם כל הסמסטרים",
+  "importData": "ייבוא גיבוי",
+  "importDataSubtitle": "שחזור גיבוי של LecCheck (כולל קבצים מהאפליקציה הישנה)",
+  "importReplaceTitle": "להחליף את הנתונים?",
+  "importReplaceBody": "סמסטרים מיובאים יתווספו; סמסטרים עם אותו מזהה יוחלפו.",
+  "importDone": "{count, plural, =1{יובא סמסטר אחד} =2{יובאו שני סמסטרים} other{יובאו {count} סמסטרים}}",
+  "@importDone": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "importFailed": "הקובץ הזה אינו גיבוי של LecCheck.",
+  "exportDone": "הגיבוי נשמר",
+  "about": "אודות",
+  "version": "גרסה",
+  "sourceCode": "קוד מקור",
+  "signInFailed": "ההתחברות נכשלה. בדקו את החיבור ונסו שוב.",
+  "devSignIn": "התחברות מפתחים",
+  "restoringData": "משחזרים את הנתונים שלך…",
+  "syncSynced": "סונכרן {time}",
+  "@syncSynced": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "justNow": "הרגע",
+  "syncSyncing": "מסנכרן…",
+  "syncConnecting": "מתחבר…",
+  "syncOffline": "אין חיבור — השינויים יסונכרנו אחר כך",
+  "syncPending": "{count, plural, =1{שינוי אחד ממתין לסנכרון} =2{שני שינויים ממתינים לסנכרון} other{{count} שינויים ממתינים לסנכרון}}",
+  "@syncPending": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "syncNotConfigured": "הסנכרון לא מוגדר בגרסה הזו.",
+  "syncNow": "סנכרון עכשיו",
+  "signOut": "התנתקות",
+  "signOutTitle": "להתנתק?",
+  "signOutBody": "לשמור עותק של הנתונים במכשיר הזה?",
+  "keepData": "לשמור במכשיר",
+  "removeData": "להסיר מהמכשיר",
+  "signOutEverywhere": "התנתקות מכל המכשירים",
+  "deleteCloudData": "מחיקת הנתונים בענן",
+  "deleteCloudTitle": "למחוק את הנתונים בענן?",
+  "deleteCloudBody": "הנתונים המסונכרנים יימחקו מהשרת. במכשיר הזה יישאר עותק.",
+  "replaceDataTitle": "להחליף חשבון?",
+  "replaceDataBody": "במכשיר הזה יש נתונים של חשבון אחר. ההתחברות תחליף אותם בנתונים של החשבון הזה.",
+  "replace": "החלפה",
+  "syncHint": "התחברו כדי לסנכרן עם המכשירים האחרים שלכם. בחינם, והנתונים נשארים פרטיים לחשבון שלכם.",
+  "notifications": "התראות",
+  "beforeClass": "לפני השיעור",
+  "beforeClassSubtitle": "תזכורת עם החדר והקישור",
+  "afterClass": "אחרי השיעור: איך היה?",
+  "afterClassSubtitle": "סימון נוכחות ישר מההתראה",
+  "minutesShort": "{minutes} ד׳",
+  "@minutesShort": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "testNotification": "שליחת התראת בדיקה",
+  "notificationsBlocked": "ההתראות חסומות. אפשרו אותן בהגדרות המערכת.",
+  "notifyBeforeTitle": "{course} · {type} בעוד {minutes} ד׳",
+  "@notifyBeforeTitle": {
+    "placeholders": {
+      "course": {
+        "type": "String"
+      },
+      "type": {
+        "type": "String"
+      },
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "notifyAfterTitle": "איך היה ב{course}?",
+  "@notifyAfterTitle": {
+    "placeholders": {
+      "course": {
+        "type": "String"
+      }
+    }
+  },
+  "notifyTestTitle": "התזכורות של LecCheck פעילות",
+  "notifyTestBody": "כך ייראו התזכורות לפני ואחרי השיעור.",
+  "channelBefore": "לפני השיעור",
+  "channelAfter": "אחרי השיעור"
+}

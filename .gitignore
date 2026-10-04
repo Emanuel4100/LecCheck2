@@ -1,0 +1,21 @@
+# OS / editors
+.DS_Store
+.idea/
+.vscode/
+*.iml
+*.swp
+
+# Secrets (never commit)
+.env
+*.env
+!.env.example
+*.jks
+*.keystore
+key.properties
+.dev.vars
+
+# Node / Worker
+node_modules/
+.wrangler/
+dist/
+coverage/

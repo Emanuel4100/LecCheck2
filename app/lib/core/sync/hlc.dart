@@ -1,0 +1,89 @@
+import 'dart:math' as math;
+
+/// Hybrid logical clock timestamp: wall-clock millis + counter + node id.
+///
+/// Packed as a fixed-width string so plain string comparison (used by the
+/// server's per-field merge) matches [compareTo].
+class Hlc implements Comparable<Hlc> {
+  const Hlc(this.millis, this.counter, this.node);
+
+  factory Hlc.parse(String packed) {
+    final parts = packed.split(':');
+    if (parts.length != 3) throw FormatException('Bad HLC', packed);
+    return Hlc(int.parse(parts[0]), int.parse(parts[1], radix: 16), parts[2]);
+  }
+
+  static Hlc zero(String node) => Hlc(0, 0, node);
+
+  final int millis;
+  final int counter;
+  final String node;
+
+  String pack() =>
+      '${millis.toString().padLeft(15, '0')}:${counter.toRadixString(16).padLeft(4, '0')}:$node';
+
+  @override
+  int compareTo(Hlc other) {
+    var c = millis.compareTo(other.millis);
+    if (c != 0) return c;
+    c = counter.compareTo(other.counter);
+    if (c != 0) return c;
+    return node.compareTo(other.node);
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      other is Hlc &&
+      other.millis == millis &&
+      other.counter == counter &&
+      other.node == node;
+
+  @override
+  int get hashCode => Object.hash(millis, counter, node);
+
+  @override
+  String toString() => pack();
+}
+
+/// Issues monotonically increasing [Hlc]s for this device, even if the wall
+/// clock jumps backwards.
+class HlcClock {
+  HlcClock({required this.node, Hlc? last, int Function()? wallClock})
+    : _last = last ?? Hlc.zero(node),
+      _wallClock = wallClock ?? _systemMillis;
+
+  final String node;
+  final int Function() _wallClock;
+  Hlc _last;
+
+  Hlc get last => _last;
+
+  static int _systemMillis() => DateTime.now().millisecondsSinceEpoch;
+
+  /// Timestamp for a local change.
+  Hlc tick() {
+    final wall = _wallClock();
+    _last = wall > _last.millis
+        ? Hlc(wall, 0, node)
+        : Hlc(_last.millis, _last.counter + 1, node);
+    return _last;
+  }
+
+  /// Moves past a timestamp seen from another device, so later local edits
+  /// always win over what we already received.
+  void receive(Hlc remote) {
+    final wall = _wallClock();
+    final millis = math.max(wall, math.max(_last.millis, remote.millis));
+    final int counter;
+    if (millis == _last.millis && millis == remote.millis) {
+      counter = math.max(_last.counter, remote.counter) + 1;
+    } else if (millis == _last.millis) {
+      counter = _last.counter + 1;
+    } else if (millis == remote.millis) {
+      counter = remote.counter + 1;
+    } else {
+      counter = 0;
+    }
+    _last = Hlc(millis, counter, node);
+  }
+}

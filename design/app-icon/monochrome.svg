@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <mask id="m">
+      <rect width="1024" height="1024" fill="#fff"/>
+      <polyline points="404,538 484,618 626,476" fill="none" stroke="#000" stroke-width="66" stroke-linecap="round" stroke-linejoin="round"/>
+      <rect x="372" y="300" width="96" height="40" fill="#000"/>
+      <rect x="556" y="300" width="96" height="40" fill="#000"/>
+    </mask>
+  </defs>
+  <g transform="translate(512 512) scale(1.16) translate(-512 -506)">
+  <g mask="url(#m)">
+    <rect x="287" y="320" width="450" height="420" rx="112" fill="#fff"/>
+  </g>
+  <rect x="392" y="262" width="56" height="128" rx="28" fill="#fff"/>
+  <rect x="576" y="262" width="56" height="128" rx="28" fill="#fff"/>
+
+</g>
+</svg>

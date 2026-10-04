@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Status-bar icon: the LecCheck mark (calendar page + check), single color. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M8.5,2.5a1.25,1.25 0,0 1,1.25 1.25V5h4.5V3.75a1.25,1.25 0,1 1,2.5 0V5.1A4.5,4.5 0,0 1,20.5 9.5v8A4.5,4.5 0,0 1,16 22H8a4.5,4.5 0,0 1,-4.5 -4.5v-8A4.5,4.5 0,0 1,7.25 5.1V3.75A1.25,1.25 0,0 1,8.5 2.5zM15.9,11.1a1.1,1.1 0,0 0,-1.55 0l-3.15,3.15 -1.55,-1.55a1.1,1.1 0,1 0,-1.55 1.55l2.32,2.32a1.1,1.1 0,0 0,1.56 0l3.92,-3.92a1.1,1.1 0,0 0,0 -1.55z" />
+</vector>
