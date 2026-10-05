@@ -71,4 +71,10 @@ abstract final class LecIcons {
   static const celebrate = Icons.celebration_outlined;
   static const numbers = Icons.tag_rounded;
   static const clock24 = Icons.av_timer_rounded;
+  static const notifications = Icons.notifications_outlined;
+  static const device = Icons.devices_outlined;
+  static const keyboard = Icons.keyboard_outlined;
+  static const widget = Icons.widgets_outlined;
+  static const refresh = Icons.refresh_rounded;
+  static const warning = Icons.warning_amber_rounded;
 }

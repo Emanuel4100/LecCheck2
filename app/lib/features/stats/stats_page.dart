@@ -15,6 +15,7 @@ import '../../domain/attendance_stats.dart';
 import '../../domain/occurrence.dart';
 import '../../domain/schedule_types.dart';
 import '../../l10n/gen/app_localizations.dart';
+import '../courses/course_actions.dart';
 import '../courses/requirement_chip.dart';
 import '../session/session_tile.dart';
 
@@ -64,6 +65,27 @@ class StatsPage extends ConsumerWidget {
     final l = AppLocalizations.of(context);
     final stats = ref.watch(_statsProvider);
     final hasData = stats.overall.total > 0;
+    final catchUp = [
+      SliverToBoxAdapter(child: SectionHeader(title: l.catchUp)),
+      if (stats.catchUp.isEmpty)
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Text(l.catchUpEmpty),
+          ),
+        )
+      else
+        SliverPadding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          sliver: SliverList.separated(
+            itemCount: stats.catchUp.length,
+            separatorBuilder: (_, _) => const SizedBox(height: 8),
+            itemBuilder: (context, i) =>
+                SessionTile(sessionId: stats.catchUp[i].id, showDate: true),
+          ),
+        ),
+      const SliverToBoxAdapter(child: SizedBox(height: 40)),
+    ];
 
     return Scaffold(
       body: CustomScrollView(
@@ -74,36 +96,57 @@ class StatsPage extends ConsumerWidget {
               hasScrollBody: false,
               child: EmptyState(icon: LecIcons.stats, title: l.noDataYet),
             )
-          else ...[
-            SliverToBoxAdapter(child: _Hero(stats: stats)),
-            SliverToBoxAdapter(child: _Metrics(stats: stats)),
-            const SliverToBoxAdapter(child: _RequirementsOverview()),
-            SliverToBoxAdapter(child: _ByCourse(stats: stats)),
-            SliverToBoxAdapter(child: _ByType(stats: stats)),
-            SliverToBoxAdapter(child: _WeeklyTrend(stats: stats)),
-            SliverToBoxAdapter(child: _StatusMix(counts: stats.overall)),
-            SliverToBoxAdapter(child: SectionHeader(title: l.catchUp)),
-            if (stats.catchUp.isEmpty)
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: Text(l.catchUpEmpty),
-                ),
-              )
-            else
-              SliverPadding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                sliver: SliverList.separated(
-                  itemCount: stats.catchUp.length,
-                  separatorBuilder: (_, _) => const SizedBox(height: 8),
-                  itemBuilder: (context, i) => SessionTile(
-                    sessionId: stats.catchUp[i].id,
-                    showDate: true,
+          else if (WindowSize.of(context).isWide)
+            // Dashboard: overview and lists | charts.
+            SliverCentered(
+              maxWidth: 1400,
+              sliver: SliverCrossAxisGroup(
+                slivers: [
+                  SliverCrossAxisExpanded(
+                    flex: 1,
+                    sliver: SliverMainAxisGroup(
+                      slivers: [
+                        SliverToBoxAdapter(child: _Hero(stats: stats)),
+                        SliverToBoxAdapter(child: _Metrics(stats: stats)),
+                        const SliverToBoxAdapter(
+                          child: _RequirementsOverview(),
+                        ),
+                        SliverToBoxAdapter(child: _ByCourse(stats: stats)),
+                        ...catchUp,
+                      ],
+                    ),
                   ),
-                ),
+                  SliverCrossAxisExpanded(
+                    flex: 1,
+                    sliver: SliverMainAxisGroup(
+                      slivers: [
+                        SliverToBoxAdapter(child: _ByType(stats: stats)),
+                        SliverToBoxAdapter(child: _WeeklyTrend(stats: stats)),
+                        SliverToBoxAdapter(
+                          child: _StatusMix(counts: stats.overall),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
-            const SliverToBoxAdapter(child: SizedBox(height: 40)),
-          ],
+            )
+          else
+            SliverCentered(
+              maxWidth: 720,
+              sliver: SliverMainAxisGroup(
+                slivers: [
+                  SliverToBoxAdapter(child: _Hero(stats: stats)),
+                  SliverToBoxAdapter(child: _Metrics(stats: stats)),
+                  const SliverToBoxAdapter(child: _RequirementsOverview()),
+                  SliverToBoxAdapter(child: _ByCourse(stats: stats)),
+                  SliverToBoxAdapter(child: _ByType(stats: stats)),
+                  SliverToBoxAdapter(child: _WeeklyTrend(stats: stats)),
+                  SliverToBoxAdapter(child: _StatusMix(counts: stats.overall)),
+                  ...catchUp,
+                ],
+              ),
+            ),
         ],
       ),
     );
@@ -295,7 +338,7 @@ class _RequirementsOverview extends ConsumerWidget {
                 ],
               ),
             ),
-            onTap: () => context.go('/courses/${course.id}'),
+            onTap: () => openCourse(context, ref, course.id),
           ),
       ],
     );
@@ -402,7 +445,7 @@ class _ByCourse extends ConsumerWidget {
             label: c.name,
             counts: stats.byCourse[c.id] ?? StatusCounts(),
             color: colors.tone(c.colorKey).accent,
-            onTap: () => context.go('/courses/${c.id}'),
+            onTap: () => openCourse(context, ref, c.id),
           ),
       ],
     );

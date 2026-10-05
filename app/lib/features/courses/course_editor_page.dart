@@ -1,11 +1,14 @@
 import 'package:collection/collection.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 
+import '../../app/adaptive.dart';
 import '../../app/format.dart';
 import '../../app/labels.dart';
 import '../../app/providers.dart';
+import '../../app/shortcuts.dart';
 import '../../app/theme/colors.dart';
 import '../../app/theme/motion.dart';
 import '../../app/widgets/common.dart';
@@ -328,21 +331,14 @@ class _CourseEditorPageState extends ConsumerState<CourseEditorPage> {
     if (changed.isEmpty) return meetings;
 
     final l = AppLocalizations.of(context);
-    final fromThisWeek = await showDialog<bool>(
-      context: context,
-      builder: (context) => SimpleDialog(
-        title: Text(l.applyChangeTitle),
-        children: [
-          SimpleDialogOption(
-            onPressed: () => Navigator.pop(context, false),
-            child: ListTile(title: Text(l.applyAllWeeks)),
-          ),
-          SimpleDialogOption(
-            onPressed: () => Navigator.pop(context, true),
-            child: ListTile(title: Text(l.applyFromThisWeek)),
-          ),
-        ],
-      ),
+    final fromThisWeek = await showChoiceDialog<bool?>(
+      context,
+      title: l.applyChangeTitle,
+      choices: [
+        DialogChoice(l.cancel, null),
+        DialogChoice(l.applyAllWeeks, false),
+        DialogChoice(l.applyFromThisWeek, true, primary: true),
+      ],
     );
     if (fromThisWeek == null) return null;
     if (!fromThisWeek) return meetings;
@@ -393,28 +389,14 @@ class _CourseEditorPageState extends ConsumerState<CourseEditorPage> {
 
   Future<void> _delete() async {
     final l = AppLocalizations.of(context);
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(l.deleteCourseTitle),
-        content: Text(l.deleteCourseBody),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text(l.cancel),
-          ),
-          FilledButton(
-            style: FilledButton.styleFrom(
-              backgroundColor: Theme.of(context).colorScheme.error,
-              foregroundColor: Theme.of(context).colorScheme.onError,
-            ),
-            onPressed: () => Navigator.pop(context, true),
-            child: Text(l.delete),
-          ),
-        ],
-      ),
+    final ok = await confirmDialog(
+      context,
+      title: l.deleteCourseTitle,
+      body: l.deleteCourseBody,
+      confirmLabel: l.delete,
+      destructive: true,
     );
-    if (ok != true || !mounted) return;
+    if (!ok || !mounted) return;
     final repo = ref.read(repositoryProvider);
     final messenger = ScaffoldMessenger.of(context);
     final router = GoRouter.of(context);
@@ -434,22 +416,14 @@ class _CourseEditorPageState extends ConsumerState<CourseEditorPage> {
 
   Future<bool> _confirmDiscard() async {
     final l = AppLocalizations.of(context);
-    return await showDialog<bool>(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: Text(l.discardChangesTitle),
-            content: Text(l.discardChangesBody),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, true),
-                child: Text(l.discard),
-              ),
-              FilledButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: Text(l.keepEditing),
-              ),
-            ],
-          ),
+    return await showChoiceDialog<bool>(
+          context,
+          title: l.discardChangesTitle,
+          body: l.discardChangesBody,
+          choices: [
+            DialogChoice(l.discard, true, destructive: true),
+            DialogChoice(l.keepEditing, false, primary: true),
+          ],
         ) ??
         false;
   }
@@ -470,168 +444,173 @@ class _CourseEditorPageState extends ConsumerState<CourseEditorPage> {
           context.pop();
         }
       },
-      child: Scaffold(
-        appBar: AppBar(
-          title: Text(widget.courseId == null ? l.newCourse : l.editCourse),
-          actions: [
-            if (widget.courseId != null)
-              IconButton(
-                tooltip: l.delete,
-                icon: const Icon(LecIcons.delete),
-                onPressed: _delete,
+      child: PageShortcuts(
+        // A new course starts in the name field instead.
+        autofocus: widget.courseId != null,
+        bindings: {primaryKey(LogicalKeyboardKey.keyS): _save},
+        child: Scaffold(
+          appBar: AppBar(
+            title: Text(widget.courseId == null ? l.newCourse : l.editCourse),
+            actions: [
+              if (widget.courseId != null)
+                IconButton(
+                  tooltip: l.delete,
+                  icon: const Icon(LecIcons.delete),
+                  onPressed: _delete,
+                ),
+              Padding(
+                padding: const EdgeInsetsDirectional.only(end: 8),
+                child: FilledButton(onPressed: _save, child: Text(l.save)),
               ),
-            Padding(
-              padding: const EdgeInsetsDirectional.only(end: 8),
-              child: FilledButton(onPressed: _save, child: Text(l.save)),
-            ),
-          ],
-        ),
-        body: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 680),
-            child: ListView(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 48),
-              children: [
-                TextField(
-                  controller: _name,
-                  autofocus: widget.courseId == null,
-                  textCapitalization: TextCapitalization.sentences,
-                  style: theme.textTheme.titleLarge,
-                  decoration: InputDecoration(
-                    labelText: l.courseName,
-                    errorText: nameError ? l.courseNameRequired : null,
+            ],
+          ),
+          body: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 680),
+              child: ListView(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 48),
+                children: [
+                  TextField(
+                    controller: _name,
+                    autofocus: widget.courseId == null,
+                    textCapitalization: TextCapitalization.sentences,
+                    style: theme.textTheme.titleLarge,
+                    decoration: InputDecoration(
+                      labelText: l.courseName,
+                      errorText: nameError ? l.courseNameRequired : null,
+                    ),
+                    onChanged: (_) => setState(() {}),
                   ),
-                  onChanged: (_) => setState(() {}),
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        controller: _code,
-                        decoration: InputDecoration(
-                          labelText: '${l.courseCode} (${l.optional})',
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: _code,
+                          decoration: InputDecoration(
+                            labelText: '${l.courseCode} (${l.optional})',
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: TextField(
+                          controller: _lecturer,
+                          textCapitalization: TextCapitalization.words,
+                          decoration: InputDecoration(
+                            labelText: '${l.lecturer} (${l.optional})',
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  Text(l.courseColor, style: theme.textTheme.titleSmall),
+                  const SizedBox(height: 10),
+                  _ColorPicker(
+                    selected: _colorKey,
+                    onSelected: (k) => setState(() => _colorKey = k),
+                  ),
+                  SectionHeader(
+                    title: l.meetingsSection,
+                    padding: const EdgeInsetsDirectional.fromSTEB(4, 28, 0, 8),
+                  ),
+                  if (_meetings.isEmpty)
+                    Padding(
+                      padding: const EdgeInsets.all(8),
+                      child: Text(
+                        l.noMeetingsYet,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
                         ),
                       ),
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: TextField(
-                        controller: _lecturer,
-                        textCapitalization: TextCapitalization.words,
-                        decoration: InputDecoration(
-                          labelText: '${l.lecturer} (${l.optional})',
+                  for (final m in _meetings)
+                    Padding(
+                      key: ValueKey(m.id),
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: _MeetingCard(
+                        draft: m,
+                        semester: _data?.semester,
+                        showErrors: _showErrors,
+                        onChanged: () => setState(() {}),
+                        onRemove: () => setState(() {
+                          _meetings.remove(m);
+                          m.dispose();
+                        }),
+                      ),
+                    ),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      FilledButton.tonalIcon(
+                        onPressed: () => setState(
+                          () => _meetings.add(_newMeeting(MeetingKind.weekly)),
                         ),
+                        icon: const Icon(LecIcons.add),
+                        label: Text(l.addMeeting),
                       ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 20),
-                Text(l.courseColor, style: theme.textTheme.titleSmall),
-                const SizedBox(height: 10),
-                _ColorPicker(
-                  selected: _colorKey,
-                  onSelected: (k) => setState(() => _colorKey = k),
-                ),
-                SectionHeader(
-                  title: l.meetingsSection,
-                  padding: const EdgeInsetsDirectional.fromSTEB(4, 28, 0, 8),
-                ),
-                if (_meetings.isEmpty)
-                  Padding(
-                    padding: const EdgeInsets.all(8),
-                    child: Text(
-                      l.noMeetingsYet,
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
+                      OutlinedButton.icon(
+                        onPressed: () => setState(
+                          () => _meetings.add(_newMeeting(MeetingKind.once)),
+                        ),
+                        icon: const Icon(LecIcons.date),
+                        label: Text(l.addOneTimeSession),
                       ),
-                    ),
+                    ],
                   ),
-                for (final m in _meetings)
-                  Padding(
-                    key: ValueKey(m.id),
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: _MeetingCard(
-                      draft: m,
-                      semester: _data?.semester,
-                      showErrors: _showErrors,
+                  SectionHeader(
+                    title: l.requirementsSection,
+                    subtitle: l.requirementsHint,
+                    padding: const EdgeInsetsDirectional.fromSTEB(4, 28, 0, 8),
+                  ),
+                  for (final r in _requirements)
+                    _RequirementRow(
+                      key: ValueKey(r.id),
+                      draft: r,
                       onChanged: () => setState(() {}),
-                      onRemove: () => setState(() {
-                        _meetings.remove(m);
-                        m.dispose();
-                      }),
+                      onRemove: () => setState(() => _requirements.remove(r)),
                     ),
-                  ),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: [
-                    FilledButton.tonalIcon(
+                  Align(
+                    alignment: AlignmentDirectional.centerStart,
+                    child: TextButton.icon(
                       onPressed: () => setState(
-                        () => _meetings.add(_newMeeting(MeetingKind.weekly)),
+                        () => _requirements.add(
+                          _RequirementDraft(id: ScheduleRepository.newId()),
+                        ),
                       ),
-                      icon: const Icon(LecIcons.add),
-                      label: Text(l.addMeeting),
+                      icon: const Icon(LecIcons.target),
+                      label: Text(l.addRequirement),
                     ),
-                    OutlinedButton.icon(
-                      onPressed: () => setState(
-                        () => _meetings.add(_newMeeting(MeetingKind.once)),
-                      ),
-                      icon: const Icon(LecIcons.date),
-                      label: Text(l.addOneTimeSession),
+                  ),
+                  SectionHeader(
+                    title: l.courseNotes,
+                    padding: const EdgeInsetsDirectional.fromSTEB(4, 28, 0, 8),
+                  ),
+                  TextField(
+                    controller: _notes,
+                    minLines: 3,
+                    maxLines: 8,
+                    textCapitalization: TextCapitalization.sentences,
+                    decoration: InputDecoration(hintText: l.courseNotesHint),
+                  ),
+                  SectionHeader(
+                    title: l.extraLinks,
+                    padding: const EdgeInsetsDirectional.fromSTEB(4, 28, 0, 8),
+                  ),
+                  TextField(
+                    controller: _website,
+                    keyboardType: TextInputType.url,
+                    decoration: InputDecoration(
+                      labelText: l.courseWebsite,
+                      prefixIcon: const Icon(LecIcons.link),
                     ),
-                  ],
-                ),
-                SectionHeader(
-                  title: l.requirementsSection,
-                  subtitle: l.requirementsHint,
-                  padding: const EdgeInsetsDirectional.fromSTEB(4, 28, 0, 8),
-                ),
-                for (final r in _requirements)
-                  _RequirementRow(
-                    key: ValueKey(r.id),
-                    draft: r,
-                    onChanged: () => setState(() {}),
-                    onRemove: () => setState(() => _requirements.remove(r)),
                   ),
-                Align(
-                  alignment: AlignmentDirectional.centerStart,
-                  child: TextButton.icon(
-                    onPressed: () => setState(
-                      () => _requirements.add(
-                        _RequirementDraft(id: ScheduleRepository.newId()),
-                      ),
-                    ),
-                    icon: const Icon(LecIcons.target),
-                    label: Text(l.addRequirement),
-                  ),
-                ),
-                SectionHeader(
-                  title: l.courseNotes,
-                  padding: const EdgeInsetsDirectional.fromSTEB(4, 28, 0, 8),
-                ),
-                TextField(
-                  controller: _notes,
-                  minLines: 3,
-                  maxLines: 8,
-                  textCapitalization: TextCapitalization.sentences,
-                  decoration: InputDecoration(hintText: l.courseNotesHint),
-                ),
-                SectionHeader(
-                  title: l.extraLinks,
-                  padding: const EdgeInsetsDirectional.fromSTEB(4, 28, 0, 8),
-                ),
-                TextField(
-                  controller: _website,
-                  keyboardType: TextInputType.url,
-                  decoration: InputDecoration(
-                    labelText: l.courseWebsite,
-                    prefixIcon: const Icon(LecIcons.link),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                _LinksEditor(links: _links, onChanged: () => setState(() {})),
-              ],
+                  const SizedBox(height: 12),
+                  _LinksEditor(links: _links, onChanged: () => setState(() {})),
+                ],
+              ),
             ),
           ),
         ),
@@ -699,19 +678,11 @@ class _MeetingCard extends StatelessWidget {
   final VoidCallback onRemove;
 
   Future<void> _pickTime(BuildContext context, bool start) async {
-    final fmt = Fmt.of(context);
-    final initial = start ? draft.startMin : draft.endMin;
-    final picked = await showTimePicker(
-      context: context,
-      initialTime: TimeOfDay(hour: initial ~/ 60, minute: initial % 60),
-      builder: (context, child) => MediaQuery(
-        data: MediaQuery.of(context)
-            .copyWith(alwaysUse24HourFormat: fmt.use24h),
-        child: child!,
-      ),
+    final minutes = await pickTime(
+      context,
+      start ? draft.startMin : draft.endMin,
     );
-    if (picked == null) return;
-    final minutes = picked.hour * 60 + picked.minute;
+    if (minutes == null) return;
     if (start) {
       final length = draft.endMin - draft.startMin;
       draft.startMin = minutes;
@@ -826,19 +797,12 @@ class _MeetingCard extends StatelessWidget {
                       : null,
                 ),
                 onPressed: () async {
-                  final initial = draft.date ?? LocalDate.today();
-                  final picked = await showDatePicker(
-                    context: context,
-                    initialDate: DateTime(
-                      initial.year,
-                      initial.month,
-                      initial.day,
-                    ),
-                    firstDate: DateTime(2020),
-                    lastDate: DateTime(2040),
+                  final picked = await pickDate(
+                    context,
+                    draft.date ?? LocalDate.today(),
                   );
                   if (picked != null) {
-                    draft.date = LocalDate.fromDateTime(picked);
+                    draft.date = picked;
                     onChanged();
                   }
                 },
@@ -889,7 +853,7 @@ class _MeetingCard extends StatelessWidget {
             ),
             if (draft.kind == MeetingKind.weekly) ...[
               const SizedBox(height: 4),
-              SwitchListTile(
+              SwitchListTile.adaptive(
                 contentPadding: const EdgeInsetsDirectional.only(end: 8),
                 title: Text(l.everyOtherWeek),
                 value: draft.intervalWeeks == 2,
@@ -1127,7 +1091,7 @@ class _RequirementRow extends StatelessWidget {
                 ),
               ],
             ),
-            SwitchListTile(
+            SwitchListTile.adaptive(
               contentPadding: EdgeInsets.zero,
               title: Text(l.recordingsCount),
               value: draft.recordingsCount,

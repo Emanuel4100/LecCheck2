@@ -1,11 +1,14 @@
 import 'dart:async';
 
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
+import '../../app/adaptive.dart';
 import '../../app/format.dart';
 import '../../app/labels.dart';
 import '../../app/providers.dart';
+import '../../app/shortcuts.dart';
 import '../../app/theme/colors.dart';
 import '../../app/widgets/common.dart';
 import '../../core/icons/lec_icons.dart';
@@ -17,9 +20,9 @@ import 'session_actions.dart';
 import 'status_buttons.dart';
 
 /// Opens session details: a draggable bottom sheet on phones, a dialog on
-/// wider windows.
+/// wider windows and on desktop.
 Future<void> showSessionSheet(BuildContext context, String sessionId) {
-  if (WindowSize.of(context) != WindowSize.compact) {
+  if (AppIdiom.isDesktop || WindowSize.of(context) != WindowSize.compact) {
     return showDialog<void>(
       context: context,
       builder: (_) => Dialog(
@@ -52,10 +55,15 @@ class SessionSheet extends ConsumerStatefulWidget {
     super.key,
     required this.sessionId,
     this.scrollController,
+    this.onClose,
   });
 
   final String sessionId;
   final ScrollController? scrollController;
+
+  /// Closes the details (e.g. after removing the session). Defaults to
+  /// popping the sheet or dialog; the week side panel deselects instead.
+  final VoidCallback? onClose;
 
   @override
   ConsumerState<SessionSheet> createState() => _SessionSheetState();
@@ -141,9 +149,13 @@ class _SessionSheetState extends ConsumerState<SessionSheet> {
       ...?meeting?.links,
     ].where((link) => link.url.isNotEmpty).toList();
 
-    return ListView(
-      controller: widget.scrollController,
-      padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
+    void setStatus(AttendanceStatus status) => repo.setStatus(
+      session,
+      status == session.explicitStatus ? null : status,
+    );
+
+    final info = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           children: [
@@ -195,121 +207,146 @@ class _SessionSheetState extends ConsumerState<SessionSheet> {
             text: l.canceledByHolidayHint,
             color: theme.colorScheme.tertiary,
           ),
-        const SizedBox(height: 20),
-        Text(l.status, style: theme.textTheme.titleSmall),
-        const SizedBox(height: 8),
-        StatusButtonGroup(
-          selected: session.explicitStatus,
-          onSelected: (status) => repo.setStatus(
-            session,
-            status == session.explicitStatus ? null : status,
-          ),
-        ),
-        const SizedBox(height: 20),
-        TextField(
-          controller: _notes,
-          focusNode: _notesFocus,
-          minLines: 2,
-          maxLines: 6,
-          textCapitalization: TextCapitalization.sentences,
-          decoration: InputDecoration(
-            labelText: l.sessionNotes,
-            hintText: l.sessionNotesHint,
-            prefixIcon: const Icon(LecIcons.notes),
-          ),
-          onChanged: (text) {
-            _notesTimer?.cancel();
-            _notesTimer = Timer(
-              const Duration(milliseconds: 600),
-              () => repo.setSessionNotes(session, text),
-            );
-          },
-        ),
-        const SizedBox(height: 12),
-        TextField(
-          controller: _recording,
-          focusNode: _recordingFocus,
-          keyboardType: TextInputType.url,
-          decoration: InputDecoration(
-            labelText: l.recordingLink,
-            hintText: 'https://',
-            prefixIcon: const Icon(LecIcons.recording),
-            suffixIcon: _recording.text.trim().isEmpty
-                ? null
-                : IconButton(
-                    tooltip: l.openLink,
-                    icon: const Icon(LecIcons.openLink),
-                    onPressed: () => openUrl(_recording.text.trim()),
-                  ),
-          ),
-          onChanged: (text) {
-            setState(() {});
-            _recordingTimer?.cancel();
-            _recordingTimer = Timer(
-              const Duration(milliseconds: 600),
-              () => repo.setRecordingUrl(session, text),
-            );
-          },
-        ),
-        if (links.isNotEmpty) ...[
-          const SizedBox(height: 20),
-          Text(l.courseLinks, style: theme.textTheme.titleSmall),
-          const SizedBox(height: 8),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              for (final link in links)
-                ActionChip(
-                  avatar: const Icon(LecIcons.link, size: 18),
-                  label: Text(link.title.isEmpty ? link.url : link.title),
-                  onPressed: () => openUrl(link.url),
-                ),
-            ],
-          ),
-        ],
-        const SizedBox(height: 20),
-        Text(l.thisWeekOnly, style: theme.textTheme.titleSmall),
-        ListTile(
-          contentPadding: EdgeInsets.zero,
-          leading: const Icon(LecIcons.moved),
-          title: Text(l.moveSession),
-          onTap: () => showMoveSessionDialog(context, ref, session),
-        ),
-        if (session.isMoved)
-          ListTile(
-            contentPadding: EdgeInsets.zero,
-            leading: const Icon(LecIcons.undo),
-            title: Text(l.resetChanges),
-            onTap: () => repo.resetSessionMove(session),
-          ),
-        if (session.isOneOff)
-          ListTile(
-            contentPadding: EdgeInsets.zero,
-            leading: Icon(LecIcons.delete, color: theme.colorScheme.error),
-            title: Text(
-              l.removeOneTime,
-              style: TextStyle(color: theme.colorScheme.error),
-            ),
-            onTap: () async {
-              final messenger = ScaffoldMessenger.of(context);
-              Navigator.pop(context);
-              final receipt = await repo.deleteMeeting(session.meetingId);
-              messenger.showSnackBar(
-                SnackBar(
-                  content: Text(l.removeOneTime),
-                  action: SnackBarAction(
-                    label: l.undo,
-                    onPressed: () => repo.undoDeletion(receipt),
-                  ),
-                ),
-              );
-            },
-          ),
       ],
+    );
+
+    // Keys 1–5 mark the session (while not typing in the notes).
+    return CallbackShortcuts(
+      bindings: {
+        for (final (i, status) in markableStatuses.indexed)
+          SingleActivator(_digitKeys[i]): unlessTyping(() => setStatus(status)),
+      },
+      child: Focus(
+        autofocus: true,
+        child: ListView(
+          controller: widget.scrollController,
+          padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
+          children: [
+            // Desktop: details can be selected and copied with the mouse.
+            if (AppIdiom.isDesktop) SelectionArea(child: info) else info,
+            const SizedBox(height: 20),
+            Text(l.status, style: theme.textTheme.titleSmall),
+            const SizedBox(height: 8),
+            StatusButtonGroup(
+              selected: session.explicitStatus,
+              onSelected: setStatus,
+            ),
+            const SizedBox(height: 20),
+            TextField(
+              controller: _notes,
+              focusNode: _notesFocus,
+              minLines: 2,
+              maxLines: 6,
+              textCapitalization: TextCapitalization.sentences,
+              decoration: InputDecoration(
+                labelText: l.sessionNotes,
+                hintText: l.sessionNotesHint,
+                prefixIcon: const Icon(LecIcons.notes),
+              ),
+              onChanged: (text) {
+                _notesTimer?.cancel();
+                _notesTimer = Timer(
+                  const Duration(milliseconds: 600),
+                  () => repo.setSessionNotes(session, text),
+                );
+              },
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _recording,
+              focusNode: _recordingFocus,
+              keyboardType: TextInputType.url,
+              decoration: InputDecoration(
+                labelText: l.recordingLink,
+                hintText: 'https://',
+                prefixIcon: const Icon(LecIcons.recording),
+                suffixIcon: _recording.text.trim().isEmpty
+                    ? null
+                    : IconButton(
+                        tooltip: l.openLink,
+                        icon: const Icon(LecIcons.openLink),
+                        onPressed: () => openUrl(_recording.text.trim()),
+                      ),
+              ),
+              onChanged: (text) {
+                setState(() {});
+                _recordingTimer?.cancel();
+                _recordingTimer = Timer(
+                  const Duration(milliseconds: 600),
+                  () => repo.setRecordingUrl(session, text),
+                );
+              },
+            ),
+            if (links.isNotEmpty) ...[
+              const SizedBox(height: 20),
+              Text(l.courseLinks, style: theme.textTheme.titleSmall),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  for (final link in links)
+                    ActionChip(
+                      avatar: const Icon(LecIcons.link, size: 18),
+                      label: Text(link.title.isEmpty ? link.url : link.title),
+                      onPressed: () => openUrl(link.url),
+                    ),
+                ],
+              ),
+            ],
+            const SizedBox(height: 20),
+            Text(l.thisWeekOnly, style: theme.textTheme.titleSmall),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: const Icon(LecIcons.moved),
+              title: Text(l.moveSession),
+              onTap: () => showMoveSessionDialog(context, ref, session),
+            ),
+            if (session.isMoved)
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: const Icon(LecIcons.undo),
+                title: Text(l.resetChanges),
+                onTap: () => repo.resetSessionMove(session),
+              ),
+            if (session.isOneOff)
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: Icon(LecIcons.delete, color: theme.colorScheme.error),
+                title: Text(
+                  l.removeOneTime,
+                  style: TextStyle(color: theme.colorScheme.error),
+                ),
+                onTap: () async {
+                  final messenger = ScaffoldMessenger.of(context);
+                  final close = widget.onClose ?? () => Navigator.pop(context);
+                  close();
+                  final receipt = await repo.deleteMeeting(session.meetingId);
+                  messenger.showSnackBar(
+                    SnackBar(
+                      content: Text(l.removeOneTime),
+                      action: SnackBarAction(
+                        label: l.undo,
+                        onPressed: () => repo.undoDeletion(receipt),
+                      ),
+                    ),
+                  );
+                },
+              ),
+          ],
+        ),
+      ),
     );
   }
 }
+
+const _digitKeys = [
+  LogicalKeyboardKey.digit1,
+  LogicalKeyboardKey.digit2,
+  LogicalKeyboardKey.digit3,
+  LogicalKeyboardKey.digit4,
+  LogicalKeyboardKey.digit5,
+];
 
 class _InfoRow extends StatelessWidget {
   const _InfoRow({required this.icon, required this.text, this.color});
@@ -371,19 +408,8 @@ class _MoveSessionDialogState extends ConsumerState<_MoveSessionDialog> {
   }
 
   Future<void> _pickTime(bool start) async {
-    final fmt = Fmt.of(context);
-    final initial = start ? _start : _end;
-    final picked = await showTimePicker(
-      context: context,
-      initialTime: TimeOfDay(hour: initial ~/ 60, minute: initial % 60),
-      builder: (context, child) => MediaQuery(
-        data: MediaQuery.of(context)
-            .copyWith(alwaysUse24HourFormat: fmt.use24h),
-        child: child!,
-      ),
-    );
-    if (picked == null) return;
-    final minutes = picked.hour * 60 + picked.minute;
+    final minutes = await pickTime(context, start ? _start : _end);
+    if (minutes == null) return;
     setState(() {
       if (start) {
         final length = _end - _start;
@@ -410,15 +436,8 @@ class _MoveSessionDialogState extends ConsumerState<_MoveSessionDialog> {
             leading: const Icon(LecIcons.date),
             title: Text(fmt.longDate(_date)),
             onTap: () async {
-              final picked = await showDatePicker(
-                context: context,
-                initialDate: DateTime(_date.year, _date.month, _date.day),
-                firstDate: DateTime(2020),
-                lastDate: DateTime(2040),
-              );
-              if (picked != null) {
-                setState(() => _date = LocalDate.fromDateTime(picked));
-              }
+              final picked = await pickDate(context, _date);
+              if (picked != null) setState(() => _date = picked);
             },
           ),
           Row(

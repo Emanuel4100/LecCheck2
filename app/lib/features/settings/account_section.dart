@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 
+import '../../app/adaptive.dart';
 import '../../app/format.dart';
 import '../../app/sync_providers.dart';
 import '../../core/icons/lec_icons.dart';
@@ -24,25 +25,13 @@ Future<bool> signIn(
         .read(authProvider.notifier)
         .signIn(
           devName: devName,
-          confirmReplace: () async =>
-              await showDialog<bool>(
-                context: context,
-                builder: (context) => AlertDialog(
-                  title: Text(l.replaceDataTitle),
-                  content: Text(l.replaceDataBody),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(context, false),
-                      child: Text(l.cancel),
-                    ),
-                    FilledButton(
-                      onPressed: () => Navigator.pop(context, true),
-                      child: Text(l.replace),
-                    ),
-                  ],
-                ),
-              ) ??
-              false,
+          confirmReplace: () => confirmDialog(
+            context,
+            title: l.replaceDataTitle,
+            body: l.replaceDataBody,
+            confirmLabel: l.replace,
+            destructive: true,
+          ),
         );
     return ref.read(authProvider).value != null;
   } on PlatformException catch (e) {
@@ -163,54 +152,29 @@ class AccountSection extends ConsumerWidget {
 
   Future<void> _signOut(BuildContext context, WidgetRef ref) async {
     final l = AppLocalizations.of(context);
-    final mode = await showDialog<SignOutMode>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(l.signOutTitle),
-        content: Text(l.signOutBody),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(l.cancel),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, SignOutMode.removeData),
-            child: Text(l.removeData),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, SignOutMode.keepData),
-            child: Text(l.keepData),
-          ),
-        ],
-      ),
+    final mode = await showChoiceDialog<SignOutMode?>(
+      context,
+      title: l.signOutTitle,
+      body: l.signOutBody,
+      choices: [
+        DialogChoice(l.cancel, null),
+        DialogChoice(l.removeData, SignOutMode.removeData, destructive: true),
+        DialogChoice(l.keepData, SignOutMode.keepData, primary: true),
+      ],
     );
     if (mode != null) await ref.read(authProvider.notifier).signOut(mode);
   }
 
   Future<void> _deleteCloud(BuildContext context, WidgetRef ref) async {
     final l = AppLocalizations.of(context);
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(l.deleteCloudTitle),
-        content: Text(l.deleteCloudBody),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text(l.cancel),
-          ),
-          FilledButton(
-            style: FilledButton.styleFrom(
-              backgroundColor: Theme.of(context).colorScheme.error,
-              foregroundColor: Theme.of(context).colorScheme.onError,
-            ),
-            onPressed: () => Navigator.pop(context, true),
-            child: Text(l.delete),
-          ),
-        ],
-      ),
+    final ok = await confirmDialog(
+      context,
+      title: l.deleteCloudTitle,
+      body: l.deleteCloudBody,
+      confirmLabel: l.delete,
+      destructive: true,
     );
-    if (ok == true) await ref.read(authProvider.notifier).deleteCloudData();
+    if (ok) await ref.read(authProvider.notifier).deleteCloudData();
   }
 }
 

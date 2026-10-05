@@ -35,6 +35,21 @@ abstract final class TodayWidget {
 
   static bool get supported => !kIsWeb && Platform.isAndroid;
 
+  /// Whether the launcher lets the app add the widget (Android 8+, most
+  /// launchers).
+  static Future<bool> canPin() async {
+    if (!supported) return false;
+    try {
+      return await HomeWidget.isRequestPinWidgetSupported() ?? false;
+    } on Object {
+      return false;
+    }
+  }
+
+  /// Asks the launcher to add the widget to the home screen.
+  static Future<void> requestPin() =>
+      HomeWidget.requestPinWidget(qualifiedAndroidName: _receiver);
+
   static Map<String, Object?> snapshot({
     required SemesterData data,
     required OccurrenceIndex index,

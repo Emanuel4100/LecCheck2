@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'app/adaptive.dart';
 import 'app/app.dart';
 import 'app/notification_controller.dart';
 import 'app/providers.dart';
@@ -14,6 +15,11 @@ import 'app/widget_controller.dart';
 /// first frame; nothing waits on the network.
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  if (AppIdiom.isAndroid) {
+    // Draw behind the status and navigation bars on every Android version
+    // (15+ enforces it); the theme makes the bars transparent.
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+  }
   LicenseRegistry.addLicense(() async* {
     final ofl = await rootBundle.loadString('assets/fonts/OFL.txt');
     yield LicenseEntryWithLineBreaks(['Rubik'], ofl);

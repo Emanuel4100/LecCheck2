@@ -7,10 +7,13 @@
          (fine outside the Play Store; revisit before publishing there). -->
     <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" android:maxSdkVersion="32" />
+    <!-- enableOnBackInvokedCallback: predictive back (Android 13+): the
+         back gesture previews the previous screen. -->
     <application
         android:label="LecCheck"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/ic_launcher"
+        android:enableOnBackInvokedCallback="true">
         <activity
             android:name=".MainActivity"
             android:exported="true"

@@ -1,8 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
+import '../../app/adaptive.dart';
 import '../../app/labels.dart';
 import '../../app/providers.dart';
+import '../../app/shortcuts.dart';
 import '../../app/widgets/common.dart';
 import '../../core/icons/lec_icons.dart';
 import '../../domain/occurrence.dart';
@@ -56,92 +58,119 @@ class _AllSessionsPageState extends ConsumerState<AllSessionsPage> {
     ];
     final ordered = _upcoming ? sessions : sessions.reversed.toList();
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(l.allSessions),
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(64),
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-            child: SearchBar(
-              leading: const Icon(LecIcons.search),
-              hintText: l.search,
-              elevation: const WidgetStatePropertyAll(0),
-              onChanged: (v) => setState(() => _query = v),
+    return PageShortcuts(
+      autofocus: !AppIdiom.isDesktop,
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(l.allSessions),
+          bottom: PreferredSize(
+            preferredSize: const Size.fromHeight(64),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+              child: Centered(
+                maxWidth: 868,
+                child: SearchBar(
+                  // Opened to search (Ctrl+F on desktop): ready to type.
+                  autoFocus: AppIdiom.isDesktop,
+                  leading: const Icon(LecIcons.search),
+                  hintText: l.search,
+                  elevation: const WidgetStatePropertyAll(0),
+                  onChanged: (v) => setState(() => _query = v),
+                ),
+              ),
             ),
           ),
         ),
-      ),
-      body: CustomScrollView(
-        slivers: [
-          SliverToBoxAdapter(
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
-              child: Row(
-                children: [
-                  SegmentedButton<bool>(
-                    showSelectedIcon: false,
-                    segments: [
-                      ButtonSegment(value: false, label: Text(l.statusMix)),
-                      ButtonSegment(value: true, label: Text(l.comingUp)),
-                    ],
-                    selected: {_upcoming},
-                    onSelectionChanged: (s) =>
-                        setState(() => _upcoming = s.first),
+        body: CustomScrollView(
+          slivers: [
+            SliverCentered(
+              maxWidth: 900,
+              sliver: SliverMainAxisGroup(
+                slivers: [
+                  SliverToBoxAdapter(
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+                      child: Row(
+                        children: [
+                          SegmentedButton<bool>(
+                            showSelectedIcon: false,
+                            segments: [
+                              ButtonSegment(
+                                value: false,
+                                label: Text(l.statusMix),
+                              ),
+                              ButtonSegment(
+                                value: true,
+                                label: Text(l.comingUp),
+                              ),
+                            ],
+                            selected: {_upcoming},
+                            onSelectionChanged: (s) =>
+                                setState(() => _upcoming = s.first),
+                          ),
+                          const SizedBox(width: 8),
+                          _FilterMenu<String?>(
+                            label: _courseId == null
+                                ? l.navCourses
+                                : courseById[_courseId]?.name ?? l.navCourses,
+                            active: _courseId != null,
+                            options: {
+                              null: l.allTypes,
+                              for (final c in courses) c.id: c.name,
+                            },
+                            onSelected: (v) => setState(() => _courseId = v),
+                          ),
+                          const SizedBox(width: 8),
+                          _FilterMenu<SessionType?>(
+                            label: _type?.label(l) ?? l.appliesTo,
+                            active: _type != null,
+                            options: {
+                              null: l.allTypes,
+                              for (final t in SessionType.values) t: t.label(l),
+                            },
+                            onSelected: (v) => setState(() => _type = v),
+                          ),
+                          const SizedBox(width: 8),
+                          _FilterMenu<AttendanceStatus?>(
+                            label: _status?.label(l) ?? l.status,
+                            active: _status != null,
+                            options: {
+                              null: l.allTypes,
+                              for (final s in AttendanceStatus.values)
+                                s: s.label(l),
+                            },
+                            onSelected: (v) => setState(() => _status = v),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
-                  const SizedBox(width: 8),
-                  _FilterMenu<String?>(
-                    label: _courseId == null
-                        ? l.navCourses
-                        : courseById[_courseId]?.name ?? l.navCourses,
-                    active: _courseId != null,
-                    options: {
-                      null: l.allTypes,
-                      for (final c in courses) c.id: c.name,
-                    },
-                    onSelected: (v) => setState(() => _courseId = v),
-                  ),
-                  const SizedBox(width: 8),
-                  _FilterMenu<SessionType?>(
-                    label: _type?.label(l) ?? l.appliesTo,
-                    active: _type != null,
-                    options: {
-                      null: l.allTypes,
-                      for (final t in SessionType.values) t: t.label(l),
-                    },
-                    onSelected: (v) => setState(() => _type = v),
-                  ),
-                  const SizedBox(width: 8),
-                  _FilterMenu<AttendanceStatus?>(
-                    label: _status?.label(l) ?? l.status,
-                    active: _status != null,
-                    options: {
-                      null: l.allTypes,
-                      for (final s in AttendanceStatus.values) s: s.label(l),
-                    },
-                    onSelected: (v) => setState(() => _status = v),
-                  ),
+                  if (ordered.isEmpty)
+                    SliverFillRemaining(
+                      hasScrollBody: false,
+                      child: EmptyState(
+                        icon: LecIcons.search,
+                        title: l.noUpcoming,
+                      ),
+                    )
+                  else
+                    SliverPadding(
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
+                      sliver: SliverList.separated(
+                        itemCount: ordered.length,
+                        separatorBuilder: (_, _) => const SizedBox(height: 8),
+                        itemBuilder: (context, i) => SessionTile(
+                          sessionId: ordered[i].id,
+                          showDate: true,
+                        ),
+                      ),
+                    ),
                 ],
               ),
             ),
-          ),
-          if (ordered.isEmpty)
-            SliverFillRemaining(
-              hasScrollBody: false,
-              child: EmptyState(icon: LecIcons.search, title: l.noUpcoming),
-            )
-          else
-            SliverPadding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
-              sliver: SliverList.separated(
-                itemCount: ordered.length,
-                separatorBuilder: (_, _) => const SizedBox(height: 8),
-                itemBuilder: (context, i) =>
-                    SessionTile(sessionId: ordered[i].id, showDate: true),
-              ),
-            ),
-        ],
+          ],
+        ),
       ),
     );
   }

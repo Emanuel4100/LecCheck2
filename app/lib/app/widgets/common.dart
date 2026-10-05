@@ -136,16 +136,64 @@ class ColorBar extends StatelessWidget {
   );
 }
 
-/// Width-based layout classes (Material window size classes).
+/// Width-based layout classes (Material window size classes). They decide the
+/// layout; how the user interacts (touch, mouse, keyboard) is [AppIdiom].
 enum WindowSize {
   compact,
   medium,
-  expanded;
+  expanded,
+  large;
 
-  static WindowSize of(BuildContext context) {
-    final width = MediaQuery.sizeOf(context).width;
+  static WindowSize of(BuildContext context) =>
+      fromWidth(MediaQuery.sizeOf(context).width);
+
+  static WindowSize fromWidth(double width) {
     if (width < 600) return compact;
     if (width < 840) return medium;
-    return expanded;
+    if (width < 1200) return expanded;
+    return large;
   }
+
+  /// Room for side-by-side panes (840 dp and up).
+  bool get isWide => index >= expanded.index;
+}
+
+/// Centers a sliver at most [maxWidth] wide in whatever width it gets.
+class SliverCentered extends StatelessWidget {
+  const SliverCentered({
+    super.key,
+    required this.maxWidth,
+    required this.sliver,
+  });
+
+  final double maxWidth;
+  final Widget sliver;
+
+  @override
+  Widget build(BuildContext context) => SliverLayoutBuilder(
+    builder: (context, constraints) {
+      final side = (constraints.crossAxisExtent - maxWidth) / 2;
+      return SliverPadding(
+        padding: EdgeInsets.symmetric(horizontal: side > 0 ? side : 0),
+        sliver: sliver,
+      );
+    },
+  );
+}
+
+/// Box version of [SliverCentered].
+class Centered extends StatelessWidget {
+  const Centered({super.key, required this.maxWidth, required this.child});
+
+  final double maxWidth;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => Align(
+    alignment: Alignment.topCenter,
+    child: ConstrainedBox(
+      constraints: BoxConstraints(maxWidth: maxWidth),
+      child: child,
+    ),
+  );
 }

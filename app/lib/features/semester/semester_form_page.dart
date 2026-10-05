@@ -1,10 +1,13 @@
 import 'package:collection/collection.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 
+import '../../app/adaptive.dart';
 import '../../app/format.dart';
 import '../../app/providers.dart';
+import '../../app/shortcuts.dart';
 import '../../core/db/schedule_repository.dart';
 import '../../core/icons/lec_icons.dart';
 import '../../domain/local_date.dart';
@@ -71,16 +74,9 @@ class _SemesterFormPageState extends ConsumerState<SemesterFormPage> {
   bool get _valid => _end.isAfter(_start) && _name.text.trim().isNotEmpty;
 
   Future<void> _pickDate(bool start) async {
-    final current = start ? _start : _end;
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: DateTime(current.year, current.month, current.day),
-      firstDate: DateTime(2020),
-      lastDate: DateTime(2040),
-    );
-    if (picked == null) return;
+    final date = await pickDate(context, start ? _start : _end);
+    if (date == null) return;
     setState(() {
-      final date = LocalDate.fromDateTime(picked);
       if (start) {
         final length = _start.daysUntil(_end);
         _start = date;
@@ -124,113 +120,124 @@ class _SemesterFormPageState extends ConsumerState<SemesterFormPage> {
       for (var i = 0; i < 7; i++) (_weekStart - 1 + i) % 7 + 1,
     ];
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          widget.semesterId == null ? l.semesterSetupTitle : l.editSemester,
-        ),
-      ),
-      body: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 560),
-          child: ListView(
-            padding: const EdgeInsets.fromLTRB(20, 8, 20, 120),
-            children: [
-              if (widget.semesterId == null)
-                Text(
-                  l.semesterSetupSubtitle,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                ),
-              const SizedBox(height: 20),
-              TextField(
-                controller: _name,
-                textCapitalization: TextCapitalization.sentences,
-                decoration: InputDecoration(
-                  labelText: l.semesterName,
-                  prefixIcon: const Icon(LecIcons.semester),
-                ),
-                onChanged: (_) => setState(() {}),
-              ),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  Expanded(
-                    child: _DateField(
-                      label: l.startDate,
-                      value: fmt.yearMonthDay(_start),
-                      onTap: () => _pickDate(true),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _DateField(
-                      label: l.endDate,
-                      value: fmt.yearMonthDay(_end),
-                      onTap: () => _pickDate(false),
-                    ),
-                  ),
-                ],
-              ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(4, 8, 4, 0),
-                child: Text(
-                  _end.isAfter(_start)
-                      ? l.semesterLength(weeks.ceil())
-                      : l.dateRangeError,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: _end.isAfter(_start)
-                        ? theme.colorScheme.onSurfaceVariant
-                        : theme.colorScheme.error,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 24),
-              Text(l.weekStartsOn, style: theme.textTheme.titleSmall),
-              const SizedBox(height: 8),
-              SegmentedButton<int>(
-                segments: [
-                  for (final d in const [
-                    DateTime.saturday,
-                    DateTime.sunday,
-                    DateTime.monday,
-                  ])
-                    ButtonSegment(value: d, label: Text(fmt.isoWeekdayName(d))),
-                ],
-                selected: {_weekStart},
-                onSelectionChanged: (s) => setState(() => _weekStart = s.first),
-              ),
-              const SizedBox(height: 24),
-              Text(l.visibleDays, style: theme.textTheme.titleSmall),
-              const SizedBox(height: 8),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  for (final d in orderedDays)
-                    FilterChip(
-                      label: Text(fmt.isoWeekdayShort(d)),
-                      selected: _days.contains(d),
-                      onSelected: (on) => setState(() {
-                        if (on) {
-                          _days.add(d);
-                        } else if (_days.length > 1) {
-                          _days.remove(d);
-                        }
-                      }),
-                    ),
-                ],
-              ),
-            ],
+    return PageShortcuts(
+      bindings: {
+        primaryKey(LogicalKeyboardKey.keyS): () {
+          if (_valid && !_saving) _save();
+        },
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(
+            widget.semesterId == null ? l.semesterSetupTitle : l.editSemester,
           ),
         ),
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _valid && !_saving ? _save : null,
-        icon: const Icon(LecIcons.check),
-        label: Text(widget.semesterId == null ? l.createSemester : l.save),
+        body: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 560),
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(20, 8, 20, 120),
+              children: [
+                if (widget.semesterId == null)
+                  Text(
+                    l.semesterSetupSubtitle,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                const SizedBox(height: 20),
+                TextField(
+                  controller: _name,
+                  textCapitalization: TextCapitalization.sentences,
+                  decoration: InputDecoration(
+                    labelText: l.semesterName,
+                    prefixIcon: const Icon(LecIcons.semester),
+                  ),
+                  onChanged: (_) => setState(() {}),
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _DateField(
+                        label: l.startDate,
+                        value: fmt.yearMonthDay(_start),
+                        onTap: () => _pickDate(true),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _DateField(
+                        label: l.endDate,
+                        value: fmt.yearMonthDay(_end),
+                        onTap: () => _pickDate(false),
+                      ),
+                    ),
+                  ],
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(4, 8, 4, 0),
+                  child: Text(
+                    _end.isAfter(_start)
+                        ? l.semesterLength(weeks.ceil())
+                        : l.dateRangeError,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: _end.isAfter(_start)
+                          ? theme.colorScheme.onSurfaceVariant
+                          : theme.colorScheme.error,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 24),
+                Text(l.weekStartsOn, style: theme.textTheme.titleSmall),
+                const SizedBox(height: 8),
+                SegmentedButton<int>(
+                  segments: [
+                    for (final d in const [
+                      DateTime.saturday,
+                      DateTime.sunday,
+                      DateTime.monday,
+                    ])
+                      ButtonSegment(
+                        value: d,
+                        label: Text(fmt.isoWeekdayName(d)),
+                      ),
+                  ],
+                  selected: {_weekStart},
+                  onSelectionChanged: (s) =>
+                      setState(() => _weekStart = s.first),
+                ),
+                const SizedBox(height: 24),
+                Text(l.visibleDays, style: theme.textTheme.titleSmall),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    for (final d in orderedDays)
+                      FilterChip(
+                        label: Text(fmt.isoWeekdayShort(d)),
+                        selected: _days.contains(d),
+                        onSelected: (on) => setState(() {
+                          if (on) {
+                            _days.add(d);
+                          } else if (_days.length > 1) {
+                            _days.remove(d);
+                          }
+                        }),
+                      ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+        floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+        floatingActionButton: FloatingActionButton.extended(
+          onPressed: _valid && !_saving ? _save : null,
+          icon: const Icon(LecIcons.check),
+          label: Text(widget.semesterId == null ? l.createSemester : l.save),
+        ),
       ),
     );
   }

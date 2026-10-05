@@ -1,4 +1,5 @@
 import 'package:dynamic_color/dynamic_color.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -47,15 +48,20 @@ class LecCheckApp extends ConsumerWidget {
           AppLocalizations.delegate,
           ...GlobalMaterialLocalizations.delegates,
         ],
-        builder: (context, child) => FmtScope(
-          fmt: Fmt(
-            Localizations.localeOf(context).toLanguageTag(),
-            use24h: use24h ?? MediaQuery.alwaysUse24HourFormatOf(context),
+        builder: (context, child) => AnnotatedRegion<SystemUiOverlayStyle>(
+          // System bar style for screens without an app bar (and the bottom
+          // navigation bar area everywhere).
+          value: Theme.of(context).appBarTheme.systemOverlayStyle!,
+          child: FmtScope(
+            fmt: Fmt(
+              Localizations.localeOf(context).toLanguageTag(),
+              use24h: use24h ?? MediaQuery.alwaysUse24HourFormatOf(context),
+            ),
+            // fl_chart still uses package:flutter/material; the bridge lets
+            // its widgets resolve our material_ui theme until it migrates.
+            // ignore: deprecated_member_use
+            child: MaterialUiCompatibilityBridge(child: child!),
           ),
-          // fl_chart still uses package:flutter/material; the bridge lets its
-          // widgets resolve our material_ui theme until it migrates.
-          // ignore: deprecated_member_use
-          child: MaterialUiCompatibilityBridge(child: child!),
         ),
       ),
     );

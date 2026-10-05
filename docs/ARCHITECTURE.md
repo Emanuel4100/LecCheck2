@@ -39,7 +39,7 @@ These directly fix v1, which serialized the whole app to one JSON blob per chang
 | `core/home_widget/` | Android widget snapshot + background callback |
 | `core/backup/` | JSON v3 export/import, v1/v2 importer |
 | `core/icons/` | `LecIcons` (meaning → glyph) and the generated custom icon font class |
-| `app/` | Providers, router, shell, theme, formatting, notification/widget controllers |
+| `app/` | Providers, router, shell, theme, formatting, notification/widget controllers, adaptive helpers (`adaptive.dart`) and keyboard shortcuts (`shortcuts.dart`) |
 | `features/` | Screens: onboarding, today, week, courses, session, stats, settings, sessions |
 
 ## Data model
@@ -193,7 +193,23 @@ scheme. The Google client secret exists only in the Worker. Sessions renew after
 
 - **Router**: go_router with a `StatefulShellRoute` (Today, Week, Courses, Stats). The
   shell keeps every tab alive and fades/scales the newly selected one in ("fade
-  through"). Phones get a bottom navigation bar; wider windows a navigation rail.
+  through").
+- **Adaptive layer** — two independent axes:
+  - *Window size* (`WindowSize`: compact < 600, medium < 840, expanded < 1200, large)
+    decides the **layout**: bottom bar → rail with an Add button → extended sidebar;
+    single column → centered column (`SliverCentered`) → two columns
+    (`SliverCrossAxisGroup`) or list + details (Courses, the Week panel, Settings).
+  - *Idiom* (`AppIdiom`, from `defaultTargetPlatform` so tests can override it) decides
+    **input and controls**: touch gets swipes, long-press and bottom sheets; desktop
+    gets hover, right-click menus (`showSessionMenu`), dialogs and keyboard shortcuts;
+    Apple platforms get Cupertino alerts and date/time wheels (`showChoiceDialog`,
+    `pickDate`, `pickTime`) and adaptive switches.
+  - Shortcuts: the shell's `CallbackShortcuts` handles app-wide keys and drives the Week
+    page through `weekCommandsProvider`; pushed pages wrap themselves in `PageShortcuts`
+    (Esc, Ctrl+S). Single-key shortcuts are ignored while a text field has focus.
+- **Platform runners**: Linux is single-instance (a second launch presents the existing
+  window), uses a GTK header bar only on GNOME-family desktops, and has a minimum window
+  size. Android enables predictive back and draws edge-to-edge on every version.
 - **Theme** (`app/theme`): `material_ui` (the standalone Material package). Presets build
   a `ColorScheme.fromSeed` with a per-preset scheme variant; `StatusColors` and
   `CourseColors` theme extensions compute light/dark tones in HCT and harmonize them with
@@ -213,8 +229,8 @@ scheme. The Google client secret exists only in the Worker. Sessions renew after
 |---|---|
 | `app/test/domain` | Engine (DST weeks, biweekly, ranges, holidays, moves, numbering), stats, requirements, reminder planning |
 | `app/test/core` | Repository (history kept, null clearing, cascade + undo), HLC, backup import/export |
-| `app/test/widget` | Mark + undo, editor validation, unsaved-changes guard, empty state |
-| `app/test_screenshots` | Renders every main screen offscreen to PNG (English/Hebrew, light/dark) |
+| `app/test/widget` | Mark + undo, editor validation, unsaved-changes guard, empty state; adaptive behavior per platform (desktop sidebar, shortcuts, right-click, list + details; iPhone dialogs and pickers; phone swipe) |
+| `app/test_screenshots` | Renders every main screen offscreen to PNG (English/Hebrew, light/dark; phone, desktop 1440×900, iPhone) |
 | `app/test_sync` | Two simulated devices against a local Worker: live sync, field merges, delete/undo |
 | `server/test` | Merge rules, validation, auth/PKCE, isolation, paging, revocation, WebSocket broadcast |
 

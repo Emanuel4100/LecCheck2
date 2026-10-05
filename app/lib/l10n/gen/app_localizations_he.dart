@@ -935,4 +935,81 @@ class AppLocalizationsHe extends AppLocalizations {
 
   @override
   String get channelAfter => 'אחרי השיעור';
+
+  @override
+  String get previousWeek => 'השבוע הקודם';
+
+  @override
+  String get nextWeek => 'השבוע הבא';
+
+  @override
+  String get rightClickHint => 'לחיצה ימנית על מפגש פותחת אפשרויות נוספות';
+
+  @override
+  String get details => 'פרטים';
+
+  @override
+  String get goToCourse => 'מעבר לקורס';
+
+  @override
+  String get selectSessionHint => 'בחרו מפגש כדי לראות כאן את הפרטים שלו';
+
+  @override
+  String get keyboardShortcuts => 'קיצורי מקלדת';
+
+  @override
+  String get keyboardShortcutsSubtitle => 'אפשר להציג אותם בכל רגע עם F1';
+
+  @override
+  String get shortcutTabs => 'מעבר בין הלשוניות';
+
+  @override
+  String get shortcutSearch => 'חיפוש מפגשים';
+
+  @override
+  String get shortcutWeeks => 'שבוע קודם / הבא';
+
+  @override
+  String get shortcutZoom => 'הגדלה / הקטנה / איפוס של תצוגת השבוע';
+
+  @override
+  String get shortcutMark => 'סימון המפגש הפתוח: נכח, החסיר, צפייה, דילג, בוטל';
+
+  @override
+  String get shortcutBack => 'סגירה / חזרה';
+
+  @override
+  String get shortcutHelp => 'הצגת הרשימה הזו';
+
+  @override
+  String get thisDevice => 'המכשיר הזה';
+
+  @override
+  String get addWidget => 'הוספת וידג׳ט למסך הבית';
+
+  @override
+  String get addWidgetSubtitle => 'המפגשים של היום עם סימון בלחיצה אחת';
+
+  @override
+  String get altStoreRefresh => 'יש לרענן ב-AltStore או ב-SideStore כל שבוע';
+
+  @override
+  String get altStoreRefreshSubtitle =>
+      'אפליקציות שהותקנו עם Apple ID חינמי מפסיקות להיפתח אחרי 7 ימים בלי רענון.';
+
+  @override
+  String get notificationsOff => 'ההתראות של LecCheck כבויות';
+
+  @override
+  String get notificationsOffSubtitle => 'התזכורות לא יופיעו עד שתאפשרו אותן.';
+
+  @override
+  String get allow => 'לאפשר';
+
+  @override
+  String get remindersWhileOpen =>
+      'במחשב הזה התזכורות מופיעות כש-LecCheck פתוחה.';
+
+  @override
+  String get presetAccent => 'צבע המערכת';
 }

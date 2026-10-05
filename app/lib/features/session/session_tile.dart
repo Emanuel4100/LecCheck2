@@ -2,6 +2,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
+import '../../app/adaptive.dart';
 import '../../app/format.dart';
 import '../../app/labels.dart';
 import '../../app/providers.dart';
@@ -13,12 +14,15 @@ import '../../domain/occurrence.dart';
 import '../../domain/schedule_types.dart';
 import '../../l10n/gen/app_localizations.dart';
 import 'session_actions.dart';
+import 'session_menu.dart';
 import 'session_sheet.dart';
 import 'status_buttons.dart';
 
-/// One session as a card. Swipe right = attended, left = missed (physical
-/// directions, also in RTL); tap opens details; long-press opens the status
-/// picker. Watches only its own session, so marking one tile rebuilds only it.
+/// One session as a card. Touch: swipe right = attended, left = missed
+/// (physical directions, also in RTL), long-press opens the status picker.
+/// Mouse: hovering a started session shows ✓ / ✗, right-click opens a menu.
+/// Tap opens details. Watches only its own session, so marking one tile
+/// rebuilds only it.
 class SessionTile extends ConsumerWidget {
   const SessionTile({
     super.key,
@@ -66,7 +70,7 @@ class SessionTile extends ConsumerWidget {
       session.location,
     ]);
 
-    final card = Card(
+    Widget card(bool hovered) => Card(
       color: highlight
           ? tone.container
           : canceled
@@ -75,6 +79,8 @@ class SessionTile extends ConsumerWidget {
       child: InkWell(
         onTap: () => showSessionSheet(context, session.id),
         onLongPress: () => showStatusPicker(context, ref, session),
+        onSecondaryTapUp: (d) =>
+            showSessionMenu(context, ref, session, d.globalPosition),
         child: Padding(
           padding: const EdgeInsetsDirectional.fromSTEB(12, 12, 8, 12),
           child: Row(
@@ -127,7 +133,9 @@ class SessionTile extends ConsumerWidget {
                   ],
                 ),
               ),
-              if (quickActions && session.status == AttendanceStatus.pending)
+              if (session.status == AttendanceStatus.pending &&
+                  (quickActions ||
+                      (hovered && session.hasStarted(DateTime.now()))))
                 ..._quickButtons(context, ref, session, l)
               else
                 Padding(
@@ -142,6 +150,11 @@ class SessionTile extends ConsumerWidget {
         ),
       ),
     );
+
+    // A mouse drag is not a swipe: desktop marks through hover and menus.
+    if (AppIdiom.isDesktop) {
+      return HoverBuilder(builder: (context, hovered) => card(hovered));
+    }
 
     return Dismissible(
       key: ValueKey('swipe-${session.id}'),
@@ -174,7 +187,7 @@ class SessionTile extends ConsumerWidget {
         status: rtl ? AttendanceStatus.attended : AttendanceStatus.missed,
         alignment: Alignment.centerRight,
       ),
-      child: card,
+      child: card(false),
     );
   }
 
@@ -238,16 +251,16 @@ class _SwipeBackground extends StatelessWidget {
   }
 }
 
-/// Bottom sheet with every status, opened by long-press.
+/// Every status as buttons, opened by long-press: a bottom sheet on phones,
+/// a dialog on tablets.
 Future<void> showStatusPicker(
   BuildContext context,
   WidgetRef ref,
   Occurrence session,
 ) {
   final l = AppLocalizations.of(context);
-  return showModalBottomSheet<void>(
+  return showAppSheet<void>(
     context: context,
-    useRootNavigator: true,
     builder: (sheetContext) => SafeArea(
       child: Padding(
         padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),

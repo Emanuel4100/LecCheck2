@@ -202,9 +202,11 @@ Future<ProviderContainer> _pumpApp(
   required String locale,
   required ThemeMode mode,
   ThemePreset preset = ThemePreset.ocean,
+  Size size = const Size(412, 915),
+  double pixelRatio = 2.6,
 }) async {
-  tester.view.physicalSize = const Size(412 * 2.6, 915 * 2.6);
-  tester.view.devicePixelRatio = 2.6;
+  tester.view.physicalSize = size * pixelRatio;
+  tester.view.devicePixelRatio = pixelRatio;
   addTearDown(tester.view.reset);
 
   SharedPreferencesAsyncPlatform.instance =
@@ -310,6 +312,33 @@ void main() {
     await _go(tester, c, '/stats');
     await _shot(tester, 'he_dark_stats');
   });
+
+  testWidgets('Desktop · English · light', (tester) async {
+    final c = await _pumpApp(
+      tester,
+      locale: 'en',
+      mode: ThemeMode.light,
+      size: const Size(1440, 900),
+      pixelRatio: 1,
+    );
+    await _shot(tester, 'desktop_today');
+    await _go(tester, c, '/week');
+    await tester.tap(find.text('Data Structures').first);
+    await _settle(tester);
+    await _shot(tester, 'desktop_week');
+    await _go(tester, c, '/courses');
+    await _shot(tester, 'desktop_courses');
+    await _go(tester, c, '/stats');
+    await _shot(tester, 'desktop_stats');
+    await _go(tester, c, '/settings');
+    await _shot(tester, 'desktop_settings');
+  }, variant: TargetPlatformVariant.only(TargetPlatform.linux));
+
+  testWidgets('iPhone · English · light', (tester) async {
+    final c = await _pumpApp(tester, locale: 'en', mode: ThemeMode.light);
+    await _go(tester, c, '/settings');
+    await _shot(tester, 'ios_settings');
+  }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
   testWidgets('Onboarding', (tester) async {
     tester.view.physicalSize = const Size(412 * 2.6, 915 * 2.6);

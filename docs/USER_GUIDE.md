@@ -52,6 +52,10 @@ Ways to mark:
 - **Needs marking** list: tap ✓ / ✗, or **swipe right** for attended and **left** for
   missed (also in Hebrew). **Mark all attended** marks the whole queue.
 - **Long-press** any session (list or week grid) for all statuses.
+- **With a mouse** (desktop): hover a session that has started to get ✓ / ✗, or
+  **right-click** any session for every status plus Details, Open link and Go to course.
+- **Keyboard**: with session details open, press **1–5** for attended, missed, watched,
+  skipped, canceled.
 - **Session details** (tap a session): pick a status — tap it again to clear it.
 - **Notifications** and the **home-screen widget** (below).
 
@@ -80,10 +84,13 @@ Tap any session to see its date, time, room and lecturer, and to:
 
 ## Week
 
-- Swipe left/right to change weeks; the calendar button jumps to any date, the sun button
-  back to today.
+- Swipe left/right to change weeks (on tablets and desktop also the ‹ › buttons); the
+  calendar button jumps to any date, the sun button back to today.
 - Today's column is highlighted with a moving "now" line.
-- The hour range fits your schedule; pinch with two fingers to zoom.
+- The hour range fits your schedule; pinch with two fingers to zoom (desktop: Ctrl +
+  mouse wheel or a trackpad pinch). The zoom is remembered on each device; on desktop the
+  default fills the window.
+- On large windows, a click shows the session's details in a panel beside the grid.
 - Tap a day header to mark it as **no class** (holiday, strike, exam day — with an
   optional reason) or restore it. Sessions that day show as canceled; your own marks stay
   and come back if you restore the day.
@@ -128,16 +135,51 @@ tap. Tap the widget to open the app.
 - **Sign out on all devices** — revokes every session.
 - **Delete cloud data** — removes your data from the server (this device keeps a copy).
 
+## Phones, tablets and desktop
+
+The layout follows the window size, and the controls follow the device:
+
+- **Phones**: bottom navigation; details and pickers open as bottom sheets.
+- **Tablets and wide windows**: a navigation rail with an **Add** button (new course or
+  one-time session); Today and Stats in two columns; **Courses** shows the list and the
+  selected course side by side; **Settings** has categories on the left.
+- **Large desktop windows**: a sidebar with the logo, sync status and Add; Week gets a
+  details panel.
+- **iPhone**: iOS switches, alerts and date/time wheels.
+- **Desktop**: right-click menus, hover actions, keyboard shortcuts, time fields you can
+  type into, and only one LecCheck window at a time (launching it again brings the window
+  forward).
+
+### Keyboard shortcuts
+
+Ctrl on Linux and Windows (⌘ on a Mac). **F1** shows this list in the app.
+
+| Keys | Action |
+|---|---|
+| Ctrl+1 … 4 | Today, Week, Courses, Stats |
+| Ctrl+N / Ctrl+Shift+N | New course / one-time session |
+| Ctrl+F | Search all sessions |
+| Ctrl+R or F5 | Sync now |
+| Ctrl+, | Settings |
+| ← → or PgUp PgDn | Previous / next week (Week tab) |
+| T or Home | This week |
+| Ctrl+= / Ctrl+− / Ctrl+0 | Zoom the week in / out / reset |
+| 1 … 5 | Mark the open session |
+| Ctrl+S | Save (course and semester editors) |
+| Esc | Close / back |
+
 ## Appearance and settings
 
-- **Color theme**: Wallpaper (Material You, Android 12+), Ocean, Sunset, Forest, Grape,
-  Rose, Mono. **Mode**: system / light / dark, plus **Pure black** for OLED screens.
+- **Color theme**: Wallpaper (Material You, Android 12+; on desktop "System accent"; not
+  on iPhone), Ocean, Sunset, Forest, Grape, Rose, Mono. **Mode**: system / light / dark, plus **Pure black** for OLED screens.
 - **Language**: system, English or Hebrew. **24-hour time** and **session numbering**
   (#1, #2… per course and type).
 - **Semesters**: switch between semesters (tap), edit, delete (undoable), add another.
 - **Holidays and no-class days**: add date ranges with a reason.
 - **Data**: export a JSON backup of all semesters, or import one — including backups from
   the old LecCheck app.
+- **This device**: Android — add the home-screen widget; desktop — keyboard shortcuts;
+  iPhone — a reminder to refresh the app in AltStore/SideStore every week.
 
 ## Moving from LecCheck v1
 

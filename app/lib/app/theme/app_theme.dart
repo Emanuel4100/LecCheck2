@@ -1,7 +1,9 @@
 import 'package:cupertino_ui/cupertino_ui.dart'
     show CupertinoPageTransitionsBuilder;
+import 'package:flutter/services.dart';
 import 'package:material_ui/material_ui.dart';
 
+import '../adaptive.dart';
 import 'colors.dart';
 import 'motion.dart';
 
@@ -35,7 +37,11 @@ abstract final class AppTheme {
     final stadium = WidgetStatePropertyAll<OutlinedBorder>(
       const StadiumBorder(),
     );
-    const buttonSize = WidgetStatePropertyAll(Size(64, 48));
+    // Touch keeps 48 dp targets; mouse-driven desktop gets denser buttons.
+    final buttonSize = WidgetStatePropertyAll(
+      Size(64, AppIdiom.isDesktop ? 40 : 48),
+    );
+    final dark = brightness == Brightness.dark;
     final rounded16 = BorderRadius.circular(16);
 
     return ThemeData(
@@ -49,6 +55,18 @@ abstract final class AppTheme {
         surfaceTintColor: Colors.transparent,
         scrolledUnderElevation: 0,
         centerTitle: false,
+        // Edge-to-edge: transparent system bars, icons following the theme.
+        systemOverlayStyle: SystemUiOverlayStyle(
+          statusBarColor: Colors.transparent,
+          statusBarBrightness: brightness,
+          statusBarIconBrightness: dark ? Brightness.light : Brightness.dark,
+          systemNavigationBarColor: Colors.transparent,
+          systemNavigationBarDividerColor: Colors.transparent,
+          systemNavigationBarIconBrightness: dark
+              ? Brightness.light
+              : Brightness.dark,
+          systemNavigationBarContrastEnforced: false,
+        ),
       ),
       cardTheme: CardThemeData(
         elevation: 0,

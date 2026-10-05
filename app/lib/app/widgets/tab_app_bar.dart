@@ -7,7 +7,8 @@ import '../../features/settings/account_section.dart';
 import 'common.dart';
 
 /// Collapsing Material 3 app bar used by every tab. On phones it carries the
-/// settings button; wider layouts have settings in the navigation rail.
+/// settings button; wider layouts have settings in the navigation rail, and
+/// the large sidebar also shows the sync status.
 class TabAppBar extends StatelessWidget {
   const TabAppBar({super.key, required this.title, this.actions = const []});
 
@@ -16,12 +17,13 @@ class TabAppBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final compact = WindowSize.of(context) == WindowSize.compact;
+    final size = WindowSize.of(context);
+    final compact = size == WindowSize.compact;
     return SliverAppBar.medium(
       title: Text(title),
       actions: [
         ...actions,
-        const SyncIndicator(),
+        if (size != WindowSize.large) const SyncIndicator(),
         if (compact)
           IconButton(
             tooltip: AppLocalizations.of(context).settings,

@@ -1,5 +1,25 @@
 # Changelog
 
+## Unreleased
+
+Each platform gets its own layout, input and options.
+
+- **Desktop & tablets**: navigation rail with an Add button (extended sidebar on large
+  windows); Today and Stats in two columns; Courses as list + details; a details panel
+  beside the Week grid; Settings with categories; content no longer stretches across wide
+  windows.
+- **Desktop input**: right-click menus and hover ✓ / ✗ on sessions (no accidental mouse
+  swipes), ‹ › week buttons, Ctrl + wheel / trackpad pinch zoom (remembered), hours that
+  fill the window, keyboard shortcuts (F1 lists them), typed time entry, selectable
+  session details.
+- **Linux**: one window at a time (a second launch brings it forward), no GTK header bar
+  outside GNOME (e.g. Hyprland), "LecCheck" title, minimum window size.
+- **Android**: predictive back, edge-to-edge with transparent system bars on every
+  version, "Add widget to home screen" in Settings, a warning when notifications are
+  turned off for the app.
+- **iPhone**: iOS switches, alerts and date/time wheels; no Wallpaper theme (iOS has no
+  wallpaper colors); a reminder to refresh the app in AltStore/SideStore.
+
 ## 2.0.0-beta.2 — 2026-10-05
 
 First public beta of LecCheck 2 (Android, iPhone via AltStore/SideStore, Linux; beta.1

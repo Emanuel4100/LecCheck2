@@ -935,4 +935,83 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get channelAfter => 'After class';
+
+  @override
+  String get previousWeek => 'Previous week';
+
+  @override
+  String get nextWeek => 'Next week';
+
+  @override
+  String get rightClickHint => 'Right-click a session for more options';
+
+  @override
+  String get details => 'Details';
+
+  @override
+  String get goToCourse => 'Go to course';
+
+  @override
+  String get selectSessionHint => 'Select a session to see its details here';
+
+  @override
+  String get keyboardShortcuts => 'Keyboard shortcuts';
+
+  @override
+  String get keyboardShortcutsSubtitle => 'Press F1 to see them anytime';
+
+  @override
+  String get shortcutTabs => 'Switch tabs';
+
+  @override
+  String get shortcutSearch => 'Search sessions';
+
+  @override
+  String get shortcutWeeks => 'Previous / next week';
+
+  @override
+  String get shortcutZoom => 'Zoom the week in / out / reset';
+
+  @override
+  String get shortcutMark =>
+      'Mark the open session: attended, missed, watched, skipped, canceled';
+
+  @override
+  String get shortcutBack => 'Close / go back';
+
+  @override
+  String get shortcutHelp => 'Show this list';
+
+  @override
+  String get thisDevice => 'This device';
+
+  @override
+  String get addWidget => 'Add widget to home screen';
+
+  @override
+  String get addWidgetSubtitle => 'Today\'s sessions with one-tap marking';
+
+  @override
+  String get altStoreRefresh => 'Refresh in AltStore or SideStore every week';
+
+  @override
+  String get altStoreRefreshSubtitle =>
+      'Apps installed with a free Apple ID stop opening after 7 days without a refresh.';
+
+  @override
+  String get notificationsOff => 'Notifications are off for LecCheck';
+
+  @override
+  String get notificationsOffSubtitle =>
+      'Reminders can\'t appear until you allow them.';
+
+  @override
+  String get allow => 'Allow';
+
+  @override
+  String get remindersWhileOpen =>
+      'On this computer, reminders appear while LecCheck is open.';
+
+  @override
+  String get presetAccent => 'System accent';
 }

@@ -150,6 +150,29 @@ class NotificationService {
     return true;
   }
 
+  /// Whether the OS currently lets LecCheck show notifications (Android and
+  /// iOS can turn them off per app). True where there's no such switch.
+  Future<bool> enabled() async {
+    if (kIsWeb || !_ready) return true;
+    if (Platform.isAndroid) {
+      return await _plugin
+              .resolvePlatformSpecificImplementation<
+                AndroidFlutterLocalNotificationsPlugin
+              >()
+              ?.areNotificationsEnabled() ??
+          true;
+    }
+    if (Platform.isIOS) {
+      final options = await _plugin
+          .resolvePlatformSpecificImplementation<
+            IOSFlutterLocalNotificationsPlugin
+          >()
+          ?.checkPermissions();
+      return options?.isEnabled ?? true;
+    }
+    return true;
+  }
+
   Future<void> apply(List<PlannedReminder> plan) async {
     if (!_ready) return;
     if (!_osSchedules) {

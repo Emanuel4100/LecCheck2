@@ -1729,6 +1729,156 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'After class'**
   String get channelAfter;
+
+  /// No description provided for @previousWeek.
+  ///
+  /// In en, this message translates to:
+  /// **'Previous week'**
+  String get previousWeek;
+
+  /// No description provided for @nextWeek.
+  ///
+  /// In en, this message translates to:
+  /// **'Next week'**
+  String get nextWeek;
+
+  /// No description provided for @rightClickHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Right-click a session for more options'**
+  String get rightClickHint;
+
+  /// No description provided for @details.
+  ///
+  /// In en, this message translates to:
+  /// **'Details'**
+  String get details;
+
+  /// No description provided for @goToCourse.
+  ///
+  /// In en, this message translates to:
+  /// **'Go to course'**
+  String get goToCourse;
+
+  /// No description provided for @selectSessionHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Select a session to see its details here'**
+  String get selectSessionHint;
+
+  /// No description provided for @keyboardShortcuts.
+  ///
+  /// In en, this message translates to:
+  /// **'Keyboard shortcuts'**
+  String get keyboardShortcuts;
+
+  /// No description provided for @keyboardShortcutsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Press F1 to see them anytime'**
+  String get keyboardShortcutsSubtitle;
+
+  /// No description provided for @shortcutTabs.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch tabs'**
+  String get shortcutTabs;
+
+  /// No description provided for @shortcutSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Search sessions'**
+  String get shortcutSearch;
+
+  /// No description provided for @shortcutWeeks.
+  ///
+  /// In en, this message translates to:
+  /// **'Previous / next week'**
+  String get shortcutWeeks;
+
+  /// No description provided for @shortcutZoom.
+  ///
+  /// In en, this message translates to:
+  /// **'Zoom the week in / out / reset'**
+  String get shortcutZoom;
+
+  /// No description provided for @shortcutMark.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark the open session: attended, missed, watched, skipped, canceled'**
+  String get shortcutMark;
+
+  /// No description provided for @shortcutBack.
+  ///
+  /// In en, this message translates to:
+  /// **'Close / go back'**
+  String get shortcutBack;
+
+  /// No description provided for @shortcutHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Show this list'**
+  String get shortcutHelp;
+
+  /// No description provided for @thisDevice.
+  ///
+  /// In en, this message translates to:
+  /// **'This device'**
+  String get thisDevice;
+
+  /// No description provided for @addWidget.
+  ///
+  /// In en, this message translates to:
+  /// **'Add widget to home screen'**
+  String get addWidget;
+
+  /// No description provided for @addWidgetSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Today\'s sessions with one-tap marking'**
+  String get addWidgetSubtitle;
+
+  /// No description provided for @altStoreRefresh.
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh in AltStore or SideStore every week'**
+  String get altStoreRefresh;
+
+  /// No description provided for @altStoreRefreshSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Apps installed with a free Apple ID stop opening after 7 days without a refresh.'**
+  String get altStoreRefreshSubtitle;
+
+  /// No description provided for @notificationsOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Notifications are off for LecCheck'**
+  String get notificationsOff;
+
+  /// No description provided for @notificationsOffSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Reminders can\'t appear until you allow them.'**
+  String get notificationsOffSubtitle;
+
+  /// No description provided for @allow.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow'**
+  String get allow;
+
+  /// No description provided for @remindersWhileOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'On this computer, reminders appear while LecCheck is open.'**
+  String get remindersWhileOpen;
+
+  /// No description provided for @presetAccent.
+  ///
+  /// In en, this message translates to:
+  /// **'System accent'**
+  String get presetAccent;
 }
 
 class _AppLocalizationsDelegate

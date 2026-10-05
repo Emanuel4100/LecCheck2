@@ -6,13 +6,16 @@ import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
+import '../../app/adaptive.dart';
 import '../../app/format.dart';
 import '../../app/providers.dart';
+import '../../app/shortcuts.dart';
 import '../../app/theme/app_theme.dart';
 import '../../app/theme/colors.dart';
 import '../../app/theme/motion.dart';
 import '../../app/widgets/common.dart';
 import '../../core/backup/backup_service.dart';
+import '../../core/home_widget/today_widget.dart';
 import '../../core/db/schedule_repository.dart';
 import '../../core/icons/lec_icons.dart';
 import '../../domain/local_date.dart';
@@ -27,54 +30,200 @@ final _versionProvider = FutureProvider<String>((ref) async {
   return '${info.version} (${info.buildNumber})';
 });
 
-class SettingsPage extends ConsumerWidget {
+final _pinSupportedProvider = FutureProvider<bool>(
+  (ref) => TodayWidget.canPin(),
+);
+
+/// One settings category: a header and its tiles on phones, an entry of the
+/// category list on wide windows.
+class _Section {
+  const _Section(this.icon, this.title, this.children);
+
+  final IconData icon;
+  final String title;
+  final List<Widget> children;
+}
+
+class SettingsPage extends ConsumerStatefulWidget {
   const SettingsPage({super.key});
+
+  @override
+  ConsumerState<SettingsPage> createState() => _SettingsPageState();
+}
+
+class _SettingsPageState extends ConsumerState<SettingsPage> {
+  int _selected = 0;
+
+  List<_Section> _sections(AppLocalizations l) {
+    final device =
+        AppIdiom.isDesktop ||
+        AppIdiom.isIOS ||
+        (ref.watch(_pinSupportedProvider).value ?? false);
+    return [
+      _Section(LecIcons.account, l.account, const [AccountSection()]),
+      _Section(LecIcons.palette, l.appearance, const [
+        _ThemePresetPicker(),
+        _ModeAndLanguage(),
+      ]),
+      _Section(LecIcons.notifications, l.notifications, const [
+        NotificationsSection(),
+      ]),
+      _Section(LecIcons.semester, l.semesterSection, const [
+        _SemesterSection(),
+        _NoClassSection(),
+      ]),
+      _Section(LecIcons.courses, l.navCourses, const [_CourseOptions()]),
+      _Section(LecIcons.exportData, l.data, const [_DataSection()]),
+      if (device)
+        _Section(LecIcons.device, l.thisDevice, const [_DeviceSection()]),
+      _Section(LecIcons.info, l.about, const [_AboutSection()]),
+    ];
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    final sections = _sections(l);
+
+    if (!WindowSize.of(context).isWide) {
+      return PageShortcuts(
+        child: Scaffold(
+          body: CustomScrollView(
+            slivers: [
+              SliverAppBar.large(title: Text(l.settings)),
+              SliverCentered(
+                maxWidth: 720,
+                sliver: SliverList.list(
+                  children: [
+                    for (final section in sections) ...[
+                      SectionHeader(title: section.title),
+                      ...section.children,
+                    ],
+                    const SizedBox(height: 48),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    // Wide: categories on the left, the chosen one on the right.
+    final theme = Theme.of(context);
+    final selected = _selected.clamp(0, sections.length - 1);
+    return PageShortcuts(
+      child: Scaffold(
+        appBar: AppBar(title: Text(l.settings)),
+        body: Row(
+          children: [
+            SizedBox(
+              width: 280,
+              child: ListView(
+                padding: const EdgeInsets.fromLTRB(12, 8, 12, 24),
+                children: [
+                  for (final (i, section) in sections.indexed)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 2),
+                      child: ListTile(
+                        leading: Icon(section.icon),
+                        title: Text(section.title),
+                        selected: i == selected,
+                        selectedColor: theme.colorScheme.onSecondaryContainer,
+                        selectedTileColor: theme.colorScheme.secondaryContainer,
+                        shape: const StadiumBorder(),
+                        onTap: () => setState(() => _selected = i),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            const VerticalDivider(width: 1),
+            Expanded(
+              child: Align(
+                alignment: AlignmentDirectional.topStart,
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 760),
+                  child: ListView(
+                    key: ValueKey(selected),
+                    padding: const EdgeInsets.only(bottom: 48),
+                    children: [
+                      SectionHeader(title: sections[selected].title),
+                      ...sections[selected].children,
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _AboutSection extends ConsumerWidget {
+  const _AboutSection();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l = AppLocalizations.of(context);
-    return Scaffold(
-      body: CustomScrollView(
-        slivers: [
-          SliverAppBar.large(title: Text(l.settings)),
-          SliverList.list(
-            children: [
-              SectionHeader(title: l.account),
-              const AccountSection(),
-              SectionHeader(title: l.appearance),
-              const _ThemePresetPicker(),
-              const _ModeAndLanguage(),
-              SectionHeader(title: l.notifications),
-              const NotificationsSection(),
-              SectionHeader(title: l.semesterSection),
-              const _SemesterSection(),
-              const _NoClassSection(),
-              SectionHeader(title: l.navCourses),
-              const _CourseOptions(),
-              SectionHeader(title: l.data),
-              const _DataSection(),
-              SectionHeader(title: l.about),
-              ListTile(
-                leading: const Icon(LecIcons.info),
-                title: Text(l.version),
-                subtitle: Text(ref.watch(_versionProvider).value ?? ''),
-                onTap: () => showLicensePage(
-                  context: context,
-                  applicationName: 'LecCheck',
-                  applicationVersion: ref.read(_versionProvider).value,
-                ),
-              ),
-              ListTile(
-                leading: const Icon(LecIcons.code),
-                title: Text(l.sourceCode),
-                subtitle: const Text('github.com/Emanuel4100/LecCheck2'),
-                onTap: () => openUrl('https://github.com/Emanuel4100/LecCheck2'),
-              ),
-              const SizedBox(height: 48),
-            ],
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        ListTile(
+          leading: const Icon(LecIcons.info),
+          title: Text(l.version),
+          subtitle: Text(ref.watch(_versionProvider).value ?? ''),
+          onTap: () => showLicensePage(
+            context: context,
+            applicationName: 'LecCheck',
+            applicationVersion: ref.read(_versionProvider).value,
           ),
-        ],
-      ),
+        ),
+        ListTile(
+          leading: const Icon(LecIcons.code),
+          title: Text(l.sourceCode),
+          subtitle: const Text('github.com/Emanuel4100/LecCheck2'),
+          onTap: () => openUrl('https://github.com/Emanuel4100/LecCheck2'),
+        ),
+      ],
+    );
+  }
+}
+
+/// Options that only exist on this kind of device.
+class _DeviceSection extends ConsumerWidget {
+  const _DeviceSection();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l = AppLocalizations.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (AppIdiom.isDesktop)
+          ListTile(
+            leading: const Icon(LecIcons.keyboard),
+            title: Text(l.keyboardShortcuts),
+            subtitle: Text(l.keyboardShortcutsSubtitle),
+            onTap: () => showShortcutsHelp(context),
+          ),
+        if (ref.watch(_pinSupportedProvider).value ?? false)
+          ListTile(
+            leading: const Icon(LecIcons.widget),
+            title: Text(l.addWidget),
+            subtitle: Text(l.addWidgetSubtitle),
+            onTap: TodayWidget.requestPin,
+          ),
+        // Sideloaded with a free Apple ID: the app expires after 7 days.
+        if (AppIdiom.isIOS)
+          ListTile(
+            leading: const Icon(LecIcons.refresh),
+            title: Text(l.altStoreRefresh),
+            subtitle: Text(l.altStoreRefreshSubtitle),
+          ),
+      ],
     );
   }
 }
@@ -88,8 +237,14 @@ class _ThemePresetPicker extends ConsumerWidget {
     final selected = ref.watch(appearanceProvider.select((a) => a.preset));
     final brightness = Theme.of(context).brightness;
     final motion = AppMotion.of(context);
+    // iPhone has no wallpaper colors; desktops offer their accent color.
+    final presets = [
+      for (final p in ThemePreset.values)
+        if (p != ThemePreset.wallpaper || !AppIdiom.isIOS) p,
+    ];
     String name(ThemePreset p) => switch (p) {
-      ThemePreset.wallpaper => l.presetWallpaper,
+      ThemePreset.wallpaper =>
+        AppIdiom.isDesktop ? l.presetAccent : l.presetWallpaper,
       ThemePreset.ocean => l.presetOcean,
       ThemePreset.sunset => l.presetSunset,
       ThemePreset.forest => l.presetForest,
@@ -103,10 +258,10 @@ class _ThemePresetPicker extends ConsumerWidget {
       child: ListView.separated(
         padding: const EdgeInsets.symmetric(horizontal: 16),
         scrollDirection: Axis.horizontal,
-        itemCount: ThemePreset.values.length,
+        itemCount: presets.length,
         separatorBuilder: (_, _) => const SizedBox(width: 12),
         itemBuilder: (context, i) {
-          final preset = ThemePreset.values[i];
+          final preset = presets[i];
           final scheme = preset == ThemePreset.wallpaper
               ? Theme.of(context).colorScheme
               : AppTheme.build(
@@ -206,7 +361,7 @@ class _ModeAndLanguage extends ConsumerWidget {
             ),
           ),
         ),
-        SwitchListTile(
+        SwitchListTile.adaptive(
           secondary: const Icon(LecIcons.darkMode),
           title: Text(l.pureBlack),
           subtitle: Text(l.pureBlackSubtitle),
@@ -231,7 +386,7 @@ class _ModeAndLanguage extends ConsumerWidget {
             ),
           ),
         ),
-        SwitchListTile(
+        SwitchListTile.adaptive(
           secondary: const Icon(LecIcons.clock24),
           title: Text(l.time24h),
           subtitle: Text(l.time24hSubtitle),
@@ -297,28 +452,14 @@ class _SemesterSection extends ConsumerWidget {
     SemesterInfo semester,
   ) async {
     final l = AppLocalizations.of(context);
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(l.deleteSemesterTitle),
-        content: Text(l.deleteSemesterBody),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text(l.cancel),
-          ),
-          FilledButton(
-            style: FilledButton.styleFrom(
-              backgroundColor: Theme.of(context).colorScheme.error,
-              foregroundColor: Theme.of(context).colorScheme.onError,
-            ),
-            onPressed: () => Navigator.pop(context, true),
-            child: Text(l.delete),
-          ),
-        ],
-      ),
+    final ok = await confirmDialog(
+      context,
+      title: l.deleteSemesterTitle,
+      body: l.deleteSemesterBody,
+      confirmLabel: l.delete,
+      destructive: true,
     );
-    if (ok != true || !context.mounted) return;
+    if (!ok || !context.mounted) return;
     final repo = ref.read(repositoryProvider);
     final messenger = ScaffoldMessenger.of(context);
     final receipt = await repo.deleteSemester(semester.id);
@@ -442,7 +583,7 @@ class _CourseOptions extends ConsumerWidget {
     final numbers = ref.watch(
       userPrefsProvider.select((p) => p.value?.meetingNumbers ?? true),
     );
-    return SwitchListTile(
+    return SwitchListTile.adaptive(
       secondary: const Icon(LecIcons.numbers),
       title: Text(l.meetingNumbers),
       subtitle: Text(l.meetingNumbersSubtitle),
@@ -490,24 +631,13 @@ class _DataSection extends ConsumerWidget {
               allowedExtensions: const ['json'],
             );
             if (file == null || !context.mounted) return;
-            final ok = await showDialog<bool>(
-              context: context,
-              builder: (context) => AlertDialog(
-                title: Text(l.importReplaceTitle),
-                content: Text(l.importReplaceBody),
-                actions: [
-                  TextButton(
-                    onPressed: () => Navigator.pop(context, false),
-                    child: Text(l.cancel),
-                  ),
-                  FilledButton(
-                    onPressed: () => Navigator.pop(context, true),
-                    child: Text(l.importData),
-                  ),
-                ],
-              ),
+            final ok = await confirmDialog(
+              context,
+              title: l.importReplaceTitle,
+              body: l.importReplaceBody,
+              confirmLabel: l.importData,
             );
-            if (ok != true) return;
+            if (!ok) return;
             try {
               final text = utf8.decode(await file.readAsBytes());
               final count = await backup().importJson(text);

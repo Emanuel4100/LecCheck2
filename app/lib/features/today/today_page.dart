@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 
+import '../../app/adaptive.dart';
 import '../../app/format.dart';
 import '../../app/labels.dart';
 import '../../app/providers.dart';
@@ -15,6 +16,7 @@ import '../../domain/occurrence.dart';
 import '../../domain/schedule_types.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../session/session_actions.dart';
+import '../session/session_menu.dart';
 import '../session/session_sheet.dart';
 import '../session/session_tile.dart';
 import '../session/status_buttons.dart';
@@ -31,6 +33,16 @@ class TodayPage extends ConsumerWidget {
       coursesProvider.select((c) => c.items.isNotEmpty),
     );
     final loaded = ref.watch(semesterDataProvider.select((d) => d.hasValue));
+    final allSessions = SliverToBoxAdapter(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+        child: OutlinedButton.icon(
+          onPressed: () => context.push('/today/sessions'),
+          icon: const Icon(LecIcons.search),
+          label: Text(l.allSessions),
+        ),
+      ),
+    );
 
     return Scaffold(
       body: CustomScrollView(
@@ -52,23 +64,50 @@ class TodayPage extends ConsumerWidget {
                 ),
               ),
             )
-          else ...[
-            const SliverToBoxAdapter(child: _WeekProgress()),
-            const SliverToBoxAdapter(child: _NowNextCard()),
-            const _NeedsMarkingSection(),
-            const _TodayTimeline(),
-            const _ComingUp(),
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
-                child: OutlinedButton.icon(
-                  onPressed: () => context.push('/today/sessions'),
-                  icon: const Icon(LecIcons.search),
-                  label: Text(l.allSessions),
-                ),
+          else if (WindowSize.of(context).isWide)
+            // Two columns: what to do now | the schedule.
+            SliverCentered(
+              maxWidth: 1400,
+              sliver: SliverCrossAxisGroup(
+                slivers: [
+                  SliverCrossAxisExpanded(
+                    flex: 5,
+                    sliver: SliverMainAxisGroup(
+                      slivers: [
+                        const SliverToBoxAdapter(child: _WeekProgress()),
+                        const SliverToBoxAdapter(child: _NowNextCard()),
+                        const _NeedsMarkingSection(),
+                        allSessions,
+                      ],
+                    ),
+                  ),
+                  const SliverCrossAxisExpanded(
+                    flex: 4,
+                    sliver: SliverMainAxisGroup(
+                      slivers: [
+                        _TodayTimeline(),
+                        _ComingUp(),
+                        SliverToBoxAdapter(child: SizedBox(height: 32)),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            )
+          else
+            SliverCentered(
+              maxWidth: 720,
+              sliver: SliverMainAxisGroup(
+                slivers: [
+                  const SliverToBoxAdapter(child: _WeekProgress()),
+                  const SliverToBoxAdapter(child: _NowNextCard()),
+                  const _NeedsMarkingSection(),
+                  const _TodayTimeline(),
+                  const _ComingUp(),
+                  allSessions,
+                ],
               ),
             ),
-          ],
         ],
       ),
     );
@@ -217,6 +256,8 @@ class _HeroSession extends ConsumerWidget {
         color: tone.container,
         child: InkWell(
           onTap: () => showSessionSheet(context, session.id),
+          onSecondaryTapUp: (d) =>
+              showSessionMenu(context, ref, session, d.globalPosition),
           child: Padding(
             padding: const EdgeInsets.all(20),
             child: Column(
@@ -414,7 +455,7 @@ class _NeedsMarkingSectionState extends ConsumerState<_NeedsMarkingSection> {
           child: Padding(
             padding: const EdgeInsetsDirectional.fromSTEB(20, 8, 20, 0),
             child: Text(
-              l.swipeHint,
+              AppIdiom.isDesktop ? l.rightClickHint : l.swipeHint,
               style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),

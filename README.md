@@ -18,6 +18,10 @@ Android · iPhone · Linux · (Windows coming) &nbsp;|&nbsp; English · עברי
   <img src="app/test_screenshots/goldens/he_dark_today.png" width="200" alt="Hebrew, dark" />
 </p>
 
+<p align="center">
+  <img src="app/test_screenshots/goldens/desktop_week.png" width="820" alt="Desktop: week with the details panel" />
+</p>
+
 LecCheck 2 is a from-scratch rebuild of [LecCheck v1](https://github.com/Emanuel4100/LecCheck).
 v1 saved the whole app as one JSON blob and rebuilt every screen on each tap; v2 keeps a
 local SQLite database on every device, redraws only what changed, and syncs individual

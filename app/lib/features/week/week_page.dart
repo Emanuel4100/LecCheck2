@@ -1,10 +1,15 @@
 import 'dart:math' as math;
 
+import 'package:flutter/gestures.dart'
+    show GestureBinding, PointerScrollEvent, PointerSignalEvent;
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 
+import '../../app/adaptive.dart';
 import '../../app/format.dart';
+import '../../app/labels.dart';
 import '../../app/providers.dart';
 import '../../app/theme/colors.dart';
 import '../../app/theme/motion.dart';
@@ -16,6 +21,7 @@ import '../../domain/occurrence.dart';
 import '../../domain/schedule_types.dart';
 import '../../domain/semester_calendar.dart';
 import '../../l10n/gen/app_localizations.dart';
+import '../session/session_menu.dart';
 import '../session/session_sheet.dart';
 import '../settings/account_section.dart';
 import '../session/session_tile.dart';
@@ -36,6 +42,46 @@ final hourRangeProvider = Provider<(int, int)>((ref) {
   return (start, end);
 });
 
+/// Lets keyboard shortcuts (handled by the app shell) drive the week view.
+class WeekCommands {
+  _WeekPageState? _page;
+
+  void step(int weeks) => _page?._step(weeks);
+  void thisWeek() => _page?._thisWeek();
+
+  /// Multiplies the hour height by [factor]; 0 resets to the default.
+  void zoom(double factor) => _page?._zoomBy(factor);
+}
+
+final weekCommandsProvider = Provider<WeekCommands>((ref) => WeekCommands());
+
+/// The session shown in the details panel of the large-window layout.
+class _SelectedSession extends Notifier<String?> {
+  @override
+  String? build() => null;
+
+  void select(String? id) => state = id;
+}
+
+final _selectedSessionProvider = NotifierProvider<_SelectedSession, String?>(
+  _SelectedSession.new,
+);
+
+/// Tells grid tiles whether a tap selects into the side panel (large
+/// windows) or opens the details dialog / sheet.
+class _PanelScope extends InheritedWidget {
+  const _PanelScope({required this.enabled, required super.child});
+
+  final bool enabled;
+
+  static bool of(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<_PanelScope>()?.enabled ??
+      false;
+
+  @override
+  bool updateShouldNotify(_PanelScope old) => old.enabled != enabled;
+}
+
 class WeekPage extends ConsumerStatefulWidget {
   const WeekPage({super.key});
 
@@ -44,15 +90,30 @@ class WeekPage extends ConsumerStatefulWidget {
 }
 
 class _WeekPageState extends ConsumerState<WeekPage> {
+  static const _zoomKey = 'week.hourHeight';
+  static const _minHour = 36.0;
+  static const _maxHour = 140.0;
+
   PageController? _controller;
+  late final _commands = ref.read(weekCommandsProvider);
   int _page = 0;
-  double _hourHeight = 60;
+  int _weekCountCache = 1;
+  int _currentWeekCache = 1;
+
+  /// Chosen zoom (persisted per device); null = automatic: fit the hours to
+  /// the window on desktop, 60 per hour on phones.
+  double? _hourHeight;
+  double? _fitHeight;
 
   // Two-finger pinch tracked from raw pointers so it never competes with the
   // page swipe or the vertical scroll in the gesture arena.
   final _pointers = <int, Offset>{};
   double? _pinchStart;
   double _pinchHeight = 60;
+  double _panZoomStart = 60;
+
+  double get _effectiveHeight =>
+      _hourHeight ?? (AppIdiom.isDesktop ? _fitHeight ?? 60 : 60);
 
   double get _pinchDistance {
     final p = _pointers.values.toList();
@@ -60,7 +121,15 @@ class _WeekPageState extends ConsumerState<WeekPage> {
   }
 
   @override
+  void initState() {
+    super.initState();
+    _hourHeight = ref.read(sharedPrefsProvider).getDouble(_zoomKey);
+    _commands._page = this;
+  }
+
+  @override
   void dispose() {
+    if (_commands._page == this) _commands._page = null;
     _controller?.dispose();
     super.dispose();
   }
@@ -79,6 +148,31 @@ class _WeekPageState extends ConsumerState<WeekPage> {
     );
   }
 
+  void _step(int weeks) =>
+      _goToWeek((_page + 1 + weeks).clamp(1, _weekCountCache));
+
+  void _thisWeek() => _goToWeek(_currentWeekCache);
+
+  void _setHourHeight(double? value, {bool persist = true}) {
+    setState(() => _hourHeight = value?.clamp(_minHour, _maxHour));
+    if (!persist) return;
+    final prefs = ref.read(sharedPrefsProvider);
+    if (_hourHeight == null) {
+      prefs.remove(_zoomKey);
+    } else {
+      prefs.setDouble(_zoomKey, _hourHeight!);
+    }
+  }
+
+  void _zoomBy(double factor) =>
+      _setHourHeight(factor == 0 ? null : _effectiveHeight * factor);
+
+  void _persistZoom() {
+    if (_hourHeight != null) {
+      ref.read(sharedPrefsProvider).setDouble(_zoomKey, _hourHeight!);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final calendar = ref.watch(calendarProvider);
@@ -87,16 +181,77 @@ class _WeekPageState extends ConsumerState<WeekPage> {
     final l = AppLocalizations.of(context);
     final fmt = Fmt.of(context);
     final today = ref.watch(todayProvider);
+    final (startHour, endHour) = ref.watch(hourRangeProvider);
     final weekCount = _weekCount(calendar);
     final currentWeek = calendar.weekNumberOf(today).clamp(1, weekCount);
+    _weekCountCache = weekCount;
+    _currentWeekCache = currentWeek;
     if (_controller == null) {
       _page = currentWeek - 1;
       _controller = PageController(initialPage: _page);
     }
     final shownWeek = _page + 1;
     final weekStart = calendar.weekStartOf(shownWeek);
-    final compact = WindowSize.of(context) == WindowSize.compact;
+    final size = WindowSize.of(context);
+    final compact = size == WindowSize.compact;
+    final panel = size == WindowSize.large;
+    final arrows = !compact || AppIdiom.isDesktop;
     final motion = AppMotion.of(context);
+
+    final grid = LayoutBuilder(
+      builder: (context, constraints) {
+        // Hours that fill the window (desktop default zoom).
+        final available = constraints.maxHeight - _headerHeight - 49;
+        _fitHeight = (available / (endHour - startHour)).clamp(
+          _minHour,
+          _maxHour,
+        );
+        final hourHeight = _effectiveHeight;
+        return Listener(
+          onPointerDown: (e) {
+            _pointers[e.pointer] = e.position;
+            if (_pointers.length == 2) {
+              _pinchStart = _pinchDistance;
+              _pinchHeight = hourHeight;
+            }
+          },
+          onPointerMove: (e) {
+            if (!_pointers.containsKey(e.pointer)) return;
+            _pointers[e.pointer] = e.position;
+            final start = _pinchStart;
+            if (_pointers.length == 2 && start != null && start > 0) {
+              _setHourHeight(
+                _pinchHeight * _pinchDistance / start,
+                persist: false,
+              );
+            }
+          },
+          onPointerUp: (e) => _release(e.pointer),
+          onPointerCancel: (e) => _release(e.pointer),
+          // Trackpad pinch (desktop).
+          onPointerPanZoomStart: (_) => _panZoomStart = hourHeight,
+          onPointerPanZoomUpdate: (e) {
+            if (e.scale != 1) {
+              _setHourHeight(_panZoomStart * e.scale, persist: false);
+            }
+          },
+          onPointerPanZoomEnd: (_) => _persistZoom(),
+          child: _PanelScope(
+            enabled: panel,
+            child: PageView.builder(
+              controller: _controller,
+              itemCount: weekCount,
+              onPageChanged: (i) => setState(() => _page = i),
+              itemBuilder: (context, i) => _WeekGrid(
+                weekStart: calendar.weekStartOf(i + 1),
+                hourHeight: hourHeight,
+                onZoom: _zoomBy,
+              ),
+            ),
+          ),
+        );
+      },
+    );
 
     return Scaffold(
       appBar: AppBar(
@@ -129,26 +284,30 @@ class _WeekPageState extends ConsumerState<WeekPage> {
             IconButton(
               tooltip: l.goToToday,
               icon: const Icon(LecIcons.today),
-              onPressed: () => _goToWeek(currentWeek),
+              onPressed: _thisWeek,
             ),
+          if (arrows) ...[
+            IconButton(
+              tooltip: l.previousWeek,
+              icon: const Icon(LecIcons.chevronStart),
+              onPressed: shownWeek > 1 ? () => _step(-1) : null,
+            ),
+            IconButton(
+              tooltip: l.nextWeek,
+              icon: const Icon(LecIcons.chevronEnd),
+              onPressed: shownWeek < weekCount ? () => _step(1) : null,
+            ),
+          ],
           IconButton(
             tooltip: l.jumpToDate,
             icon: const Icon(LecIcons.date),
             onPressed: () async {
-              final picked = await showDatePicker(
-                context: context,
-                initialDate: DateTime(today.year, today.month, today.day),
-                firstDate: DateTime(2020),
-                lastDate: DateTime(2040),
-              );
+              final picked = await pickDate(context, today);
               if (picked == null) return;
-              final week = calendar.weekNumberOf(
-                LocalDate.fromDateTime(picked),
-              );
-              _goToWeek(week.clamp(1, weekCount));
+              _goToWeek(calendar.weekNumberOf(picked).clamp(1, weekCount));
             },
           ),
-          const SyncIndicator(),
+          if (size != WindowSize.large) const SyncIndicator(),
           if (compact)
             IconButton(
               tooltip: l.settings,
@@ -158,45 +317,91 @@ class _WeekPageState extends ConsumerState<WeekPage> {
           const SizedBox(width: 4),
         ],
       ),
-      body: Listener(
-        onPointerDown: (e) {
-          _pointers[e.pointer] = e.position;
-          if (_pointers.length == 2) {
-            _pinchStart = _pinchDistance;
-            _pinchHeight = _hourHeight;
-          }
-        },
-        onPointerMove: (e) {
-          if (!_pointers.containsKey(e.pointer)) return;
-          _pointers[e.pointer] = e.position;
-          final start = _pinchStart;
-          if (_pointers.length == 2 && start != null && start > 0) {
-            setState(
-              () => _hourHeight = (_pinchHeight * _pinchDistance / start).clamp(
-                36.0,
-                140.0,
-              ),
-            );
-          }
-        },
-        onPointerUp: (e) => _release(e.pointer),
-        onPointerCancel: (e) => _release(e.pointer),
-        child: PageView.builder(
-          controller: _controller,
-          itemCount: weekCount,
-          onPageChanged: (i) => setState(() => _page = i),
-          itemBuilder: (context, i) => _WeekGrid(
-            weekStart: calendar.weekStartOf(i + 1),
-            hourHeight: _hourHeight,
-          ),
-        ),
-      ),
+      body: panel
+          ? Row(
+              children: [
+                Expanded(child: grid),
+                const VerticalDivider(width: 1),
+                const SizedBox(width: 380, child: _SessionPanel()),
+              ],
+            )
+          : grid,
     );
   }
 
   void _release(int pointer) {
     _pointers.remove(pointer);
-    if (_pointers.length < 2) _pinchStart = null;
+    if (_pointers.length < 2 && _pinchStart != null) {
+      _pinchStart = null;
+      _persistZoom();
+    }
+  }
+}
+
+/// Details of the selected session beside the grid (large windows).
+class _SessionPanel extends ConsumerWidget {
+  const _SessionPanel();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+    final id = ref.watch(_selectedSessionProvider);
+    final session = id == null ? null : ref.watch(sessionProvider(id));
+    if (session == null) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                LecIcons.info,
+                size: 40,
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+              const SizedBox(height: 12),
+              Text(
+                l.selectSessionHint,
+                textAlign: TextAlign.center,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Padding(
+          padding: const EdgeInsetsDirectional.fromSTEB(20, 8, 8, 0),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(l.details, style: theme.textTheme.titleSmall),
+              ),
+              IconButton(
+                tooltip: l.close,
+                icon: const Icon(LecIcons.close),
+                onPressed: () =>
+                    ref.read(_selectedSessionProvider.notifier).select(null),
+              ),
+            ],
+          ),
+        ),
+        Expanded(
+          child: SessionSheet(
+            key: ValueKey(session.id),
+            sessionId: session.id,
+            onClose: () =>
+                ref.read(_selectedSessionProvider.notifier).select(null),
+          ),
+        ),
+      ],
+    );
   }
 }
 
@@ -204,10 +409,29 @@ const _timeColumnWidth = 48.0;
 const _headerHeight = 56.0;
 
 class _WeekGrid extends ConsumerWidget {
-  const _WeekGrid({required this.weekStart, required this.hourHeight});
+  const _WeekGrid({
+    required this.weekStart,
+    required this.hourHeight,
+    required this.onZoom,
+  });
 
   final LocalDate weekStart;
   final double hourHeight;
+  final ValueChanged<double> onZoom;
+
+  /// Ctrl/⌘ + wheel zooms instead of scrolling. This listener sits inside the
+  /// scroll view, so it claims the signal before the scroll view does.
+  void _onSignal(PointerSignalEvent event) {
+    final keys = HardwareKeyboard.instance;
+    if (event is! PointerScrollEvent ||
+        !(keys.isControlPressed || keys.isMetaPressed)) {
+      return;
+    }
+    GestureBinding.instance.pointerSignalResolver.register(event, (e) {
+      final dy = (e as PointerScrollEvent).scrollDelta.dy;
+      onZoom(math.exp(-dy / 240));
+    });
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -238,70 +462,74 @@ class _WeekGrid extends ConsumerWidget {
         Expanded(
           child: SingleChildScrollView(
             padding: const EdgeInsets.only(bottom: 24),
-            child: SizedBox(
-              height: height + 16,
-              child: Padding(
-                padding: const EdgeInsets.only(top: 8),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    SizedBox(
-                      width: _timeColumnWidth,
-                      height: height,
-                      child: Stack(
-                        clipBehavior: Clip.none,
-                        children: [
-                          for (var h = startHour; h < endHour; h++)
-                            PositionedDirectional(
-                              top: (h - startHour) * hourHeight - 7,
-                              start: 0,
-                              end: 6,
-                              child: Text(
-                                fmt.hourLabel(h),
-                                textAlign: TextAlign.end,
-                                maxLines: 1,
-                                style: theme.textTheme.labelSmall?.copyWith(
-                                  color: theme.colorScheme.onSurfaceVariant,
-                                ),
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
-                    Expanded(
-                      child: RepaintBoundary(
-                        child: CustomPaint(
-                          painter: _GridPainter(
-                            hours: endHour - startHour,
-                            hourHeight: hourHeight,
-                            columns: dates.length,
-                            todayColumn: todayIndex,
-                            line: theme.colorScheme.outlineVariant.withValues(
-                              alpha: 0.5,
-                            ),
-                            todayTint: theme.colorScheme.primary.withValues(
-                              alpha: 0.05,
-                            ),
-                            rtl:
-                                Directionality.of(context) == TextDirection.rtl,
-                          ),
-                          child: Row(
-                            children: [
-                              for (final date in dates)
-                                Expanded(
-                                  child: _DayColumn(
-                                    date: date,
-                                    startHour: startHour,
-                                    hourHeight: hourHeight,
-                                    height: height,
+            child: Listener(
+              onPointerSignal: _onSignal,
+              child: SizedBox(
+                height: height + 16,
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SizedBox(
+                        width: _timeColumnWidth,
+                        height: height,
+                        child: Stack(
+                          clipBehavior: Clip.none,
+                          children: [
+                            for (var h = startHour; h < endHour; h++)
+                              PositionedDirectional(
+                                top: (h - startHour) * hourHeight - 7,
+                                start: 0,
+                                end: 6,
+                                child: Text(
+                                  fmt.hourLabel(h),
+                                  textAlign: TextAlign.end,
+                                  maxLines: 1,
+                                  style: theme.textTheme.labelSmall?.copyWith(
+                                    color: theme.colorScheme.onSurfaceVariant,
                                   ),
                                 ),
-                            ],
+                              ),
+                          ],
+                        ),
+                      ),
+                      Expanded(
+                        child: RepaintBoundary(
+                          child: CustomPaint(
+                            painter: _GridPainter(
+                              hours: endHour - startHour,
+                              hourHeight: hourHeight,
+                              columns: dates.length,
+                              todayColumn: todayIndex,
+                              line: theme.colorScheme.outlineVariant.withValues(
+                                alpha: 0.5,
+                              ),
+                              todayTint: theme.colorScheme.primary.withValues(
+                                alpha: 0.05,
+                              ),
+                              rtl:
+                                  Directionality.of(context) ==
+                                  TextDirection.rtl,
+                            ),
+                            child: Row(
+                              children: [
+                                for (final date in dates)
+                                  Expanded(
+                                    child: _DayColumn(
+                                      date: date,
+                                      startHour: startHour,
+                                      hourHeight: hourHeight,
+                                      height: height,
+                                    ),
+                                  ),
+                              ],
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -331,6 +559,7 @@ class _DayHeader extends ConsumerWidget {
     return InkWell(
       borderRadius: BorderRadius.circular(16),
       onTap: () => showDayOptions(context, ref, date),
+      onSecondaryTap: () => showDayOptions(context, ref, date),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
@@ -520,16 +749,29 @@ class _GridTile extends ConsumerWidget {
     final tone = CourseColors.of(context).tone(course?.colorKey ?? 'ocean');
     final canceled = session.isCanceled;
     final decided = session.status != AttendanceStatus.pending;
+    final panel = _PanelScope.of(context);
+    final selected =
+        panel &&
+        ref.watch(_selectedSessionProvider.select((id) => id == sessionId));
 
-    return Opacity(
+    final tile = Opacity(
       opacity: canceled ? 0.45 : 1,
       child: Material(
         color: tone.container,
-        borderRadius: BorderRadius.circular(10),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+          side: selected
+              ? BorderSide(color: theme.colorScheme.primary, width: 2)
+              : BorderSide.none,
+        ),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
-          onTap: () => showSessionSheet(context, session.id),
+          onTap: () => panel
+              ? ref.read(_selectedSessionProvider.notifier).select(session.id)
+              : showSessionSheet(context, session.id),
           onLongPress: () => showStatusPicker(context, ref, session),
+          onSecondaryTapUp: (d) =>
+              showSessionMenu(context, ref, session, d.globalPosition),
           child: Container(
             decoration: BoxDecoration(
               border: BorderDirectional(
@@ -618,6 +860,20 @@ class _GridTile extends ConsumerWidget {
           ),
         ),
       ),
+    );
+    if (!AppIdiom.isDesktop) return tile;
+    // Small tiles cut text off; the full details show on hover.
+    final l = AppLocalizations.of(context);
+    return Tooltip(
+      waitDuration: const Duration(milliseconds: 500),
+      message: [
+        course?.name ?? '',
+        '${sessionTitle(session, l, numbers: false)} · '
+            '${fmt.timeRange(session.startMin, session.endMin)}',
+        if (session.location.isNotEmpty) session.location,
+        statusLabel(session, l),
+      ].join('\n'),
+      child: tile,
     );
   }
 }
@@ -711,10 +967,9 @@ Future<void> showDayOptions(
   final repo = ref.read(repositoryProvider);
   final messenger = ScaffoldMessenger.of(context);
 
-  return showModalBottomSheet<void>(
+  return showAppSheet<void>(
     context: context,
-    useRootNavigator: true,
-    isScrollControlled: true,
+    scrollControlled: true,
     builder: (sheet) => Padding(
       padding: EdgeInsets.fromLTRB(
         20,

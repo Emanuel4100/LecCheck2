@@ -13,8 +13,13 @@ import '../../core/icons/lec_icons.dart';
 import '../../domain/schedule_types.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../session/session_tile.dart';
+import 'course_actions.dart';
+import 'course_page.dart';
 import 'requirement_chip.dart';
 
+/// Course list. Wide windows show the selected course beside the list; phones
+/// open courses as pages and add through the expandable FAB (wider layouts
+/// have Add in the navigation rail).
 class CoursesPage extends ConsumerWidget {
   const CoursesPage({super.key});
 
@@ -22,47 +27,90 @@ class CoursesPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l = AppLocalizations.of(context);
     final courses = ref.watch(coursesProvider).items;
-    return Scaffold(
-      body: CustomScrollView(
-        slivers: [
-          TabAppBar(title: l.coursesTitle),
-          if (courses.isEmpty)
-            SliverFillRemaining(
-              hasScrollBody: false,
-              child: EmptyState(
-                icon: LecIcons.courses,
-                title: l.noCoursesYet,
-                subtitle: l.noCoursesSubtitle,
-                action: FilledButton.icon(
-                  onPressed: () => context.push('/course-editor'),
-                  icon: const Icon(LecIcons.add),
-                  label: Text(l.addCourse),
-                ),
+    final size = WindowSize.of(context);
+    final chosen = ref.watch(selectedCourseProvider);
+    final selected = !size.isWide || courses.isEmpty
+        ? null
+        : courses.any((c) => c.id == chosen)
+        ? chosen!
+        : courses.first.id;
+
+    final list = CustomScrollView(
+      slivers: [
+        TabAppBar(title: l.coursesTitle),
+        if (courses.isEmpty)
+          SliverFillRemaining(
+            hasScrollBody: false,
+            child: EmptyState(
+              icon: LecIcons.courses,
+              title: l.noCoursesYet,
+              subtitle: l.noCoursesSubtitle,
+              action: FilledButton.icon(
+                onPressed: () => context.push('/course-editor'),
+                icon: const Icon(LecIcons.add),
+                label: Text(l.addCourse),
               ),
-            )
-          else
-            SliverPadding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 120),
+            ),
+          )
+        else
+          SliverCentered(
+            maxWidth: 720,
+            sliver: SliverPadding(
+              padding: EdgeInsets.fromLTRB(
+                16,
+                0,
+                16,
+                size == WindowSize.compact ? 120 : 32,
+              ),
               sliver: SliverList.separated(
                 itemCount: courses.length,
                 separatorBuilder: (_, _) => const SizedBox(height: 10),
                 itemBuilder: (context, i) => AppearIn(
                   index: i,
-                  child: _CourseCard(course: courses[i]),
+                  child: _CourseCard(
+                    course: courses[i],
+                    selected: courses[i].id == selected,
+                  ),
                 ),
               ),
             ),
+          ),
+      ],
+    );
+
+    if (selected == null) {
+      return Scaffold(
+        body: list,
+        floatingActionButton: courses.isEmpty || size != WindowSize.compact
+            ? null
+            : const _AddFabMenu(),
+      );
+    }
+    return Scaffold(
+      body: Row(
+        children: [
+          SizedBox(width: 380, child: list),
+          const VerticalDivider(width: 1),
+          Expanded(
+            child: CourseDetailView(
+              key: ValueKey(selected),
+              courseId: selected,
+              embedded: true,
+            ),
+          ),
         ],
       ),
-      floatingActionButton: courses.isEmpty ? null : const _AddFabMenu(),
     );
   }
 }
 
 class _CourseCard extends ConsumerWidget {
-  const _CourseCard({required this.course});
+  const _CourseCard({required this.course, this.selected = false});
 
   final CourseInfo course;
+
+  /// Shown in the details pane (wide layout).
+  final bool selected;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -83,8 +131,14 @@ class _CourseCard extends ConsumerWidget {
     ].join(' · ');
 
     return Card(
+      shape: selected
+          ? RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(24),
+              side: BorderSide(color: theme.colorScheme.primary, width: 2),
+            )
+          : null,
       child: InkWell(
-        onTap: () => context.go('/courses/${course.id}'),
+        onTap: () => openCourse(context, ref, course.id),
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Row(
@@ -161,14 +215,14 @@ class _CourseCard extends ConsumerWidget {
 }
 
 /// Expressive FAB that unfolds into "Add course" / "Add one-time session".
-class _AddFabMenu extends StatefulWidget {
+class _AddFabMenu extends ConsumerStatefulWidget {
   const _AddFabMenu();
 
   @override
-  State<_AddFabMenu> createState() => _AddFabMenuState();
+  ConsumerState<_AddFabMenu> createState() => _AddFabMenuState();
 }
 
-class _AddFabMenuState extends State<_AddFabMenu> {
+class _AddFabMenuState extends ConsumerState<_AddFabMenu> {
   bool _open = false;
 
   @override
@@ -217,15 +271,10 @@ class _AddFabMenuState extends State<_AddFabMenu> {
               item(
                 LecIcons.date,
                 l.addOneTimeSession,
-                () => _pickCourseForOneTime(context),
+                () => addOneTimeSession(context, ref),
                 1,
               ),
-              item(
-                LecIcons.courses,
-                l.addCourse,
-                () => context.push('/course-editor'),
-                0,
-              ),
+              item(LecIcons.courses, l.addCourse, () => addCourse(context), 0),
             ],
           ),
         ),
@@ -244,42 +293,5 @@ class _AddFabMenuState extends State<_AddFabMenu> {
         ),
       ],
     );
-  }
-
-  Future<void> _pickCourseForOneTime(BuildContext context) async {
-    final container = ProviderScope.containerOf(context);
-    final courses = container.read(coursesProvider).items;
-    final l = AppLocalizations.of(context);
-    final picked = await showModalBottomSheet<CourseInfo>(
-      context: context,
-      useRootNavigator: true,
-      builder: (context) => SafeArea(
-        child: ListView(
-          shrinkWrap: true,
-          children: [
-            ListTile(
-              title: Text(
-                l.addOneTimeSession,
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-            ),
-            for (final c in courses)
-              ListTile(
-                leading: CircleAvatar(
-                  backgroundColor: CourseColors.of(context)
-                      .tone(c.colorKey)
-                      .accent,
-                  radius: 8,
-                ),
-                title: Text(c.name),
-                onTap: () => Navigator.pop(context, c),
-              ),
-          ],
-        ),
-      ),
-    );
-    if (picked != null && context.mounted) {
-      context.push('/course-editor?id=${picked.id}&oneTime=1');
-    }
   }
 }
