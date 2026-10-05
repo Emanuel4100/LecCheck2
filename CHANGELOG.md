@@ -1,8 +1,9 @@
 # Changelog
 
-## 2.0.0-beta.1 — 2026-10-05
+## 2.0.0-beta.2 — 2026-10-05
 
-First public beta of LecCheck 2 (Android, iPhone via AltStore/SideStore, Linux), with
+First public beta of LecCheck 2 (Android, iPhone via AltStore/SideStore, Linux; beta.1
+was never published because its Linux build failed), with
 everything listed under 2.0.0 below plus:
 
 - Live sync server with Google sign-in; homepage and privacy policy pages.
