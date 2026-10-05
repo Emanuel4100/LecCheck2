@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 """Writes the AltStore / SideStore source for the latest iPhone build.
 
-    python3 scripts/altstore_source.py <version> <build> <ipa_path> <download_url> > altstore-source.json
+    python3 scripts/altstore_source.py <version> <build> <ipa_path> <download_url> [<release>] > altstore-source.json
+
+<version> must match the IPA's CFBundleShortVersionString (numbers only, e.g. 2.0.0);
+<release> is the name shown in the notes (e.g. 2.0.0-beta.1), defaulting to <version>.
 
 Published as a release asset, so the source URL never changes:
 https://github.com/Emanuel4100/LecCheck2/releases/latest/download/altstore-source.json
@@ -12,6 +15,7 @@ import os
 import sys
 
 version, build, ipa, url = sys.argv[1:5]
+release = sys.argv[5] if len(sys.argv) > 5 else version
 repo = "https://github.com/Emanuel4100/LecCheck2"
 icon = "https://raw.githubusercontent.com/Emanuel4100/LecCheck2/main/design/app-icon/icon_full.png"
 
@@ -38,10 +42,10 @@ source = {
                     "version": version,
                     "buildVersion": build,
                     "date": datetime.date.today().isoformat(),
-                    "localizedDescription": f"LecCheck {version}",
+                    "localizedDescription": f"LecCheck {release}",
                     "downloadURL": url,
                     "size": os.path.getsize(ipa),
-                    "minOSVersion": "13.0",
+                    "minOSVersion": "15.0",
                 }
             ],
             "appPermissions": {"entitlements": [], "privacy": {}},

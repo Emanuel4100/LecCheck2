@@ -1,5 +1,19 @@
 # Changelog
 
+## 2.0.0-beta.1 — 2026-10-05
+
+First public beta of LecCheck 2 (Android, iPhone via AltStore/SideStore, Linux), with
+everything listed under 2.0.0 below plus:
+
+- Live sync server with Google sign-in; homepage and privacy policy pages.
+- Desktop keeps its sync connection while the window is hidden and reconnects by itself
+  after sleep.
+- After signing in, the app switches to the semester restored from your account.
+- Clearer sign-out dialog: your data stays in your account.
+
+Not yet verified on real devices: reminders and their buttons, the Android widget, the
+iPhone build.
+
 ## 2.0.0 — 2026-10-04
 
 Complete rebuild of LecCheck.

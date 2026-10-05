@@ -50,8 +50,9 @@ jobs:
           keyPassword=${{ secrets.ANDROID_KEY_PASSWORD }}
           EOF
       - run: flutter pub get
-      - run: flutter build apk --release --split-per-abi $DEFINES
-      - run: flutter build apk --release $DEFINES
+      # Android shows the full tag (e.g. 2.0.0-beta.1); iOS only allows numbers.
+      - run: flutter build apk --release --split-per-abi $DEFINES --build-name="${GITHUB_REF_NAME#v}"
+      - run: flutter build apk --release $DEFINES --build-name="${GITHUB_REF_NAME#v}"
       - name: Collect
         run: |
           V="${GITHUB_REF_NAME#v}"
@@ -129,22 +130,39 @@ jobs:
         with:
           path: out
           merge-multiple: true
-      - name: AltStore / SideStore source
+      - name: AltStore / SideStore source and release notes
         run: |
           V="${GITHUB_REF_NAME#v}"
+          # AltStore compares this with the IPA's numeric CFBundleShortVersionString.
+          APP_VERSION="$(grep -E '^version:' app/pubspec.yaml | sed -E 's/version: *([^+]*)\+.*/\1/')"
           BUILD="$(grep -E '^version:' app/pubspec.yaml | sed 's/.*+//')"
+          BASE="https://github.com/${GITHUB_REPOSITORY}/releases"
           IPA="out/LecCheck-$V-ios.ipa"
-          URL="https://github.com/${GITHUB_REPOSITORY}/releases/download/${GITHUB_REF_NAME}/LecCheck-$V-ios.ipa"
-          python3 scripts/altstore_source.py "$V" "$BUILD" "$IPA" "$URL" > out/altstore-source.json
+          python3 scripts/altstore_source.py "$APP_VERSION" "$BUILD" "$IPA" \
+            "$BASE/download/${GITHUB_REF_NAME}/LecCheck-$V-ios.ipa" "$V" > out/altstore-source.json
+          # "latest" links skip pre-releases, so betas link to their own tag.
+          if [[ "$V" == *-* ]]; then
+            SOURCE="$BASE/download/${GITHUB_REF_NAME}/altstore-source.json"
+            BETA=$'> **Beta.** Not yet verified on every device: reminders and their buttons, the Android widget and the iPhone build. Please report problems in Issues.\n'
+            OBTAINIUM=' Turn on **Include prereleases** to get betas.'
+          else
+            SOURCE="$BASE/latest/download/altstore-source.json"
+            BETA=''
+            OBTAINIUM=''
+          fi
+          cat > notes.md <<EOF
+          ${BETA}
+          ## Downloads
+          - **Android**: \`LecCheck-$V-android-arm64.apk\` for most phones, or the universal \`LecCheck-$V-android.apk\`.
+            Tip: add this repo to [Obtainium](https://obtainium.imranr.dev) for automatic updates.${OBTAINIUM}
+          - **iPhone**: in AltStore or SideStore, add this source:
+            \`$SOURCE\`
+          - **Linux**: extract \`LecCheck-$V-linux-x64.tar.gz\` and run \`./install.sh\`.
+          EOF
       - uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
         with:
           name: LecCheck ${{ github.ref_name }}
+          prerelease: ${{ contains(github.ref_name, '-') }}
           generate_release_notes: true
+          body_path: notes.md
           files: out/*
-          body: |
-            ## Downloads
-            - **Android**: `LecCheck-*-android.apk` (or the smaller `-arm64` build for most phones).
-              Tip: install [Obtainium](https://obtainium.imranr.dev) and add this repo for automatic updates.
-            - **iPhone**: add this source in AltStore or SideStore once:
-              `https://github.com/${{ github.repository }}/releases/latest/download/altstore-source.json`
-            - **Linux**: extract `LecCheck-*-linux-x64.tar.gz` and run `./install.sh`.
