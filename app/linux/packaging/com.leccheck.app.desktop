@@ -7,6 +7,6 @@ Comment[he]=מעקב אחרי הרצאות, תרגולים ומעבדות שהש
 Exec=leccheck
 Icon=com.leccheck.app
 Terminal=false
-Categories=Education;Office;
+Categories=Education;
 Keywords=lecture;attendance;semester;university;schedule;
 StartupWMClass=com.leccheck.app

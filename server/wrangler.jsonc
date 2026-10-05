@@ -4,6 +4,8 @@
   "main": "src/index.ts",
   "compatibility_date": "2026-08-20",
   "observability": { "enabled": true },
+  "workers_dev": true,
+  "preview_urls": false,
   "durable_objects": {
     "bindings": [{ "name": "USER_STORE", "class_name": "UserStore" }]
   },

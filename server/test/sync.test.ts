@@ -203,3 +203,14 @@ describe("WebSocket sync", () => {
     laptop.ws.close();
   });
 });
+
+describe("public pages", () => {
+  it("serves the homepage and privacy policy as HTML", async () => {
+    for (const path of ["/", "/privacy"]) {
+      const res = await SELF.fetch(`${base}${path}`);
+      expect(res.status).toBe(200);
+      expect(res.headers.get("content-type")).toContain("text/html");
+      expect(await res.text()).toContain("LecCheck");
+    }
+  });
+});

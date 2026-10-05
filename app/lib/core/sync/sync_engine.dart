@@ -50,13 +50,20 @@ class SyncEngine {
     required this._session,
     this.onSessionRevoked,
     this.watchLifecycle = true,
-  });
+    bool? pauseWhenHidden,
+  }) : pauseWhenHidden =
+           pauseWhenHidden ?? (Platform.isAndroid || Platform.isIOS);
 
   final AppDatabase db;
   final ScheduleRepository repo;
   final SyncRecorder recorder;
   final VoidCallback? onSessionRevoked;
   final bool watchLifecycle;
+
+  /// Phones drop the connection 30 s after the app goes to the background to
+  /// save battery. Desktops keep it: a hidden window (another workspace, or
+  /// minimized) should still receive changes live.
+  final bool pauseWhenHidden;
   Session _session;
 
   static const _cursorKey = 'lastVersion';
@@ -67,6 +74,8 @@ class SyncEngine {
   int _pending = 0;
 
   WebSocket? _socket;
+  StreamSubscription<dynamic>? _socketSub;
+  DateTime _lastHeard = DateTime.now();
   Timer? _pingTimer;
   Timer? _reconnectTimer;
   Timer? _pushTimer;
@@ -165,17 +174,18 @@ class SyncEngine {
       _attempt = 0;
       _caughtUp = false;
       _inflight = null;
-      socket.listen(
-        (data) => _queue = _queue.then((_) => _onMessage(data)),
+      _lastHeard = DateTime.now();
+      _socketSub = socket.listen(
+        (data) {
+          _lastHeard = DateTime.now();
+          _queue = _queue.then((_) => _onMessage(data));
+        },
         onDone: () => _onClosed(socket.closeCode),
         onError: (_) => _onClosed(null),
         cancelOnError: true,
       );
       socket.add(jsonEncode({'t': 'hello', 'since': await _cursor()}));
-      _pingTimer = Timer.periodic(
-        const Duration(seconds: 30),
-        (_) => _socket?.add('{"t":"ping"}'),
-      );
+      _pingTimer = Timer.periodic(_pingEvery, (_) => _ping(socket));
     } on Object {
       _emit(SyncPhase.offline);
       _scheduleReconnect();
@@ -183,7 +193,24 @@ class SyncEngine {
     }
   }
 
+  static const _pingEvery = Duration(seconds: 30);
+
+  /// Pings keep the connection alive; the server answers each with a pong.
+  /// After a laptop wakes from sleep the socket can be dead without any error,
+  /// so silence for more than two pings means: drop it and reconnect.
+  void _ping(WebSocket socket) {
+    if (_socket != socket) return;
+    if (DateTime.now().difference(_lastHeard) > _pingEvery * 2.5) {
+      unawaited(_socketSub?.cancel());
+      unawaited(socket.close().catchError((Object _) {}));
+      _onClosed(null);
+      return;
+    }
+    socket.add('{"t":"ping"}');
+  }
+
   void _onClosed(int? code) {
+    _socketSub = null;
     _pingTimer?.cancel();
     _ackTimer?.cancel();
     _socket = null;
@@ -226,6 +253,7 @@ class SyncEngine {
   }
 
   void _onPause() {
+    if (!pauseWhenHidden) return;
     _pauseTimer?.cancel();
     _pauseTimer = Timer(const Duration(seconds: 30), () {
       _paused = true;
@@ -236,8 +264,11 @@ class SyncEngine {
 
   void _onResume() {
     _pauseTimer?.cancel();
-    if (!_paused) return;
+    // Back in front while offline: retry now instead of waiting out the
+    // backoff (up to a minute).
+    if (!_paused && (_socket != null || _disposed)) return;
     _paused = false;
+    _reconnectTimer?.cancel();
     _attempt = 0;
     _connect();
   }

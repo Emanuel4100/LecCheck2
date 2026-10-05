@@ -24,8 +24,16 @@ Everything here is free. You only do it once.
    Firebase project).
 2. **APIs & Services → OAuth consent screen**: user type *External*, fill in the
    app name and your email. The scopes needed are `openid`, `email` and
-   `profile`, which don't require Google's verification. Click **Publish app**.
-   In "Testing" mode only listed test users can sign in.
+   `profile`, which don't require Google's verification. Publishing requires,
+   under **Branding**, a homepage and a privacy policy on an authorized domain.
+   The Worker serves both:
+   - Homepage: `https://leccheck-sync.<you>.workers.dev/`
+   - Privacy policy: `https://leccheck-sync.<you>.workers.dev/privacy`
+   - Authorized domain: `<you>.workers.dev` (`workers.dev` is a public suffix, so
+     this is the top private domain Google asks for)
+
+   Then **Audience → Publish app**. In "Testing" mode only listed test users can
+   sign in.
 3. **APIs & Services → Credentials → Create credentials → OAuth client ID**:
    - Application type: **Web application**
    - Authorized redirect URI: `https://leccheck-sync.<you>.workers.dev/v1/auth/google/callback`

@@ -140,8 +140,11 @@ minuteClockProvider (ticks on minute boundaries) → todayProvider
   3. the outbox is pushed in batches of ≤ 500; entries are deleted on `ack`;
   4. broadcasts received before catch-up finished are applied but don't move the cursor,
      so a reconnect can't skip versions;
-  5. pings every 30 s (answered by the server without waking it), exponential backoff
-     with jitter on failures, socket closed 30 s after the app goes to the background.
+  5. pings every 30 s (answered by the server without waking it); no answer for 75 s
+     (e.g. after the laptop slept) drops the socket and reconnects. Exponential backoff
+     with jitter on failures, skipped when the app comes back to the foreground. On
+     phones the socket closes 30 s after the app goes to the background; desktops keep
+     it open while the window is hidden.
 - **HTTP fallback** (`SyncEngine.syncOverHttp`) is used by background isolates
   (notification actions, widget buttons).
 - **Accounts**: guest data joins an account on first sign-in (every row queued); data of a

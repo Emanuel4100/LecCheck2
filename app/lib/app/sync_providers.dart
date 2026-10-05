@@ -7,6 +7,8 @@ import '../core/auth/session.dart';
 import '../core/sync/sync_config.dart';
 import '../core/sync/sync_engine.dart';
 import '../core/sync/sync_recorder.dart';
+import '../domain/local_date.dart';
+import '../domain/schedule_types.dart';
 import 'providers.dart';
 
 final authServiceProvider = Provider<AuthService>((ref) => AuthService());
@@ -46,6 +48,12 @@ final syncRecorderProvider = Provider<SyncRecorder?>((ref) {
 });
 
 enum SignOutMode { keepData, removeData }
+
+/// The semester running on [today], otherwise the latest one ([semesters] is
+/// sorted newest first).
+SemesterInfo? pickSemester(List<SemesterInfo> semesters, LocalDate today) =>
+    semesters.where((s) => today.isWithin(s.start, s.end)).firstOrNull ??
+    semesters.firstOrNull;
 
 class AuthController extends AsyncNotifier<Session?> {
   AuthService get _auth => ref.read(authServiceProvider);
@@ -96,7 +104,32 @@ class AuthController extends AsyncNotifier<Session?> {
       accounts.attach(session.userId);
       await ref.read(syncRecorderProvider)?.enqueueAll(repo);
     }
+    final before = {for (final s in await repo.semesters()) s.id};
     state = AsyncData(session);
+    unawaited(_showRestoredSemester(before));
+  }
+
+  /// After the first sync of a sign-in, switches to a semester the account
+  /// brought in, so its data doesn't hide behind one made on this device
+  /// while signed out.
+  Future<void> _showRestoredSemester(Set<String> before) async {
+    final engine = ref.read(syncEngineProvider);
+    if (engine == null) return;
+    try {
+      await engine.states
+          .firstWhere((s) => s.phase == SyncPhase.synced)
+          .timeout(const Duration(seconds: 30));
+    } on Object {
+      return;
+    }
+    final restored = [
+      for (final s in await ref.read(repositoryProvider).semesters())
+        if (!before.contains(s.id)) s,
+    ];
+    final pick = pickSemester(restored, LocalDate.today());
+    if (pick != null) {
+      ref.read(activeSemesterChoiceProvider.notifier).select(pick.id);
+    }
   }
 
   Future<void> signOut(SignOutMode mode) async {

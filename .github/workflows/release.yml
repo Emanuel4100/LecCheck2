@@ -12,7 +12,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 env:
   FLUTTER_VERSION: 3.47.6
@@ -25,12 +25,12 @@ jobs:
       run:
         working-directory: app
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: 21
-      - uses: subosito/flutter-action@v2
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
         with:
           flutter-version: ${{ env.FLUTTER_VERSION }}
           cache: true
@@ -58,7 +58,7 @@ jobs:
           mkdir -p ../out
           cp build/app/outputs/flutter-apk/app-release.apk "../out/LecCheck-$V-android.apk"
           cp build/app/outputs/flutter-apk/app-arm64-v8a-release.apk "../out/LecCheck-$V-android-arm64.apk"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: android
           path: out/
@@ -69,9 +69,9 @@ jobs:
       run:
         working-directory: app
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - run: sudo apt-get update && sudo apt-get install -y ninja-build libgtk-3-dev libsecret-1-dev
-      - uses: subosito/flutter-action@v2
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
         with:
           flutter-version: ${{ env.FLUTTER_VERSION }}
           cache: true
@@ -88,7 +88,7 @@ jobs:
           cp ../scripts/linux-install.sh "../out/$P/install.sh"
           tar -C ../out -czf "../out/$P.tar.gz" "$P"
           rm -rf "../out/$P"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: linux
           path: out/
@@ -99,8 +99,8 @@ jobs:
       run:
         working-directory: app
     steps:
-      - uses: actions/checkout@v4
-      - uses: subosito/flutter-action@v2
+      - uses: actions/checkout@v7
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
         with:
           flutter-version: ${{ env.FLUTTER_VERSION }}
           cache: true
@@ -113,7 +113,7 @@ jobs:
           mkdir -p Payload ../out
           cp -r build/ios/iphoneos/Runner.app Payload/
           zip -qr "../out/LecCheck-$V-ios.ipa" Payload
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: ios
           path: out/
@@ -121,9 +121,11 @@ jobs:
   publish:
     needs: [android, linux, ios]
     runs-on: ubuntu-latest
+    permissions:
+      contents: write # create the GitHub Release
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
         with:
           path: out
           merge-multiple: true
@@ -134,7 +136,7 @@ jobs:
           IPA="out/LecCheck-$V-ios.ipa"
           URL="https://github.com/${GITHUB_REPOSITORY}/releases/download/${GITHUB_REF_NAME}/LecCheck-$V-ios.ipa"
           python3 scripts/altstore_source.py "$V" "$BUILD" "$IPA" "$URL" > out/altstore-source.json
-      - uses: softprops/action-gh-release@v2
+      - uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
         with:
           name: LecCheck ${{ github.ref_name }}
           generate_release_notes: true

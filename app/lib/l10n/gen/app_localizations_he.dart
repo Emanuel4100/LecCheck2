@@ -851,7 +851,8 @@ class AppLocalizationsHe extends AppLocalizations {
   String get signOutTitle => 'להתנתק?';
 
   @override
-  String get signOutBody => 'לשמור עותק של הנתונים במכשיר הזה?';
+  String get signOutBody =>
+      'הנתונים נשמרים בחשבון Google שלך, ואפשר לקבל אותם בחזרה בהתחברות מחדש. לשמור עותק גם במכשיר הזה?';
 
   @override
   String get keepData => 'לשמור במכשיר';

@@ -849,7 +849,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get signOutTitle => 'Sign out?';
 
   @override
-  String get signOutBody => 'Keep a copy of your data on this device?';
+  String get signOutBody =>
+      'Your data stays in your Google account; sign in again to get it back. Keep a copy on this device too?';
 
   @override
   String get keepData => 'Keep on this device';

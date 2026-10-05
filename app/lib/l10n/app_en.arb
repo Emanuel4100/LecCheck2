@@ -396,7 +396,7 @@
   "syncNow": "Sync now",
   "signOut": "Sign out",
   "signOutTitle": "Sign out?",
-  "signOutBody": "Keep a copy of your data on this device?",
+  "signOutBody": "Your data stays in your Google account; sign in again to get it back. Keep a copy on this device too?",
   "keepData": "Keep on this device",
   "removeData": "Remove from this device",
   "signOutEverywhere": "Sign out on all devices",

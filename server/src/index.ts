@@ -1,12 +1,13 @@
 import { Hono } from "hono";
 import { auth, issueSession, sessionFromRequest } from "./auth";
+import { pages } from "./pages";
 import { UserStore, type Env } from "./user-store";
 
 export { UserStore };
 
 const app = new Hono<{ Bindings: Env }>();
 
-app.get("/", (c) => c.text("LecCheck sync server"));
+app.route("/", pages);
 
 app.route("/v1/auth", auth);
 

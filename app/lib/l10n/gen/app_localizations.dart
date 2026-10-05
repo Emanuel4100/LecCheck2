@@ -1583,7 +1583,7 @@ abstract class AppLocalizations {
   /// No description provided for @signOutBody.
   ///
   /// In en, this message translates to:
-  /// **'Keep a copy of your data on this device?'**
+  /// **'Your data stays in your Google account; sign in again to get it back. Keep a copy on this device too?'**
   String get signOutBody;
 
   /// No description provided for @keepData.

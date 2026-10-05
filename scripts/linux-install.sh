@@ -27,5 +27,5 @@ done
 install -Dm644 "$HERE/$APP_ID.desktop" "$PREFIX/applications/$APP_ID.desktop"
 install -Dm644 "$HERE/$APP_ID.metainfo.xml" "$PREFIX/metainfo/$APP_ID.metainfo.xml"
 command -v update-desktop-database >/dev/null && update-desktop-database "$PREFIX/applications" || true
-command -v gtk-update-icon-cache >/dev/null && gtk-update-icon-cache -q "$PREFIX/icons/hicolor" || true
+[[ -f "$PREFIX/icons/hicolor/index.theme" ]] && command -v gtk-update-icon-cache >/dev/null && gtk-update-icon-cache -q "$PREFIX/icons/hicolor" || true
 echo "LecCheck installed. Start it from your app launcher or run: leccheck"
