@@ -149,6 +149,7 @@ class CourseEditorPage extends ConsumerStatefulWidget {
 
 class _CourseEditorPageState extends ConsumerState<CourseEditorPage> {
   final _name = TextEditingController();
+  final _shortName = TextEditingController();
   final _code = TextEditingController();
   final _lecturer = TextEditingController();
   final _website = TextEditingController();
@@ -185,6 +186,7 @@ class _CourseEditorPageState extends ConsumerState<CourseEditorPage> {
         requirements: data.requirementsOf(existing.id),
       );
       _name.text = existing.name;
+      _shortName.text = existing.shortName;
       _code.text = existing.code;
       _lecturer.text = existing.lecturer;
       _website.text = existing.website;
@@ -251,6 +253,7 @@ class _CourseEditorPageState extends ConsumerState<CourseEditorPage> {
   /// Serialized form state, used to detect unsaved changes.
   String _snapshot() => [
     _name.text,
+    _shortName.text,
     _code.text,
     _lecturer.text,
     _website.text,
@@ -269,7 +272,7 @@ class _CourseEditorPageState extends ConsumerState<CourseEditorPage> {
 
   @override
   void dispose() {
-    for (final c in [_name, _code, _lecturer, _website, _notes]) {
+    for (final c in [_name, _shortName, _code, _lecturer, _website, _notes]) {
       c.dispose();
     }
     for (final l in _links) {
@@ -301,6 +304,7 @@ class _CourseEditorPageState extends ConsumerState<CourseEditorPage> {
             id: id,
             semesterId: semester.id,
             name: _name.text.trim(),
+            shortName: _shortName.text.trim(),
             code: _code.text.trim(),
             lecturer: _lecturer.text.trim(),
             colorKey: _colorKey,
@@ -492,6 +496,16 @@ class _CourseEditorPageState extends ConsumerState<CourseEditorPage> {
                     onChanged: (_) => setState(() {}),
                   ),
                   const SizedBox(height: 12),
+                  TextField(
+                    controller: _shortName,
+                    textCapitalization: TextCapitalization.sentences,
+                    decoration: InputDecoration(
+                      labelText: '${l.shortName} (${l.optional})',
+                      helperText: l.shortNameHelper,
+                    ),
+                  ),
+                  // Clear of the helper text, for the floating labels below.
+                  const SizedBox(height: 20),
                   Row(
                     children: [
                       Expanded(

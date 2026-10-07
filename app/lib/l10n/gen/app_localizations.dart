@@ -806,6 +806,18 @@ abstract class AppLocalizations {
   /// **'Course name'**
   String get courseName;
 
+  /// No description provided for @shortName.
+  ///
+  /// In en, this message translates to:
+  /// **'Short name'**
+  String get shortName;
+
+  /// No description provided for @shortNameHelper.
+  ///
+  /// In en, this message translates to:
+  /// **'Shown in the week view when the full name doesn\'t fit'**
+  String get shortNameHelper;
+
   /// No description provided for @courseNameRequired.
   ///
   /// In en, this message translates to:
@@ -1490,6 +1502,54 @@ abstract class AppLocalizations {
   /// **'Source code'**
   String get sourceCode;
 
+  /// No description provided for @license.
+  ///
+  /// In en, this message translates to:
+  /// **'License'**
+  String get license;
+
+  /// No description provided for @licenseSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'Free software under the GNU GPL v3 or later, with no warranty.'**
+  String get licenseSummary;
+
+  /// No description provided for @developer.
+  ///
+  /// In en, this message translates to:
+  /// **'Developer'**
+  String get developer;
+
+  /// No description provided for @developerTools.
+  ///
+  /// In en, this message translates to:
+  /// **'Developer tools'**
+  String get developerTools;
+
+  /// No description provided for @developerToolsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Test notifications, sync, backups and the widget on this device'**
+  String get developerToolsSubtitle;
+
+  /// No description provided for @devModeSteps.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 more tap to turn on developer mode} other{{count} more taps to turn on developer mode}}'**
+  String devModeSteps(int count);
+
+  /// No description provided for @devModeOn.
+  ///
+  /// In en, this message translates to:
+  /// **'Developer mode is on'**
+  String get devModeOn;
+
+  /// No description provided for @devModeAlreadyOn.
+  ///
+  /// In en, this message translates to:
+  /// **'Developer mode is already on'**
+  String get devModeAlreadyOn;
+
   /// No description provided for @signInFailed.
   ///
   /// In en, this message translates to:
@@ -1675,6 +1735,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Send a test notification'**
   String get testNotification;
+
+  /// No description provided for @notificationFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t show the notification: {error}'**
+  String notificationFailed(String error);
 
   /// No description provided for @notificationsBlocked.
   ///

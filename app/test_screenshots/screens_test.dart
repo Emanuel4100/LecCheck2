@@ -101,6 +101,7 @@ Future<void> _seed(ScheduleRepository repo, {required bool hebrew}) async {
             id: 'calc',
             semesterId: 'sem',
             name: hebrew ? 'חשבון אינפיניטסימלי 1' : 'Calculus 1',
+            shortName: hebrew ? 'חדו״א 1' : '',
             code: '104031',
             lecturer: hebrew ? 'ד״ר כהן' : 'Dr. Cohen',
             colorKey: 'ocean',

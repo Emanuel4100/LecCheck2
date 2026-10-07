@@ -60,8 +60,9 @@ final reminderSettingsProvider =
       ReminderSettingsController.new,
     );
 
-class _Texts implements ReminderTexts {
-  _Texts(this.l, this.fmt);
+/// Reminder texts in the app's language.
+class LocalizedReminderTexts implements ReminderTexts {
+  LocalizedReminderTexts(this.l, this.fmt);
   final AppLocalizations l;
   final Fmt fmt;
 
@@ -89,6 +90,9 @@ class _Texts implements ReminderTexts {
 class NotificationController {
   NotificationController(this.container);
 
+  /// The one `main` started (Settings → Developer reschedules with it).
+  static NotificationController? current;
+
   final ProviderContainer container;
   Timer? _debounce;
   Timer? _hourly;
@@ -101,6 +105,7 @@ class NotificationController {
   }
 
   Future<void> start() async {
+    current = this;
     final l = _l;
     await NotificationService.instance.init(
       labels: NotificationLabels(
@@ -136,12 +141,18 @@ class NotificationController {
     _debounce = Timer(const Duration(seconds: 2), _apply);
   }
 
-  Future<void> _apply() async {
+  /// Plans and schedules reminders right away. Returns how many.
+  Future<int> rescheduleNow() {
+    _debounce?.cancel();
+    return _apply();
+  }
+
+  Future<int> _apply() async {
     final settings = container.read(reminderSettingsProvider);
     final data = container.read(semesterDataProvider).value;
     if (!settings.any || data == null) {
       await NotificationService.instance.cancelAll();
-      return;
+      return 0;
     }
     final l = _l;
     final use24h =
@@ -152,10 +163,11 @@ class NotificationController {
       courses: {for (final c in data.courses) c.id: c},
       meetings: {for (final m in data.meetings) m.id: m},
       settings: settings,
-      texts: _Texts(l, Fmt(l.localeName, use24h: use24h)),
+      texts: LocalizedReminderTexts(l, Fmt(l.localeName, use24h: use24h)),
       now: DateTime.now(),
     );
     await NotificationService.instance.apply(plan);
+    return plan.length;
   }
 
   Future<void> _onResponse(NotificationResponse response) async {

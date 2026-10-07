@@ -109,11 +109,15 @@ class CourseInfo {
     this.notes = '',
     this.links = const [],
     this.sortOrder = 0,
+    this.shortName = '',
   });
 
   final String id;
   final String semesterId;
   final String name;
+
+  /// Optional; the week grid uses it when [name] doesn't fit.
+  final String shortName;
   final String code;
   final String lecturer;
   final String colorKey;
@@ -128,6 +132,7 @@ class CourseInfo {
       other.id == id &&
       other.semesterId == semesterId &&
       other.name == name &&
+      other.shortName == shortName &&
       other.code == code &&
       other.lecturer == lecturer &&
       other.colorKey == colorKey &&
@@ -138,7 +143,7 @@ class CourseInfo {
 
   @override
   int get hashCode =>
-      Object.hash(id, name, code, lecturer, colorKey, sortOrder);
+      Object.hash(id, name, shortName, code, lecturer, colorKey, sortOrder);
 }
 
 class NamedLink {

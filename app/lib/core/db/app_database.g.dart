@@ -658,6 +658,18 @@ class $CoursesTable extends Courses with TableInfo<$CoursesTable, CourseRow> {
     requiredDuringInsert: false,
     defaultValue: const Constant(0),
   );
+  static const VerificationMeta _shortNameMeta = const VerificationMeta(
+    'shortName',
+  );
+  @override
+  late final GeneratedColumn<String> shortName = GeneratedColumn<String>(
+    'short_name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -672,6 +684,7 @@ class $CoursesTable extends Courses with TableInfo<$CoursesTable, CourseRow> {
     notes,
     links,
     sortOrder,
+    shortName,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -760,6 +773,12 @@ class $CoursesTable extends Courses with TableInfo<$CoursesTable, CourseRow> {
         sortOrder.isAcceptableOrUnknown(data['sort_order']!, _sortOrderMeta),
       );
     }
+    if (data.containsKey('short_name')) {
+      context.handle(
+        _shortNameMeta,
+        shortName.isAcceptableOrUnknown(data['short_name']!, _shortNameMeta),
+      );
+    }
     return context;
   }
 
@@ -817,6 +836,10 @@ class $CoursesTable extends Courses with TableInfo<$CoursesTable, CourseRow> {
         DriftSqlType.int,
         data['${effectivePrefix}sort_order'],
       )!,
+      shortName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}short_name'],
+      )!,
     );
   }
 
@@ -845,6 +868,10 @@ class CourseRow extends DataClass implements Insertable<CourseRow> {
   /// JSON list of `{title, url}`.
   final String links;
   final int sortOrder;
+
+  /// Optional, for the week grid when [name] doesn't fit (schema v3). Last,
+  /// so new and upgraded databases have the same column order.
+  final String shortName;
   const CourseRow({
     required this.id,
     required this.deleted,
@@ -858,6 +885,7 @@ class CourseRow extends DataClass implements Insertable<CourseRow> {
     required this.notes,
     required this.links,
     required this.sortOrder,
+    required this.shortName,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -874,6 +902,7 @@ class CourseRow extends DataClass implements Insertable<CourseRow> {
     map['notes'] = Variable<String>(notes);
     map['links'] = Variable<String>(links);
     map['sort_order'] = Variable<int>(sortOrder);
+    map['short_name'] = Variable<String>(shortName);
     return map;
   }
 
@@ -891,6 +920,7 @@ class CourseRow extends DataClass implements Insertable<CourseRow> {
       notes: Value(notes),
       links: Value(links),
       sortOrder: Value(sortOrder),
+      shortName: Value(shortName),
     );
   }
 
@@ -912,6 +942,7 @@ class CourseRow extends DataClass implements Insertable<CourseRow> {
       notes: serializer.fromJson<String>(json['notes']),
       links: serializer.fromJson<String>(json['links']),
       sortOrder: serializer.fromJson<int>(json['sortOrder']),
+      shortName: serializer.fromJson<String>(json['shortName']),
     );
   }
   @override
@@ -930,6 +961,7 @@ class CourseRow extends DataClass implements Insertable<CourseRow> {
       'notes': serializer.toJson<String>(notes),
       'links': serializer.toJson<String>(links),
       'sortOrder': serializer.toJson<int>(sortOrder),
+      'shortName': serializer.toJson<String>(shortName),
     };
   }
 
@@ -946,6 +978,7 @@ class CourseRow extends DataClass implements Insertable<CourseRow> {
     String? notes,
     String? links,
     int? sortOrder,
+    String? shortName,
   }) => CourseRow(
     id: id ?? this.id,
     deleted: deleted ?? this.deleted,
@@ -959,6 +992,7 @@ class CourseRow extends DataClass implements Insertable<CourseRow> {
     notes: notes ?? this.notes,
     links: links ?? this.links,
     sortOrder: sortOrder ?? this.sortOrder,
+    shortName: shortName ?? this.shortName,
   );
   CourseRow copyWithCompanion(CoursesCompanion data) {
     return CourseRow(
@@ -976,6 +1010,7 @@ class CourseRow extends DataClass implements Insertable<CourseRow> {
       notes: data.notes.present ? data.notes.value : this.notes,
       links: data.links.present ? data.links.value : this.links,
       sortOrder: data.sortOrder.present ? data.sortOrder.value : this.sortOrder,
+      shortName: data.shortName.present ? data.shortName.value : this.shortName,
     );
   }
 
@@ -993,7 +1028,8 @@ class CourseRow extends DataClass implements Insertable<CourseRow> {
           ..write('website: $website, ')
           ..write('notes: $notes, ')
           ..write('links: $links, ')
-          ..write('sortOrder: $sortOrder')
+          ..write('sortOrder: $sortOrder, ')
+          ..write('shortName: $shortName')
           ..write(')'))
         .toString();
   }
@@ -1012,6 +1048,7 @@ class CourseRow extends DataClass implements Insertable<CourseRow> {
     notes,
     links,
     sortOrder,
+    shortName,
   );
   @override
   bool operator ==(Object other) =>
@@ -1028,7 +1065,8 @@ class CourseRow extends DataClass implements Insertable<CourseRow> {
           other.website == this.website &&
           other.notes == this.notes &&
           other.links == this.links &&
-          other.sortOrder == this.sortOrder);
+          other.sortOrder == this.sortOrder &&
+          other.shortName == this.shortName);
 }
 
 class CoursesCompanion extends UpdateCompanion<CourseRow> {
@@ -1044,6 +1082,7 @@ class CoursesCompanion extends UpdateCompanion<CourseRow> {
   final Value<String> notes;
   final Value<String> links;
   final Value<int> sortOrder;
+  final Value<String> shortName;
   final Value<int> rowid;
   const CoursesCompanion({
     this.id = const Value.absent(),
@@ -1058,6 +1097,7 @@ class CoursesCompanion extends UpdateCompanion<CourseRow> {
     this.notes = const Value.absent(),
     this.links = const Value.absent(),
     this.sortOrder = const Value.absent(),
+    this.shortName = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   CoursesCompanion.insert({
@@ -1073,6 +1113,7 @@ class CoursesCompanion extends UpdateCompanion<CourseRow> {
     this.notes = const Value.absent(),
     this.links = const Value.absent(),
     this.sortOrder = const Value.absent(),
+    this.shortName = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        semesterId = Value(semesterId),
@@ -1090,6 +1131,7 @@ class CoursesCompanion extends UpdateCompanion<CourseRow> {
     Expression<String>? notes,
     Expression<String>? links,
     Expression<int>? sortOrder,
+    Expression<String>? shortName,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -1105,6 +1147,7 @@ class CoursesCompanion extends UpdateCompanion<CourseRow> {
       if (notes != null) 'notes': notes,
       if (links != null) 'links': links,
       if (sortOrder != null) 'sort_order': sortOrder,
+      if (shortName != null) 'short_name': shortName,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -1122,6 +1165,7 @@ class CoursesCompanion extends UpdateCompanion<CourseRow> {
     Value<String>? notes,
     Value<String>? links,
     Value<int>? sortOrder,
+    Value<String>? shortName,
     Value<int>? rowid,
   }) {
     return CoursesCompanion(
@@ -1137,6 +1181,7 @@ class CoursesCompanion extends UpdateCompanion<CourseRow> {
       notes: notes ?? this.notes,
       links: links ?? this.links,
       sortOrder: sortOrder ?? this.sortOrder,
+      shortName: shortName ?? this.shortName,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -1180,6 +1225,9 @@ class CoursesCompanion extends UpdateCompanion<CourseRow> {
     if (sortOrder.present) {
       map['sort_order'] = Variable<int>(sortOrder.value);
     }
+    if (shortName.present) {
+      map['short_name'] = Variable<String>(shortName.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -1201,6 +1249,7 @@ class CoursesCompanion extends UpdateCompanion<CourseRow> {
           ..write('notes: $notes, ')
           ..write('links: $links, ')
           ..write('sortOrder: $sortOrder, ')
+          ..write('shortName: $shortName, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -5096,6 +5145,7 @@ typedef $$CoursesTableCreateCompanionBuilder = CoursesCompanion Function({
   Value<String> notes,
   Value<String> links,
   Value<int> sortOrder,
+  Value<String> shortName,
   Value<int> rowid,
 });
 typedef $$CoursesTableUpdateCompanionBuilder = CoursesCompanion Function({
@@ -5111,6 +5161,7 @@ typedef $$CoursesTableUpdateCompanionBuilder = CoursesCompanion Function({
   Value<String> notes,
   Value<String> links,
   Value<int> sortOrder,
+  Value<String> shortName,
   Value<int> rowid,
 });
 
@@ -5180,6 +5231,11 @@ class $$CoursesTableFilterComposer
 
   ColumnFilters<int> get sortOrder => $composableBuilder(
     column: $table.sortOrder,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get shortName => $composableBuilder(
+    column: $table.shortName,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -5252,6 +5308,11 @@ class $$CoursesTableOrderingComposer
     column: $table.sortOrder,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get shortName => $composableBuilder(
+    column: $table.shortName,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$CoursesTableAnnotationComposer
@@ -5300,6 +5361,9 @@ class $$CoursesTableAnnotationComposer
 
   GeneratedColumn<int> get sortOrder =>
       $composableBuilder(column: $table.sortOrder, builder: (column) => column);
+
+  GeneratedColumn<String> get shortName =>
+      $composableBuilder(column: $table.shortName, builder: (column) => column);
 }
 
 class $$CoursesTableTableManager
@@ -5342,6 +5406,7 @@ class $$CoursesTableTableManager
                 Value<String> notes = const Value.absent(),
                 Value<String> links = const Value.absent(),
                 Value<int> sortOrder = const Value.absent(),
+                Value<String> shortName = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => CoursesCompanion(
                 id: id,
@@ -5356,6 +5421,7 @@ class $$CoursesTableTableManager
                 notes: notes,
                 links: links,
                 sortOrder: sortOrder,
+                shortName: shortName,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -5372,6 +5438,7 @@ class $$CoursesTableTableManager
                 Value<String> notes = const Value.absent(),
                 Value<String> links = const Value.absent(),
                 Value<int> sortOrder = const Value.absent(),
+                Value<String> shortName = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => CoursesCompanion.insert(
                 id: id,
@@ -5386,6 +5453,7 @@ class $$CoursesTableTableManager
                 notes: notes,
                 links: links,
                 sortOrder: sortOrder,
+                shortName: shortName,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

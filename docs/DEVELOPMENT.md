@@ -65,10 +65,20 @@ Server (from `server/`): `npm test`, `npm run typecheck`, `npx wrangler dev`.
 
 ### Change the database schema
 
-1. Edit `lib/core/db/tables.dart`.
-2. Bump `schemaVersion` in `app_database.dart` and add a step to `migration`.
-3. Regenerate: `dart run build_runner build --delete-conflicting-outputs`.
-4. If the table syncs, add it to `SYNCED_TABLES` in `server/src/protocol.ts` and to the
+1. Edit `lib/core/db/tables.dart`. Add new columns at the end of the table (upgraded
+   databases append them there) and give them a default.
+2. Bump `schemaVersion` in `app_database.dart`.
+3. Regenerate: `dart run build_runner build --delete-conflicting-outputs`, then
+   `dart run drift_dev make-migrations`. It saves the new schema in `drift_schemas/` and
+   regenerates `app_database.steps.dart` and the test helpers in `test/drift/`.
+4. Add the `fromNToN+1` step to `stepByStep` in `app_database.dart`, and extend
+   `test/drift/leccheck/migration_test.dart`: it checks every upgrade path against the
+   saved schemas and that existing rows survive.
+5. A new column in a synced table: add its default to the adapter's `added` map in
+   `schedule_repository.dart`. Rows synced by older app versions, and older backups and
+   automatic backups, don't have it and must still load. Older app versions ignore fields
+   they don't know.
+6. A new synced table: add it to `SYNCED_TABLES` in `server/src/protocol.ts` and to the
    repository's adapters. The server stores rows as JSON, so new columns need no server
    change.
 
@@ -91,6 +101,37 @@ Edit `design/app-icon/*.svg`, export PNGs into `app/assets/branding/` (see
 dart run flutter_launcher_icons
 dart run flutter_native_splash:create
 ```
+
+## Testing on a real phone
+
+Turn on developer mode (**Settings → About → Version** 7 times) and open **Settings →
+Developer → Developer tools**:
+
+- **Notifications**: whether they're set up (and the error if not), permission, exact
+  alarms, time zone, what's scheduled. Show one now, schedule one in a minute, or an
+  after-class reminder in a minute. Close the app before it arrives, press a button, then
+  check the session and the log. Its buttons mark the latest session that needs marking;
+  if none does, they only log.
+- **Sync**: state, cursor, dataset, clock correction; **Sync now**; **Pretend the server
+  is busy** for 2 minutes. Account then shows "Sync paused until…", and sync resumes by
+  itself.
+- **Data**: database and automatic backup sizes (Android backs up 25 MB per app),
+  `PRAGMA quick_check`.
+- **This device**: Android version, battery optimization, screen, time zone. A button
+  opens LecCheck's system settings (notifications, alarms, battery).
+- **Log**: errors (`debugPrint`, uncaught errors) and what notification and widget
+  buttons did in the background (`core/dev/dev_log.dart`, kept in `dev_log.txt`,
+  64 KB at most, left out of Android's backup). **Copy diagnostics** copies all of it.
+
+Android's backup (needs `adb`, from `~/Android/Sdk/platform-tools`):
+
+```bash
+adb shell bmgr backupnow com.leccheck.app   # back up now (the phone must be signed in to Google)
+adb uninstall com.leccheck.app              # export a backup first: this deletes the app's data
+adb install LecCheck-…-android-arm64.apk    # the same signing key; the data comes back
+```
+
+After the restore, sign in again (the sign-in token isn't backed up).
 
 ## Code style
 

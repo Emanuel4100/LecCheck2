@@ -10,6 +10,7 @@ import '../../domain/schedule_types.dart';
 import '../auth/auth_service.dart';
 import '../db/app_database.dart';
 import '../db/schedule_repository.dart';
+import '../dev/dev_log.dart';
 import '../sync/sync_config.dart';
 import '../sync/sync_engine.dart';
 import '../sync/sync_recorder.dart';
@@ -21,6 +22,7 @@ class ReminderPayload {
     required this.meetingId,
     required this.originalDate,
     this.link,
+    this.test = false,
   });
 
   static ReminderPayload? parse(String? json) {
@@ -32,6 +34,7 @@ class ReminderPayload {
         meetingId: map['meeting']! as String,
         originalDate: LocalDate.parse(map['date']! as String),
         link: map['link'] as String?,
+        test: map['test'] == true,
       );
     } on Object {
       return null;
@@ -42,6 +45,9 @@ class ReminderPayload {
   final String meetingId;
   final LocalDate originalDate;
   final String? link;
+
+  /// From Settings → Developer: the buttons only log.
+  final bool test;
 }
 
 AttendanceStatus? statusForAction(String? actionId) => switch (actionId) {
@@ -59,6 +65,10 @@ Future<bool> markFromNotification(
   final status = statusForAction(response.actionId);
   final payload = ReminderPayload.parse(response.payload);
   if (status == null || payload == null) return false;
+  if (payload.test) {
+    DevLog.add('Test notification: "${status.key}" pressed (nothing changed)');
+    return false;
+  }
   await repo.setStatusFor(
     meetingId: payload.meetingId,
     originalDate: payload.originalDate,
@@ -76,6 +86,8 @@ Future<void> onNotificationActionInBackground(
 ) async {
   if (statusForAction(response.actionId) == null) return;
   DartPluginRegistrant.ensureInitialized();
+  DevLog.start();
+  DevLog.add('Notification button "${response.actionId}" (app closed)');
   final prefs = await SharedPreferencesWithCache.create(
     cacheOptions: const SharedPreferencesWithCacheOptions(),
   );
@@ -87,9 +99,9 @@ Future<void> onNotificationActionInBackground(
         ? SyncRecorder(db: db, prefs: prefs)
         : null;
     repo.recorder = recorder;
-    if (!await markFromNotification(response, repo) || recorder == null) {
-      return;
-    }
+    if (!await markFromNotification(response, repo)) return;
+    DevLog.add('Saved');
+    if (recorder == null) return;
     final session = await AuthService().load();
     if (session != null) {
       await SyncEngine.syncOverHttp(
@@ -98,10 +110,12 @@ Future<void> onNotificationActionInBackground(
         recorder: recorder,
         session: session,
       );
+      DevLog.add('Synced');
     }
   } on Object catch (e) {
     debugPrint('Notification action failed: $e');
   } finally {
     await db.close();
+    await DevLog.flush();
   }
 }

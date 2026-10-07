@@ -21,6 +21,7 @@ import '../../l10n/gen/app_localizations.dart';
 import '../auth/auth_service.dart';
 import '../db/app_database.dart';
 import '../db/schedule_repository.dart';
+import '../dev/dev_log.dart';
 import '../sync/sync_config.dart';
 import '../sync/sync_engine.dart';
 import '../sync/sync_recorder.dart';
@@ -124,6 +125,8 @@ Future<void> todayWidgetCallback(Uri? uri) async {
   if (meeting == null || date == null || status == null) return;
 
   DartPluginRegistrant.ensureInitialized();
+  DevLog.start();
+  DevLog.add('Widget button "${status.key}"');
   final prefs = await SharedPreferencesWithCache.create(
     cacheOptions: const SharedPreferencesWithCacheOptions(),
   );
@@ -141,6 +144,7 @@ Future<void> todayWidgetCallback(Uri? uri) async {
       status: status,
     );
     await refreshTodayWidget(repo, prefs);
+    DevLog.add('Saved');
     if (recorder != null) {
       final session = await AuthService().load();
       if (session != null) {
@@ -150,12 +154,14 @@ Future<void> todayWidgetCallback(Uri? uri) async {
           recorder: recorder,
           session: session,
         );
+        DevLog.add('Synced');
       }
     }
   } on Object catch (e) {
     debugPrint('Widget action failed: $e');
   } finally {
     await db.close();
+    await DevLog.flush();
   }
 }
 

@@ -32,7 +32,8 @@ fields in the background — so it is instant, works offline, and never loses ed
 - **Today** — what's on now or next with a live countdown, one-tap Attended / Missed /
   Watched, and a "needs marking" queue (swipe right = attended, left = missed, with undo).
 - **Week** — swipe between weeks; pinned day headers, a live "now" line, overlapping
-  sessions side by side, pinch to zoom, tap a day to mark it as a holiday.
+  sessions side by side, pinch to zoom, tap a day to mark it as a holiday. Course names
+  fit their tiles, with optional short names for long ones.
 - **Courses** — attendance ring per course and **attendance requirements**
   ("you can miss 2 more").
 - **Stats** — attendance, streaks, per-course and per-type breakdowns, weekly trend,
@@ -84,7 +85,7 @@ mise install                    # Flutter, Java, Node, ninja (pinned in mise.tom
 cd app
 flutter pub get
 flutter run -d linux            # or an Android device
-TZ=Asia/Jerusalem flutter test  # 55 tests
+TZ=Asia/Jerusalem flutter test  # 98 tests
 ```
 
 Sync needs a server URL at build time: `--dart-define=API_BASE_URL=…` (see
@@ -99,3 +100,13 @@ design/    SVG sources for the icon font, app icon and logo
 docs/      Documentation
 scripts/   Release helpers (Linux installer, AltStore source)
 ```
+
+## License
+
+LecCheck is free software: you can redistribute it and/or modify it under the terms of
+the [GNU General Public License](LICENSE) as published by the Free Software Foundation,
+either version 3 of the License, or (at your option) any later version. It is
+distributed in the hope that it will be useful, but without any warranty.
+
+Copyright © 2026 Emanuel. The Rubik font is under the
+[SIL Open Font License](app/assets/fonts/OFL.txt).

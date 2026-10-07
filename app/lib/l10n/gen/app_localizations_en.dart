@@ -425,6 +425,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get courseName => 'Course name';
 
   @override
+  String get shortName => 'Short name';
+
+  @override
+  String get shortNameHelper =>
+      'Shown in the week view when the full name doesn\'t fit';
+
+  @override
   String get courseNameRequired => 'Enter a course name';
 
   @override
@@ -792,6 +799,40 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sourceCode => 'Source code';
 
   @override
+  String get license => 'License';
+
+  @override
+  String get licenseSummary =>
+      'Free software under the GNU GPL v3 or later, with no warranty.';
+
+  @override
+  String get developer => 'Developer';
+
+  @override
+  String get developerTools => 'Developer tools';
+
+  @override
+  String get developerToolsSubtitle =>
+      'Test notifications, sync, backups and the widget on this device';
+
+  @override
+  String devModeSteps(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count more taps to turn on developer mode',
+      one: '1 more tap to turn on developer mode',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get devModeOn => 'Developer mode is on';
+
+  @override
+  String get devModeAlreadyOn => 'Developer mode is already on';
+
+  @override
   String get signInFailed =>
       'Couldn\'t sign in. Check your connection and try again.';
 
@@ -901,6 +942,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get testNotification => 'Send a test notification';
+
+  @override
+  String notificationFailed(String error) {
+    return 'Couldn\'t show the notification: $error';
+  }
 
   @override
   String get notificationsBlocked =>

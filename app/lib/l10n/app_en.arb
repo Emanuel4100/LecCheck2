@@ -232,6 +232,8 @@
   "newCourse": "New course",
   "editCourse": "Edit course",
   "courseName": "Course name",
+  "shortName": "Short name",
+  "shortNameHelper": "Shown in the week view when the full name doesn't fit",
   "courseNameRequired": "Enter a course name",
   "courseNotesHint": "Reading list, exam rules, grading…",
   "courseColor": "Color",
@@ -367,6 +369,21 @@
   "about": "About",
   "version": "Version",
   "sourceCode": "Source code",
+  "license": "License",
+  "licenseSummary": "Free software under the GNU GPL v3 or later, with no warranty.",
+  "developer": "Developer",
+  "developerTools": "Developer tools",
+  "developerToolsSubtitle": "Test notifications, sync, backups and the widget on this device",
+  "devModeSteps": "{count, plural, =1{1 more tap to turn on developer mode} other{{count} more taps to turn on developer mode}}",
+  "@devModeSteps": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "devModeOn": "Developer mode is on",
+  "devModeAlreadyOn": "Developer mode is already on",
   "signInFailed": "Couldn't sign in. Check your connection and try again.",
   "devSignIn": "Developer sign-in",
   "restoringData": "Restoring your data…",
@@ -419,6 +436,14 @@
     }
   },
   "testNotification": "Send a test notification",
+  "notificationFailed": "Couldn't show the notification: {error}",
+  "@notificationFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
   "notificationsBlocked": "Notifications are blocked. Allow them in system settings.",
   "notifyBeforeTitle": "{course} · {type} in {minutes} min",
   "@notifyBeforeTitle": {

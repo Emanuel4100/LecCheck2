@@ -781,15 +781,11 @@ class _GridTile extends ConsumerWidget {
             padding: const EdgeInsetsDirectional.fromSTEB(5, 3, 3, 3),
             child: LayoutBuilder(
               builder: (context, c) {
-                final tall = c.maxHeight > 44;
-                final roomy = c.maxHeight > 64;
-                final name = course?.name ?? '';
-                final badge = decided && !canceled;
                 final nameStyle =
                     (c.maxWidth < 64
                             ? theme.textTheme.labelSmall
-                            : theme.textTheme.labelMedium)
-                        ?.copyWith(
+                            : theme.textTheme.labelMedium)!
+                        .copyWith(
                           color: tone.onContainer,
                           fontWeight: FontWeight.w700,
                           height: 1.15,
@@ -797,60 +793,72 @@ class _GridTile extends ConsumerWidget {
                               ? TextDecoration.lineThrough
                               : null,
                         );
-                // Wrapping a word wider than the tile would split it
-                // mid-word ("Data Str|uctures"); use one ellipsized line.
-                final lines =
-                    _wordsFit(
-                      name,
-                      nameStyle!,
-                      c.maxWidth - (badge ? 14 : 0),
-                      MediaQuery.textScalerOf(context),
-                    )
-                    ? (roomy ? 3 : (tall ? 2 : 1))
-                    : 1;
-                final detail = theme.textTheme.labelSmall?.copyWith(
+                final detailStyle = theme.textTheme.labelSmall!.copyWith(
                   color: tone.onContainer.withValues(alpha: 0.8),
+                );
+                final time = fmt.time(session.startMin);
+                final badge = decided && !canceled;
+                final layout = layoutTile(
+                  name: course?.name ?? '',
+                  shortName: course?.shortName ?? '',
+                  time: time,
+                  room: session.location,
+                  badge: badge,
+                  nameStyle: nameStyle,
+                  detailStyle: detailStyle,
+                  size: c.biggest,
+                  scaler: MediaQuery.textScalerOf(context),
+                  direction: Directionality.of(context),
                 );
                 return Stack(
                   children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Padding(
-                          padding: EdgeInsetsDirectional.only(
-                            end: badge ? 14 : 0,
-                          ),
-                          child: Text(
-                            name,
-                            maxLines: lines,
-                            overflow: TextOverflow.ellipsis,
-                            style: nameStyle,
+                    Positioned.fill(
+                      child: ClipRect(
+                        child: OverflowBox(
+                          alignment: AlignmentDirectional.topStart,
+                          maxHeight: double.infinity,
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Padding(
+                                padding: EdgeInsetsDirectional.only(
+                                  end: layout.nameInset,
+                                ),
+                                child: Text(
+                                  layout.name,
+                                  maxLines: layout.nameLines,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: layout.nameStyle,
+                                ),
+                              ),
+                              if (layout.showTime)
+                                Text(
+                                  time,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.fade,
+                                  softWrap: false,
+                                  style: detailStyle,
+                                ),
+                              if (layout.showRoom)
+                                Text(
+                                  session.location,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: detailStyle,
+                                ),
+                            ],
                           ),
                         ),
-                        if (tall)
-                          Text(
-                            fmt.time(session.startMin),
-                            maxLines: 1,
-                            overflow: TextOverflow.fade,
-                            softWrap: false,
-                            style: detail,
-                          ),
-                        if (roomy && session.location.isNotEmpty)
-                          Text(
-                            session.location,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: detail,
-                          ),
-                      ],
+                      ),
                     ),
-                    if (badge)
+                    if (layout.badgeTop case final top?)
                       PositionedDirectional(
-                        top: 0,
+                        top: top,
                         end: 0,
                         child: StatusIndicator(
                           status: session.status,
-                          size: 14,
+                          size: tileBadgeSize,
                         ),
                       ),
                   ],
@@ -878,25 +886,186 @@ class _GridTile extends ConsumerWidget {
   }
 }
 
-bool _wordsFit(
-  String text,
-  TextStyle style,
-  double maxWidth,
-  TextScaler scaler,
-) {
-  for (final word in text.split(RegExp(r'\s+'))) {
-    if (word.isEmpty) continue;
-    final painter = TextPainter(
-      text: TextSpan(text: word, style: style),
-      textDirection: TextDirection.ltr,
-      maxLines: 1,
-      textScaler: scaler,
-    )..layout();
-    final width = painter.width;
-    painter.dispose();
-    if (width > maxWidth) return false;
+/// Size of the status icon in a week tile.
+const tileBadgeSize = 14.0;
+
+/// What a week tile shows ([layoutTile]).
+@immutable
+class TileLayout {
+  const TileLayout({
+    required this.name,
+    required this.nameStyle,
+    required this.nameLines,
+    required this.showTime,
+    required this.showRoom,
+    this.nameInset = 0,
+    this.badgeTop,
+  });
+
+  /// The course name, or its short name when the full one doesn't fit.
+  final String name;
+  final TextStyle nameStyle;
+  final int nameLines;
+  final bool showTime;
+  final bool showRoom;
+
+  /// Space kept at the end of the name's lines for the status icon (only in
+  /// tiles too small to put it anywhere else).
+  final double nameInset;
+
+  /// Where the status icon goes, from the top; null for none.
+  final double? badgeTop;
+}
+
+/// Widest word of a name per style. It doesn't depend on the tile's size,
+/// so pinch zoom doesn't measure it again on every frame.
+final _widestWords = <(String, TextStyle, TextScaler), double>{};
+
+/// Lays out a week tile so the course name is as readable as possible.
+///
+/// The name comes first: it gets the whole width and as many lines as fit,
+/// and a word too wide for the tile shrinks the text a little. When the name
+/// still doesn't fit, the course's short name is shown, if it has one. Then
+/// come the room and the start time; the time is dropped first, since the
+/// grid already shows when a session starts. The status icon goes after the
+/// name's first line, into free space at the bottom, or after the last line.
+TileLayout layoutTile({
+  required String name,
+  required String shortName,
+  required String time,
+  required String room,
+  required bool badge,
+  required TextStyle nameStyle,
+  required TextStyle detailStyle,
+  required Size size,
+  required TextScaler scaler,
+  required TextDirection direction,
+}) {
+  final width = size.width;
+  final height = size.height;
+
+  TextPainter painter(
+    String text,
+    TextStyle style, {
+    int? maxLines,
+    double maxWidth = double.infinity,
+  }) => TextPainter(
+    text: TextSpan(text: text, style: style),
+    textDirection: direction,
+    textScaler: scaler,
+    maxLines: maxLines,
+    ellipsis: maxLines == null ? null : '\u2026',
+  )..layout(maxWidth: maxWidth);
+
+  double widthOf(String text, TextStyle style) {
+    final p = painter(text, style, maxLines: 1);
+    final result = p.width;
+    p.dispose();
+    return result;
   }
-  return true;
+
+  double widestWord(String text, TextStyle style) {
+    if (_widestWords.length > 400) _widestWords.clear();
+    return _widestWords.putIfAbsent((text, style, scaler), () {
+      var widest = 0.0;
+      for (final word in text.split(RegExp(r'\s+'))) {
+        if (word.isNotEmpty) widest = math.max(widest, widthOf(word, style));
+      }
+      return widest;
+    });
+  }
+
+  // The name as it would be shown, and whether all of it fits.
+  ({String text, TextStyle style, int lines, bool fits}) fit(String text) {
+    // A word wider than the tile first loses its letter spacing, then
+    // shrinks by up to 1.5 px. Wrapping it mid-way ("Data Structure|s") is
+    // the last resort.
+    final smallest = nameStyle.fontSize! - 1.5;
+    var style = nameStyle;
+    var wordsFit = widestWord(text, style) <= width;
+    if (!wordsFit) style = style.copyWith(letterSpacing: 0);
+    while (!(wordsFit = widestWord(text, style) <= width) &&
+        style.fontSize! > smallest) {
+      style = style.copyWith(fontSize: style.fontSize! - 0.25);
+    }
+    final p = painter(text, style, maxWidth: width);
+    final needed = math.max(1, p.computeLineMetrics().length);
+    final available = math.max(1, (height / p.preferredLineHeight).floor());
+    p.dispose();
+    return (
+      text: text,
+      style: style,
+      lines: math.min(needed, available),
+      fits: wordsFit && needed <= available,
+    );
+  }
+
+  var chosen = fit(name);
+  if (!chosen.fits && shortName.isNotEmpty) chosen = fit(shortName);
+
+  final namePainter = painter(
+    chosen.text,
+    chosen.style,
+    maxLines: chosen.lines,
+    maxWidth: width,
+  );
+  final lines = namePainter.computeLineMetrics();
+  final nameHeight = namePainter.height;
+  namePainter.dispose();
+  final detailPainter = painter('0', detailStyle);
+  final detailHeight = detailPainter.preferredLineHeight;
+  detailPainter.dispose();
+
+  var free = height - nameHeight;
+  final showRoom = room.isNotEmpty && free >= detailHeight;
+  if (showRoom) free -= detailHeight;
+  var showTime = free >= detailHeight;
+  if (showTime) free -= detailHeight;
+
+  TileLayout result({double? badgeTop, double nameInset = 0}) => TileLayout(
+    name: chosen.text,
+    nameStyle: chosen.style,
+    nameLines: chosen.lines,
+    showTime: showTime,
+    showRoom: showRoom,
+    nameInset: nameInset,
+    badgeTop: badgeTop,
+  );
+
+  if (!badge) return result();
+  bool fitsAfter(double lineWidth) => lineWidth + 2 + tileBadgeSize <= width;
+  double centeredOn(double top, double lineHeight) =>
+      top + (lineHeight - tileBadgeSize) / 2;
+  final first = lines.firstOrNull;
+  final last = lines.lastOrNull;
+
+  // After the name's first line, as on wide tiles.
+  if (fitsAfter(first?.width ?? 0)) {
+    return result(badgeTop: centeredOn(0, first?.height ?? nameHeight));
+  }
+  // Free space at the bottom.
+  if (free >= tileBadgeSize) return result(badgeTop: height - tileBadgeSize);
+  // After a line short enough: the time, the room or the name's last line.
+  var top = nameHeight;
+  if (showTime) {
+    if (fitsAfter(widthOf(time, detailStyle))) {
+      return result(badgeTop: centeredOn(top, detailHeight));
+    }
+    top += detailHeight;
+  }
+  if (showRoom && fitsAfter(widthOf(room, detailStyle))) {
+    return result(badgeTop: centeredOn(top, detailHeight));
+  }
+  if (last != null && fitsAfter(last.width)) {
+    return result(badgeTop: centeredOn(nameHeight - last.height, last.height));
+  }
+  // Make room at the bottom by dropping the time.
+  if (showTime) {
+    showTime = false;
+    return result(badgeTop: height - tileBadgeSize);
+  }
+  // A small tile: keep space for the icon beside the name.
+  return result(badgeTop: 0, nameInset: tileBadgeSize);
 }
 
 class _GridPainter extends CustomPainter {

@@ -18,13 +18,18 @@
   what changed, refused changes kept, corrections for lost writes, automatic local
   backups, Recently deleted, 30-day trash for deleted cloud data, dataset ids for
   server resets, Android backup rules, pausing sync at the free plan's daily limit.
+- **After beta.3**: notifications work in Android release builds again; readable course
+  names in the Week view and optional short names; a hidden developer mode for testing
+  on real phones (test notifications, sync, backups, device details, a log); database
+  migration tests against every earlier schema; GPL-3.0-or-later license.
 
 ## Not yet verified on real hardware
 
 These are built and compile, but have only been exercised in tests so far:
 
 - The iOS build (first run happens in the release workflow on a macOS runner).
-- Reminders and their action buttons on a phone; the Android widget on a home screen.
+- Reminders and their action buttons on a phone; the Android widget on a home screen
+  (Settings → Developer has tools for testing both).
 - Google sign-in end-to-end (needs the Cloudflare + Google setup in [SETUP.md](SETUP.md));
   sync itself is verified end-to-end with the dev sign-in against a local Worker.
 
@@ -34,10 +39,10 @@ These are built and compile, but have only been exercised in tests so far:
   shortcuts, Windows build + installer, AUR package, Flatpak.
 - **iPhone widget** (WidgetKit) — needs App Group support from AltStore/SideStore.
 - **Data safety, part 3**: SQLite WAL + `quick_check` on startup (offer the latest
-  automatic backup if it fails), drift migration tests, keep server rows the app can't
-  read yet (and re-fetch after an update), server-side value validation, HLC stored in
-  SQLite, a multi-device convergence fuzz test, and an in-app "restore deleted cloud
-  data" button (the server side exists).
+  automatic backup if it fails; the check exists in Settings → Developer), keep server
+  rows the app can't read yet (and re-fetch after an update), server-side value
+  validation, HLC stored in SQLite, a multi-device convergence fuzz test, and an in-app
+  "restore deleted cloud data" button (the server side exists).
 - **Reminders**: mute per course; daily background top-up (workmanager) so reminders stay
   scheduled even if the app isn't opened for two weeks.
 - **Stats v2**: per-week heatmap, requirement projections.

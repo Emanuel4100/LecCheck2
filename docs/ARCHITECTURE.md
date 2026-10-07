@@ -137,6 +137,11 @@ minuteClockProvider (ticks on minute boundaries) → todayProvider
   `backup_rules.xml`). iCloud backup includes Application Support on iPhone.
 - `watchSemesterData` is a Drift `customSelect(..., readsFrom: {...}).watch()` mapped to
   a loader: one emission per transaction, and it cancels cleanly.
+- Schema upgrades are drift `stepByStep` migrations, each written against the schema of
+  its own version (`app_database.steps.dart`) and tested from every earlier version
+  (`test/drift`). Columns added after a release have defaults in the repository's
+  adapters (`added`), so rows from older app versions still load: synced rows, backups
+  and automatic backups.
 
 ## Sync
 
@@ -212,6 +217,10 @@ scheme. The Google client secret exists only in the Worker. Sessions renew after
   shown from in-app timers.
 - Action buttons call `onNotificationActionInBackground` in a background isolate: it opens
   the shared database, sets the status, and tries an HTTP sync.
+- The status-bar icon (`ic_stat_leccheck`) is named only from Dart, so
+  `res/raw/keep.xml` stops release builds from stripping it. Without it, the plugin can't
+  start, and nothing is shown or scheduled (as in v2.0.0-beta.3 on Android). A failed
+  setup is logged and shown in Settings → Developer, and the test button reports it.
 - The Android widget (`android/.../widget/TodayWidget.kt`, Jetpack Glance) renders a JSON
   snapshot written by `WidgetController`; it decides at render time which sessions have
   started, and its buttons call `todayWidgetCallback` in the background.
@@ -255,8 +264,9 @@ scheme. The Google client secret exists only in the Worker. Sessions renew after
 | Suite | What it covers |
 |---|---|
 | `app/test/domain` | Engine (DST weeks, biweekly, ranges, holidays, moves, numbering), stats, requirements, reminder planning |
-| `app/test/core` | Repository (history kept, null clearing, cascade + undo), HLC, backup import/export; data safety: editor saves, import merge/replace, trash, snapshots, refused and corrected changes, sync pausing when the server is over its limit |
-| `app/test/widget` | Mark + undo, editor validation, unsaved-changes guard, empty state; adaptive behavior per platform (desktop sidebar, shortcuts, right-click, list + details; iPhone dialogs and pickers; phone swipe) |
+| `app/test/core` | Repository (history kept, null clearing, cascade + undo), HLC, backup import/export; data safety: editor saves, import merge/replace, trash, snapshots, refused and corrected changes, sync pausing when the server is over its limit, rows from older app versions, test notification buttons |
+| `app/test/drift` | Database upgrades from every earlier schema (`drift_schemas/`): the result matches a fresh database and existing rows survive |
+| `app/test/widget` | Mark + undo, editor validation, unsaved-changes guard, empty state, developer mode; week tile layout; adaptive behavior per platform (desktop sidebar, shortcuts, right-click, list + details; iPhone dialogs and pickers; phone swipe) |
 | `app/test_screenshots` | Renders every main screen offscreen to PNG (English/Hebrew, light/dark; phone, desktop 1440×900, iPhone) |
 | `app/test_sync` | Two simulated devices against a local Worker: live sync, field merges, delete/undo |
 | `server/test` | Merge rules (incl. `ifAbsent`), validation, auth/PKCE, isolation, paging, revocation, WebSocket broadcast, corrections, one write per row per push, delete + restore, dataset resets, storage failures |

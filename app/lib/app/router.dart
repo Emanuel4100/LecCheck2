@@ -5,6 +5,7 @@ import 'package:material_ui/material_ui.dart';
 import '../features/courses/course_editor_page.dart';
 import '../features/courses/course_page.dart';
 import '../features/courses/courses_page.dart';
+import '../features/developer/developer_page.dart';
 import '../features/onboarding/welcome_page.dart';
 import '../features/semester/semester_form_page.dart';
 import '../features/sessions/all_sessions_page.dart';
@@ -99,6 +100,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/settings',
         parentNavigatorKey: _rootKey,
         builder: (_, _) => const SettingsPage(),
+      ),
+      GoRoute(
+        path: '/developer',
+        parentNavigatorKey: _rootKey,
+        builder: (_, _) => const DeveloperPage(),
       ),
       GoRoute(
         path: '/course-editor',

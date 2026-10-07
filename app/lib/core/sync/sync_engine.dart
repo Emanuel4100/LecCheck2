@@ -201,6 +201,15 @@ class SyncEngine {
     }
   }
 
+  /// Settings → Developer: acts as if the server asked this device to wait
+  /// [duration] (Account then shows "Sync paused until …").
+  void simulateBusyServer(Duration duration) => _hold(
+    retryAt:
+        DateTime.now().millisecondsSinceEpoch +
+        recorder.clock.offsetMs +
+        duration.inMilliseconds,
+  );
+
   // --------------------------------------------------------- connection --
 
   Future<void> _connect() async {

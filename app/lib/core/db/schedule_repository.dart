@@ -101,15 +101,23 @@ class DeletionReceipt {
 }
 
 class _Adapter<D extends DataClass> {
-  const _Adapter(this.table, this.fromJson);
+  const _Adapter(this.table, this.fromJson, [this.added = const {}]);
   final TableInfo<Table, D> table;
   final D Function(Map<String, dynamic> json) fromJson;
+
+  /// Defaults of columns added after the first release. Rows written by
+  /// older app versions (synced rows, backups, snapshots) don't have them,
+  /// and must still load.
+  final Map<String, Object?> added;
   String get name => table.actualTableName;
+
+  /// A row from JSON, with [added] columns filled in when missing.
+  D parse(Map<String, dynamic> json) => fromJson({...added, ...json});
 
   /// Upserts a full row. Lives here so [D] is the real row type even when
   /// the adapter is reached through a `_Adapter<DataClass>` reference.
   Future<void> upsert(GeneratedDatabase db, Map<String, dynamic> json) {
-    final row = fromJson(json) as Insertable<D>;
+    final row = parse(json) as Insertable<D>;
     // toColumns(false) keeps nulls as real values: a data class used directly
     // treats null as "absent", and the upsert would never clear a column.
     return db
@@ -138,7 +146,11 @@ class ScheduleRepository {
     db.semesters,
     SemesterRow.fromJson,
   );
-  late final _courses = _Adapter<CourseRow>(db.courses, CourseRow.fromJson);
+  late final _courses = _Adapter<CourseRow>(
+    db.courses,
+    CourseRow.fromJson,
+    const {'shortName': ''},
+  );
   late final _meetings = _Adapter<MeetingRow>(db.meetings, MeetingRow.fromJson);
   late final _overrides = _Adapter<SessionOverrideRow>(
     db.sessionOverrides,
@@ -456,7 +468,7 @@ class ScheduleRepository {
       for (final row in rows) {
         final next = _normalize(adapter, row);
         if (mode == ImportMode.replace) {
-          await _upsert(adapter, adapter.fromJson({...next, 'updatedAt': 0}));
+          await _upsert(adapter, adapter.parse({...next, 'updatedAt': 0}));
         } else if (await _find(adapter, next['id']! as String) == null) {
           await _write(adapter, next, next, ifAbsent: true);
         }
@@ -500,7 +512,7 @@ class ScheduleRepository {
           for (final row in tables[adapter.name] ?? const []) {
             final next = _normalize(adapter, row);
             ids.add(next['id']! as String);
-            await _upsert(adapter, adapter.fromJson({...next, 'updatedAt': 0}));
+            await _upsert(adapter, adapter.parse({...next, 'updatedAt': 0}));
           }
           final live = await (db.select(
             adapter.table,
@@ -517,7 +529,7 @@ class ScheduleRepository {
     _Adapter<D> a,
     Map<String, Object?> row,
   ) =>
-      a.fromJson({'deleted': false, ...row, 'updatedAt': 0}).toJson()
+      a.parse({'deleted': false, ...row, 'updatedAt': 0}).toJson()
         ..remove('updatedAt');
 
   // ------------------------------------------------------ recently deleted --

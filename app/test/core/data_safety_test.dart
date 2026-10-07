@@ -1,10 +1,12 @@
 // Guards against data being overwritten, dropped or lost: editor saves,
-// backup imports, restores, the trash, snapshots and the sync outbox.
+// backup imports, restores, the trash, snapshots, the sync outbox, rows from
+// older app versions and notification buttons.
 import 'dart:convert';
 import 'dart:io';
 
 import 'package:drift/drift.dart' hide isNull;
 import 'package:drift/native.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:leccheck/core/auth/session.dart';
 import 'package:leccheck/core/backup/backup_service.dart';
@@ -12,6 +14,7 @@ import 'package:leccheck/core/backup/snapshot_service.dart';
 import 'package:leccheck/core/db/app_database.dart';
 import 'package:leccheck/core/db/mappers.dart';
 import 'package:leccheck/core/db/schedule_repository.dart';
+import 'package:leccheck/core/notifications/notification_actions.dart';
 import 'package:leccheck/core/sync/hlc.dart';
 import 'package:leccheck/core/sync/sync_engine.dart';
 import 'package:leccheck/core/sync/sync_recorder.dart';
@@ -505,6 +508,117 @@ void main() {
       await Future<void>.delayed(const Duration(milliseconds: 300));
       expect(connections, 1);
     });
+  });
+
+  group('short names (database v3)', () {
+    // A course as v2.0.0-beta.3 and older store and send it.
+    Map<String, Object?> older(String id, String name) =>
+        _row(CourseInfo(id: id, semesterId: 'sem', name: name).toRow())
+          ..remove('shortName');
+
+    test('courses saved by older app versions still load', () async {
+      // Synced from a device that doesn't know short names yet,
+      await SyncEngine.applyServerRows(db, repo, [
+        {'tbl': 'courses', 'id': 'c2', 'data': older('c2', 'Physics')},
+      ], cursor: null);
+      // in a backup file,
+      await repo.importRows({
+        'courses': [older('c3', 'Chemistry')],
+      });
+      expect((await courseRow('c2')).shortName, '');
+      expect((await courseRow('c3')).name, 'Chemistry');
+      // and in an automatic backup taken before the update.
+      final snapshot = await repo.exportRows(includeDeleted: true);
+      await repo.saveCourse(
+        const CourseInfo(id: 'c1', semesterId: 'sem', name: 'Renamed'),
+        meetings: const [lecture],
+        requirements: const [],
+      );
+      await repo.restoreAll({
+        ...snapshot,
+        'courses': [
+          for (final c in snapshot['courses']!) {...c}..remove('shortName'),
+        ],
+      });
+      expect((await courseRow('c1')).name, 'Calculus');
+    });
+
+    test('a short name syncs like any other field', () async {
+      await repo.saveCourse(
+        const CourseInfo(
+          id: 'c1',
+          semesterId: 'sem',
+          name: 'Calculus',
+          lecturer: 'Dr. Cohen',
+          shortName: 'Calc',
+        ),
+        meetings: const [lecture],
+        requirements: const [],
+        base: CourseBase(
+          course: course,
+          meetings: const [lecture],
+          requirements: const [],
+        ),
+      );
+      expect(
+        [for (final e in await outbox()) jsonDecode(e.patch)],
+        [
+          {'shortName': 'Calc'},
+        ],
+      );
+    });
+
+    test('the editor keeps a short name set on another device', () async {
+      final base = CourseBase(
+        course: course,
+        meetings: const [lecture],
+        requirements: const [],
+      );
+      await SyncEngine.applyServerRows(db, repo, [
+        {
+          'tbl': 'courses',
+          'id': 'c1',
+          'data': {...(await courseRow('c1')).toJson(), 'shortName': 'Calc'},
+        },
+      ], cursor: null);
+      await repo.saveCourse(
+        const CourseInfo(
+          id: 'c1',
+          semesterId: 'sem',
+          name: 'Calculus 1',
+          lecturer: 'Dr. Cohen',
+        ),
+        meetings: const [lecture],
+        requirements: const [],
+        base: base,
+      );
+      final row = await courseRow('c1');
+      expect(row.name, 'Calculus 1');
+      expect(row.shortName, 'Calc');
+    });
+  });
+
+  test('buttons of test notifications change nothing', () async {
+    NotificationResponse press(Map<String, Object?> payload) =>
+        NotificationResponse(
+          notificationResponseType:
+              NotificationResponseType.selectedNotificationAction,
+          actionId: 'attended',
+          payload: jsonEncode({
+            'kind': 'after',
+            'meeting': 'm1',
+            'date': '2026-10-18',
+            ...payload,
+          }),
+        );
+    expect(await markFromNotification(press({'test': true}), repo), isFalse);
+    expect(await db.select(db.sessionOverrides).get(), isEmpty);
+    // The same button on a real reminder marks the session.
+    expect(await markFromNotification(press({}), repo), isTrue);
+    expect(
+      (await db.select(db.sessionOverrides).get()).single.status,
+      'attended',
+    );
   });
 }
 

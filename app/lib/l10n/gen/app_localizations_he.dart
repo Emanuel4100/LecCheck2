@@ -427,6 +427,12 @@ class AppLocalizationsHe extends AppLocalizations {
   String get courseName => 'שם הקורס';
 
   @override
+  String get shortName => 'שם מקוצר';
+
+  @override
+  String get shortNameHelper => 'מוצג בתצוגה השבועית כשהשם המלא לא נכנס';
+
+  @override
   String get courseNameRequired => 'יש להזין שם קורס';
 
   @override
@@ -794,6 +800,40 @@ class AppLocalizationsHe extends AppLocalizations {
   String get sourceCode => 'קוד מקור';
 
   @override
+  String get license => 'רישיון';
+
+  @override
+  String get licenseSummary =>
+      'תוכנה חופשית לפי GNU GPL גרסה 3 ואילך, ללא אחריות.';
+
+  @override
+  String get developer => 'מפתחים';
+
+  @override
+  String get developerTools => 'כלי מפתחים';
+
+  @override
+  String get developerToolsSubtitle =>
+      'בדיקת התראות, סנכרון, גיבויים והווידג׳ט במכשיר הזה';
+
+  @override
+  String devModeSteps(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'עוד $count הקשות להפעלת מצב מפתחים',
+      one: 'עוד הקשה אחת להפעלת מצב מפתחים',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get devModeOn => 'מצב מפתחים פעיל';
+
+  @override
+  String get devModeAlreadyOn => 'מצב מפתחים כבר פעיל';
+
+  @override
   String get signInFailed => 'ההתחברות נכשלה. בדקו את החיבור ונסו שוב.';
 
   @override
@@ -902,6 +942,11 @@ class AppLocalizationsHe extends AppLocalizations {
 
   @override
   String get testNotification => 'שליחת התראת בדיקה';
+
+  @override
+  String notificationFailed(String error) {
+    return 'לא ניתן להציג את ההתראה: $error';
+  }
 
   @override
   String get notificationsBlocked =>

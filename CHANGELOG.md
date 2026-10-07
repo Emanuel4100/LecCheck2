@@ -1,5 +1,26 @@
 # Changelog
 
+## Unreleased
+
+- **Reminders on Android**: in 2.0.0-beta.3 (and beta.2), release builds left out the
+  status-bar icon, so notifications couldn't start: no reminders, and the test button
+  did nothing. Fixed. The test button now asks for permission first and says why if
+  nothing can be shown.
+- **Week**: course names are easier to read on phones. The ✓ / ✗ moves out of the name's
+  way, names wrap over more lines instead of "Calcu…", and long words shrink a little to
+  fit. In short sessions the start time is left out before the room.
+- **Short names**: a course can have an optional short name (e.g. "Calc 1"). The Week
+  view shows it when the full name doesn't fit.
+- **Developer mode** (tap Settings → About → Version 7 times): test notifications,
+  including after-class buttons pressed with the app closed; sync tools, including
+  pretending the server is busy; database checks and backup sizes; device details
+  (Android version, battery optimization); a log of errors and background actions; and
+  copying all of it for a bug report.
+- **License**: LecCheck is now free software under the GNU GPL v3 or later. Settings →
+  About shows the license.
+- **Data safety**: database upgrades are tested from every earlier version. Courses
+  synced or backed up by older versions load without the new field.
+
 ## 2.0.0-beta.3 — 2026-10-07
 
 Each platform gets its own layout, input and options.

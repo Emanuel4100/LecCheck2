@@ -67,6 +67,7 @@ extension CourseRowMapping on CourseRow {
     notes: notes,
     links: decodeLinks(links),
     sortOrder: sortOrder,
+    shortName: shortName,
   );
 }
 
@@ -84,6 +85,7 @@ extension CourseInfoMapping on CourseInfo {
     notes: notes,
     links: encodeLinks(links),
     sortOrder: sortOrder,
+    shortName: shortName,
   );
 }
 

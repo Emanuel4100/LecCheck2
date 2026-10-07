@@ -22,6 +22,7 @@ import '../../core/icons/lec_icons.dart';
 import '../../domain/local_date.dart';
 import '../../domain/schedule_types.dart';
 import '../../l10n/gen/app_localizations.dart';
+import '../developer/developer_page.dart';
 import '../session/session_actions.dart';
 import 'account_section.dart';
 import 'notifications_section.dart';
@@ -78,6 +79,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       if (device)
         _Section(LecIcons.device, l.thisDevice, const [_DeviceSection()]),
       _Section(LecIcons.info, l.about, const [_AboutSection()]),
+      if (ref.watch(devModeProvider))
+        _Section(LecIcons.developer, l.developer, const [_DeveloperSection()]),
     ];
   }
 
@@ -163,11 +166,41 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   }
 }
 
-class _AboutSection extends ConsumerWidget {
+class _AboutSection extends ConsumerStatefulWidget {
   const _AboutSection();
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_AboutSection> createState() => _AboutSectionState();
+}
+
+class _AboutSectionState extends ConsumerState<_AboutSection> {
+  /// Taps on the version: like Android's build number, 7 turn on developer
+  /// mode.
+  int _taps = 0;
+
+  void _tapVersion() {
+    final l = AppLocalizations.of(context);
+    void say(String text) => ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(content: Text(text), duration: const Duration(seconds: 2)),
+      );
+    if (ref.read(devModeProvider)) {
+      say(l.devModeAlreadyOn);
+      return;
+    }
+    final left = 7 - ++_taps;
+    if (left > 0) {
+      if (left <= 4) say(l.devModeSteps(left));
+      return;
+    }
+    _taps = 0;
+    ref.read(devModeProvider.notifier).set(true);
+    say(l.devModeOn);
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -176,10 +209,17 @@ class _AboutSection extends ConsumerWidget {
           leading: const Icon(LecIcons.info),
           title: Text(l.version),
           subtitle: Text(ref.watch(_versionProvider).value ?? ''),
+          onTap: _tapVersion,
+        ),
+        ListTile(
+          leading: const Icon(LecIcons.license),
+          title: Text(l.license),
+          subtitle: Text(l.licenseSummary),
           onTap: () => showLicensePage(
             context: context,
             applicationName: 'LecCheck',
             applicationVersion: ref.read(_versionProvider).value,
+            applicationLegalese: '${l.licenseSummary}\n© 2026 Emanuel',
           ),
         ),
         ListTile(
@@ -189,6 +229,22 @@ class _AboutSection extends ConsumerWidget {
           onTap: () => openUrl('https://github.com/Emanuel4100/LecCheck2'),
         ),
       ],
+    );
+  }
+}
+
+/// Shown once developer mode is on.
+class _DeveloperSection extends StatelessWidget {
+  const _DeveloperSection();
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    return ListTile(
+      leading: const Icon(LecIcons.developer),
+      title: Text(l.developerTools),
+      subtitle: Text(l.developerToolsSubtitle),
+      onTap: () => context.push('/developer'),
     );
   }
 }

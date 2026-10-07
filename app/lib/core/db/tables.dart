@@ -43,6 +43,10 @@ class Courses extends Table with SyncedRow {
   /// JSON list of `{title, url}`.
   TextColumn get links => text().withDefault(const Constant('[]'))();
   IntColumn get sortOrder => integer().withDefault(const Constant(0))();
+
+  /// Optional, for the week grid when [name] doesn't fit (schema v3). Last,
+  /// so new and upgraded databases have the same column order.
+  TextColumn get shortName => text().withDefault(const Constant(''))();
 }
 
 @DataClassName('MeetingRow')

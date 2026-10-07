@@ -13,11 +13,15 @@ import 'providers.dart';
 class WidgetController {
   WidgetController(this.container);
 
+  /// The one `main` started (Settings → Developer refreshes with it).
+  static WidgetController? current;
+
   final ProviderContainer container;
   Timer? _debounce;
 
   Future<void> start() async {
     if (!TodayWidget.supported) return;
+    current = this;
     await TodayWidget.registerCallback();
     void refresh(Object? _, Object? _) => schedule();
     container
@@ -32,6 +36,12 @@ class WidgetController {
   void schedule() {
     _debounce?.cancel();
     _debounce = Timer(const Duration(seconds: 1), _push);
+  }
+
+  /// Writes the widget's snapshot right away.
+  Future<void> refreshNow() {
+    _debounce?.cancel();
+    return _push();
   }
 
   Future<void> _push() async {

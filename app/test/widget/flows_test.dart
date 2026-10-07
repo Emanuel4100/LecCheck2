@@ -11,6 +11,7 @@ import 'package:leccheck/core/icons/lec_icons.dart';
 import 'package:leccheck/domain/local_date.dart';
 import 'package:leccheck/domain/schedule_types.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shared_preferences_platform_interface/in_memory_shared_preferences_async.dart';
 import 'package:shared_preferences_platform_interface/shared_preferences_async_platform_interface.dart';
@@ -95,6 +96,14 @@ Future<String?> _statusOf(WidgetTester tester, AppDatabase db) async {
 
 void main() {
   driftRuntimeOptions.dontWarnAboutMultipleDatabases = true;
+  // ignore: invalid_use_of_visible_for_testing_member
+  PackageInfo.setMockInitialValues(
+    appName: 'LecCheck',
+    packageName: 'com.leccheck.app',
+    version: '2.0.0',
+    buildNumber: '12',
+    buildSignature: '',
+  );
 
   testWidgets('quick-mark a pending session, then undo', (tester) async {
     final (_, db) = await _start(tester);
@@ -151,5 +160,40 @@ void main() {
     await _start(tester, withCourse: false);
     expect(find.text('No courses yet'), findsOneWidget);
     expect(find.byIcon(LecIcons.add), findsWidgets);
+  });
+
+  testWidgets('tapping the version 7 times opens developer mode', (
+    tester,
+  ) async {
+    final (container, _) = await _start(tester);
+    container.read(routerProvider).push('/settings');
+    await _settle(tester);
+    final list = find.byType(Scrollable).first;
+    await tester.scrollUntilVisible(
+      find.text('Version'),
+      300,
+      scrollable: list,
+    );
+    expect(find.text('Developer tools'), findsNothing);
+
+    for (var i = 0; i < 6; i++) {
+      await tester.tap(find.text('Version'));
+      await tester.pump();
+    }
+    expect(find.text('1 more tap to turn on developer mode'), findsOneWidget);
+    await tester.tap(find.text('Version'));
+    await _settle(tester);
+    expect(find.text('Developer mode is on'), findsOneWidget);
+    expect(container.read(sharedPrefsProvider).getBool('dev.mode'), isTrue);
+
+    await tester.scrollUntilVisible(
+      find.text('Developer tools'),
+      300,
+      scrollable: list,
+    );
+    await tester.tap(find.text('Developer tools'));
+    await _settle(tester);
+    expect(find.text('Show a notification now'), findsOneWidget);
+    expect(find.text('After-class reminder in 1 minute'), findsOneWidget);
   });
 }

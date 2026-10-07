@@ -9,18 +9,21 @@ import 'app/app.dart';
 import 'app/notification_controller.dart';
 import 'app/providers.dart';
 import 'app/widget_controller.dart';
+import 'core/dev/dev_log.dart';
 
 /// Startup does only local work: read preferences, then show UI. The
 /// database opens on its own isolate; notifications are set up after the
 /// first frame; nothing waits on the network.
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  DevLog.start();
   if (AppIdiom.isAndroid) {
     // Draw behind the status and navigation bars on every Android version
     // (15+ enforces it); the theme makes the bars transparent.
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
   }
   LicenseRegistry.addLicense(() async* {
+    yield const LicenseEntryWithLineBreaks(['LecCheck'], _license);
     final ofl = await rootBundle.loadString('assets/fonts/OFL.txt');
     yield LicenseEntryWithLineBreaks(['Rubik'], ofl);
   });
@@ -50,3 +53,12 @@ void _dailySnapshots(ProviderContainer container) {
   take();
   AppLifecycleListener(onResume: take);
 }
+
+/// The app's own license notice (full text: LICENSE in the repository).
+const _license = '''Copyright (C) 2026 Emanuel
+
+LecCheck is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+
+LecCheck is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License along with LecCheck. If not, see <https://www.gnu.org/licenses/>.''';

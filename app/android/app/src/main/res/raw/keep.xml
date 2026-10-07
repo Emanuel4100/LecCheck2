@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Resources only Dart code names (as strings), which release builds would
+     otherwise strip as unused. Without the status-bar icon, notifications
+     can't start at all (flutter_local_notifications rejects the icon). -->
+<resources xmlns:tools="http://schemas.android.com/tools"
+    tools:keep="@drawable/ic_stat_leccheck" />

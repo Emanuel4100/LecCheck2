@@ -79,4 +79,6 @@ abstract final class LecIcons {
   static const warning = Icons.warning_amber_rounded;
   static const history = Icons.history_rounded;
   static const restore = Icons.restore_from_trash_outlined;
+  static const license = Icons.balance_rounded;
+  static const developer = Icons.developer_mode_rounded;
 }

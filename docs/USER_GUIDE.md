@@ -13,7 +13,9 @@
 
 Open **Courses → +** (or the button on an empty Today screen).
 
-- **Course info** — name, optional code and lecturer, color, notes, website and extra links.
+- **Course info** — name, optional short name, code and lecturer, color, notes, website
+  and extra links. The **short name** (e.g. "Calc 1") is shown in the Week view when the
+  full name doesn't fit.
 - **Weekly schedule** — add each recurring meeting: type (Lecture / Practice / Lab /
   Other), day, start and end time, room, and links (e.g. the Zoom link). Turn on
   **Every other week** for alternating meetings and choose whether it starts in the first
@@ -87,6 +89,10 @@ Tap any session to see its date, time, room and lecturer, and to:
 - Swipe left/right to change weeks (on tablets and desktop also the ‹ › buttons); the
   calendar button jumps to any date, the sun button back to today.
 - Today's column is highlighted with a moving "now" line.
+- Each session shows its course name first, over as many lines as fit, with long words
+  shrunk a little to fit (or the course's short name, if it has one and the full name
+  doesn't fit). Then come the room and the start time; the time is left out first in
+  short sessions. A ✓ / ✗ shows how you marked it.
 - The hour range fits your schedule; pinch with two fingers to zoom (desktop: Ctrl +
   mouse wheel or a trackpad pinch). The zoom is remembered on each device; on desktop the
   default fills the window.
@@ -112,7 +118,7 @@ recording link).
 - **After class: how was it?** — 0–30 minutes after a session ends, with **Attended /
   Missed / Watched** buttons. Tapping one records the status without opening the app
   (and syncs if you're signed in). Only sessions still pending get this reminder.
-- **Send a test notification** to check it works.
+- **Send a test notification** to check it works. If nothing can be shown, it says why.
 
 Permission is requested when you switch a reminder on. Reminders are planned two weeks
 ahead and kept up to date as you edit. On Linux they fire while LecCheck is running.
@@ -189,6 +195,18 @@ Ctrl on Linux and Windows (⌘ on a Mac). **F1** shows this list in the app.
   deleted in the last 30 days.
 - **This device**: Android — add the home-screen widget; desktop — keyboard shortcuts;
   iPhone — a reminder to refresh the app in AltStore/SideStore every week.
+- **About**: version, license (GNU GPL v3 or later) and the source code.
+
+### Developer mode
+
+For testing on a real phone: tap **Settings → About → Version** 7 times, then open
+**Settings → Developer → Developer tools**. It can show and schedule test notifications
+(including an after-class reminder whose buttons you press with the app closed),
+reschedule reminders, pretend the sync server is busy, check the database, update the
+widget, and show device details: Android version, battery optimization and time zone.
+It also keeps a **log** of errors and of what notification and widget buttons did in the
+background. **Copy diagnostics** puts all of it on the clipboard to paste into a bug
+report. Switch it off at the top of the same page.
 
 ## Moving from LecCheck v1
 

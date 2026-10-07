@@ -56,6 +56,25 @@ class _NotificationsSectionState extends ConsumerState<NotificationsSection> {
     return ok;
   }
 
+  /// Says why when nothing could be shown (v2.0.0-beta.3 on Android showed
+  /// nothing at all, silently).
+  Future<void> _sendTest() async {
+    final l = AppLocalizations.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+    if (!await _allowed()) return;
+    try {
+      await NotificationService.instance.showTest(
+        l.notifyTestTitle,
+        l.notifyTestBody,
+      );
+    } on Object catch (e) {
+      debugPrint('Test notification failed: $e');
+      messenger.showSnackBar(
+        SnackBar(content: Text(l.notificationFailed('$e'))),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
@@ -147,10 +166,7 @@ class _NotificationsSectionState extends ConsumerState<NotificationsSection> {
           ListTile(
             leading: const Icon(LecIcons.celebrate),
             title: Text(l.testNotification),
-            onTap: () => NotificationService.instance.showTest(
-              l.notifyTestTitle,
-              l.notifyTestBody,
-            ),
+            onTap: _sendTest,
           ),
         // Linux has no OS scheduler for notifications: the app fires them.
         if (settings.any && AppIdiom.isLinux)
