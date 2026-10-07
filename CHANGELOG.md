@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 2.0.0-beta.3 — 2026-10-07
 
 Each platform gets its own layout, input and options.
 
