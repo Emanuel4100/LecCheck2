@@ -18,10 +18,11 @@
   what changed, refused changes kept, corrections for lost writes, automatic local
   backups, Recently deleted, 30-day trash for deleted cloud data, dataset ids for
   server resets, Android backup rules, pausing sync at the free plan's daily limit.
-- **After beta.3**: notifications work in Android release builds again; readable course
-  names in the Week view and optional short names; a hidden developer mode for testing
-  on real phones (test notifications, sync, backups, device details, a log); database
-  migration tests against every earlier schema; GPL-3.0-or-later license.
+- **Fixes and testing tools** (2.0.0-beta.4): notifications work in Android release
+  builds again; readable course names in the Week view and optional short names; a
+  hidden developer mode for testing on real phones (test notifications, sync, backups,
+  device details, a log); database migration tests against every earlier schema;
+  GPL-3.0-or-later license.
 
 ## Not yet verified on real hardware
 
