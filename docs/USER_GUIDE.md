@@ -131,9 +131,14 @@ tap. Tap the widget to open the app.
 - If this device holds data from a *different* account, you're asked before it's replaced.
 - The cloud icon in the top bar shows sync status (synced / syncing / offline); **Sync
   now** forces a sync. Changes made offline sync when you're back online.
-- **Sign out** — keep a copy on this device, or remove it.
+- Changes the server refuses are kept on the device and listed under Account with a
+  **Retry** button. If the sync server is busy (for example, it reached its free daily
+  limit), Account shows **Sync paused until** a time; your changes wait on the device.
+- **Sign out** — keep a copy on this device (unsynced changes sync when you sign back
+  in), or remove it (an automatic backup is saved first).
 - **Sign out on all devices** — revokes every session.
-- **Delete cloud data** — removes your data from the server (this device keeps a copy).
+- **Delete cloud data** — removes your data from the server (this device keeps a copy;
+  the server keeps a copy for 30 days in case it was a mistake).
 
 ## Phones, tablets and desktop
 
@@ -177,7 +182,11 @@ Ctrl on Linux and Windows (⌘ on a Mac). **F1** shows this list in the app.
 - **Semesters**: switch between semesters (tap), edit, delete (undoable), add another.
 - **Holidays and no-class days**: add date ranges with a reason.
 - **Data**: export a JSON backup of all semesters, or import one — including backups from
-  the old LecCheck app.
+  the old LecCheck app. Importing shows what would change: **Add missing** (the default)
+  never changes your data; **Replace** overwrites it, after an automatic backup.
+  **Automatic backups** (daily, and before imports, restores, sign-out and account
+  switches) can be restored; **Recently deleted** brings back semesters and courses
+  deleted in the last 30 days.
 - **This device**: Android — add the home-screen widget; desktop — keyboard shortcuts;
   iPhone — a reminder to refresh the app in AltStore/SideStore every week.
 
@@ -189,6 +198,8 @@ backup**.
 
 ## Where your data lives
 
-Each device keeps a SQLite database (Linux: `~/.local/share/com.leccheck.app/`). When
-signed in, the server stores your rows in your own private storage unit; nobody else's
-data is ever mixed with yours.
+Each device keeps a SQLite database and its automatic backups (Linux:
+`~/.local/share/com.leccheck.app/`, backups in `snapshots/`). Android's backup to your
+Google Drive and iPhone's iCloud backup include them, so a new phone gets them back
+(sign in again after a restore). When signed in, the server stores your rows in your own
+private storage unit; nobody else's data is ever mixed with yours.

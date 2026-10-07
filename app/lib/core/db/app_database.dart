@@ -23,7 +23,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor]) : super(executor ?? _open());
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
 
   /// Runs on drift's background isolate. `shareAcrossIsolates` lets
   /// notification-action and home-widget callbacks (separate isolates) write
@@ -37,8 +37,15 @@ class AppDatabase extends _$AppDatabase {
   );
 
   @override
-  MigrationStrategy get migration =>
-      MigrationStrategy(onCreate: (m) => m.createAll());
+  MigrationStrategy get migration => MigrationStrategy(
+    onCreate: (m) => m.createAll(),
+    onUpgrade: (m, from, to) async {
+      if (from < 2) {
+        await m.addColumn(outbox, outbox.ifAbsent);
+        await m.addColumn(outbox, outbox.rejected);
+      }
+    },
+  );
 
   /// Every synced table, keyed by its SQL name (the `tbl` used in the outbox
   /// and the sync protocol).

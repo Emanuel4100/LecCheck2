@@ -34,6 +34,9 @@ class _SemesterFormPageState extends ConsumerState<SemesterFormPage> {
   bool _initialized = false;
   bool _saving = false;
 
+  /// The semester as the form loaded it; saving writes only what changed.
+  SemesterInfo? _loaded;
+
   SemesterInfo? get _existing => ref
       .read(semestersProvider)
       .value
@@ -44,7 +47,7 @@ class _SemesterFormPageState extends ConsumerState<SemesterFormPage> {
     super.didChangeDependencies();
     if (_initialized) return;
     _initialized = true;
-    final existing = _existing;
+    final existing = _loaded = _existing;
     if (existing != null) {
       _name.text = existing.name;
       _start = existing.start;
@@ -100,6 +103,7 @@ class _SemesterFormPageState extends ConsumerState<SemesterFormPage> {
         weekStart: _weekStart,
         visibleDays: _days,
       ),
+      base: _loaded,
     );
     ref.read(activeSemesterChoiceProvider.notifier).select(id);
     if (!mounted) return;

@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/auth/auth_service.dart';
 import '../core/auth/session.dart';
+import '../core/backup/snapshot_service.dart';
 import '../core/sync/sync_config.dart';
 import '../core/sync/sync_engine.dart';
 import '../core/sync/sync_recorder.dart';
@@ -14,7 +15,8 @@ import 'providers.dart';
 final authServiceProvider = Provider<AuthService>((ref) => AuthService());
 
 /// The account whose data this device holds (persisted). While set, every
-/// local change is recorded for sync — even when temporarily signed out.
+/// local change is recorded for sync — even when signed out with "keep on
+/// this device", so those edits sync when the same account signs in again.
 class AttachedAccountController extends Notifier<String?> {
   static const _key = SyncRecorder.attachedAccountKey;
 
@@ -75,10 +77,12 @@ class AuthController extends AsyncNotifier<Session?> {
 
   /// Signs in and attaches the account to this device.
   ///
-  /// - Guest data (never synced) joins the account.
+  /// - Guest data (never synced) joins the account, without overwriting
+  ///   anything the account already has.
+  /// - The same account again: edits made while signed out sync normally.
   /// - Data from a *different* account is only replaced after
   ///   [confirmReplace] returns true (v1 silently pushed it into the new
-  ///   account).
+  ///   account), and a snapshot of it is kept.
   Future<void> signIn({
     required Future<bool> Function() confirmReplace,
     String? devName,
@@ -96,6 +100,9 @@ class AuthController extends AsyncNotifier<Session?> {
         await _auth.clear();
         return;
       }
+      await ref
+          .read(snapshotServiceProvider)
+          .take(SnapshotReason.beforeAccountSwitch);
       accounts.detach();
       await repo.wipeAll();
       await SyncEngine.resetCursor(db);
@@ -132,19 +139,30 @@ class AuthController extends AsyncNotifier<Session?> {
     }
   }
 
+  /// Signs out. With [SignOutMode.keepData] the device stays attached to the
+  /// account: edits keep queueing (nothing unsynced is dropped) and sync when
+  /// the account signs in again. [SignOutMode.removeData] saves a snapshot
+  /// first, then removes the data.
   Future<void> signOut(SignOutMode mode) async {
-    final repo = ref.read(repositoryProvider);
-    final db = ref.read(databaseProvider);
+    if (mode == SignOutMode.removeData) {
+      await ref
+          .read(snapshotServiceProvider)
+          .take(SnapshotReason.beforeSignOut);
+    }
     await _auth.clear();
     state = const AsyncData(null);
+    if (mode == SignOutMode.removeData) {
+      await _detach();
+      await ref.read(repositoryProvider).wipeAll();
+    }
+  }
+
+  /// Leaves the account; the data here becomes guest data.
+  Future<void> _detach() async {
+    final db = ref.read(databaseProvider);
     ref.read(attachedAccountProvider.notifier).detach();
     await SyncEngine.resetCursor(db);
-    if (mode == SignOutMode.removeData) {
-      await repo.wipeAll();
-    } else {
-      // Keep the data as guest data; unsynced edits stay local.
-      await db.delete(db.outbox).go();
-    }
+    await db.delete(db.outbox).go();
   }
 
   Future<void> signOutEverywhere() async {
@@ -154,12 +172,14 @@ class AuthController extends AsyncNotifier<Session?> {
     await signOut(SignOutMode.keepData);
   }
 
-  /// Deletes the cloud copy; local data stays as guest data.
+  /// Deletes the cloud copy (the server keeps it restorable for 30 days);
+  /// local data stays as guest data.
   Future<void> deleteCloudData() async {
     final session = state.value;
     if (session == null) return;
     await _auth.deleteAccount(session);
     await signOut(SignOutMode.keepData);
+    await _detach();
   }
 
   /// The server revoked this session (e.g. "sign out everywhere" elsewhere).

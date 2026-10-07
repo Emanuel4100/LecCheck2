@@ -136,7 +136,8 @@ void main() {
     // The laptop signs in later and catches up.
     laptop.connect(session);
     await eventually(
-      () async => (await laptop.repo.loadSemesterData('sem'))?.courses.length == 1,
+      () async =>
+          (await laptop.repo.loadSemesterData('sem'))?.courses.length == 1,
       'laptop received the course',
     );
     final first = OccurrenceEngine.expand(
@@ -176,7 +177,9 @@ void main() {
   });
 
   test('a deletion syncs and undo restores it everywhere', () async {
-    final session = await devLogin('e2e-del-${DateTime.now().microsecondsSinceEpoch}');
+    final session = await devLogin(
+      'e2e-del-${DateTime.now().microsecondsSinceEpoch}',
+    );
     final a = await Device.create('deviceA000000001');
     final b = await Device.create('deviceB000000001');
     addTearDown(() async {
@@ -206,13 +209,116 @@ void main() {
     );
     final receipt = await a.repo.deleteCourse('c1');
     await eventually(
-      () async => (await b.repo.loadSemesterData('sem'))?.courses.isEmpty ?? false,
+      () async =>
+          (await b.repo.loadSemesterData('sem'))?.courses.isEmpty ?? false,
       'b sees the deletion',
     );
     await a.repo.undoDeletion(receipt);
     await eventually(
       () async => (await b.repo.loadSemesterData('sem'))?.courses.length == 1,
       'b sees the undo',
+    );
+  });
+
+  test('signing back in never overwrites newer edits from elsewhere', () async {
+    final session = await devLogin(
+      'e2e-rejoin-${DateTime.now().microsecondsSinceEpoch}',
+    );
+    final phone = await Device.create('phoneR0000000001');
+    final laptop = await Device.create('laptopR000000001');
+    addTearDown(() async {
+      await phone.disconnect();
+      await laptop.disconnect();
+      await phone.db.close();
+      await laptop.db.close();
+    });
+    final semester = SemesterInfo(
+      id: 'sem',
+      name: 'S',
+      start: LocalDate.parse('2026-10-18'),
+      end: LocalDate.parse('2027-01-22'),
+    );
+    phone.connect(session);
+    laptop.connect(session);
+    await phone.repo.saveSemester(semester);
+    await phone.repo.saveCourse(
+      const CourseInfo(id: 'c1', semesterId: 'sem', name: 'Physics'),
+      meetings: const [],
+      requirements: const [],
+    );
+    await phone.repo.saveCourse(
+      const CourseInfo(id: 'c2', semesterId: 'sem', name: 'Chemistry'),
+      meetings: const [],
+      requirements: const [],
+    );
+    await eventually(
+      () async =>
+          (await laptop.repo.loadSemesterData('sem'))?.courses.length == 2,
+      'laptop has both courses',
+    );
+
+    // The laptop signs out keeping its data, and edits while signed out.
+    await laptop.disconnect();
+    await laptop.repo.saveCourse(
+      const CourseInfo(
+        id: 'c1',
+        semesterId: 'sem',
+        name: 'Physics',
+        notes: 'Bring calculator',
+      ),
+      meetings: const [],
+      requirements: const [],
+    );
+    // Meanwhile the phone renames a course and deletes the other.
+    await phone.repo.saveCourse(
+      const CourseInfo(id: 'c1', semesterId: 'sem', name: 'Physics 1'),
+      meetings: const [],
+      requirements: const [],
+    );
+    await phone.repo.deleteCourse('c2');
+    await eventually(
+      () async => (await phone.db.select(phone.db.outbox).get()).isEmpty,
+      'phone outbox drained',
+    );
+
+    // A third device that only has an old guest copy joins the account.
+    final tablet = await Device.create('tabletR000000001');
+    addTearDown(() async {
+      await tablet.disconnect();
+      await tablet.db.close();
+    });
+    tablet.repo.recorder = null;
+    await tablet.repo.saveSemester(semester);
+    await tablet.repo.saveCourse(
+      const CourseInfo(id: 'c2', semesterId: 'sem', name: 'Chemistry (old)'),
+      meetings: const [],
+      requirements: const [],
+    );
+    tablet.repo.recorder = tablet.recorder;
+    await tablet.recorder.enqueueAll(tablet.repo);
+
+    laptop.connect(session);
+    tablet.connect(session);
+
+    Future<bool> converged(Device d) async {
+      final courses =
+          (await d.repo.loadSemesterData('sem'))?.courses ?? const [];
+      return courses.length == 1 &&
+          courses.single.name == 'Physics 1' &&
+          courses.single.notes == 'Bring calculator';
+    }
+
+    await eventually(
+      () => converged(phone),
+      'phone keeps the rename and gets the notes',
+    );
+    await eventually(
+      () => converged(laptop),
+      'laptop takes the rename and the deletion',
+    );
+    await eventually(
+      () => converged(tablet),
+      "tablet's old copy doesn't bring c2 back",
     );
   });
 }

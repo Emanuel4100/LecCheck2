@@ -67,11 +67,15 @@ We don't receive your Google password or access to any other Google data.</p>
 <h2>Synced data</h2>
 <p>While signed in, the same schedule and attendance data that is on your device is stored on
 our server (Cloudflare Workers and Durable Objects), in storage reserved for your account.
-It is used only to sync your devices. It is sent over encrypted connections (HTTPS).</p>
+It is used only to sync your devices. It is sent over encrypted connections (HTTPS).
+To protect against mistakes, Cloudflare keeps point-in-time copies of your storage for
+30 days.</p>
 
 <h2>Deleting your data</h2>
-<p>In the app, <b>Settings → Account → Delete cloud data</b> removes everything stored for you
-on the server immediately. Signing out lets you also remove the copy on the device.
+<p>In the app, <b>Settings → Account → Delete cloud data</b> removes your data from sync
+immediately and signs out your devices. In case it was a mistake, the deleted data can be
+restored for 30 days; after that it is erased permanently. Signing out lets you also remove
+the copy on the device.
 Uninstalling the app removes local data.</p>
 
 <h2>Third parties</h2>

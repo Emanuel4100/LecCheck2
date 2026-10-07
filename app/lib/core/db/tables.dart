@@ -117,6 +117,14 @@ class Outbox extends Table {
   /// JSON object with only the changed fields.
   TextColumn get patch => text()();
   TextColumn get hlc => text()();
+
+  /// The server only fills fields it doesn't have yet (data joining an
+  /// account, merged backups), so this can't overwrite newer edits.
+  BoolColumn get ifAbsent => boolean().withDefault(const Constant(false))();
+
+  /// Why the server refused this change. Kept (not pushed) until retried, so
+  /// the edit is never silently dropped.
+  TextColumn get rejected => text().nullable()();
 }
 
 @DataClassName('SyncMetaEntry')

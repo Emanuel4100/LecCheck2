@@ -47,6 +47,10 @@ Future<bool> signIn(
 
 String syncStatusText(SyncState state, AppLocalizations l, Fmt fmt) {
   final pending = state.pending > 0 ? ' · ${l.syncPending(state.pending)}' : '';
+  final held = state.heldUntil;
+  if (held != null) {
+    return '${l.syncPaused(fmt.time(held.hour * 60 + held.minute))}$pending';
+  }
   return switch (state.phase) {
     SyncPhase.synced => l.syncSynced(_ago(state.lastSyncedAt, l, fmt)),
     SyncPhase.syncing => '${l.syncSyncing}$pending',
@@ -123,9 +127,22 @@ class AccountSection extends ConsumerWidget {
           ListTile(
             leading: SyncIndicator.icon(state, theme),
             title: Text(syncStatusText(state, l, fmt)),
+            subtitle: state.heldUntil == null
+                ? null
+                : Text(l.syncPausedSubtitle),
             trailing: TextButton(
               onPressed: () => ref.read(syncEngineProvider)?.syncNow(),
               child: Text(l.syncNow),
+            ),
+          ),
+        if (state != null && state.failed > 0)
+          ListTile(
+            leading: Icon(LecIcons.warning, color: theme.colorScheme.error),
+            title: Text(l.syncFailed(state.failed)),
+            subtitle: Text(l.syncFailedSubtitle),
+            trailing: TextButton(
+              onPressed: () => ref.read(syncEngineProvider)?.retryRejected(),
+              child: Text(l.retry),
             ),
           ),
         ListTile(

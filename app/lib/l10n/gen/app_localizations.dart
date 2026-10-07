@@ -1454,18 +1454,6 @@ abstract class AppLocalizations {
   /// **'Restore a LecCheck backup (including files from the old app)'**
   String get importDataSubtitle;
 
-  /// No description provided for @importReplaceTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Replace your data?'**
-  String get importReplaceTitle;
-
-  /// No description provided for @importReplaceBody.
-  ///
-  /// In en, this message translates to:
-  /// **'Imported semesters are added; semesters with the same ID are replaced.'**
-  String get importReplaceBody;
-
   /// No description provided for @importDone.
   ///
   /// In en, this message translates to:
@@ -1619,7 +1607,7 @@ abstract class AppLocalizations {
   /// No description provided for @deleteCloudBody.
   ///
   /// In en, this message translates to:
-  /// **'Your synced data will be removed from the server. This device keeps its copy.'**
+  /// **'Your synced data will be removed from the server, and your devices will be signed out. This device keeps its copy.'**
   String get deleteCloudBody;
 
   /// No description provided for @replaceDataTitle.
@@ -1879,6 +1867,162 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'System accent'**
   String get presetAccent;
+
+  /// No description provided for @importTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Import this backup?'**
+  String get importTitle;
+
+  /// No description provided for @importPreview.
+  ///
+  /// In en, this message translates to:
+  /// **'This backup has {semesters} semesters: {added} new items and {changed} that differ from yours.\n\n“Add missing” only adds what you don\'t have. “Replace” overwrites your versions on all your devices; an automatic backup is saved first.'**
+  String importPreview(int semesters, int added, int changed);
+
+  /// No description provided for @importMerge.
+  ///
+  /// In en, this message translates to:
+  /// **'Add missing'**
+  String get importMerge;
+
+  /// No description provided for @importNothing.
+  ///
+  /// In en, this message translates to:
+  /// **'Everything in this backup is already here.'**
+  String get importNothing;
+
+  /// No description provided for @snapshots.
+  ///
+  /// In en, this message translates to:
+  /// **'Automatic backups'**
+  String get snapshots;
+
+  /// No description provided for @snapshotsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved daily and before imports or sign-out. Go back to an earlier state.'**
+  String get snapshotsSubtitle;
+
+  /// No description provided for @snapshotsEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No automatic backups yet.'**
+  String get snapshotsEmpty;
+
+  /// No description provided for @snapshotDaily.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily'**
+  String get snapshotDaily;
+
+  /// No description provided for @snapshotImport.
+  ///
+  /// In en, this message translates to:
+  /// **'Before import'**
+  String get snapshotImport;
+
+  /// No description provided for @snapshotRestore.
+  ///
+  /// In en, this message translates to:
+  /// **'Before restore'**
+  String get snapshotRestore;
+
+  /// No description provided for @snapshotSignOut.
+  ///
+  /// In en, this message translates to:
+  /// **'Before sign-out'**
+  String get snapshotSignOut;
+
+  /// No description provided for @snapshotSwitch.
+  ///
+  /// In en, this message translates to:
+  /// **'Before switching accounts'**
+  String get snapshotSwitch;
+
+  /// No description provided for @restoreSnapshotTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore this backup?'**
+  String get restoreSnapshotTitle;
+
+  /// No description provided for @restoreSnapshotBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Your data goes back to how it was then, on all your synced devices. Your current data is saved as a backup first, so you can undo this.'**
+  String get restoreSnapshotBody;
+
+  /// No description provided for @restore.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore'**
+  String get restore;
+
+  /// No description provided for @restoreDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Restored'**
+  String get restoreDone;
+
+  /// No description provided for @recentlyDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Recently deleted'**
+  String get recentlyDeleted;
+
+  /// No description provided for @recentlyDeletedSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Semesters and courses deleted in the last 30 days'**
+  String get recentlyDeletedSubtitle;
+
+  /// No description provided for @recentlyDeletedEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing was deleted recently.'**
+  String get recentlyDeletedEmpty;
+
+  /// No description provided for @deletedSemester.
+  ///
+  /// In en, this message translates to:
+  /// **'Semester · deleted {date}'**
+  String deletedSemester(String date);
+
+  /// No description provided for @deletedCourse.
+  ///
+  /// In en, this message translates to:
+  /// **'Course · deleted {date}'**
+  String deletedCourse(String date);
+
+  /// No description provided for @syncFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 change couldn\'t sync} other{{count} changes couldn\'t sync}}'**
+  String syncFailed(int count);
+
+  /// No description provided for @syncFailedSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'They\'re kept on this device.'**
+  String get syncFailedSubtitle;
+
+  /// No description provided for @retry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get retry;
+
+  /// No description provided for @syncPaused.
+  ///
+  /// In en, this message translates to:
+  /// **'Sync paused until {time}'**
+  String syncPaused(String time);
+
+  /// No description provided for @syncPausedSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'The sync server is busy. Your changes are saved on this device and sync then.'**
+  String get syncPausedSubtitle;
 }
 
 class _AppLocalizationsDelegate

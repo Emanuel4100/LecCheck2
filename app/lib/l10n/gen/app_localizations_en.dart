@@ -766,13 +766,6 @@ class AppLocalizationsEn extends AppLocalizations {
       'Restore a LecCheck backup (including files from the old app)';
 
   @override
-  String get importReplaceTitle => 'Replace your data?';
-
-  @override
-  String get importReplaceBody =>
-      'Imported semesters are added; semesters with the same ID are replaced.';
-
-  @override
   String importDone(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
@@ -869,7 +862,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get deleteCloudBody =>
-      'Your synced data will be removed from the server. This device keeps its copy.';
+      'Your synced data will be removed from the server, and your devices will be signed out. This device keeps its copy.';
 
   @override
   String get replaceDataTitle => 'Switch accounts?';
@@ -1014,4 +1007,102 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get presetAccent => 'System accent';
+
+  @override
+  String get importTitle => 'Import this backup?';
+
+  @override
+  String importPreview(int semesters, int added, int changed) {
+    return 'This backup has $semesters semesters: $added new items and $changed that differ from yours.\n\n“Add missing” only adds what you don\'t have. “Replace” overwrites your versions on all your devices; an automatic backup is saved first.';
+  }
+
+  @override
+  String get importMerge => 'Add missing';
+
+  @override
+  String get importNothing => 'Everything in this backup is already here.';
+
+  @override
+  String get snapshots => 'Automatic backups';
+
+  @override
+  String get snapshotsSubtitle =>
+      'Saved daily and before imports or sign-out. Go back to an earlier state.';
+
+  @override
+  String get snapshotsEmpty => 'No automatic backups yet.';
+
+  @override
+  String get snapshotDaily => 'Daily';
+
+  @override
+  String get snapshotImport => 'Before import';
+
+  @override
+  String get snapshotRestore => 'Before restore';
+
+  @override
+  String get snapshotSignOut => 'Before sign-out';
+
+  @override
+  String get snapshotSwitch => 'Before switching accounts';
+
+  @override
+  String get restoreSnapshotTitle => 'Restore this backup?';
+
+  @override
+  String get restoreSnapshotBody =>
+      'Your data goes back to how it was then, on all your synced devices. Your current data is saved as a backup first, so you can undo this.';
+
+  @override
+  String get restore => 'Restore';
+
+  @override
+  String get restoreDone => 'Restored';
+
+  @override
+  String get recentlyDeleted => 'Recently deleted';
+
+  @override
+  String get recentlyDeletedSubtitle =>
+      'Semesters and courses deleted in the last 30 days';
+
+  @override
+  String get recentlyDeletedEmpty => 'Nothing was deleted recently.';
+
+  @override
+  String deletedSemester(String date) {
+    return 'Semester · deleted $date';
+  }
+
+  @override
+  String deletedCourse(String date) {
+    return 'Course · deleted $date';
+  }
+
+  @override
+  String syncFailed(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count changes couldn\'t sync',
+      one: '1 change couldn\'t sync',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get syncFailedSubtitle => 'They\'re kept on this device.';
+
+  @override
+  String get retry => 'Retry';
+
+  @override
+  String syncPaused(String time) {
+    return 'Sync paused until $time';
+  }
+
+  @override
+  String get syncPausedSubtitle =>
+      'The sync server is busy. Your changes are saved on this device and sync then.';
 }

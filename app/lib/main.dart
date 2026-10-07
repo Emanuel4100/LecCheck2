@@ -36,5 +36,17 @@ Future<void> main() async {
   WidgetsBinding.instance.addPostFrameCallback((_) {
     NotificationController(container).start();
     WidgetController(container).start();
+    _dailySnapshots(container);
   });
+}
+
+/// Saves the day's automatic backup at startup, and when the app comes back
+/// after a day in the background.
+void _dailySnapshots(ProviderContainer container) {
+  void take() => container
+      .read(snapshotServiceProvider)
+      .takeDailyIfDue()
+      .catchError((Object e) => debugPrint('Daily snapshot failed: $e'));
+  take();
+  AppLifecycleListener(onResume: take);
 }

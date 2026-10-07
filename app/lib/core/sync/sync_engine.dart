@@ -18,23 +18,39 @@ enum SyncPhase { connecting, syncing, synced, offline }
 
 @immutable
 class SyncState {
-  const SyncState(this.phase, {this.lastSyncedAt, this.pending = 0});
+  const SyncState(
+    this.phase, {
+    this.lastSyncedAt,
+    this.pending = 0,
+    this.failed = 0,
+    this.heldUntil,
+  });
 
   final SyncPhase phase;
   final DateTime? lastSyncedAt;
 
+  /// Set while the server asked this device to wait (e.g. its daily limit
+  /// is used up). Changes stay on the device and sync after this time.
+  final DateTime? heldUntil;
+
   /// Local changes not yet confirmed by the server.
   final int pending;
+
+  /// Local changes the server refused; kept on this device until retried.
+  final int failed;
 
   @override
   bool operator ==(Object other) =>
       other is SyncState &&
       other.phase == phase &&
       other.lastSyncedAt == lastSyncedAt &&
-      other.pending == pending;
+      other.pending == pending &&
+      other.failed == failed &&
+      other.heldUntil == heldUntil;
 
   @override
-  int get hashCode => Object.hash(phase, lastSyncedAt, pending);
+  int get hashCode =>
+      Object.hash(phase, lastSyncedAt, pending, failed, heldUntil);
 }
 
 /// Keeps this device's database in sync with the user's Durable Object.
@@ -51,6 +67,7 @@ class SyncEngine {
     this.onSessionRevoked,
     this.watchLifecycle = true,
     bool? pauseWhenHidden,
+    this._socketUri,
   }) : pauseWhenHidden =
            pauseWhenHidden ?? (Platform.isAndroid || Platform.isIOS);
 
@@ -66,12 +83,17 @@ class SyncEngine {
   final bool pauseWhenHidden;
   Session _session;
 
+  /// Where to connect, if not the configured server (tests).
+  final Uri? _socketUri;
+
   static const _cursorKey = 'lastVersion';
+  static const _datasetKey = 'dataset';
 
   final _states = StreamController<SyncState>.broadcast();
   SyncState _state = const SyncState(SyncPhase.connecting);
   DateTime? _lastSyncedAt;
   int _pending = 0;
+  int _failed = 0;
 
   WebSocket? _socket;
   StreamSubscription<dynamic>? _socketSub;
@@ -81,7 +103,8 @@ class SyncEngine {
   Timer? _pushTimer;
   Timer? _ackTimer;
   Timer? _pauseTimer;
-  StreamSubscription<int>? _outboxSub;
+  Timer? _holdTimer;
+  StreamSubscription<(int, int)>? _outboxSub;
   AppLifecycleListener? _lifecycle;
   Future<void> _queue = Future.value();
   final _random = Random();
@@ -91,7 +114,16 @@ class SyncEngine {
   bool _paused = false;
   bool _disposed = false;
   String? _inflight;
-  int _inflightMaxSeq = 0;
+  List<int> _inflightSeqs = const [];
+
+  /// The server's data was reset or restored: offer ours once caught up.
+  bool _reoffer = false;
+
+  /// See [SyncState.heldUntil]; [_holds] counts holds in a row.
+  DateTime? _heldUntil;
+  int _holds = 0;
+
+  bool get _held => _heldUntil != null && DateTime.now().isBefore(_heldUntil!);
 
   SyncState get state => _state;
 
@@ -107,15 +139,19 @@ class SyncEngine {
   void start() {
     _outboxSub = db
         .customSelect(
-          'SELECT COUNT(*) AS n FROM outbox',
+          'SELECT COUNT(*) - COUNT(rejected) AS n, COUNT(rejected) AS failed '
+          'FROM outbox',
           readsFrom: {db.outbox},
         )
         .watch()
-        .map((rows) => rows.first.read<int>('n'))
-        .listen((count) {
-          _pending = count;
+        .map(
+          (rows) => (rows.first.read<int>('n'), rows.first.read<int>('failed')),
+        )
+        .listen((counts) {
+          _pending = counts.$1;
+          _failed = counts.$2;
           _emit(_state.phase);
-          if (count > 0) _schedulePush();
+          if (_pending > 0) _schedulePush();
         });
     if (watchLifecycle) {
       _lifecycle = AppLifecycleListener(
@@ -137,6 +173,7 @@ class SyncEngine {
       _pushTimer,
       _ackTimer,
       _pauseTimer,
+      _holdTimer,
     ]) {
       timer?.cancel();
     }
@@ -145,8 +182,16 @@ class SyncEngine {
     await _states.close();
   }
 
-  /// Push and pull right away ("Sync now").
+  /// Queues the changes the server refused again ("Retry").
+  Future<void> retryRejected() async {
+    await recorder.retryRejected();
+    syncNow();
+  }
+
+  /// Push and pull right away ("Sync now"), even while held.
   void syncNow() {
+    _holdTimer?.cancel();
+    _heldUntil = null;
     if (_socket == null) {
       _reconnectTimer?.cancel();
       _attempt = 0;
@@ -159,11 +204,11 @@ class SyncEngine {
   // --------------------------------------------------------- connection --
 
   Future<void> _connect() async {
-    if (_disposed || _paused || _socket != null) return;
+    if (_disposed || _paused || _socket != null || _held) return;
     _emit(SyncPhase.connecting);
     try {
       final socket = await WebSocket.connect(
-        SyncConfig.socket('/v1/sync').toString(),
+        (_socketUri ?? SyncConfig.socket('/v1/sync')).toString(),
         headers: {'Authorization': 'Bearer ${_session.token}'},
       ).timeout(const Duration(seconds: 15));
       if (_disposed || _paused) {
@@ -184,9 +229,22 @@ class SyncEngine {
         onError: (_) => _onClosed(null),
         cancelOnError: true,
       );
-      socket.add(jsonEncode({'t': 'hello', 'since': await _cursor()}));
+      socket.add(
+        jsonEncode({
+          't': 'hello',
+          'since': await _cursor(),
+          'dataset': await _meta(db, _datasetKey),
+        }),
+      );
       _pingTimer = Timer.periodic(_pingEvery, (_) => _ping(socket));
-    } on Object {
+    } on Object catch (e) {
+      final status = e is WebSocketException ? e.httpStatusCode : null;
+      if (status == 503 || status == 429) {
+        // The server (or Cloudflare, for its free plan's request limit) is
+        // over capacity: don't spend more requests retrying every minute.
+        _hold();
+        return;
+      }
       _emit(SyncPhase.offline);
       _scheduleReconnect();
       if (_attempt == 3) unawaited(_checkSession());
@@ -226,7 +284,7 @@ class SyncEngine {
   }
 
   void _scheduleReconnect() {
-    if (_disposed || _paused) return;
+    if (_disposed || _paused || _held) return;
     _reconnectTimer?.cancel();
     _attempt++;
     final seconds = min(60, pow(2, _attempt - 1).toInt());
@@ -249,6 +307,39 @@ class SyncEngine {
       if (response.statusCode == 401) onSessionRevoked?.call();
     } on Object {
       // Still offline.
+    }
+  }
+
+  /// The server can't save right now: every change stays in the outbox, and
+  /// sync resumes at [retryAt] (server time, ms; 00:00 UTC when the free
+  /// plan's daily limit is used up), or later if it keeps happening.
+  void _hold({int? retryAt}) {
+    _holds++;
+    final backoff = Duration(seconds: min(3600, 30 << min(_holds, 7)));
+    final now = DateTime.now().millisecondsSinceEpoch;
+    final asked = Duration(
+      milliseconds: max(0, (retryAt ?? 0) - now - recorder.clock.offsetMs),
+    );
+    var wait = asked > backoff ? asked : backoff;
+    // Spread devices out, so they don't all come back at once.
+    wait += Duration(
+      milliseconds: _random.nextInt(min(300000, wait.inMilliseconds ~/ 10) + 1),
+    );
+    _heldUntil = DateTime.now().add(wait);
+    _holdTimer?.cancel();
+    _holdTimer = Timer(wait, () {
+      _heldUntil = null;
+      _attempt = 0;
+      _emit(_state.phase);
+      _connect();
+    });
+    final socket = _socket;
+    if (socket != null) {
+      unawaited(_socketSub?.cancel());
+      unawaited(socket.close().catchError((Object _) {}));
+      _onClosed(null);
+    } else {
+      _emit(SyncPhase.offline);
     }
   }
 
@@ -286,9 +377,13 @@ class SyncEngine {
     switch (message['t']) {
       case 'changes':
         recorder.receive(message['clock'] as String?);
+        recorder.syncTime((message['now'] as num?)?.toInt());
         final catchUp = message['catchUp'] == true;
         final more = message['more'] == true;
         final upto = (message['upto'] as num?)?.toInt() ?? 0;
+        if (catchUp && await _datasetChanged(db, message['dataset'])) {
+          _reoffer = true;
+        }
         // Broadcasts may arrive before our catch-up finished; only trust
         // their cursor once we're caught up, so no versions are skipped.
         await _applyRows(
@@ -297,22 +392,31 @@ class SyncEngine {
         );
         if (catchUp && !more) {
           _caughtUp = true;
+          if (_pending == 0) _holds = 0;
+          if (_reoffer) {
+            _reoffer = false;
+            await recorder.enqueueAll(repo);
+          }
           _schedulePush(immediate: true);
         }
         _markSyncedIfIdle();
       case 'ack':
         if (message['batchId'] != _inflight) return;
         _ackTimer?.cancel();
-        recorder.receive(message['clock'] as String?);
-        await (db.delete(
-          db.outbox,
-        )..where((o) => o.seq.isSmallerOrEqualValue(_inflightMaxSeq))).go();
-        final rejected = message['rejected'] as List? ?? const [];
-        if (rejected.isNotEmpty) debugPrint('Sync rejected: $rejected');
+        _holds = 0;
+        await settleBatch(
+          db: db,
+          repo: repo,
+          recorder: recorder,
+          seqs: _inflightSeqs,
+          reply: message,
+        );
         _inflight = null;
         _schedulePush(immediate: true);
       case 'error':
         debugPrint('Sync error: ${message['code']} ${message['message']}');
+        final retryAt = message['retryAt'];
+        if (retryAt is num) _hold(retryAt: retryAt.toInt());
     }
   }
 
@@ -334,17 +438,13 @@ class SyncEngine {
   Future<void> _pushPending() async {
     final socket = _socket;
     if (socket == null || !_caughtUp || _inflight != null || _disposed) return;
-    final entries =
-        await (db.select(db.outbox)
-              ..orderBy([(o) => OrderingTerm.asc(o.seq)])
-              ..limit(500))
-            .get();
+    final entries = await _nextBatch(db);
     if (entries.isEmpty) {
       _markSyncedIfIdle();
       return;
     }
     _inflight = 'b${DateTime.now().microsecondsSinceEpoch}';
-    _inflightMaxSeq = entries.last.seq;
+    _inflightSeqs = [for (final e in entries) e.seq];
     _emit(SyncPhase.syncing);
     socket.add(
       jsonEncode({
@@ -363,7 +463,92 @@ class SyncEngine {
     'id': e.rowId,
     'patch': jsonDecode(e.patch),
     'hlc': e.hlc,
+    if (e.ifAbsent) 'ifAbsent': true,
   };
+
+  /// The oldest changes not refused by the server.
+  static Future<List<OutboxEntry>> _nextBatch(AppDatabase db) =>
+      (db.select(db.outbox)
+            ..where((o) => o.rejected.isNull())
+            ..orderBy([(o) => OrderingTerm.asc(o.seq)])
+            ..limit(500))
+          .get();
+
+  /// Handles the server's reply to a pushed batch ([seqs], in push order).
+  ///
+  /// Accepted changes leave the outbox. Refused ones stay, parked with the
+  /// reason, so the edit is never lost; a wrong device clock is corrected
+  /// and those changes go out again with a new clock. Rows where a pushed
+  /// field lost to a newer edit come back corrected.
+  @visibleForTesting
+  static Future<void> settleBatch({
+    required AppDatabase db,
+    required ScheduleRepository repo,
+    required SyncRecorder recorder,
+    required List<int> seqs,
+    required Map<String, Object?> reply,
+  }) async {
+    recorder.receive(reply['clock'] as String?);
+    final serverNow = (reply['now'] as num?)?.toInt();
+    recorder.syncTime(serverNow);
+    final refused = <int, String>{};
+    for (final r in (reply['rejected'] as List? ?? const []).whereType<Map>()) {
+      final i = r['i'];
+      if (i is int && i >= 0 && i < seqs.length) {
+        refused[seqs[i]] = r['reason']?.toString() ?? 'rejected';
+      }
+    }
+    if (refused.isNotEmpty) debugPrint('Sync refused: $refused');
+    await db.transaction(() async {
+      await (db.delete(db.outbox)..where(
+            (o) => o.seq.isIn([
+              for (final seq in seqs)
+                if (!refused.containsKey(seq)) seq,
+            ]),
+          ))
+          .go();
+      for (final MapEntry(key: seq, value: reason) in refused.entries) {
+        await (db.update(db.outbox)..where((o) => o.seq.equals(seq))).write(
+          OutboxCompanion(rejected: Value(reason)),
+        );
+      }
+    });
+    // The clock was just corrected from the server's time.
+    final skewed = [
+      for (final MapEntry(key: seq, value: reason) in refused.entries)
+        if (reason == 'clock_skew' && serverNow != null) seq,
+    ];
+    if (skewed.isNotEmpty) await recorder.restamp(skewed);
+    final corrections = reply['rows'] ?? reply['corrections'];
+    if (corrections is List && corrections.isNotEmpty) {
+      await applyServerRows(
+        db,
+        repo,
+        corrections.cast<Map<String, Object?>>(),
+        cursor: null,
+      );
+    }
+  }
+
+  /// Saves the server's dataset id and says whether it differs from the
+  /// one this device synced with before (the server's data was reset or
+  /// restored).
+  static Future<bool> _datasetChanged(AppDatabase db, Object? dataset) async {
+    if (dataset is! String) return false;
+    final known = await _meta(db, _datasetKey);
+    if (known == dataset) return false;
+    await db
+        .into(db.syncMeta)
+        .insertOnConflictUpdate(
+          SyncMetaCompanion.insert(key: _datasetKey, value: dataset),
+        );
+    return known != null;
+  }
+
+  static Future<String?> _meta(AppDatabase db, String key) async =>
+      (await (db.select(
+        db.syncMeta,
+      )..where((m) => m.key.equals(key))).getSingleOrNull())?.value;
 
   // -------------------------------------------------------------- state --
 
@@ -381,22 +566,22 @@ class SyncEngine {
       phase,
       lastSyncedAt: _lastSyncedAt,
       pending: _pending,
+      failed: _failed,
+      heldUntil: _held ? _heldUntil : null,
     );
     if (next == _state || _states.isClosed) return;
     _state = next;
     _states.add(next);
   }
 
-  Future<int> _cursor() async {
-    final row = await (db.select(
-      db.syncMeta,
-    )..where((m) => m.key.equals(_cursorKey))).getSingleOrNull();
-    return int.tryParse(row?.value ?? '') ?? 0;
-  }
+  Future<int> _cursor() async =>
+      int.tryParse(await _meta(db, _cursorKey) ?? '') ?? 0;
 
-  /// Forgets the server cursor (after wiping local data or switching account).
-  static Future<void> resetCursor(AppDatabase db) =>
-      (db.delete(db.syncMeta)..where((m) => m.key.equals(_cursorKey))).go();
+  /// Forgets the server cursor and dataset (after wiping local data or
+  /// leaving the account).
+  static Future<void> resetCursor(AppDatabase db) => (db.delete(
+    db.syncMeta,
+  )..where((m) => m.key.isIn([_cursorKey, _datasetKey]))).go();
 
   // ---------------------------------------------------------- utilities --
 
@@ -418,7 +603,15 @@ class SyncEngine {
                 ..orderBy([(o) => OrderingTerm.asc(o.seq)]))
               .get();
       for (final p in pending) {
-        merged.addAll(Map<String, Object?>.from(jsonDecode(p.patch) as Map));
+        final patch = Map<String, Object?>.from(jsonDecode(p.patch) as Map);
+        if (p.ifAbsent) {
+          // The server keeps what it has; only missing fields come from us.
+          for (final e in patch.entries) {
+            merged.putIfAbsent(e.key, () => e.value);
+          }
+        } else {
+          merged.addAll(patch);
+        }
       }
       await repo.applyRemoteRow(table, merged);
     }
@@ -439,15 +632,8 @@ class SyncEngine {
     required SyncRecorder recorder,
     required Session session,
   }) async {
-    final entries =
-        await (db.select(db.outbox)
-              ..orderBy([(o) => OrderingTerm.asc(o.seq)])
-              ..limit(500))
-            .get();
-    final cursorRow = await (db.select(
-      db.syncMeta,
-    )..where((m) => m.key.equals(_cursorKey))).getSingleOrNull();
-    var since = int.tryParse(cursorRow?.value ?? '') ?? 0;
+    final entries = await _nextBatch(db);
+    var since = int.tryParse(await _meta(db, _cursorKey) ?? '') ?? 0;
     final response = await http
         .post(
           SyncConfig.api('/v1/sync'),
@@ -457,23 +643,28 @@ class SyncEngine {
           },
           body: jsonEncode({
             'since': since,
+            'dataset': await _meta(db, _datasetKey),
             'changes': [for (final e in entries) _changeJson(e)],
           }),
         )
         .timeout(const Duration(seconds: 20));
     if (response.statusCode != 200) return;
     final body = jsonDecode(response.body) as Map<String, Object?>;
-    if (entries.isNotEmpty) {
-      await (db.delete(
-        db.outbox,
-      )..where((o) => o.seq.isSmallerOrEqualValue(entries.last.seq))).go();
-    }
-    recorder.receive(body['clock'] as String?);
+    await settleBatch(
+      db: db,
+      repo: repo,
+      recorder: recorder,
+      seqs: [for (final e in entries) e.seq],
+      reply: body,
+    );
+    final reoffer = await _datasetChanged(db, body['dataset']);
     await applyServerRows(
       db,
       repo,
       (body['rows'] as List? ?? const []).cast<Map<String, Object?>>(),
       cursor: (body['upto'] as num?)?.toInt() ?? since,
     );
+    // Pushed on the next sync.
+    if (reoffer) await recorder.enqueueAll(repo);
   }
 }

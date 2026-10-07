@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { applyPatch } from "../src/merge";
-import { validateChange } from "../src/protocol";
+import { unavailable, validateChange } from "../src/protocol";
 
 const clock = (ms: number, counter = 0, node = "node0001") =>
   `${String(ms).padStart(15, "0")}:${counter.toString(16).padStart(4, "0")}:${node}`;
@@ -37,6 +37,31 @@ describe("applyPatch (per-field last-writer-wins)", () => {
     expect(same.clockChanged).toBe(true);
   });
 
+  it("ifAbsent only fills fields the server has never seen", () => {
+    const deleted = applyPatch(base, { tbl: "t", id: "m1_20261025", patch: { deleted: true }, hlc: clock(5000) }).state;
+    const stale = applyPatch(deleted, {
+      tbl: "t",
+      id: "m1_20261025",
+      patch: { status: "skipped", deleted: false, recordingUrl: "https://rec" },
+      hlc: clock(9000),
+      ifAbsent: true,
+    });
+    expect(stale.state.data).toMatchObject({ status: "attended", deleted: true, recordingUrl: "https://rec" });
+    expect(stale.lost).toBe(true);
+    const fresh = applyPatch(null, { tbl: "t", id: "new", patch: { name: "x" }, hlc: clock(1), ifAbsent: true });
+    expect(fresh.state.data).toEqual({ id: "new", name: "x" });
+    expect(fresh.lost).toBe(false);
+  });
+
+  it("reports when a pushed field loses", () => {
+    const older = applyPatch(base, { tbl: "t", id: "m1_20261025", patch: { status: "missed" }, hlc: clock(500) });
+    expect(older.lost).toBe(true);
+    const same = applyPatch(base, { tbl: "t", id: "m1_20261025", patch: { status: "attended" }, hlc: clock(500) });
+    expect(same.lost).toBe(false);
+    const newer = applyPatch(base, { tbl: "t", id: "m1_20261025", patch: { status: "missed", notes: "" }, hlc: clock(2000) });
+    expect(newer.lost).toBe(false);
+  });
+
   it("tombstones are just a field", () => {
     const deleted = applyPatch(base, { tbl: "t", id: "m1_20261025", patch: { deleted: true }, hlc: clock(5000) });
     expect(deleted.state.data.deleted).toBe(true);
@@ -58,7 +83,28 @@ describe("validateChange", () => {
     [{ ...ok, hlc: "yesterday" }, "bad_clock"],
     [{ ...ok, hlc: clock(now + 10 * 60 * 1000) }, "clock_skew"],
     [{ ...ok, patch: { notes: "x".repeat(20_000) } }, "patch_too_large"],
+    [{ ...ok, ifAbsent: "yes" }, "malformed"],
   ])("rejects %j", (change, reason) => {
     expect(validateChange(change, now)).toEqual({ ok: false, reason });
+  });
+});
+
+describe("unavailable", () => {
+  const now = Date.UTC(2026, 9, 7, 15, 30);
+
+  it("waits for the 00:00 UTC reset when a free-plan limit is used up", () => {
+    for (const message of [
+      "Exceeded allowed rows written in Durable Objects free tier.",
+      "Your account has exceeded its daily limit",
+      "database or disk is full: SQLITE_FULL",
+    ]) {
+      expect(unavailable(new Error(message), now)).toEqual({ code: "quota", retryAt: Date.UTC(2026, 9, 8) });
+    }
+  });
+
+  it("tries again after a minute for anything else", () => {
+    for (const message of ["Network connection lost.", "Durable Object storage operation exceeded timeout"]) {
+      expect(unavailable(new Error(message), now)).toEqual({ code: "unavailable", retryAt: now + 60_000 });
+    }
   });
 });

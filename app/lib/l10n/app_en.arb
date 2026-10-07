@@ -354,8 +354,6 @@
   "exportDataSubtitle": "Save a JSON file with all semesters",
   "importData": "Import backup",
   "importDataSubtitle": "Restore a LecCheck backup (including files from the old app)",
-  "importReplaceTitle": "Replace your data?",
-  "importReplaceBody": "Imported semesters are added; semesters with the same ID are replaced.",
   "importDone": "{count, plural, =1{Imported 1 semester} other{Imported {count} semesters}}",
   "@importDone": {
     "placeholders": {
@@ -402,7 +400,7 @@
   "signOutEverywhere": "Sign out on all devices",
   "deleteCloudData": "Delete cloud data",
   "deleteCloudTitle": "Delete your cloud data?",
-  "deleteCloudBody": "Your synced data will be removed from the server. This device keeps its copy.",
+  "deleteCloudBody": "Your synced data will be removed from the server, and your devices will be signed out. This device keeps its copy.",
   "replaceDataTitle": "Switch accounts?",
   "replaceDataBody": "This device has data from another account. Signing in will replace it with this account's data.",
   "replace": "Replace",
@@ -472,5 +470,72 @@
   "notificationsOffSubtitle": "Reminders can't appear until you allow them.",
   "allow": "Allow",
   "remindersWhileOpen": "On this computer, reminders appear while LecCheck is open.",
-  "presetAccent": "System accent"
+  "presetAccent": "System accent",
+  "importTitle": "Import this backup?",
+  "importPreview": "This backup has {semesters} semesters: {added} new items and {changed} that differ from yours.\n\n“Add missing” only adds what you don't have. “Replace” overwrites your versions on all your devices; an automatic backup is saved first.",
+  "@importPreview": {
+    "placeholders": {
+      "semesters": {
+        "type": "int"
+      },
+      "added": {
+        "type": "int"
+      },
+      "changed": {
+        "type": "int"
+      }
+    }
+  },
+  "importMerge": "Add missing",
+  "importNothing": "Everything in this backup is already here.",
+  "snapshots": "Automatic backups",
+  "snapshotsSubtitle": "Saved daily and before imports or sign-out. Go back to an earlier state.",
+  "snapshotsEmpty": "No automatic backups yet.",
+  "snapshotDaily": "Daily",
+  "snapshotImport": "Before import",
+  "snapshotRestore": "Before restore",
+  "snapshotSignOut": "Before sign-out",
+  "snapshotSwitch": "Before switching accounts",
+  "restoreSnapshotTitle": "Restore this backup?",
+  "restoreSnapshotBody": "Your data goes back to how it was then, on all your synced devices. Your current data is saved as a backup first, so you can undo this.",
+  "restore": "Restore",
+  "restoreDone": "Restored",
+  "recentlyDeleted": "Recently deleted",
+  "recentlyDeletedSubtitle": "Semesters and courses deleted in the last 30 days",
+  "recentlyDeletedEmpty": "Nothing was deleted recently.",
+  "deletedSemester": "Semester · deleted {date}",
+  "@deletedSemester": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "deletedCourse": "Course · deleted {date}",
+  "@deletedCourse": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "syncFailed": "{count, plural, =1{1 change couldn't sync} other{{count} changes couldn't sync}}",
+  "@syncFailed": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "syncFailedSubtitle": "They're kept on this device.",
+  "retry": "Retry",
+  "syncPaused": "Sync paused until {time}",
+  "@syncPaused": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "syncPausedSubtitle": "The sync server is busy. Your changes are saved on this device and sync then."
 }

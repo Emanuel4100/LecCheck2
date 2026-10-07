@@ -13,7 +13,66 @@ import 'tables.dart';
 /// Receives every local change so it can be synced. Installed by the sync
 /// engine while signed in; called inside the write transaction.
 abstract interface class ChangeRecorder {
-  Future<void> record(String table, String rowId, Map<String, Object?> patch);
+  /// [ifAbsent]: the server only takes fields it doesn't have yet, so an old
+  /// copy (a backup, data joining an account) never overwrites newer edits.
+  Future<void> record(
+    String table,
+    String rowId,
+    Map<String, Object?> patch, {
+    bool ifAbsent = false,
+  });
+}
+
+/// How a backup is imported.
+enum ImportMode {
+  /// Only adds rows this device doesn't have; nothing existing changes.
+  merge,
+
+  /// Rows in the backup replace the ones here (and on synced devices).
+  replace,
+}
+
+/// What a course editor loaded, so saving only writes what the user changed
+/// and can't revert edits that synced in while the editor was open.
+class CourseBase {
+  const CourseBase({
+    required this.course,
+    required this.meetings,
+    required this.requirements,
+  });
+
+  final CourseInfo course;
+  final List<MeetingRule> meetings;
+  final List<AttendanceRequirement> requirements;
+}
+
+/// A deleted semester or course that can still be restored.
+class DeletedItem {
+  const DeletedItem({
+    required this.table,
+    required this.id,
+    required this.name,
+    required this.deletedAt,
+  });
+
+  /// `semesters` or `courses`.
+  final String table;
+  final String id;
+  final String name;
+  final DateTime deletedAt;
+
+  bool get isSemester => table == 'semesters';
+
+  @override
+  bool operator ==(Object other) =>
+      other is DeletedItem &&
+      other.table == table &&
+      other.id == id &&
+      other.name == name &&
+      other.deletedAt == deletedAt;
+
+  @override
+  int get hashCode => Object.hash(table, id, name, deletedAt);
 }
 
 /// Settings that follow the account.
@@ -206,8 +265,12 @@ class ScheduleRepository {
 
   // --------------------------------------------------------------- writes --
 
-  Future<void> saveSemester(SemesterInfo semester) =>
-      db.transaction(() => _upsert(_semesters, semester.toRow()));
+  /// Saves a semester. With [base] (what the form loaded), only the fields
+  /// the user changed are written.
+  Future<void> saveSemester(SemesterInfo semester, {SemesterInfo? base}) =>
+      db.transaction(
+        () => _saveEdited(_semesters, semester.toRow(), base?.toRow()),
+      );
 
   /// Tombstones the semester with all its courses, meetings, sessions,
   /// requirements and no-class ranges.
@@ -234,36 +297,54 @@ class ScheduleRepository {
         return receipt;
       });
 
-  /// Saves a course with its full list of meetings and requirements; meetings
-  /// or requirements missing from the lists are deleted.
+  /// Saves a course with its full list of meetings and requirements.
+  ///
+  /// With [base] (what the editor loaded), only fields the user changed are
+  /// written, and only meetings or requirements the user removed are deleted;
+  /// changes that synced in meanwhile survive. Without it, meetings or
+  /// requirements missing from the lists are deleted.
   Future<void> saveCourse(
     CourseInfo course, {
     required List<MeetingRule> meetings,
     required List<AttendanceRequirement> requirements,
+    CourseBase? base,
   }) => db.transaction(() async {
-    await _upsert(_courses, course.toRow());
+    await _saveEdited(_courses, course.toRow(), base?.course.toRow());
 
-    final keepMeetings = {for (final m in meetings) m.id};
-    final oldMeetings = await _ids(
-      db.select(db.meetings)
-        ..where((m) => m.courseId.equals(course.id) & m.deleted.equals(false)),
-    );
+    final baseMeetings = {
+      for (final m in base?.meetings ?? const <MeetingRule>[]) m.id: m,
+    };
     for (final m in meetings) {
-      await _upsert(_meetings, m.toRow());
+      await _saveEdited(_meetings, m.toRow(), baseMeetings[m.id]?.toRow());
     }
+    final keepMeetings = {for (final m in meetings) m.id};
+    final oldMeetings = base != null
+        ? baseMeetings.keys
+        : await _ids(
+            db.select(db.meetings)..where(
+              (m) => m.courseId.equals(course.id) & m.deleted.equals(false),
+            ),
+          );
     final receipt = DeletionReceipt._();
     for (final id in oldMeetings) {
       if (!keepMeetings.contains(id)) await _deleteMeetingTree(id, receipt);
     }
 
-    final keepReqs = {for (final r in requirements) r.id};
-    final oldReqs = await _ids(
-      db.select(db.requirements)
-        ..where((r) => r.courseId.equals(course.id) & r.deleted.equals(false)),
-    );
+    final baseReqs = {
+      for (final r in base?.requirements ?? const <AttendanceRequirement>[])
+        r.id: r,
+    };
     for (final r in requirements) {
-      await _upsert(_requirements, r.toRow());
+      await _saveEdited(_requirements, r.toRow(), baseReqs[r.id]?.toRow());
     }
+    final keepReqs = {for (final r in requirements) r.id};
+    final oldReqs = base != null
+        ? baseReqs.keys
+        : await _ids(
+            db.select(db.requirements)..where(
+              (r) => r.courseId.equals(course.id) & r.deleted.equals(false),
+            ),
+          );
     for (final id in oldReqs) {
       if (!keepReqs.contains(id)) await _tombstone(_requirements, id, receipt);
     }
@@ -362,37 +443,204 @@ class ScheduleRepository {
       });
 
   /// Writes full rows (backup import). Unknown tables are ignored.
-  Future<void> importRows(Map<String, List<Map<String, Object?>>> tables) =>
+  ///
+  /// [ImportMode.merge] only adds rows that don't exist here, and asks the
+  /// server to do the same, so an old backup can't overwrite newer data.
+  Future<void> importRows(
+    Map<String, List<Map<String, Object?>>> tables, {
+    ImportMode mode = ImportMode.merge,
+  }) => db.transaction(() async {
+    for (final MapEntry(key: table, value: rows) in tables.entries) {
+      final adapter = _byName[table];
+      if (adapter == null) continue;
+      for (final row in rows) {
+        final next = _normalize(adapter, row);
+        if (mode == ImportMode.replace) {
+          await _upsert(adapter, adapter.fromJson({...next, 'updatedAt': 0}));
+        } else if (await _find(adapter, next['id']! as String) == null) {
+          await _write(adapter, next, next, ifAbsent: true);
+        }
+      }
+    }
+  });
+
+  /// How many backup rows are new here, and how many differ from this
+  /// device's copy (what [ImportMode.replace] would overwrite).
+  Future<({int added, int changed})> previewImport(
+    Map<String, List<Map<String, Object?>>> tables,
+  ) async {
+    var added = 0;
+    var changed = 0;
+    for (final MapEntry(key: table, value: rows) in tables.entries) {
+      final adapter = _byName[table];
+      if (adapter == null) continue;
+      for (final row in rows) {
+        final next = _normalize(adapter, row);
+        final existing = await _find(adapter, next['id']! as String);
+        if (existing == null) {
+          added++;
+        } else if (_changed(
+          existing.toJson()..remove('updatedAt'),
+          next,
+        ).isNotEmpty) {
+          changed++;
+        }
+      }
+    }
+    return (added: added, changed: changed);
+  }
+
+  /// Makes this device's data equal [tables] (a snapshot, tombstones
+  /// included): rows are written back and rows created since are deleted.
+  /// Recorded like any edit, so the restore reaches synced devices too.
+  Future<void> restoreAll(Map<String, List<Map<String, Object?>>> tables) =>
       db.transaction(() async {
-        for (final MapEntry(key: table, value: rows) in tables.entries) {
-          final adapter = _byName[table];
-          if (adapter == null) continue;
-          for (final row in rows) {
-            await _upsert(adapter, adapter.fromJson({...row, 'updatedAt': 0}));
+        for (final adapter in _byName.values) {
+          final ids = <String>{};
+          for (final row in tables[adapter.name] ?? const []) {
+            final next = _normalize(adapter, row);
+            ids.add(next['id']! as String);
+            await _upsert(adapter, adapter.fromJson({...next, 'updatedAt': 0}));
+          }
+          final live = await (db.select(
+            adapter.table,
+          )..where((t) => (t as SyncedRow).deleted.equals(false))).get();
+          for (final row in live) {
+            final id = row.toJson()['id']! as String;
+            if (!ids.contains(id)) await _patch(adapter, id, {'deleted': true});
           }
         }
       });
 
-  /// Writes a complete session override (backup import).
-  Future<void> saveOverride(SessionOverride o) => db.transaction(
-    () => _upsert(
-      _overrides,
-      SessionOverrideRow(
-        id: o.id,
-        deleted: false,
-        updatedAt: 0,
-        meetingId: o.meetingId,
-        originalDate: o.originalDate.toIso(),
-        status: o.status?.key,
-        notes: o.notes,
-        recordingUrl: o.recordingUrl,
-        movedDate: o.movedDate?.toIso(),
-        movedStartMin: o.movedStartMin,
-        movedEndMin: o.movedEndMin,
-        movedLocation: o.movedLocation,
-      ),
-    ),
-  );
+  /// A row from a file as this app version stores it.
+  Map<String, Object?> _normalize<D extends DataClass>(
+    _Adapter<D> a,
+    Map<String, Object?> row,
+  ) =>
+      a.fromJson({'deleted': false, ...row, 'updatedAt': 0}).toJson()
+        ..remove('updatedAt');
+
+  // ------------------------------------------------------ recently deleted --
+
+  /// How long deleted semesters and courses are listed for restoring.
+  static const trashDays = 30;
+
+  /// Semesters and courses deleted in the last [trashDays] days, newest
+  /// first. Courses of a deleted semester come back with the semester.
+  Stream<List<DeletedItem>> watchRecentlyDeleted() => db
+      .customSelect('SELECT 1', readsFrom: {db.semesters, db.courses})
+      .watch()
+      .asyncMap((_) => recentlyDeleted());
+
+  Future<List<DeletedItem>> recentlyDeleted() async {
+    final cutoff = _now() - trashDays * Duration.millisecondsPerDay;
+    final semesters = await db.select(db.semesters).get();
+    final liveSemesters = {
+      for (final s in semesters)
+        if (!s.deleted) s.id,
+    };
+    final courses =
+        await (db.select(db.courses)..where(
+              (c) =>
+                  c.deleted.equals(true) &
+                  c.updatedAt.isBiggerOrEqualValue(cutoff),
+            ))
+            .get();
+    DateTime at(int ms) => DateTime.fromMillisecondsSinceEpoch(ms);
+    return [
+      for (final s in semesters)
+        if (s.deleted && s.updatedAt >= cutoff)
+          DeletedItem(
+            table: _semesters.name,
+            id: s.id,
+            name: s.name,
+            deletedAt: at(s.updatedAt),
+          ),
+      for (final c in courses)
+        if (liveSemesters.contains(c.semesterId))
+          DeletedItem(
+            table: _courses.name,
+            id: c.id,
+            name: c.name,
+            deletedAt: at(c.updatedAt),
+          ),
+    ]..sort((a, b) => b.deletedAt.compareTo(a.deletedAt));
+  }
+
+  /// Restores a deleted semester or course with everything deleted along
+  /// with it (rows deleted earlier on their own stay deleted).
+  Future<void> restoreDeleted(DeletedItem item) => db.transaction(() async {
+    if (item.isSemester) {
+      final semester = await _find(_semesters, item.id);
+      if (semester == null) return;
+      final since = semester.updatedAt - _cascadeWindowMs;
+      for (final c
+          in await (db.select(db.courses)..where(
+                (c) =>
+                    c.semesterId.equals(item.id) &
+                    c.deleted.equals(true) &
+                    c.updatedAt.isBiggerOrEqualValue(since),
+              ))
+              .get()) {
+        await _restoreCourseTree(c.id, since);
+      }
+      for (final r
+          in await (db.select(db.noClassRanges)..where(
+                (r) =>
+                    r.semesterId.equals(item.id) &
+                    r.deleted.equals(true) &
+                    r.updatedAt.isBiggerOrEqualValue(since),
+              ))
+              .get()) {
+        await _patch(_noClass, r.id, {'deleted': false});
+      }
+      await _patch(_semesters, item.id, {'deleted': false});
+    } else {
+      final course = await _find(_courses, item.id);
+      if (course == null) return;
+      await _restoreCourseTree(item.id, course.updatedAt - _cascadeWindowMs);
+    }
+  });
+
+  /// Rows tombstoned by one delete get their time within this window.
+  static const _cascadeWindowMs = 10 * 1000;
+
+  Future<void> _restoreCourseTree(String courseId, int since) async {
+    final meetings =
+        await (db.select(db.meetings)..where(
+              (m) =>
+                  m.courseId.equals(courseId) &
+                  m.deleted.equals(true) &
+                  m.updatedAt.isBiggerOrEqualValue(since),
+            ))
+            .get();
+    for (final m in meetings) {
+      final overrides =
+          await (db.select(db.sessionOverrides)..where(
+                (o) =>
+                    o.meetingId.equals(m.id) &
+                    o.deleted.equals(true) &
+                    o.updatedAt.isBiggerOrEqualValue(since),
+              ))
+              .get();
+      for (final o in overrides) {
+        await _patch(_overrides, o.id, {'deleted': false});
+      }
+      await _patch(_meetings, m.id, {'deleted': false});
+    }
+    final requirements =
+        await (db.select(db.requirements)..where(
+              (r) =>
+                  r.courseId.equals(courseId) &
+                  r.deleted.equals(true) &
+                  r.updatedAt.isBiggerOrEqualValue(since),
+            ))
+            .get();
+    for (final r in requirements) {
+      await _patch(_requirements, r.id, {'deleted': false});
+    }
+    await _patch(_courses, courseId, {'deleted': false});
+  }
 
   /// Writes a row received from the sync server (already merged with any
   /// pending local patches). Not recorded, so it isn't sent back.
@@ -418,13 +666,20 @@ class ScheduleRepository {
     await db.delete(db.outbox).go();
   });
 
-  /// Every live row of every synced table, keyed by table name.
-  Future<Map<String, List<Map<String, Object?>>>> exportRows() async => {
+  /// Every live row of every synced table, keyed by table name; with
+  /// [includeDeleted], tombstones too (snapshots).
+  Future<Map<String, List<Map<String, Object?>>>> exportRows({
+    bool includeDeleted = false,
+  }) async => {
     for (final a in _byName.values)
       a.name: [
-        for (final row in await (db.select(
-          a.table,
-        )..where((t) => (t as SyncedRow).deleted.equals(false))).get())
+        for (final row
+            in await (db.select(a.table)..where(
+                  (t) => includeDeleted
+                      ? const Constant(true)
+                      : (t as SyncedRow).deleted.equals(false),
+                ))
+                .get())
           row.toJson()..remove('updatedAt'),
       ],
   };
@@ -453,13 +708,31 @@ class ScheduleRepository {
   Future<void> _write<D extends DataClass>(
     _Adapter<D> a,
     Map<String, Object?> json,
-    Map<String, Object?> patch,
-  ) async {
+    Map<String, Object?> patch, {
+    bool ifAbsent = false,
+  }) async {
     await a.upsert(db, {...json, 'updatedAt': _now()});
     final r = recorder;
     if (r != null && patch.isNotEmpty) {
-      await r.record(a.name, json['id']! as String, patch);
+      await r.record(a.name, json['id']! as String, patch, ifAbsent: ifAbsent);
     }
+  }
+
+  /// Writes the fields that differ between [base] (what an editor loaded)
+  /// and [next] onto the current row. Without a base, writes [next] whole.
+  Future<void> _saveEdited<D extends DataClass>(
+    _Adapter<D> a,
+    D next,
+    D? base,
+  ) async {
+    if (base == null) return _upsert(a, next);
+    final nextJson = next.toJson()..remove('updatedAt');
+    final id = nextJson['id']! as String;
+    if (await _find(a, id) == null) {
+      await _write(a, nextJson, nextJson);
+      return;
+    }
+    await _patch(a, id, _changed(base.toJson()..remove('updatedAt'), nextJson));
   }
 
   Future<void> _upsert<D extends DataClass>(_Adapter<D> a, D row) async {

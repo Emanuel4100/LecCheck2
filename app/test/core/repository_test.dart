@@ -10,13 +10,18 @@ import 'package:leccheck/domain/semester_data.dart';
 
 class _Recorder implements ChangeRecorder {
   final changes = <(String, String, Map<String, Object?>)>[];
+  final ifAbsent = <(String, String)>[];
 
   @override
   Future<void> record(
     String table,
     String rowId,
-    Map<String, Object?> patch,
-  ) async => changes.add((table, rowId, patch));
+    Map<String, Object?> patch, {
+    bool ifAbsent = false,
+  }) async {
+    changes.add((table, rowId, patch));
+    if (ifAbsent) this.ifAbsent.add((table, rowId));
+  }
 }
 
 void main() {

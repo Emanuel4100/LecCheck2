@@ -57,7 +57,8 @@ Synced tables (Drift, `core/db/tables.dart`). Every row has `id` (TEXT, UUIDv7),
 | `requirements` | courseId, type (null = all), minPercent, recordingsCount |
 | `user_settings` | single row `me`: use24h (null = follow device), meetingNumbers |
 
-Local-only: `outbox(seq, tbl, rowId, patch JSON, hlc)` and `sync_meta` (server cursor).
+Local-only: `outbox(seq, tbl, rowId, patch JSON, hlc, ifAbsent, rejected)` and
+`sync_meta` (server cursor, dataset id).
 
 Conventions: enums are stored as stable keys (`lecture`, `attended`, …) — never
 translated labels (v1's bug); times are minutes after midnight; dates are `yyyy-MM-dd`;
@@ -120,7 +121,20 @@ minuteClockProvider (ticks on minute boundaries) → todayProvider
   as *absent*, and the upsert would never clear a column (found by a test — undo to
   "pending" silently failed).
 - Deletes tombstone the whole tree (course → meetings → overrides → requirements) and
-  return a `DeletionReceipt`, which `undoDeletion` replays.
+  return a `DeletionReceipt`, which `undoDeletion` replays. Tombstones from the last 30
+  days are listed in **Recently deleted**, which restores a course or semester with
+  everything deleted along with it.
+- Editors pass the state they loaded (`CourseBase`, the loaded `SemesterInfo`): only
+  fields the user changed are written, and only meetings/requirements the user removed
+  are deleted, so edits that synced in while the editor was open survive.
+- **Automatic backups** (`core/backup/snapshot_service.dart`): gzipped v3 JSON (deleted
+  rows included) in app-support `/snapshots`, written to a `.part` file and renamed.
+  One a day, plus one before imports, restores, removing data on sign-out and switching
+  accounts; kept: 7 daily, 4 weekly, 10 others. Restoring saves the current state first.
+- Off-device copies: Android's own backup (Google Drive) includes the database and
+  snapshots; SharedPreferences, where the sign-in token is encrypted with a key that
+  can't leave the phone, are excluded (`res/xml/data_extraction_rules.xml`,
+  `backup_rules.xml`). iCloud backup includes Application Support on iPhone.
 - `watchSemesterData` is a Drift `customSelect(..., readsFrom: {...}).watch()` mapped to
   a loader: one emission per transaction, and it cancels cleanly.
 
@@ -137,18 +151,29 @@ minuteClockProvider (ticks on minute boundaries) → todayProvider
      saved in the same transaction as the rows;
   2. every server row is written as the new base state, then the row's **pending outbox
      patches are re-applied on top** (rebase), so local edits never flicker away;
-  3. the outbox is pushed in batches of ≤ 500; entries are deleted on `ack`;
-  4. broadcasts received before catch-up finished are applied but don't move the cursor,
-     so a reconnect can't skip versions;
-  5. pings every 30 s (answered by the server without waking it); no answer for 75 s
+  3. the outbox is pushed in batches of ≤ 500. On `ack`, accepted entries are deleted;
+     refused ones stay, parked with the reason (Settings → Account shows them with
+     Retry); `clock_skew` ones are re-stamped after the clock is corrected from the
+     server's `now`; rows where a pushed field lost come back as corrections;
+  4. if the server can't save (an `error` with `retryAt`: its free plan's daily limit,
+     until 00:00 UTC, or an outage), or refuses the connection with 503/429, the socket
+     closes and the engine comes back at that time, backing off up to an hour if it
+     keeps happening. The outbox keeps everything meanwhile;
+  5. broadcasts received before catch-up finished are applied but don't move the cursor,
+     so a reconnect can't skip versions; a catch-up with a new `dataset` id (the server's
+     data was deleted or rolled back) restarts from 0 and re-offers this device's rows;
+  6. pings every 30 s (answered by the server without waking it); no answer for 75 s
      (e.g. after the laptop slept) drops the socket and reconnects. Exponential backoff
      with jitter on failures, skipped when the app comes back to the foreground. On
      phones the socket closes 30 s after the app goes to the background; desktops keep
      it open while the window is hidden.
 - **HTTP fallback** (`SyncEngine.syncOverHttp`) is used by background isolates
   (notification actions, widget buttons).
-- **Accounts**: guest data joins an account on first sign-in (every row queued); data of a
-  different account is wiped only after confirmation; sign-out keeps or removes local data.
+- **Accounts**: guest data joins an account on first sign-in (every row offered
+  add-only, `ifAbsent`, so it never overwrites the account's newer edits or deleted rows);
+  data of a different account is wiped only after confirmation and an automatic backup;
+  sign-out either keeps local data (and the unsynced outbox, which syncs on the next
+  sign-in to the same account) or removes it (after an automatic backup).
 
 ### Server (`server/`)
 
@@ -157,7 +182,9 @@ One Durable Object per user (`idFromName(userId)`) with its own SQLite:
 clock is newer than the stored clock for that field (**per-field last-writer-wins**), so
 the phone setting a status and the laptop editing notes on the same session both keep
 their change. Accepted changes bump a monotonically increasing `version` (the clients'
-cursor) and are broadcast to all of the user's sockets. Details: [server/README.md](../server/README.md).
+cursor) and are broadcast to all of the user's sockets. A push is one transaction that
+writes each touched row once. "Delete cloud data" moves rows to a trash for 30 days.
+Details, including the free plan's daily limits: [server/README.md](../server/README.md).
 
 ### Sign-in
 
@@ -228,10 +255,10 @@ scheme. The Google client secret exists only in the Worker. Sessions renew after
 | Suite | What it covers |
 |---|---|
 | `app/test/domain` | Engine (DST weeks, biweekly, ranges, holidays, moves, numbering), stats, requirements, reminder planning |
-| `app/test/core` | Repository (history kept, null clearing, cascade + undo), HLC, backup import/export |
+| `app/test/core` | Repository (history kept, null clearing, cascade + undo), HLC, backup import/export; data safety: editor saves, import merge/replace, trash, snapshots, refused and corrected changes, sync pausing when the server is over its limit |
 | `app/test/widget` | Mark + undo, editor validation, unsaved-changes guard, empty state; adaptive behavior per platform (desktop sidebar, shortcuts, right-click, list + details; iPhone dialogs and pickers; phone swipe) |
 | `app/test_screenshots` | Renders every main screen offscreen to PNG (English/Hebrew, light/dark; phone, desktop 1440×900, iPhone) |
 | `app/test_sync` | Two simulated devices against a local Worker: live sync, field merges, delete/undo |
-| `server/test` | Merge rules, validation, auth/PKCE, isolation, paging, revocation, WebSocket broadcast |
+| `server/test` | Merge rules (incl. `ifAbsent`), validation, auth/PKCE, isolation, paging, revocation, WebSocket broadcast, corrections, one write per row per push, delete + restore, dataset resets, storage failures |
 
 App tests run with `TZ=Asia/Jerusalem` so they cross real daylight-saving transitions.

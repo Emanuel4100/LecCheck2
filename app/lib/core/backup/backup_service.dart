@@ -1,11 +1,27 @@
 import 'dart:convert';
 
+import 'package:drift/drift.dart' show DataClass;
 import 'package:material_color_utilities/material_color_utilities.dart';
 
 import '../../app/theme/colors.dart';
 import '../../domain/local_date.dart';
 import '../../domain/schedule_types.dart';
+import '../db/app_database.dart';
+import '../db/mappers.dart';
 import '../db/schedule_repository.dart';
+
+/// A backup read into rows, before anything is written.
+class ParsedBackup {
+  const ParsedBackup(this.tables);
+
+  /// Rows keyed by table name (the sync table names).
+  final Map<String, List<Map<String, Object?>>> tables;
+
+  int get semesters => [
+    for (final row in tables['semesters'] ?? const <Map<String, Object?>>[])
+      if (row['deleted'] != true) row,
+  ].length;
+}
 
 /// Backup files: JSON v3 (this app) and v1/v2 exports from the old LecCheck.
 class BackupService {
@@ -16,8 +32,10 @@ class BackupService {
   static const format = 'leccheck';
   static const version = 3;
 
-  Future<String> exportJson() async {
-    final tables = await repo.exportRows();
+  /// A v3 backup. With [includeDeleted] (snapshots), deleted rows are kept
+  /// too, so a restore can bring back exactly this state.
+  Future<String> exportJson({bool includeDeleted = false}) async {
+    final tables = await repo.exportRows(includeDeleted: includeDeleted);
     return const JsonEncoder.withIndent('  ').convert({
       'format': format,
       'version': version,
@@ -28,61 +46,71 @@ class BackupService {
 
   /// Imports a backup and returns how many semesters it contained.
   /// Throws [FormatException] for anything that isn't a LecCheck backup.
-  Future<int> importJson(String text) async {
-    final Object? json;
-    try {
-      json = jsonDecode(text);
-    } on FormatException {
-      rethrow;
-    }
+  Future<int> importJson(String text, {ImportMode mode = ImportMode.merge}) =>
+      importParsed(parse(text), mode: mode);
+
+  Future<int> importParsed(
+    ParsedBackup backup, {
+    ImportMode mode = ImportMode.merge,
+  }) async {
+    await repo.importRows(backup.tables, mode: mode);
+    return backup.semesters;
+  }
+
+  /// Reads a backup without writing anything.
+  /// Throws [FormatException] for anything that isn't a LecCheck backup.
+  static ParsedBackup parse(String text) {
+    final Object? json = jsonDecode(text);
     if (json is! Map<String, Object?>) {
       throw const FormatException('Not a LecCheck backup');
     }
     if (json['format'] == format && json['tables'] is Map) {
-      return _importV3(json);
+      return ParsedBackup({
+        for (final e in (json['tables']! as Map).entries)
+          if (e.value is List)
+            e.key as String: [
+              for (final row in e.value as List)
+                if (row is Map && row['id'] is String)
+                  row.cast<String, Object?>(),
+            ],
+      });
     }
+    final legacy = _LegacyTables();
     if (json['semesters'] is List) {
-      final semesters = (json['semesters']! as List).whereType<Map>();
-      for (final s in semesters) {
-        await _importLegacySemester(s.cast<String, Object?>());
+      for (final s in (json['semesters']! as List).whereType<Map>()) {
+        legacy.addSemester(s.cast<String, Object?>());
       }
-      return semesters.length;
+      return ParsedBackup(legacy.tables);
     }
     if (json['courses'] is List && json['startDate'] is String) {
-      await _importLegacySemester({
+      legacy.addSemester({
         ...json,
         'id': json['id'] ?? 'semester_1',
         'name': json['name'] ?? 'Semester',
       });
-      return 1;
+      return ParsedBackup(legacy.tables);
     }
     throw const FormatException('Not a LecCheck backup');
   }
+}
 
-  Future<int> _importV3(Map<String, Object?> json) async {
-    final tables = <String, List<Map<String, Object?>>>{
-      for (final e in (json['tables']! as Map).entries)
-        if (e.value is List)
-          e.key as String: [
-            for (final row in e.value as List)
-              if (row is Map) row.cast<String, Object?>(),
-          ],
-    };
-    await repo.importRows(tables);
-    return tables['semesters']?.length ?? 0;
-  }
+/// Converts v1/v2 exports into v3 rows.
+class _LegacyTables {
+  final tables = <String, List<Map<String, Object?>>>{};
 
-  // ------------------------------------------------------------- legacy --
+  void _add(String table, DataClass row) =>
+      (tables[table] ??= []).add(row.toJson()..remove('updatedAt'));
 
   /// One v1/v2 semester: meetings become rules; lectures with a status,
   /// notes or recording become session overrides; no-class dates become
   /// ranges.
-  Future<void> _importLegacySemester(Map<String, Object?> s) async {
+  void addSemester(Map<String, Object?> s) {
     final semesterId = s['id']?.toString() ?? ScheduleRepository.newId();
     final start = _date(s['startDate']) ?? LocalDate.today();
     final end = _date(s['endDate']) ?? start.addDays(13 * 7);
     final visible = (s['visibleWeekdays'] as List?)?.whereType<int>().toSet();
-    await repo.saveSemester(
+    _add(
+      'semesters',
       SemesterInfo(
         id: semesterId,
         name: (s['name'] as String?)?.trim().isNotEmpty ?? false
@@ -94,26 +122,33 @@ class BackupService {
         visibleDays: visible == null || visible.isEmpty
             ? const {1, 2, 3, 4, 5, 6, 7}
             : visible,
-      ),
+      ).toRow(),
     );
-    if (s['use24HourTime'] is bool) {
-      await repo.setUse24h(s['use24HourTime']! as bool);
-    }
-    if (s['enableMeetingNumbers'] is bool) {
-      await repo.setMeetingNumbers(s['enableMeetingNumbers']! as bool);
+    if (s['use24HourTime'] is bool || s['enableMeetingNumbers'] is bool) {
+      tables['user_settings'] = [
+        UserSettingsRow(
+          id: 'me',
+          deleted: false,
+          updatedAt: 0,
+          use24h: s['use24HourTime'] as bool?,
+          meetingNumbers: s['enableMeetingNumbers'] as bool? ?? true,
+        ).toJson()..remove('updatedAt'),
+      ];
     }
 
     final noClass = <LocalDate>{
       for (final d in (s['noClassDates'] as List?) ?? const []) ?_date(d),
     };
     for (final range in _mergeDates(noClass)) {
-      await repo.saveNoClassRange(
+      _add(
+        'no_class_ranges',
         NoClassRange(
-          id: ScheduleRepository.newId(),
+          // Stable, so importing the same file twice doesn't duplicate it.
+          id: '${semesterId}_nc_${range.$1.toIso()}',
           semesterId: semesterId,
           start: range.$1,
           end: range.$2,
-        ),
+        ).toRow(),
       );
     }
 
@@ -142,7 +177,8 @@ class BackupService {
           ),
         );
       }
-      await repo.saveCourse(
+      _add(
+        'courses',
         CourseInfo(
           id: courseId,
           semesterId: semesterId,
@@ -154,10 +190,11 @@ class BackupService {
           links: _links(c['extraLinks']),
           colorKey: _nearestPaletteKey(c['color']),
           sortOrder: order++,
-        ),
-        meetings: meetings,
-        requirements: const [],
+        ).toRow(),
       );
+      for (final m in meetings) {
+        _add('meetings', m.toRow());
+      }
 
       for (final rawLecture in (c['lectures'] as List?) ?? const []) {
         if (rawLecture is! Map) continue;
@@ -178,11 +215,15 @@ class BackupService {
             lecture['meetingId']?.toString() ??
             _matchMeeting(meetings, date, lecture)?.id;
         if (meetingId == null) continue;
-        await repo.saveOverride(
-          SessionOverride(
+        _add(
+          'session_overrides',
+          SessionOverrideRow(
+            id: sessionId(meetingId, date),
+            deleted: false,
+            updatedAt: 0,
             meetingId: meetingId,
-            originalDate: date,
-            status: status,
+            originalDate: date.toIso(),
+            status: status?.key,
             notes: notes,
             recordingUrl: recording?.isEmpty ?? true ? null : recording,
           ),

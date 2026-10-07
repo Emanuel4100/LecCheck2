@@ -56,13 +56,32 @@ class HlcClock {
   final int Function() _wallClock;
   Hlc _last;
 
+  /// Added to the device clock: server time minus device time.
+  int offsetMs = 0;
+
   Hlc get last => _last;
 
   static int _systemMillis() => DateTime.now().millisecondsSinceEpoch;
 
+  int _wall() => _wallClock() + offsetMs;
+
+  /// Adopts the server's time. A wrong device clock would otherwise stamp
+  /// edits the server refuses (too far ahead) or that lose every merge (too
+  /// far behind).
+  ///
+  /// If this clock already ran past what the server accepts ([maxAheadMs],
+  /// its skew limit), it steps back to just under that limit: still later
+  /// than anything the server took, so new edits keep winning, but accepted.
+  void correct(int serverNow, {int maxAheadMs = 5 * 60 * 1000}) {
+    offsetMs = serverNow - _wallClock();
+    if (_last.millis > serverNow + maxAheadMs) {
+      _last = Hlc(serverNow + maxAheadMs - 60 * 1000, 0, node);
+    }
+  }
+
   /// Timestamp for a local change.
   Hlc tick() {
-    final wall = _wallClock();
+    final wall = _wall();
     _last = wall > _last.millis
         ? Hlc(wall, 0, node)
         : Hlc(_last.millis, _last.counter + 1, node);
@@ -72,7 +91,7 @@ class HlcClock {
   /// Moves past a timestamp seen from another device, so later local edits
   /// always win over what we already received.
   void receive(Hlc remote) {
-    final wall = _wallClock();
+    final wall = _wall();
     final millis = math.max(wall, math.max(_last.millis, remote.millis));
     final int counter;
     if (millis == _last.millis && millis == remote.millis) {

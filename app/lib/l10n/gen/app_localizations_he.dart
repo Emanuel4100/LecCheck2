@@ -767,13 +767,6 @@ class AppLocalizationsHe extends AppLocalizations {
       'שחזור גיבוי של LecCheck (כולל קבצים מהאפליקציה הישנה)';
 
   @override
-  String get importReplaceTitle => 'להחליף את הנתונים?';
-
-  @override
-  String get importReplaceBody =>
-      'סמסטרים מיובאים יתווספו; סמסטרים עם אותו מזהה יוחלפו.';
-
-  @override
   String importDone(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
@@ -871,7 +864,7 @@ class AppLocalizationsHe extends AppLocalizations {
 
   @override
   String get deleteCloudBody =>
-      'הנתונים המסונכרנים יימחקו מהשרת. במכשיר הזה יישאר עותק.';
+      'הנתונים המסונכרנים יימחקו מהשרת, וכל המכשירים יתנתקו. במכשיר הזה יישאר עותק.';
 
   @override
   String get replaceDataTitle => 'להחליף חשבון?';
@@ -1012,4 +1005,103 @@ class AppLocalizationsHe extends AppLocalizations {
 
   @override
   String get presetAccent => 'צבע המערכת';
+
+  @override
+  String get importTitle => 'לייבא את הגיבוי?';
+
+  @override
+  String importPreview(int semesters, int added, int changed) {
+    return 'בגיבוי יש $semesters סמסטרים: $added פריטים חדשים ו־$changed שונים משלך.\n\n„הוספת החסר” מוסיפה רק מה שאין לך. „החלפה” דורסת את הגרסאות שלך בכל המכשירים; לפני כן נשמר גיבוי אוטומטי.';
+  }
+
+  @override
+  String get importMerge => 'הוספת החסר';
+
+  @override
+  String get importNothing => 'כל מה שבגיבוי כבר נמצא כאן.';
+
+  @override
+  String get snapshots => 'גיבויים אוטומטיים';
+
+  @override
+  String get snapshotsSubtitle =>
+      'נשמרים מדי יום ולפני ייבוא או התנתקות. אפשר לחזור למצב קודם.';
+
+  @override
+  String get snapshotsEmpty => 'עדיין אין גיבויים אוטומטיים.';
+
+  @override
+  String get snapshotDaily => 'יומי';
+
+  @override
+  String get snapshotImport => 'לפני ייבוא';
+
+  @override
+  String get snapshotRestore => 'לפני שחזור';
+
+  @override
+  String get snapshotSignOut => 'לפני התנתקות';
+
+  @override
+  String get snapshotSwitch => 'לפני החלפת חשבון';
+
+  @override
+  String get restoreSnapshotTitle => 'לשחזר את הגיבוי הזה?';
+
+  @override
+  String get restoreSnapshotBody =>
+      'הנתונים יחזרו למצבם באותו זמן, בכל המכשירים המסונכרנים. הנתונים הנוכחיים נשמרים קודם כגיבוי, כך שאפשר לבטל.';
+
+  @override
+  String get restore => 'שחזור';
+
+  @override
+  String get restoreDone => 'שוחזר';
+
+  @override
+  String get recentlyDeleted => 'נמחקו לאחרונה';
+
+  @override
+  String get recentlyDeletedSubtitle =>
+      'סמסטרים וקורסים שנמחקו ב־30 הימים האחרונים';
+
+  @override
+  String get recentlyDeletedEmpty => 'לא נמחק דבר לאחרונה.';
+
+  @override
+  String deletedSemester(String date) {
+    return 'סמסטר · נמחק $date';
+  }
+
+  @override
+  String deletedCourse(String date) {
+    return 'קורס · נמחק $date';
+  }
+
+  @override
+  String syncFailed(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count שינויים לא סונכרנו',
+      two: 'שני שינויים לא סונכרנו',
+      one: 'שינוי אחד לא סונכרן',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get syncFailedSubtitle => 'הם נשמרים במכשיר הזה.';
+
+  @override
+  String get retry => 'ניסיון חוזר';
+
+  @override
+  String syncPaused(String time) {
+    return 'הסנכרון מושהה עד $time';
+  }
+
+  @override
+  String get syncPausedSubtitle =>
+      'שרת הסנכרון עמוס. השינויים שלך שמורים במכשיר הזה ויסונכרנו אז.';
 }

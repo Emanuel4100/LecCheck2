@@ -77,4 +77,6 @@ abstract final class LecIcons {
   static const widget = Icons.widgets_outlined;
   static const refresh = Icons.refresh_rounded;
   static const warning = Icons.warning_amber_rounded;
+  static const history = Icons.history_rounded;
+  static const restore = Icons.restore_from_trash_outlined;
 }

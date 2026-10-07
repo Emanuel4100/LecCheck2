@@ -1,4 +1,4 @@
-import { env, SELF } from "cloudflare:test";
+import { env, runInDurableObject, SELF } from "cloudflare:test";
 import { describe, expect, it } from "vitest";
 import { isAllowedRedirect } from "../src/auth";
 import { pkceChallenge, randomId, signToken } from "../src/jwt";
@@ -16,11 +16,11 @@ async function login(name: string): Promise<string> {
   return ((await res.json()) as { token: string }).token;
 }
 
-async function sync(token: string, since: number, changes: unknown[] = []) {
+async function sync(token: string, since: number, changes: unknown[] = [], dataset?: string) {
   const res = await SELF.fetch(`${base}/v1/sync`, {
     method: "POST",
     headers: { Authorization: `Bearer ${token}`, "content-type": "application/json" },
-    body: JSON.stringify({ since, changes }),
+    body: JSON.stringify({ since, changes, dataset }),
   });
   return { status: res.status, body: res.status === 200 ? ((await res.json()) as any) : null };
 }
@@ -59,7 +59,97 @@ describe("HTTP sync", () => {
       { tbl: "users", id: "x", patch: { a: 1 }, hlc: clock() },
       { tbl: "courses", id: "c1", patch: { name: "x" }, hlc: clock(60 * 60 * 1000) },
     ]);
-    expect(body.rejected.map((r: { reason: string }) => r.reason)).toEqual(["unknown_table", "clock_skew"]);
+    expect(body.rejected.map((r: { i: number; reason: string }) => [r.i, r.reason])).toEqual([
+      [0, "unknown_table"],
+      [1, "clock_skew"],
+    ]);
+    expect(Math.abs(body.now - Date.now())).toBeLessThan(60_000);
+  });
+
+  it("returns the server's row when a pushed field loses", async () => {
+    const token = await login("ivan");
+    await sync(token, 0, [{ tbl: "courses", id: "c1", patch: { name: "New", deleted: true }, hlc: clock(-1000) }]);
+    const { body } = await sync(token, 0, [
+      { tbl: "courses", id: "c1", patch: { name: "Old" }, hlc: clock(-5000, 0, "laptop01") },
+      { tbl: "courses", id: "c1", patch: { name: "Old", deleted: false, code: "101" }, hlc: clock(0, 0, "laptop01"), ifAbsent: true },
+    ]);
+    expect(body.corrections).toEqual([
+      expect.objectContaining({ tbl: "courses", id: "c1", data: { id: "c1", name: "New", deleted: true, code: "101" } }),
+    ]);
+  });
+
+  it("writes each row once per batch, in clock order", async () => {
+    const token = await login("judy");
+    const { body } = await sync(token, 0, [
+      { tbl: "courses", id: "c1", patch: { name: "A" }, hlc: clock(-3000) },
+      { tbl: "courses", id: "c1", patch: { notes: "n" }, hlc: clock(-2000) },
+      { tbl: "courses", id: "c1", patch: { name: "B" }, hlc: clock(-1000) },
+      { tbl: "courses", id: "c2", patch: { name: "C" }, hlc: clock(-1000) },
+      { tbl: "courses", id: "c1", patch: { name: "stale" }, hlc: clock(-5000) },
+    ]);
+    // One version per row: three edits to c1 were one write.
+    expect(body.upto).toBe(2);
+    const c1 = { tbl: "courses", id: "c1", data: { id: "c1", name: "B", notes: "n" }, v: 1 };
+    expect(body.rows).toEqual([c1, expect.objectContaining({ id: "c2", v: 2 })]);
+    expect(body.corrections).toEqual([c1]);
+  });
+
+  it("answers 503 with a retry time when storage fails", async () => {
+    const token = await login("quinn");
+    await sync(token, 0, [{ tbl: "courses", id: "c1", patch: { name: "A" }, hlc: clock(-1000) }]);
+    const stub = env.USER_STORE.get(env.USER_STORE.idFromName("dev:quinn"));
+    await runInDurableObject(stub, (store) => {
+      (store as any).applyChanges = () => {
+        throw new Error("Exceeded allowed rows written in Durable Objects free tier.");
+      };
+    });
+    const res = await SELF.fetch(`${base}/v1/sync`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}`, "content-type": "application/json" },
+      body: JSON.stringify({ since: 0, changes: [{ tbl: "courses", id: "c1", patch: { name: "B" }, hlc: clock() }] }),
+    });
+    expect(res.status).toBe(503);
+    const midnight = (Math.floor(Date.now() / 86_400_000) + 1) * 86_400_000;
+    expect(await res.json()).toEqual({ error: "quota", retryAt: midnight });
+    expect(Number(res.headers.get("Retry-After"))).toBeGreaterThan(0);
+    // Nothing was half-applied.
+    await runInDurableObject(stub, (store) => {
+      delete (store as any).applyChanges;
+    });
+    expect((await sync(token, 0)).body.rows[0].data).toEqual({ id: "c1", name: "A" });
+  });
+
+  it("deleting cloud data can be undone, and resets devices' cursors", async () => {
+    let token = await login("kim");
+    const first = await sync(token, 0, [{ tbl: "courses", id: "c1", patch: { name: "Keep me" }, hlc: clock(-1000) }]);
+    const oldDataset = first.body.dataset;
+    const del = await SELF.fetch(`${base}/v1/account`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    expect(del.status).toBe(204);
+    // Every device is signed out.
+    expect((await sync(token, 0)).status).toBe(401);
+    token = await login("kim");
+    const empty = await sync(token, first.body.upto, [], oldDataset);
+    expect(empty.body.rows).toEqual([]);
+    expect(empty.body.dataset).not.toBe(oldDataset);
+
+    const restore = await SELF.fetch(`${base}/v1/account/restore`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    expect(await restore.json()).toEqual({ restored: 1 });
+    // A device with an old cursor from before the delete still gets the row.
+    const back = await sync(token, first.body.upto, [], empty.body.dataset);
+    expect(back.body.rows).toEqual([expect.objectContaining({ id: "c1", data: { id: "c1", name: "Keep me" } })]);
+  });
+
+  it("a device from another dataset catches up from the start", async () => {
+    const token = await login("leo");
+    const first = await sync(token, 0, [{ tbl: "courses", id: "c1", patch: { name: "A" }, hlc: clock(-1000) }]);
+    expect((await sync(token, first.body.upto, [], first.body.dataset)).body.rows).toEqual([]);
+    expect((await sync(token, first.body.upto, [], "some-older-dataset")).body.rows).toHaveLength(1);
   });
 
   it("keeps users isolated", async () => {
@@ -195,12 +285,37 @@ describe("WebSocket sync", () => {
       }),
     );
     const ack = await phone.next((m) => m.t === "ack");
-    expect(ack).toMatchObject({ batchId: "b1", rejected: [] });
+    expect(ack).toMatchObject({ batchId: "b1", rejected: [], rows: [] });
+    expect(typeof catchUp.dataset).toBe("string");
     const live = await laptop.next((m) => m.t === "changes");
     expect(live.rows[0]).toMatchObject({ id: "c1", data: { name: "Live" } });
 
     phone.ws.close();
     laptop.ws.close();
+  });
+
+  it("tells the device when to retry if a push can't be saved", async () => {
+    const token = await login("rosa");
+    const phone = await connect(token);
+    phone.ws.send(JSON.stringify({ t: "hello", since: 0 }));
+    await phone.next((m) => m.t === "changes");
+    const stub = env.USER_STORE.get(env.USER_STORE.idFromName("dev:rosa"));
+    await runInDurableObject(stub, (store) => {
+      (store as any).applyChanges = () => {
+        throw new Error("Network connection lost.");
+      };
+    });
+    phone.ws.send(
+      JSON.stringify({
+        t: "push",
+        batchId: "b1",
+        changes: [{ tbl: "courses", id: "c1", patch: { name: "Later" }, hlc: clock() }],
+      }),
+    );
+    const error = await phone.next((m) => m.t === "error");
+    expect(error.code).toBe("unavailable");
+    expect(error.retryAt - Date.now()).toBeGreaterThan(50_000);
+    phone.ws.close();
   });
 });
 

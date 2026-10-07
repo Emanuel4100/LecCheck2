@@ -15,6 +15,7 @@ import '../../app/theme/colors.dart';
 import '../../app/theme/motion.dart';
 import '../../app/widgets/common.dart';
 import '../../core/backup/backup_service.dart';
+import '../../core/backup/snapshot_service.dart';
 import '../../core/home_widget/today_widget.dart';
 import '../../core/db/schedule_repository.dart';
 import '../../core/icons/lec_icons.dart';
@@ -599,7 +600,7 @@ class _DataSection extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l = AppLocalizations.of(context);
-    BackupService backup() => BackupService(ref.read(repositoryProvider));
+    final deleted = ref.watch(recentlyDeletedProvider).value ?? const [];
 
     return Column(
       children: [
@@ -609,7 +610,8 @@ class _DataSection extends ConsumerWidget {
           subtitle: Text(l.exportDataSubtitle),
           onTap: () async {
             final messenger = ScaffoldMessenger.of(context);
-            final json = await backup().exportJson();
+            final json = await BackupService(ref.read(repositoryProvider))
+                .exportJson();
             final stamp = LocalDate.today().toIso();
             final saved = await FilePicker.saveFile(
               fileName: 'leccheck-backup-$stamp.json',
@@ -625,31 +627,226 @@ class _DataSection extends ConsumerWidget {
           leading: const Icon(LecIcons.importData),
           title: Text(l.importData),
           subtitle: Text(l.importDataSubtitle),
-          onTap: () async {
-            final messenger = ScaffoldMessenger.of(context);
-            final file = await FilePicker.pickFile(
-              allowedExtensions: const ['json'],
-            );
-            if (file == null || !context.mounted) return;
-            final ok = await confirmDialog(
-              context,
-              title: l.importReplaceTitle,
-              body: l.importReplaceBody,
-              confirmLabel: l.importData,
-            );
-            if (!ok) return;
-            try {
-              final text = utf8.decode(await file.readAsBytes());
-              final count = await backup().importJson(text);
-              messenger.showSnackBar(
-                SnackBar(content: Text(l.importDone(count))),
-              );
-            } on FormatException {
-              messenger.showSnackBar(SnackBar(content: Text(l.importFailed)));
-            }
-          },
+          onTap: () => _import(context, ref),
+        ),
+        ListTile(
+          leading: const Icon(LecIcons.history),
+          title: Text(l.snapshots),
+          subtitle: Text(l.snapshotsSubtitle),
+          onTap: () => showAppSheet<void>(
+            context: context,
+            scrollControlled: true,
+            builder: (_) => const _SnapshotList(),
+          ),
+        ),
+        ListTile(
+          leading: const Icon(LecIcons.restore),
+          title: Text(l.recentlyDeleted),
+          subtitle: Text(l.recentlyDeletedSubtitle),
+          trailing: deleted.isEmpty ? null : Text('${deleted.length}'),
+          onTap: () => showAppSheet<void>(
+            context: context,
+            scrollControlled: true,
+            builder: (_) => const _RecentlyDeletedList(),
+          ),
         ),
       ],
+    );
+  }
+
+  /// Reads the file, shows what it would change, and imports it after an
+  /// automatic backup. "Add missing" never changes existing data.
+  Future<void> _import(BuildContext context, WidgetRef ref) async {
+    final l = AppLocalizations.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+    final repo = ref.read(repositoryProvider);
+    final file = await FilePicker.pickFile(allowedExtensions: const ['json']);
+    if (file == null || !context.mounted) return;
+    final ParsedBackup backup;
+    try {
+      backup = BackupService.parse(utf8.decode(await file.readAsBytes()));
+    } on FormatException {
+      messenger.showSnackBar(SnackBar(content: Text(l.importFailed)));
+      return;
+    }
+    final preview = await repo.previewImport(backup.tables);
+    if (preview.added == 0 && preview.changed == 0) {
+      messenger.showSnackBar(SnackBar(content: Text(l.importNothing)));
+      return;
+    }
+    if (!context.mounted) return;
+    final mode = await showChoiceDialog<ImportMode?>(
+      context,
+      title: l.importTitle,
+      body: l.importPreview(backup.semesters, preview.added, preview.changed),
+      choices: [
+        DialogChoice(l.cancel, null),
+        if (preview.changed > 0)
+          DialogChoice(l.replace, ImportMode.replace, destructive: true),
+        DialogChoice(l.importMerge, ImportMode.merge, primary: true),
+      ],
+    );
+    if (mode == null) return;
+    await ref.read(snapshotServiceProvider).take(SnapshotReason.beforeImport);
+    final count = await BackupService(repo).importParsed(backup, mode: mode);
+    messenger.showSnackBar(SnackBar(content: Text(l.importDone(count))));
+  }
+}
+
+/// Automatic backups, newest first; tapping one restores it.
+class _SnapshotList extends ConsumerStatefulWidget {
+  const _SnapshotList();
+
+  @override
+  ConsumerState<_SnapshotList> createState() => _SnapshotListState();
+}
+
+class _SnapshotListState extends ConsumerState<_SnapshotList> {
+  late final _snapshots = ref.read(snapshotServiceProvider).list();
+
+  String _reason(SnapshotReason reason, AppLocalizations l) => switch (reason) {
+    SnapshotReason.daily => l.snapshotDaily,
+    SnapshotReason.beforeImport => l.snapshotImport,
+    SnapshotReason.beforeRestore => l.snapshotRestore,
+    SnapshotReason.beforeSignOut => l.snapshotSignOut,
+    SnapshotReason.beforeAccountSwitch => l.snapshotSwitch,
+  };
+
+  Future<void> _restore(Snapshot snapshot) async {
+    final l = AppLocalizations.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context);
+    final ok = await confirmDialog(
+      context,
+      title: l.restoreSnapshotTitle,
+      body: l.restoreSnapshotBody,
+      confirmLabel: l.restore,
+      destructive: true,
+    );
+    if (!ok) return;
+    await ref.read(snapshotServiceProvider).restore(snapshot);
+    navigator.pop();
+    messenger.showSnackBar(SnackBar(content: Text(l.restoreDone)));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    final fmt = Fmt.of(context);
+    return FutureBuilder(
+      future: _snapshots,
+      builder: (context, snap) {
+        final snapshots = snap.data;
+        return _SheetList(
+          title: l.snapshots,
+          empty: snapshots == null ? null : l.snapshotsEmpty,
+          children: [
+            for (final s in snapshots ?? const <Snapshot>[])
+              ListTile(
+                leading: const Icon(LecIcons.history),
+                title: Text(
+                  '${fmt.longDate(LocalDate.fromDateTime(s.takenAt))} · '
+                  '${fmt.time(s.takenAt.hour * 60 + s.takenAt.minute)}',
+                ),
+                subtitle: Text(_reason(s.reason, l)),
+                trailing: TextButton(
+                  onPressed: () => _restore(s),
+                  child: Text(l.restore),
+                ),
+              ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+/// Deleted semesters and courses, with a restore button each.
+class _RecentlyDeletedList extends ConsumerWidget {
+  const _RecentlyDeletedList();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l = AppLocalizations.of(context);
+    final fmt = Fmt.of(context);
+    final items = ref.watch(recentlyDeletedProvider).value;
+    return _SheetList(
+      title: l.recentlyDeleted,
+      empty: items == null ? null : l.recentlyDeletedEmpty,
+      children: [
+        for (final item in items ?? const <DeletedItem>[])
+          ListTile(
+            leading: Icon(
+              item.isSemester ? LecIcons.semester : LecIcons.courses,
+            ),
+            title: Text(item.name),
+            subtitle: Text(
+              (item.isSemester ? l.deletedSemester : l.deletedCourse)(
+                fmt.dayMonth(LocalDate.fromDateTime(item.deletedAt)),
+              ),
+            ),
+            trailing: TextButton(
+              onPressed: () async {
+                final messenger = ScaffoldMessenger.of(context);
+                await ref.read(repositoryProvider).restoreDeleted(item);
+                messenger.showSnackBar(SnackBar(content: Text(l.restoreDone)));
+              },
+              child: Text(l.restore),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+/// Title and a scrollable list for [showAppSheet]; shows [empty] when there
+/// are no children (null while loading).
+class _SheetList extends StatelessWidget {
+  const _SheetList({
+    required this.title,
+    required this.empty,
+    required this.children,
+  });
+
+  final String title;
+  final String? empty;
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return ConstrainedBox(
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.sizeOf(context).height * 0.7,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(24, 16, 24, 8),
+            child: Text(title, style: theme.textTheme.titleLarge),
+          ),
+          if (children.isEmpty && empty != null)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 8, 24, 32),
+              child: Text(
+                empty!,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            )
+          else
+            Flexible(
+              child: ListView(
+                shrinkWrap: true,
+                padding: const EdgeInsets.only(bottom: 24),
+                children: children,
+              ),
+            ),
+        ],
+      ),
     );
   }
 }

@@ -35,4 +35,20 @@ void main() {
     wall = 6000;
     expect(clock.tick().millis, 6000);
   });
+
+  test('correct adopts server time and steps back from a runaway clock', () {
+    var wall = 10 * 60 * 1000; // The device runs 10 minutes fast.
+    final clock = HlcClock(node: 'n1', wallClock: () => wall);
+    final runaway = clock.tick();
+    const serverNow = 0;
+    clock.correct(serverNow);
+    final next = clock.tick();
+    // Within the server's 5-minute limit, and still after anything it took.
+    expect(next.millis, lessThanOrEqualTo(serverNow + 5 * 60 * 1000));
+    expect(next.millis, greaterThan(serverNow));
+    expect(next.compareTo(runaway), lessThan(0));
+    // Later ticks follow server time.
+    wall += 60 * 60 * 1000;
+    expect(clock.tick().millis, serverNow + 60 * 60 * 1000);
+  });
 }

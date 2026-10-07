@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import { auth, issueSession, sessionFromRequest } from "./auth";
 import { pages } from "./pages";
+import { unavailable, unavailableResponse } from "./protocol";
 import { UserStore, type Env } from "./user-store";
 
 export { UserStore };
@@ -24,7 +25,13 @@ app.get("/v1/sync", async (c) => {
   }
   const headers = new Headers(c.req.raw.headers);
   headers.set("X-Session-Epoch", String(session.epoch));
-  return storeFor(c.env, session.sub).fetch(new Request(c.req.raw, { headers }));
+  try {
+    return await storeFor(c.env, session.sub).fetch(new Request(c.req.raw, { headers }));
+  } catch (error) {
+    // E.g. the free plan's daily Durable Object requests are used up.
+    console.error("sync connect failed", error);
+    return unavailableResponse(unavailable(error, Date.now()));
+  }
 });
 
 /** Same exchange over plain HTTP (background tasks, WebSocket fallback). */
@@ -32,15 +39,23 @@ app.post("/v1/sync", async (c) => {
   const session = await sessionFromRequest(c.req.raw, c.env);
   if (!session) return c.text("Unauthorized", 401);
   const body = await c.req
-    .json<{ since?: number; changes?: unknown[] }>()
+    .json<{ since?: number; changes?: unknown[]; dataset?: unknown }>()
     .catch(() => null);
   if (!body) return c.json({ error: "bad_json" }, 400);
-  const result = await storeFor(c.env, session.sub).sync(
-    session.epoch,
-    Number(body.since) || 0,
-    Array.isArray(body.changes) ? body.changes : [],
-  );
+  let result;
+  try {
+    result = await storeFor(c.env, session.sub).sync(
+      session.epoch,
+      Number(body.since) || 0,
+      Array.isArray(body.changes) ? body.changes : [],
+      typeof body.dataset === "string" ? body.dataset : null,
+    );
+  } catch (error) {
+    console.error("sync failed", error);
+    return unavailableResponse(unavailable(error, Date.now()));
+  }
   if (!result) return c.text("Session revoked", 401);
+  if ("retryAt" in result) return unavailableResponse(result);
   return c.json(result);
 });
 
@@ -61,11 +76,46 @@ app.post("/v1/auth/signout-everywhere", async (c) => {
   return c.body(null, 204);
 });
 
-/** Deletes everything stored for the account. */
+/** Deletes the account's synced data (restorable for 30 days) and signs out
+ * every device. */
 app.delete("/v1/account", async (c) => {
   const session = await sessionFromRequest(c.req.raw, c.env);
   if (!session) return c.text("Unauthorized", 401);
   await storeFor(c.env, session.sub).deleteAccount();
+  return c.body(null, 204);
+});
+
+/** Undoes "Delete cloud data" within 30 days. */
+app.post("/v1/account/restore", async (c) => {
+  const session = await sessionFromRequest(c.req.raw, c.env);
+  if (!session) return c.text("Unauthorized", 401);
+  const store = storeFor(c.env, session.sub);
+  if (session.epoch !== (await store.epoch())) return c.text("Session revoked", 401);
+  return c.json({ restored: await store.restoreDeleted() });
+});
+
+/** Rolls the account's cloud data back to a point in time (up to 30 days),
+ * for recovering from a bad sync or import. Devices re-offer what they have,
+ * so nothing they hold is lost. */
+app.post("/v1/account/restore-to", async (c) => {
+  const session = await sessionFromRequest(c.req.raw, c.env);
+  if (!session) return c.text("Unauthorized", 401);
+  const body = await c.req.json<{ at?: unknown }>().catch(() => null);
+  const at = Number(body?.at);
+  const now = Date.now();
+  if (!Number.isFinite(at) || at > now || at < now - 30 * 24 * 60 * 60 * 1000) {
+    return c.json({ error: "at must be within the last 30 days" }, 400);
+  }
+  const store = storeFor(c.env, session.sub);
+  const epoch = await store.epoch();
+  if (session.epoch !== epoch) return c.text("Session revoked", 401);
+  const bookmark = await store.bookmarkFor(at);
+  try {
+    await store.restoreBookmark(bookmark);
+  } catch {
+    // The object aborts itself to load the restored state.
+  }
+  await storeFor(c.env, session.sub).afterRestore(epoch);
   return c.body(null, 204);
 });
 

@@ -14,6 +14,10 @@
 - **Extras**: before-class and after-class reminders with background actions, attendance
   requirements, Android home-screen widget, release pipeline (APK, IPA + AltStore source,
   Linux tarball).
+- **Data safety** (2.0.0-beta.3): add-only re-joins and imports, editors that save only
+  what changed, refused changes kept, corrections for lost writes, automatic local
+  backups, Recently deleted, 30-day trash for deleted cloud data, dataset ids for
+  server resets, Android backup rules, pausing sync at the free plan's daily limit.
 
 ## Not yet verified on real hardware
 
@@ -29,7 +33,11 @@ These are built and compile, but have only been exercised in tests so far:
 - **Desktop**: system tray (keep reminders running when the window is closed), keyboard
   shortcuts, Windows build + installer, AUR package, Flatpak.
 - **iPhone widget** (WidgetKit) — needs App Group support from AltStore/SideStore.
-- **Automatic local backups** (daily, keep the last 7, plus one before destructive actions).
+- **Data safety, part 3**: SQLite WAL + `quick_check` on startup (offer the latest
+  automatic backup if it fails), drift migration tests, keep server rows the app can't
+  read yet (and re-fetch after an update), server-side value validation, HLC stored in
+  SQLite, a multi-device convergence fuzz test, and an in-app "restore deleted cloud
+  data" button (the server side exists).
 - **Reminders**: mute per course; daily background top-up (workmanager) so reminders stay
   scheduled even if the app isn't opened for two weeks.
 - **Stats v2**: per-week heatmap, requirement projections.

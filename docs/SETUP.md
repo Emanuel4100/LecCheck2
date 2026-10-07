@@ -128,6 +128,8 @@ over. Holidays become no-class ranges.
 - **Exact reminders on Android** use the `USE_EXACT_ALARM` permission, which is
   fine for apps installed outside the Play Store. If you ever publish to Google
   Play, review that policy first.
-- **Free-tier headroom**: Cloudflare's free plan allows 100,000 Durable Object
-  requests per day, and one person uses a few hundred, so you're covered even
-  if classmates join.
+- **Free-tier headroom**: Cloudflare's free plan allows, per day, 100,000 Durable
+  Object requests and 100,000 rows written (shared by everyone), and one person
+  uses a few hundred, so you're covered even if classmates join. The free plan
+  never bills: if a limit is ever reached, sync pauses until 00:00 UTC and every
+  change waits on its device until then.

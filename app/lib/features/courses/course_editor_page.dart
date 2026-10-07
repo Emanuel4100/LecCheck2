@@ -167,6 +167,10 @@ class _CourseEditorPageState extends ConsumerState<CourseEditorPage> {
   CourseInfo? get _existing =>
       widget.courseId == null ? null : _data?.course(widget.courseId!);
 
+  /// The course as the editor loaded it; saving writes only what changed
+  /// since, so edits synced in from another device meanwhile survive.
+  CourseBase? _base;
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -175,6 +179,11 @@ class _CourseEditorPageState extends ConsumerState<CourseEditorPage> {
     final existing = _existing;
     final data = _data;
     if (existing != null && data != null) {
+      _base = CourseBase(
+        course: existing,
+        meetings: data.meetingsOf(existing.id),
+        requirements: data.requirementsOf(existing.id),
+      );
       _name.text = existing.name;
       _code.text = existing.code;
       _lecturer.text = existing.lecturer;
@@ -302,6 +311,7 @@ class _CourseEditorPageState extends ConsumerState<CourseEditorPage> {
           ),
           meetings: split,
           requirements: [for (final r in _requirements) r.toRequirement(id)],
+          base: _base,
         );
     _initialSnapshot = _snapshot();
     if (mounted) context.pop();

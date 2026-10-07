@@ -1,10 +1,13 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:collection/collection.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../core/backup/snapshot_service.dart';
 import '../core/db/app_database.dart';
 import '../core/db/schedule_repository.dart';
 import '../domain/attendance_stats.dart';
@@ -58,6 +61,20 @@ final repositoryProvider = Provider<ScheduleRepository>((ref) {
   );
   return repo;
 });
+
+/// Automatic local backups, in the app's support directory.
+final snapshotServiceProvider = Provider<SnapshotService>(
+  (ref) => SnapshotService(
+    ref.watch(repositoryProvider),
+    () async =>
+        Directory('${(await getApplicationSupportDirectory()).path}/snapshots'),
+  ),
+);
+
+/// Deleted semesters and courses that can still be restored.
+final recentlyDeletedProvider = StreamProvider<List<DeletedItem>>(
+  (ref) => ref.watch(repositoryProvider).watchRecentlyDeleted(),
+);
 
 // ------------------------------------------------------------- appearance --
 

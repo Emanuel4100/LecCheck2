@@ -4153,8 +4153,42 @@ class $OutboxTable extends Outbox with TableInfo<$OutboxTable, OutboxEntry> {
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _ifAbsentMeta = const VerificationMeta(
+    'ifAbsent',
+  );
   @override
-  List<GeneratedColumn> get $columns => [seq, tbl, rowId, patch, hlc];
+  late final GeneratedColumn<bool> ifAbsent = GeneratedColumn<bool>(
+    'if_absent',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("if_absent" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _rejectedMeta = const VerificationMeta(
+    'rejected',
+  );
+  @override
+  late final GeneratedColumn<String> rejected = GeneratedColumn<String>(
+    'rejected',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    seq,
+    tbl,
+    rowId,
+    patch,
+    hlc,
+    ifAbsent,
+    rejected,
+  ];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -4205,6 +4239,18 @@ class $OutboxTable extends Outbox with TableInfo<$OutboxTable, OutboxEntry> {
     } else if (isInserting) {
       context.missing(_hlcMeta);
     }
+    if (data.containsKey('if_absent')) {
+      context.handle(
+        _ifAbsentMeta,
+        ifAbsent.isAcceptableOrUnknown(data['if_absent']!, _ifAbsentMeta),
+      );
+    }
+    if (data.containsKey('rejected')) {
+      context.handle(
+        _rejectedMeta,
+        rejected.isAcceptableOrUnknown(data['rejected']!, _rejectedMeta),
+      );
+    }
     return context;
   }
 
@@ -4234,6 +4280,14 @@ class $OutboxTable extends Outbox with TableInfo<$OutboxTable, OutboxEntry> {
         DriftSqlType.string,
         data['${effectivePrefix}hlc'],
       )!,
+      ifAbsent: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}if_absent'],
+      )!,
+      rejected: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}rejected'],
+      ),
     );
   }
 
@@ -4251,12 +4305,22 @@ class OutboxEntry extends DataClass implements Insertable<OutboxEntry> {
   /// JSON object with only the changed fields.
   final String patch;
   final String hlc;
+
+  /// The server only fills fields it doesn't have yet (data joining an
+  /// account, merged backups), so this can't overwrite newer edits.
+  final bool ifAbsent;
+
+  /// Why the server refused this change. Kept (not pushed) until retried, so
+  /// the edit is never silently dropped.
+  final String? rejected;
   const OutboxEntry({
     required this.seq,
     required this.tbl,
     required this.rowId,
     required this.patch,
     required this.hlc,
+    required this.ifAbsent,
+    this.rejected,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -4266,6 +4330,10 @@ class OutboxEntry extends DataClass implements Insertable<OutboxEntry> {
     map['row_id'] = Variable<String>(rowId);
     map['patch'] = Variable<String>(patch);
     map['hlc'] = Variable<String>(hlc);
+    map['if_absent'] = Variable<bool>(ifAbsent);
+    if (!nullToAbsent || rejected != null) {
+      map['rejected'] = Variable<String>(rejected);
+    }
     return map;
   }
 
@@ -4276,6 +4344,10 @@ class OutboxEntry extends DataClass implements Insertable<OutboxEntry> {
       rowId: Value(rowId),
       patch: Value(patch),
       hlc: Value(hlc),
+      ifAbsent: Value(ifAbsent),
+      rejected: rejected == null && nullToAbsent
+          ? const Value.absent()
+          : Value(rejected),
     );
   }
 
@@ -4290,6 +4362,8 @@ class OutboxEntry extends DataClass implements Insertable<OutboxEntry> {
       rowId: serializer.fromJson<String>(json['rowId']),
       patch: serializer.fromJson<String>(json['patch']),
       hlc: serializer.fromJson<String>(json['hlc']),
+      ifAbsent: serializer.fromJson<bool>(json['ifAbsent']),
+      rejected: serializer.fromJson<String?>(json['rejected']),
     );
   }
   @override
@@ -4301,6 +4375,8 @@ class OutboxEntry extends DataClass implements Insertable<OutboxEntry> {
       'rowId': serializer.toJson<String>(rowId),
       'patch': serializer.toJson<String>(patch),
       'hlc': serializer.toJson<String>(hlc),
+      'ifAbsent': serializer.toJson<bool>(ifAbsent),
+      'rejected': serializer.toJson<String?>(rejected),
     };
   }
 
@@ -4310,12 +4386,16 @@ class OutboxEntry extends DataClass implements Insertable<OutboxEntry> {
     String? rowId,
     String? patch,
     String? hlc,
+    bool? ifAbsent,
+    Value<String?> rejected = const Value.absent(),
   }) => OutboxEntry(
     seq: seq ?? this.seq,
     tbl: tbl ?? this.tbl,
     rowId: rowId ?? this.rowId,
     patch: patch ?? this.patch,
     hlc: hlc ?? this.hlc,
+    ifAbsent: ifAbsent ?? this.ifAbsent,
+    rejected: rejected.present ? rejected.value : this.rejected,
   );
   OutboxEntry copyWithCompanion(OutboxCompanion data) {
     return OutboxEntry(
@@ -4324,6 +4404,8 @@ class OutboxEntry extends DataClass implements Insertable<OutboxEntry> {
       rowId: data.rowId.present ? data.rowId.value : this.rowId,
       patch: data.patch.present ? data.patch.value : this.patch,
       hlc: data.hlc.present ? data.hlc.value : this.hlc,
+      ifAbsent: data.ifAbsent.present ? data.ifAbsent.value : this.ifAbsent,
+      rejected: data.rejected.present ? data.rejected.value : this.rejected,
     );
   }
 
@@ -4334,13 +4416,16 @@ class OutboxEntry extends DataClass implements Insertable<OutboxEntry> {
           ..write('tbl: $tbl, ')
           ..write('rowId: $rowId, ')
           ..write('patch: $patch, ')
-          ..write('hlc: $hlc')
+          ..write('hlc: $hlc, ')
+          ..write('ifAbsent: $ifAbsent, ')
+          ..write('rejected: $rejected')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(seq, tbl, rowId, patch, hlc);
+  int get hashCode =>
+      Object.hash(seq, tbl, rowId, patch, hlc, ifAbsent, rejected);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -4349,7 +4434,9 @@ class OutboxEntry extends DataClass implements Insertable<OutboxEntry> {
           other.tbl == this.tbl &&
           other.rowId == this.rowId &&
           other.patch == this.patch &&
-          other.hlc == this.hlc);
+          other.hlc == this.hlc &&
+          other.ifAbsent == this.ifAbsent &&
+          other.rejected == this.rejected);
 }
 
 class OutboxCompanion extends UpdateCompanion<OutboxEntry> {
@@ -4358,12 +4445,16 @@ class OutboxCompanion extends UpdateCompanion<OutboxEntry> {
   final Value<String> rowId;
   final Value<String> patch;
   final Value<String> hlc;
+  final Value<bool> ifAbsent;
+  final Value<String?> rejected;
   const OutboxCompanion({
     this.seq = const Value.absent(),
     this.tbl = const Value.absent(),
     this.rowId = const Value.absent(),
     this.patch = const Value.absent(),
     this.hlc = const Value.absent(),
+    this.ifAbsent = const Value.absent(),
+    this.rejected = const Value.absent(),
   });
   OutboxCompanion.insert({
     this.seq = const Value.absent(),
@@ -4371,6 +4462,8 @@ class OutboxCompanion extends UpdateCompanion<OutboxEntry> {
     required String rowId,
     required String patch,
     required String hlc,
+    this.ifAbsent = const Value.absent(),
+    this.rejected = const Value.absent(),
   }) : tbl = Value(tbl),
        rowId = Value(rowId),
        patch = Value(patch),
@@ -4381,6 +4474,8 @@ class OutboxCompanion extends UpdateCompanion<OutboxEntry> {
     Expression<String>? rowId,
     Expression<String>? patch,
     Expression<String>? hlc,
+    Expression<bool>? ifAbsent,
+    Expression<String>? rejected,
   }) {
     return RawValuesInsertable({
       if (seq != null) 'seq': seq,
@@ -4388,6 +4483,8 @@ class OutboxCompanion extends UpdateCompanion<OutboxEntry> {
       if (rowId != null) 'row_id': rowId,
       if (patch != null) 'patch': patch,
       if (hlc != null) 'hlc': hlc,
+      if (ifAbsent != null) 'if_absent': ifAbsent,
+      if (rejected != null) 'rejected': rejected,
     });
   }
 
@@ -4397,6 +4494,8 @@ class OutboxCompanion extends UpdateCompanion<OutboxEntry> {
     Value<String>? rowId,
     Value<String>? patch,
     Value<String>? hlc,
+    Value<bool>? ifAbsent,
+    Value<String?>? rejected,
   }) {
     return OutboxCompanion(
       seq: seq ?? this.seq,
@@ -4404,6 +4503,8 @@ class OutboxCompanion extends UpdateCompanion<OutboxEntry> {
       rowId: rowId ?? this.rowId,
       patch: patch ?? this.patch,
       hlc: hlc ?? this.hlc,
+      ifAbsent: ifAbsent ?? this.ifAbsent,
+      rejected: rejected ?? this.rejected,
     );
   }
 
@@ -4425,6 +4526,12 @@ class OutboxCompanion extends UpdateCompanion<OutboxEntry> {
     if (hlc.present) {
       map['hlc'] = Variable<String>(hlc.value);
     }
+    if (ifAbsent.present) {
+      map['if_absent'] = Variable<bool>(ifAbsent.value);
+    }
+    if (rejected.present) {
+      map['rejected'] = Variable<String>(rejected.value);
+    }
     return map;
   }
 
@@ -4435,7 +4542,9 @@ class OutboxCompanion extends UpdateCompanion<OutboxEntry> {
           ..write('tbl: $tbl, ')
           ..write('rowId: $rowId, ')
           ..write('patch: $patch, ')
-          ..write('hlc: $hlc')
+          ..write('hlc: $hlc, ')
+          ..write('ifAbsent: $ifAbsent, ')
+          ..write('rejected: $rejected')
           ..write(')'))
         .toString();
   }
@@ -6789,6 +6898,8 @@ typedef $$OutboxTableCreateCompanionBuilder = OutboxCompanion Function({
   required String rowId,
   required String patch,
   required String hlc,
+  Value<bool> ifAbsent,
+  Value<String?> rejected,
 });
 typedef $$OutboxTableUpdateCompanionBuilder = OutboxCompanion Function({
   Value<int> seq,
@@ -6796,6 +6907,8 @@ typedef $$OutboxTableUpdateCompanionBuilder = OutboxCompanion Function({
   Value<String> rowId,
   Value<String> patch,
   Value<String> hlc,
+  Value<bool> ifAbsent,
+  Value<String?> rejected,
 });
 
 class $$OutboxTableFilterComposer
@@ -6829,6 +6942,16 @@ class $$OutboxTableFilterComposer
 
   ColumnFilters<String> get hlc => $composableBuilder(
     column: $table.hlc,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get ifAbsent => $composableBuilder(
+    column: $table.ifAbsent,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get rejected => $composableBuilder(
+    column: $table.rejected,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -6866,6 +6989,16 @@ class $$OutboxTableOrderingComposer
     column: $table.hlc,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<bool> get ifAbsent => $composableBuilder(
+    column: $table.ifAbsent,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get rejected => $composableBuilder(
+    column: $table.rejected,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$OutboxTableAnnotationComposer
@@ -6891,6 +7024,12 @@ class $$OutboxTableAnnotationComposer
 
   GeneratedColumn<String> get hlc =>
       $composableBuilder(column: $table.hlc, builder: (column) => column);
+
+  GeneratedColumn<bool> get ifAbsent =>
+      $composableBuilder(column: $table.ifAbsent, builder: (column) => column);
+
+  GeneratedColumn<String> get rejected =>
+      $composableBuilder(column: $table.rejected, builder: (column) => column);
 }
 
 class $$OutboxTableTableManager
@@ -6929,12 +7068,16 @@ class $$OutboxTableTableManager
                 Value<String> rowId = const Value.absent(),
                 Value<String> patch = const Value.absent(),
                 Value<String> hlc = const Value.absent(),
+                Value<bool> ifAbsent = const Value.absent(),
+                Value<String?> rejected = const Value.absent(),
               }) => OutboxCompanion(
                 seq: seq,
                 tbl: tbl,
                 rowId: rowId,
                 patch: patch,
                 hlc: hlc,
+                ifAbsent: ifAbsent,
+                rejected: rejected,
               ),
           createCompanionCallback:
               ({
@@ -6943,12 +7086,16 @@ class $$OutboxTableTableManager
                 required String rowId,
                 required String patch,
                 required String hlc,
+                Value<bool> ifAbsent = const Value.absent(),
+                Value<String?> rejected = const Value.absent(),
               }) => OutboxCompanion.insert(
                 seq: seq,
                 tbl: tbl,
                 rowId: rowId,
                 patch: patch,
                 hlc: hlc,
+                ifAbsent: ifAbsent,
+                rejected: rejected,
               ),
           withReferenceMapper: (p0) => p0
               .map(

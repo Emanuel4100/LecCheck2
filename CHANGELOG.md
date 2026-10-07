@@ -20,6 +20,33 @@ Each platform gets its own layout, input and options.
 - **iPhone**: iOS switches, alerts and date/time wheels; no Wallpaper theme (iOS has no
   wallpaper colors); a reminder to refresh the app in AltStore/SideStore.
 
+Data safety: nothing you enter should ever be overwritten, dropped or lost.
+
+- **Signing back in** no longer overwrites newer edits from your other devices or brings
+  back deleted items. Signing out with "Keep on this device" keeps unsynced edits, and
+  they sync when you sign in again.
+- **Editors** save only the fields you changed, so edits that synced in while a course or
+  semester was open are kept, and meetings added elsewhere aren't deleted.
+- **Sync** keeps changes the server refuses (shown in Account with a Retry button)
+  instead of dropping them, corrects a wrong device clock from the server's time, and
+  fixes this device's copy when one of its edits loses to a newer one.
+- **Import** shows what a backup would change. "Add missing" (the default) never changes
+  existing data; "Replace" saves an automatic backup first.
+- **Automatic backups**: a daily one, plus one before imports, restores, removing data
+  on sign-out, and switching accounts. Restore them from Settings → Data.
+- **Recently deleted**: restore semesters and courses deleted in the last 30 days.
+- **Backups off the device**: Android's backup to your Google Drive includes the database
+  and the automatic backups, but not the sign-in (sign in again after a restore). On
+  iPhone, iCloud backup already included them. Automatic backups are compressed.
+- **Free plan**: if the sync server ever reaches Cloudflare's free daily limit, sync
+  pauses until the limit resets (Account shows until when) instead of retrying, and
+  your changes wait on the device. Several edits to the same item are saved on the
+  server as one write.
+- **Server**: "Delete cloud data" signs out every device and keeps a copy for 30 days
+  in case it was a mistake (restored on request for now), and point-in-time restore is
+  available. If the server's data is ever reset or restored, devices re-offer what
+  they have.
+
 ## 2.0.0-beta.2 — 2026-10-05
 
 First public beta of LecCheck 2 (Android, iPhone via AltStore/SideStore, Linux; beta.1

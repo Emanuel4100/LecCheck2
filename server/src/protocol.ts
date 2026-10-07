@@ -28,6 +28,8 @@ export interface Change {
   /** Only the fields that changed. */
   patch: Record<string, unknown>;
   hlc: string;
+  /** Only fill fields the server doesn't have yet (see `applyPatch`). */
+  ifAbsent?: boolean;
 }
 
 export interface WireRow {
@@ -39,13 +41,15 @@ export interface WireRow {
 }
 
 export interface Rejected {
+  /** Position of the change in the pushed list. */
+  i: number;
   tbl: string;
   id: string;
   reason: string;
 }
 
 export type ClientMessage =
-  | { t: "hello"; since: number }
+  | { t: "hello"; since: number; dataset?: string }
   | { t: "push"; batchId: string; changes: Change[] };
 
 export type ServerMessage =
@@ -58,9 +62,59 @@ export type ServerMessage =
       /** Set on replies to `hello`; clients only move their saved cursor
        * from broadcasts once catch-up has finished. */
       catchUp?: boolean;
+      /** Identifies this copy of the account's data (catch-up only). A new id
+       * means the data was reset or restored: the client starts over from 0
+       * and re-offers its own rows. */
+      dataset?: string;
+      /** Server time in ms, so clients can correct a wrong device clock. */
+      now?: number;
     }
-  | { t: "ack"; batchId: string; rejected: Rejected[]; clock: string | null }
-  | { t: "error"; code: string; message: string };
+  | {
+      t: "ack";
+      batchId: string;
+      rejected: Rejected[];
+      /** Current state of rows where some pushed field didn't win. */
+      rows: WireRow[];
+      clock: string | null;
+      now: number;
+    }
+  | {
+      t: "error";
+      code: string;
+      message: string;
+      /** Set when storage can't be used right now (see `unavailable`): the
+       * client keeps its changes and tries again at this server time (ms). */
+      retryAt?: number;
+    };
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+export interface Unavailable {
+  code: "quota" | "unavailable";
+  retryAt: number;
+}
+
+/**
+ * Classifies a failed storage operation. On the free plan, going over a daily
+ * limit (requests, rows read or rows written, shared by all users) makes
+ * operations fail until the limits reset at 00:00 UTC. Anything else is tried
+ * again after a minute (clients back off further if it keeps failing).
+ */
+export function unavailable(error: unknown, now: number): Unavailable {
+  const message = error instanceof Error ? error.message : String(error);
+  return /free tier|daily limit|quota|exceeded allowed|SQLITE_FULL|disk is full/i.test(message)
+    ? { code: "quota", retryAt: (Math.floor(now / DAY_MS) + 1) * DAY_MS }
+    : { code: "unavailable", retryAt: now + 60_000 };
+}
+
+/** HTTP answer for [Unavailable]: 503 with `Retry-After`. */
+export function unavailableResponse(failure: Unavailable, now = Date.now()): Response {
+  const seconds = Math.max(1, Math.ceil((failure.retryAt - now) / 1000));
+  return Response.json(
+    { error: failure.code, retryAt: failure.retryAt },
+    { status: 503, headers: { "Retry-After": String(seconds) } },
+  );
+}
 
 export function hlcMillis(hlc: string): number | null {
   const m = HLC.exec(hlc);
@@ -90,12 +144,21 @@ export function validateChange(raw: unknown, now: number): Validation {
   }
   const millis = typeof c.hlc === "string" ? hlcMillis(c.hlc) : null;
   if (millis === null) return { ok: false, reason: "bad_clock" };
+  if (c.ifAbsent !== undefined && typeof c.ifAbsent !== "boolean") {
+    return { ok: false, reason: "malformed" };
+  }
   // A device whose clock runs far ahead would win every merge for days.
   if (millis > now + MAX_CLOCK_SKEW_MS) {
     return { ok: false, reason: "clock_skew" };
   }
   return {
     ok: true,
-    change: { tbl: c.tbl, id: c.id, patch: c.patch, hlc: c.hlc! },
+    change: {
+      tbl: c.tbl,
+      id: c.id,
+      patch: c.patch,
+      hlc: c.hlc!,
+      ...(c.ifAbsent ? { ifAbsent: true } : {}),
+    },
   };
 }
