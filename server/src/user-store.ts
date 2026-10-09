@@ -27,6 +27,11 @@ export interface Env {
   HEALTH_TOKEN?: string;
   /** Apps older than this build get `upgrade_required` instead of syncing. */
   MIN_APP_BUILD?: string;
+  /** Files bug reports as issues (a fine-grained token: Issues, read and
+   * write, on the reports repository only). Reports are off without it. */
+  REPORTS_GITHUB_TOKEN?: string;
+  /** Where reports go (default: Emanuel4100/LecCheck-reports). */
+  REPORTS_REPO?: string;
 }
 
 export interface SyncResult {
@@ -118,6 +123,23 @@ export class UserStore extends DurableObject<Env> {
   async probe(): Promise<number> {
     this.setMeta("probe", String(Date.now()));
     return Number(this.meta("probe"));
+  }
+
+  /** Bug reports (only the reserved `__reports__` instance): whether one
+   * more is allowed today, from this [sender] and in all. Counts it if so. */
+  async takeReportQuota(sender: string, perSender: number, perDay: number): Promise<boolean> {
+    const day = Math.floor(Date.now() / DAY_MS);
+    const total = Number(this.meta(`reports:${day}`) ?? 0);
+    const mine = Number(this.meta(`reports:${day}:${sender}`) ?? 0);
+    if (total >= perDay || mine >= perSender) return false;
+    // Earlier days' counts aren't needed any more.
+    this.sql.exec(
+      "DELETE FROM meta WHERE k LIKE 'reports:%' AND k NOT LIKE ?",
+      `reports:${day}%`,
+    );
+    this.setMeta(`reports:${day}`, String(total + 1));
+    this.setMeta(`reports:${day}:${sender}`, String(mine + 1));
+    return true;
   }
 
   private setMeta(key: string, value: string): void {

@@ -157,6 +157,16 @@ stable versions get stable releases. Turn it off, or check right away, in
 **Settings → About**. If you installed LecCheck with Obtainium, Obtainium updates it
 instead. On iPhone, AltStore and SideStore handle updates.
 
+## Reporting a problem
+
+**Settings → About → Report a problem**: describe what happened, optionally add an email
+for a reply, and choose whether to include diagnostics (app version, device, reminder and
+sync state, and the recent log, which can mention course names). **See what's sent**
+shows everything before you send. Reports go privately to the developer. Without a
+connection they wait on the device and are sent later.
+
+If the app hit an error last time, Today offers to report it (**Not now** dismisses it).
+
 ## Home-screen widget (Android)
 
 Long-press your home screen → Widgets → **LecCheck**. The widget lists today's sessions

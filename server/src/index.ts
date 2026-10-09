@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import { auth, issueSession, sessionFromRequest } from "./auth";
 import { pages } from "./pages";
+import { reports, reportsHealth } from "./reports";
 import { appTooOld, PROTOCOL_VERSION, unavailable, unavailableResponse } from "./protocol";
 import { UserStore, type Env } from "./user-store";
 
@@ -11,6 +12,8 @@ const app = new Hono<{ Bindings: Env }>();
 app.route("/", pages);
 
 app.route("/v1/auth", auth);
+
+app.route("/v1/reports", reports);
 
 function storeFor(env: Env, userId: string) {
   return env.USER_STORE.get(env.USER_STORE.idFromName(userId));
@@ -43,7 +46,9 @@ app.get("/v1/health/deep", async (c) => {
     console.error("health probe failed", error);
   }
   const ok = Object.values(checks).every(Boolean);
-  return c.json({ ok, rev: c.env.SERVER_REV ?? "dev", checks }, ok ? 200 : 503);
+  // Reports matter less than sync: reported, but no reason to roll back.
+  const warnings = { reports: await reportsHealth(c.env) };
+  return c.json({ ok, rev: c.env.SERVER_REV ?? "dev", checks, warnings }, ok ? 200 : 503);
 });
 
 /** Live sync over a WebSocket, handled by the user's Durable Object. */

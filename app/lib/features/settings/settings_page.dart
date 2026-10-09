@@ -234,6 +234,12 @@ class _AboutSectionState extends ConsumerState<_AboutSection> {
           subtitle: const Text('github.com/Emanuel4100/LecCheck2'),
           onTap: () => openUrl('https://github.com/Emanuel4100/LecCheck2'),
         ),
+        ListTile(
+          leading: const Icon(LecIcons.warning),
+          title: Text(l.reportProblem),
+          subtitle: Text(l.reportProblemSubtitle),
+          onTap: () => context.push('/report'),
+        ),
         if (UpdateController.supported) ...[
           SwitchListTile.adaptive(
             secondary: const Icon(LecIcons.refresh),

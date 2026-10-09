@@ -13,6 +13,9 @@ import 'package:path_provider/path_provider.dart';
 /// device (not in Android's backup) unless the user copies it.
 abstract final class DevLog {
   static const fileName = 'dev_log.txt';
+
+  /// The last uncaught error, until the next start offers to report it.
+  static const lastErrorFile = 'last_error.txt';
   static const _maxBytes = 64 * 1024;
 
   static Future<File?>? _file;
@@ -33,6 +36,10 @@ abstract final class DevLog {
     final flutterError = FlutterError.onError;
     FlutterError.onError = (details) {
       add('Error: ${details.exceptionAsString()}${_brief(details.stack)}');
+      // Layout overflows are bugs, but nothing the user would call broken.
+      if (!details.silent && details.library != 'rendering library') {
+        _markError(details.exceptionAsString());
+      }
       _inFlutterError = true;
       try {
         flutterError?.call(details);
@@ -43,6 +50,7 @@ abstract final class DevLog {
     final platformError = PlatformDispatcher.instance.onError;
     PlatformDispatcher.instance.onError = (error, stack) {
       add('Uncaught: $error${_brief(stack)}');
+      _markError('$error');
       return platformError?.call(error, stack) ?? false;
     };
   }
@@ -51,6 +59,36 @@ abstract final class DevLog {
     try {
       final dir = await getApplicationSupportDirectory();
       return File('${dir.path}/$fileName');
+    } on Object {
+      return null;
+    }
+  }
+
+  static void _markError(String message) {
+    final file = _file;
+    if (file == null) return;
+    final line = '${_stamp(DateTime.now())} ${message.split('\n').first}';
+    _writes = _writes
+        .then((_) async {
+          final log = await file;
+          if (log == null) return;
+          await File('${log.parent.path}/$lastErrorFile').writeAsString(line);
+        })
+        .catchError((Object _) {});
+  }
+
+  /// The last uncaught error since the previous call ("time message"), if
+  /// any: the next start offers to report it.
+  static Future<String?> takeLastError() async {
+    await flush();
+    final log = await (_file ?? _open());
+    if (log == null) return null;
+    final marker = File('${log.parent.path}/$lastErrorFile');
+    try {
+      if (!await marker.exists()) return null;
+      final text = await marker.readAsString();
+      await marker.delete();
+      return text.trim().isEmpty ? null : text.trim();
     } on Object {
       return null;
     }

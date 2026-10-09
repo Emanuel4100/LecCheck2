@@ -9,6 +9,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:path_provider/path_provider.dart';
 
 import '../../app/adaptive.dart';
+import '../../app/diagnostics.dart';
 import '../../app/format.dart';
 import '../../app/notification_controller.dart';
 import '../../app/providers.dart';
@@ -93,10 +94,6 @@ class _DeveloperPageState extends ConsumerState<DeveloperPage> {
     if (!AppIdiom.isAndroid) return null;
     return AndroidDevice.info();
   }
-
-  static String _androidLine(Map<String, Object?> info) =>
-      'Android ${info['release']} (SDK ${info['sdk']}), '
-      '${info['maker']} ${info['model']}';
 
   Future<_Storage> _readStorage() async {
     final dir = await getApplicationSupportDirectory();
@@ -395,43 +392,6 @@ class _DeveloperPageState extends ConsumerState<DeveloperPage> {
 
   // ------------------------------------------------------------- device --
 
-  Future<String> _diagnostics() async {
-    final media = MediaQuery.of(context);
-    final layout = WindowSize.of(context).name;
-    final now = DateTime.now();
-    final notifications = await _notifications;
-    final state = ref.read(syncStateProvider).value;
-    final log = (await DevLog.read()).trimRight().split('\n');
-    final android = await _android;
-    return [
-      'LecCheck ${await _version}',
-      if (android != null)
-        '${_androidLine(android)}, battery optimization '
-            '${android['batteryOptimized']}'
-      else
-        'OS: ${Platform.operatingSystem} ${Platform.operatingSystemVersion}',
-      'Locale: ${Platform.localeName}, app: '
-          '${ref.read(appearanceProvider).localeCode ?? 'system'}',
-      'Time: $now ${now.timeZoneName} (UTC${_offset(now.timeZoneOffset)}), '
-          'reminders use ${notifications.timeZone}',
-      'Screen: ${media.size.width.round()}×${media.size.height.round()} '
-          '@${media.devicePixelRatio}, text ×${media.textScaler.scale(10) / 10}',
-      'Layout: $layout',
-      'Notifications: ready ${notifications.ready}, allowed '
-          '${notifications.health.allowed}, channels off '
-          '${notifications.health.blockedChannels}, exact '
-          '${notifications.health.exactAlarms}, '
-          '${notifications.pending.length} scheduled, '
-          '${notifications.armed ?? '?'} armed'
-          '${notifications.error == null ? '' : ', error ${notifications.error}'}',
-      'Sync: ${SyncConfig.enabled ? state?.phase.name ?? 'signed out' : 'off'}'
-          '${state == null ? '' : ', ${state.pending} waiting, ${state.failed} refused'}',
-      '',
-      'Log (newest last):',
-      ...log.skip(log.length > 80 ? log.length - 80 : 0),
-    ].join('\n');
-  }
-
   Widget _deviceTools() {
     final media = MediaQuery.of(context);
     final now = DateTime.now();
@@ -453,7 +413,7 @@ class _DeveloperPageState extends ConsumerState<DeveloperPage> {
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  _info('System', _androidLine(info)),
+                  _info('System', androidLine(info)),
                   _info(
                     'Battery optimization',
                     optimized ? 'On: reminders can come late' : 'Off',
@@ -470,7 +430,7 @@ class _DeveloperPageState extends ConsumerState<DeveloperPage> {
           ),
         _info(
           'Time zone',
-          '${now.timeZoneName} (UTC${_offset(now.timeZoneOffset)})',
+          '${now.timeZoneName} (UTC${utcOffset(now.timeZoneOffset)})',
         ),
         _info(
           'Screen',
@@ -493,7 +453,9 @@ class _DeveloperPageState extends ConsumerState<DeveloperPage> {
           LecIcons.exportData,
           'Copy diagnostics',
           () => _run('Copy', () async {
-            await Clipboard.setData(ClipboardData(text: await _diagnostics()));
+            await Clipboard.setData(
+              ClipboardData(text: await collectDiagnostics(context, ref)),
+            );
             return 'Copied: device details, status and the log';
           }),
         ),
@@ -566,10 +528,6 @@ class _DeveloperPageState extends ConsumerState<DeveloperPage> {
 
   static String _clock(DateTime t) =>
       '${t.month}/${t.day} ${_two(t.hour)}:${_two(t.minute)}:${_two(t.second)}';
-
-  static String _offset(Duration d) =>
-      '${d.isNegative ? '-' : '+'}${_two(d.inHours.abs())}:'
-      '${_two(d.inMinutes.abs() % 60)}';
 
   static String _size(int bytes) => bytes < 1024 * 1024
       ? '${(bytes / 1024).toStringAsFixed(1)} KB'

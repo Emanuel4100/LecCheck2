@@ -2138,6 +2138,102 @@ abstract class AppLocalizations {
   /// **'Update LecCheck to keep syncing'**
   String get upgradeRequired;
 
+  /// No description provided for @reportProblem.
+  ///
+  /// In en, this message translates to:
+  /// **'Report a problem'**
+  String get reportProblem;
+
+  /// No description provided for @reportProblemSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Tell the developer what went wrong'**
+  String get reportProblemSubtitle;
+
+  /// No description provided for @reportDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'What happened?'**
+  String get reportDescription;
+
+  /// No description provided for @reportDescriptionHint.
+  ///
+  /// In en, this message translates to:
+  /// **'What did you do, what did you expect, and what happened instead?'**
+  String get reportDescriptionHint;
+
+  /// No description provided for @reportContact.
+  ///
+  /// In en, this message translates to:
+  /// **'Email for a reply (optional)'**
+  String get reportContact;
+
+  /// No description provided for @reportIncludeDiagnostics.
+  ///
+  /// In en, this message translates to:
+  /// **'Include diagnostics'**
+  String get reportIncludeDiagnostics;
+
+  /// No description provided for @reportIncludeDiagnosticsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'App version, device, reminder and sync state, and the recent log, which can mention course names'**
+  String get reportIncludeDiagnosticsSubtitle;
+
+  /// No description provided for @reportPreview.
+  ///
+  /// In en, this message translates to:
+  /// **'See what\'s sent'**
+  String get reportPreview;
+
+  /// No description provided for @reportSend.
+  ///
+  /// In en, this message translates to:
+  /// **'Send'**
+  String get reportSend;
+
+  /// No description provided for @reportSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Thanks! Your report was sent.'**
+  String get reportSent;
+
+  /// No description provided for @reportSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved: it will be sent when you\'re online.'**
+  String get reportSaved;
+
+  /// No description provided for @reportRefused.
+  ///
+  /// In en, this message translates to:
+  /// **'The report wasn\'t accepted (too many today?). Please try again tomorrow.'**
+  String get reportRefused;
+
+  /// No description provided for @reportUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Reports aren\'t available in this build.'**
+  String get reportUnavailable;
+
+  /// No description provided for @lastErrorTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Something went wrong last time'**
+  String get lastErrorTitle;
+
+  /// No description provided for @lastErrorSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Send a report, so it can be fixed?'**
+  String get lastErrorSubtitle;
+
+  /// No description provided for @notNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Not now'**
+  String get notNow;
+
   /// No description provided for @presetAccent.
   ///
   /// In en, this message translates to:

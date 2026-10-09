@@ -235,6 +235,11 @@ scheme. The Google client secret exists only in the Worker. Sessions renew after
   restricted background use) comes from the plugin and `MainActivity`'s
   `com.leccheck.app/device` channel. Today warns when reminders are on but blocked, and
   Settings → Notifications offers a fix for each problem.
+- Bug reports (`core/report/report_sender.dart`) go to `POST /v1/reports` without
+  sign-in; the Worker rate-limits them (per hashed sender and per day, counted in a
+  reserved Durable Object) and files a GitHub issue in a private repository
+  (`server/src/reports.ts`). Unsent reports wait in `pending_reports.json`. DevLog marks
+  uncaught errors (`last_error.txt`), and the next start offers to report them.
 - Action buttons call `onNotificationActionInBackground` in a background isolate: it opens
   the shared database, sets the status, tries an HTTP sync, then tops up reminders.
 - The status-bar icon (`ic_stat_leccheck`) is named only from Dart, so

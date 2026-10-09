@@ -12,6 +12,8 @@ import 'app/providers.dart';
 import 'app/update_controller.dart';
 import 'app/widget_controller.dart';
 import 'core/dev/dev_log.dart';
+import 'core/report/report_sender.dart';
+import 'features/settings/report_page.dart';
 
 /// Startup does only local work: read preferences, then show UI. The
 /// database opens on its own isolate; notifications are set up after the
@@ -58,12 +60,23 @@ void _dailySnapshots(ProviderContainer container) {
   AppLifecycleListener(onResume: take);
 }
 
-/// Looks for a new release (at most once a day) at startup and when the app
-/// comes back.
+/// Looks for a new release (at most once a day), and sends bug reports that
+/// waited for a connection, at startup and when the app comes back. Offers
+/// to report an error the previous session ended with.
 void _updateChecks(ProviderContainer container) {
-  void check() => container.read(updateProvider.notifier).check();
+  void check() {
+    container.read(updateProvider.notifier).check();
+    if (ReportSender.available) {
+      container.read(reportSenderProvider).flush().catchError((Object e) {
+        debugPrint('Queued reports not sent: $e');
+        return 0;
+      });
+    }
+  }
+
   check();
   AppLifecycleListener(onResume: check);
+  container.read(lastErrorProvider.notifier).load();
 }
 
 /// The app's own license notice (full text: LICENSE in the repository).

@@ -84,10 +84,18 @@ a small file from GitHub (raw.githubusercontent.com). GitHub sees your IP addres
 any download; nothing about you or your schedule is sent. Turn it off in
 <b>Settings → About → Check for updates</b>.</p>
 
+<h2>Bug reports</h2>
+<p><b>Settings → About → Report a problem</b> sends what you write, and, if you leave it on,
+diagnostics: app version, device model and system version, language, time zone, reminder
+and sync state, and the app's recent log, which can include course names. You see all of
+it before sending. Reports become issues in a private GitHub repository that only the
+developer can read. Your email is sent only if you type it in. To limit abuse, the server
+counts reports per sender using a one-way hash of the IP address, kept for a day.</p>
+
 <h2>Third parties</h2>
-<p>Google (sign-in), Cloudflare (hosting) and GitHub (update checks) process data as needed
-to provide those services, under their own privacy policies. No other parties receive your
-data.</p>
+<p>Google (sign-in), Cloudflare (hosting) and GitHub (update checks and bug reports)
+process data as needed to provide those services, under their own privacy policies. No
+other parties receive your data.</p>
 
 <h2>Children</h2>
 <p>LecCheck is meant for students and isn't directed at children under 13.</p>

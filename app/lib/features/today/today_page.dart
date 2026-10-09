@@ -17,6 +17,7 @@ import '../../domain/schedule_types.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../session/session_actions.dart';
 import '../settings/reminder_access.dart';
+import '../settings/report_page.dart';
 import '../settings/update_card.dart';
 import '../session/session_menu.dart';
 import '../session/session_sheet.dart';
@@ -80,6 +81,7 @@ class TodayPage extends ConsumerWidget {
                         const SliverToBoxAdapter(
                           child: UpdateCard(onToday: true),
                         ),
+                        const SliverToBoxAdapter(child: LastErrorCard()),
                         const SliverToBoxAdapter(
                           child: UpdateCard(onToday: true),
                         ),

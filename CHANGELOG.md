@@ -18,6 +18,9 @@
 - **Update notice** (Android and Linux): "LecCheck X is available" at the top of Settings
   and once on Today, with a download for your device. Checked once a day; turn it off in
   Settings → About. Obtainium installs and iPhone keep updating as before.
+- **Report a problem** (Settings → About): sends a description and, if you leave it on,
+  diagnostics you can read first; they go privately to the developer, and wait on the
+  device while offline. After an error, Today offers to report it.
 - **Sync server**: health checks, and automatic deploys that are tested first, checked
   live, and rolled back by themselves if the new version fails. App releases wait until
   their server is live.

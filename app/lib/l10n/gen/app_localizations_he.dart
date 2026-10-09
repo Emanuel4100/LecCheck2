@@ -1213,6 +1213,56 @@ class AppLocalizationsHe extends AppLocalizations {
   String get upgradeRequired => 'יש לעדכן את LecCheck כדי להמשיך לסנכרן';
 
   @override
+  String get reportProblem => 'דיווח על בעיה';
+
+  @override
+  String get reportProblemSubtitle => 'לספר למפתח מה השתבש';
+
+  @override
+  String get reportDescription => 'מה קרה?';
+
+  @override
+  String get reportDescriptionHint => 'מה עשית, מה ציפית שיקרה, ומה קרה בפועל?';
+
+  @override
+  String get reportContact => 'אימייל לתשובה (לא חובה)';
+
+  @override
+  String get reportIncludeDiagnostics => 'לצרף נתוני אבחון';
+
+  @override
+  String get reportIncludeDiagnosticsSubtitle =>
+      'גרסת האפליקציה, המכשיר, מצב התזכורות והסנכרון והיומן האחרון, שעשוי לכלול שמות קורסים';
+
+  @override
+  String get reportPreview => 'מה יישלח';
+
+  @override
+  String get reportSend => 'שליחה';
+
+  @override
+  String get reportSent => 'תודה! הדיווח נשלח.';
+
+  @override
+  String get reportSaved => 'נשמר: יישלח כשיהיה חיבור לאינטרנט.';
+
+  @override
+  String get reportRefused =>
+      'הדיווח לא התקבל (יותר מדי דיווחים היום?). אפשר לנסות שוב מחר.';
+
+  @override
+  String get reportUnavailable => 'דיווחים לא זמינים בגרסה הזו.';
+
+  @override
+  String get lastErrorTitle => 'משהו השתבש בפעם הקודמת';
+
+  @override
+  String get lastErrorSubtitle => 'לשלוח דיווח כדי שאפשר יהיה לתקן?';
+
+  @override
+  String get notNow => 'לא עכשיו';
+
+  @override
   String get presetAccent => 'צבע המערכת';
 
   @override

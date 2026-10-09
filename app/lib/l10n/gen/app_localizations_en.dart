@@ -1217,6 +1217,57 @@ class AppLocalizationsEn extends AppLocalizations {
   String get upgradeRequired => 'Update LecCheck to keep syncing';
 
   @override
+  String get reportProblem => 'Report a problem';
+
+  @override
+  String get reportProblemSubtitle => 'Tell the developer what went wrong';
+
+  @override
+  String get reportDescription => 'What happened?';
+
+  @override
+  String get reportDescriptionHint =>
+      'What did you do, what did you expect, and what happened instead?';
+
+  @override
+  String get reportContact => 'Email for a reply (optional)';
+
+  @override
+  String get reportIncludeDiagnostics => 'Include diagnostics';
+
+  @override
+  String get reportIncludeDiagnosticsSubtitle =>
+      'App version, device, reminder and sync state, and the recent log, which can mention course names';
+
+  @override
+  String get reportPreview => 'See what\'s sent';
+
+  @override
+  String get reportSend => 'Send';
+
+  @override
+  String get reportSent => 'Thanks! Your report was sent.';
+
+  @override
+  String get reportSaved => 'Saved: it will be sent when you\'re online.';
+
+  @override
+  String get reportRefused =>
+      'The report wasn\'t accepted (too many today?). Please try again tomorrow.';
+
+  @override
+  String get reportUnavailable => 'Reports aren\'t available in this build.';
+
+  @override
+  String get lastErrorTitle => 'Something went wrong last time';
+
+  @override
+  String get lastErrorSubtitle => 'Send a report, so it can be fixed?';
+
+  @override
+  String get notNow => 'Not now';
+
+  @override
   String get presetAccent => 'System accent';
 
   @override

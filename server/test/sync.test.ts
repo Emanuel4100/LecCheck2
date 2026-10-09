@@ -354,6 +354,7 @@ describe("health", () => {
       ok: false,
       rev: "dev",
       checks: { jwtSecret: true, googleClient: false, devAuthOff: false, storage: true },
+      warnings: { reports: "not configured" },
     });
   });
 });

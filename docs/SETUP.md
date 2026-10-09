@@ -95,6 +95,14 @@ gh secret set HEALTH_TOKEN < health-token
 rm health-token
 ```
 
+**Bug reports** (optional): create a **private** repository `LecCheck-reports`, then a
+fine-grained token (GitHub → Settings → Developer settings → Fine-grained tokens) with
+access to that repository only and **Issues: Read and write**. Set it on the Worker:
+`npx wrangler secret put REPORTS_GITHUB_TOKEN`. Without it, the app's **Report a problem**
+says reports aren't available; with it, each report is an issue there (and an email to
+you). A different repository: set `REPORTS_REPO` (e.g. `you/reports`) the same way.
+Fine-grained tokens expire: the server health check warns when it's rejected.
+
 Then **Settings → Environments → New environment** `production-approval`, with yourself
 as a **required reviewer**. Deploys that change `server/wrangler.jsonc` (bindings,
 Durable Object migrations) run there and wait for your approval, because Cloudflare
