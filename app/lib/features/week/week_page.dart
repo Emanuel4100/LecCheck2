@@ -550,13 +550,10 @@ class _DayHeader extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final fmt = Fmt.of(context);
-    final noClass = ref.watch(
-      semesterDataProvider.select(
-        (d) => d.value?.noClassRanges.any((r) => r.contains(date)) ?? false,
-      ),
-    );
+    final noClassLabel = ref.watch(noClassLabelProvider(date));
+    final noClass = noClassLabel != null;
     final scheme = theme.colorScheme;
-    return InkWell(
+    final header = InkWell(
       borderRadius: BorderRadius.circular(16),
       onTap: () => showDayOptions(context, ref, date),
       onSecondaryTap: () => showDayOptions(context, ref, date),
@@ -595,6 +592,10 @@ class _DayHeader extends ConsumerWidget {
         ],
       ),
     );
+    // The holiday's name, on hover or a long press.
+    return noClassLabel == null || noClassLabel.isEmpty
+        ? header
+        : Tooltip(message: noClassLabel, child: header);
   }
 }
 

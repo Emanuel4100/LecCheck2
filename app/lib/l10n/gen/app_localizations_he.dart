@@ -588,6 +588,11 @@ class AppLocalizationsHe extends AppLocalizations {
   String get canceledByHolidayHint => 'בוטל בגלל יום ללא שיעורים';
 
   @override
+  String canceledForHoliday(String name) {
+    return 'אין שיעור: $name';
+  }
+
+  @override
   String get removeOneTime => 'הסרת המפגש החד-פעמי';
 
   @override
@@ -755,6 +760,81 @@ class AppLocalizationsHe extends AppLocalizations {
 
   @override
   String get addNoClassRange => 'הוספת תאריכים';
+
+  @override
+  String get holidaysTitle => 'חגים יהודיים וישראליים';
+
+  @override
+  String get holidaysAdd => 'הוספת ימי החופש המקובלים בסמסטר הזה';
+
+  @override
+  String holidaysApplied(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count ימים בלי שיעורים',
+      one: 'יום אחד בלי שיעורים',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get holidaysIntro =>
+      'בחגים המסומנים השיעורים מבוטלים. ההצעה: ימי החופש המקובלים באוניברסיטאות בישראל.';
+
+  @override
+  String get holidaysInIsrael => 'תאריכים כמו בישראל';
+
+  @override
+  String get holidaysInIsraelSubtitle => 'כשכבוי: חגים של יומיים, כמו בחו״ל';
+
+  @override
+  String get holidaysNone => 'אין חגים בתאריכי הסמסטר.';
+
+  @override
+  String get semesterHolidays => 'הוספת חגים יהודיים וישראליים';
+
+  @override
+  String get semesterHolidaysSubtitle =>
+      'השיעורים יבוטלו בימי החופש המקובלים. אפשר לשנות בהגדרות.';
+
+  @override
+  String holidayName(String name) {
+    String _temp0 = intl.Intl.selectLogic(name, {
+      'erevRoshHashana': 'ערב ראש השנה',
+      'roshHashana': 'ראש השנה',
+      'fastOfGedaliah': 'צום גדליה',
+      'erevYomKippur': 'ערב יום כיפור',
+      'yomKippur': 'יום כיפור',
+      'erevSukkot': 'ערב סוכות',
+      'sukkot': 'סוכות',
+      'cholHamoedSukkot': 'חול המועד סוכות',
+      'hoshanaRabba': 'הושענא רבה',
+      'sheminiAtzeret': 'שמיני עצרת',
+      'simchatTorah': 'שמחת תורה',
+      'sheminiAtzeretSimchatTorah': 'שמחת תורה',
+      'chanukah': 'חנוכה',
+      'tenthOfTevet': 'צום עשרה בטבת',
+      'fastOfEsther': 'תענית אסתר',
+      'purim': 'פורים',
+      'shushanPurim': 'שושן פורים',
+      'erevPesach': 'ערב פסח',
+      'pesach': 'פסח',
+      'cholHamoedPesach': 'חול המועד פסח',
+      'yomHaShoah': 'יום השואה',
+      'yomHaZikaron': 'יום הזיכרון',
+      'yomHaAtzmaut': 'יום העצמאות',
+      'lagBaOmer': 'ל״ג בעומר',
+      'yomYerushalayim': 'יום ירושלים',
+      'erevShavuot': 'ערב שבועות',
+      'shavuot': 'שבועות',
+      'seventeenTammuz': 'צום י״ז בתמוז',
+      'tishaBav': 'תשעה באב',
+      'fasts': 'צומות',
+      'other': 'חג',
+    });
+    return '$_temp0';
+  }
 
   @override
   String get data => 'נתונים';

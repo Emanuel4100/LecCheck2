@@ -99,7 +99,23 @@ Tap any session to see its date, time, room and lecturer, and to:
 - On large windows, a click shows the session's details in a panel beside the grid.
 - Tap a day header to mark it as **no class** (holiday, strike, exam day — with an
   optional reason) or restore it. Sessions that day show as canceled; your own marks stay
-  and come back if you restore the day.
+  and come back if you restore the day. On desktop, hovering a holiday's header shows
+  its name.
+
+## Holidays
+
+**Settings → Semester → Jewish and Israeli holidays** lists the holidays that fall in the
+semester's dates, each with its days. Tick the ones without classes; the suggestion is
+the usual days off at Israeli universities (Rosh Hashana, Yom Kippur, Sukkot, Purim,
+Pesach, Yom HaAtzmaut and Shavuot, each with its eve). Hanukkah, Yom HaShoah,
+Yom HaZikaron, Lag BaOmer, Yom Yerushalayim, Tisha B'Av and the minor fasts are there to
+tick if your institution gives them off. **Dates as in Israel** can be turned off for
+two-day festivals, as abroad.
+
+A new semester can start with the suggested holidays (a switch in the semester form). A
+single holiday day can be restored from the Week (tap its day header); saving the
+holidays again keeps it restored unless you untick and tick that holiday. Holidays sync
+to your other devices like any no-class day.
 
 ## Stats
 

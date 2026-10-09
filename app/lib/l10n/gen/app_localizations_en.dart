@@ -589,6 +589,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get canceledByHolidayHint => 'Canceled because of a no-class day';
 
   @override
+  String canceledForHoliday(String name) {
+    return 'No class: $name';
+  }
+
+  @override
   String get removeOneTime => 'Remove this one-time session';
 
   @override
@@ -755,6 +760,82 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get addNoClassRange => 'Add dates';
+
+  @override
+  String get holidaysTitle => 'Jewish and Israeli holidays';
+
+  @override
+  String get holidaysAdd => 'Add the usual days off for this semester';
+
+  @override
+  String holidaysApplied(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count days without classes',
+      one: '1 day without classes',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get holidaysIntro =>
+      'Classes are canceled on the ticked holidays. Suggested: the usual days off at Israeli universities.';
+
+  @override
+  String get holidaysInIsrael => 'Dates as in Israel';
+
+  @override
+  String get holidaysInIsraelSubtitle =>
+      'When off: two-day festivals, as abroad';
+
+  @override
+  String get holidaysNone => 'No holidays fall in this semester\'s dates.';
+
+  @override
+  String get semesterHolidays => 'Add Jewish and Israeli holidays';
+
+  @override
+  String get semesterHolidaysSubtitle =>
+      'Cancels classes on the usual days off. You can change this in Settings.';
+
+  @override
+  String holidayName(String name) {
+    String _temp0 = intl.Intl.selectLogic(name, {
+      'erevRoshHashana': 'Erev Rosh Hashana',
+      'roshHashana': 'Rosh Hashana',
+      'fastOfGedaliah': 'Fast of Gedaliah',
+      'erevYomKippur': 'Erev Yom Kippur',
+      'yomKippur': 'Yom Kippur',
+      'erevSukkot': 'Erev Sukkot',
+      'sukkot': 'Sukkot',
+      'cholHamoedSukkot': 'Sukkot (Chol HaMoed)',
+      'hoshanaRabba': 'Hoshana Rabba',
+      'sheminiAtzeret': 'Shemini Atzeret',
+      'simchatTorah': 'Simchat Torah',
+      'sheminiAtzeretSimchatTorah': 'Simchat Torah',
+      'chanukah': 'Hanukkah',
+      'tenthOfTevet': 'Fast of 10 Tevet',
+      'fastOfEsther': 'Fast of Esther',
+      'purim': 'Purim',
+      'shushanPurim': 'Shushan Purim',
+      'erevPesach': 'Erev Pesach',
+      'pesach': 'Pesach',
+      'cholHamoedPesach': 'Pesach (Chol HaMoed)',
+      'yomHaShoah': 'Holocaust Remembrance Day',
+      'yomHaZikaron': 'Memorial Day',
+      'yomHaAtzmaut': 'Independence Day',
+      'lagBaOmer': 'Lag BaOmer',
+      'yomYerushalayim': 'Jerusalem Day',
+      'erevShavuot': 'Erev Shavuot',
+      'shavuot': 'Shavuot',
+      'seventeenTammuz': 'Fast of 17 Tammuz',
+      'tishaBav': 'Tisha B’Av',
+      'fasts': 'Minor fasts',
+      'other': 'Holiday',
+    });
+    return '$_temp0';
+  }
 
   @override
   String get data => 'Data';

@@ -2,6 +2,7 @@ import 'package:drift/drift.dart';
 import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:uuid/uuid.dart';
 
+import '../../domain/holidays/jewish_holidays.dart';
 import '../../domain/local_date.dart';
 import '../../domain/occurrence.dart';
 import '../../domain/schedule_types.dart';
@@ -458,6 +459,47 @@ class ScheduleRepository {
 
   Future<void> saveNoClassRange(NoClassRange range) =>
       db.transaction(() => _upsert(_noClass, range.toRow()));
+
+  /// The semester's generated holidays ([holidayRangeId] rows), by date:
+  /// true while applied, false once removed (from the sheet or the Week).
+  Future<Map<LocalDate, bool>> generatedHolidays(String semesterId) async {
+    final prefix = holidayIdPrefix(semesterId);
+    final rows = await (db.select(
+      db.noClassRanges,
+    )..where((t) => t.semesterId.equals(semesterId))).get();
+    return {
+      for (final r in rows)
+        if (r.id.startsWith(prefix)) LocalDate.parse(r.startDate): !r.deleted,
+    };
+  }
+
+  /// Applies the holidays sheet: the [add] days become no-class days with
+  /// their labels (restored if removed before), the [remove] days stop being
+  /// ones. Days added by hand are never touched, and only rows that change are
+  /// written (and synced).
+  Future<void> applyHolidays(
+    String semesterId, {
+    Map<LocalDate, String> add = const {},
+    Iterable<LocalDate> remove = const [],
+  }) => db.transaction(() async {
+    for (final date in remove) {
+      await _patch(_noClass, holidayRangeId(semesterId, date), {
+        'deleted': true,
+      });
+    }
+    for (final MapEntry(key: date, value: label) in add.entries) {
+      await _upsert(
+        _noClass,
+        NoClassRange(
+          id: holidayRangeId(semesterId, date),
+          semesterId: semesterId,
+          start: date,
+          end: date,
+          label: label,
+        ).toRow(),
+      );
+    }
+  });
 
   Future<DeletionReceipt> deleteNoClassRange(String id) =>
       db.transaction(() async {

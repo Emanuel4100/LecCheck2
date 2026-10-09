@@ -141,6 +141,9 @@ class _SessionSheetState extends ConsumerState<SessionSheet> {
     final tone = CourseColors.of(context).tone(course?.colorKey ?? 'ocean');
     final repo = ref.read(repositoryProvider);
     final today = ref.watch(todayProvider);
+    final holiday = session.canceledByNoClassDay
+        ? ref.watch(noClassLabelProvider(session.date))
+        : null;
 
     final links = <NamedLink>[
       if (course != null && course.website.isNotEmpty)
@@ -204,7 +207,9 @@ class _SessionSheetState extends ConsumerState<SessionSheet> {
         if (session.canceledByNoClassDay)
           _InfoRow(
             icon: LecIcons.holiday,
-            text: l.canceledByHolidayHint,
+            text: holiday == null || holiday.isEmpty
+                ? l.canceledByHolidayHint
+                : l.canceledForHoliday(holiday),
             color: theme.colorScheme.tertiary,
           ),
       ],

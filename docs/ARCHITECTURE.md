@@ -82,6 +82,13 @@ same row and the sync merge combines their fields.
   produces are ignored (kept, so reverting the rule brings them back).
 - **No-class days** are a separate layer: a session on such a day shows as canceled
   unless the user set an explicit status; removing the range restores everything.
+- **Holidays** (`domain/holidays/jewish_holidays.dart`) are generated, not stored as a
+  calendar: `jewishHolidays()` walks the semester's days with `kosher_dart` (checked
+  against Hebcal for 2025–2030 in the tests) and the holidays sheet writes ordinary
+  no-class days, one row per day with the id `<semesterId>_hol_<date>`. Every device
+  derives the same ids, so applying the same holidays on two devices merges cleanly, and
+  no schema or server change was needed. `holidayChanges()` touches only the holidays
+  whose tick changed, so a day restored on its own stays restored.
 - **Numbering** (#N) runs per (course, type), skipping canceled sessions.
 
 Expansion is O(n) and takes well under a millisecond for a semester; the result is

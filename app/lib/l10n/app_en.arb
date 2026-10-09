@@ -285,6 +285,14 @@
   "resetChanges": "Undo changes for this week",
   "movedLabel": "Changed this week",
   "canceledByHolidayHint": "Canceled because of a no-class day",
+  "canceledForHoliday": "No class: {name}",
+  "@canceledForHoliday": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "removeOneTime": "Remove this one-time session",
   "statsTitle": "Stats",
   "attendance": "Attendance",
@@ -351,6 +359,30 @@
   "noClassDays": "Holidays and no-class days",
   "noClassDaysSubtitle": "Sessions on these dates show as canceled.",
   "addNoClassRange": "Add dates",
+  "holidaysTitle": "Jewish and Israeli holidays",
+  "holidaysAdd": "Add the usual days off for this semester",
+  "holidaysApplied": "{count, plural, =1{1 day without classes} other{{count} days without classes}}",
+  "@holidaysApplied": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "holidaysIntro": "Classes are canceled on the ticked holidays. Suggested: the usual days off at Israeli universities.",
+  "holidaysInIsrael": "Dates as in Israel",
+  "holidaysInIsraelSubtitle": "When off: two-day festivals, as abroad",
+  "holidaysNone": "No holidays fall in this semester's dates.",
+  "semesterHolidays": "Add Jewish and Israeli holidays",
+  "semesterHolidaysSubtitle": "Cancels classes on the usual days off. You can change this in Settings.",
+  "holidayName": "{name, select, erevRoshHashana{Erev Rosh Hashana} roshHashana{Rosh Hashana} fastOfGedaliah{Fast of Gedaliah} erevYomKippur{Erev Yom Kippur} yomKippur{Yom Kippur} erevSukkot{Erev Sukkot} sukkot{Sukkot} cholHamoedSukkot{Sukkot (Chol HaMoed)} hoshanaRabba{Hoshana Rabba} sheminiAtzeret{Shemini Atzeret} simchatTorah{Simchat Torah} sheminiAtzeretSimchatTorah{Simchat Torah} chanukah{Hanukkah} tenthOfTevet{Fast of 10 Tevet} fastOfEsther{Fast of Esther} purim{Purim} shushanPurim{Shushan Purim} erevPesach{Erev Pesach} pesach{Pesach} cholHamoedPesach{Pesach (Chol HaMoed)} yomHaShoah{Holocaust Remembrance Day} yomHaZikaron{Memorial Day} yomHaAtzmaut{Independence Day} lagBaOmer{Lag BaOmer} yomYerushalayim{Jerusalem Day} erevShavuot{Erev Shavuot} shavuot{Shavuot} seventeenTammuz{Fast of 17 Tammuz} tishaBav{Tisha B’Av} fasts{Minor fasts} other{Holiday}}",
+  "@holidayName": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "data": "Data",
   "exportData": "Export backup",
   "exportDataSubtitle": "Save a JSON file with all semesters",

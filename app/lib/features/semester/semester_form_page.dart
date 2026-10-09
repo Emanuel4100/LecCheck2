@@ -1,6 +1,7 @@
 import 'package:collection/collection.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -14,6 +15,7 @@ import '../../domain/local_date.dart';
 import '../../domain/schedule_types.dart';
 import '../../domain/semester_calendar.dart';
 import '../../l10n/gen/app_localizations.dart';
+import '../settings/holidays_sheet.dart';
 
 /// Creates (onboarding, "add semester") or edits a semester.
 class SemesterFormPage extends ConsumerStatefulWidget {
@@ -33,6 +35,11 @@ class _SemesterFormPageState extends ConsumerState<SemesterFormPage> {
   late Set<int> _days;
   bool _initialized = false;
   bool _saving = false;
+
+  /// New semesters: add the usual Jewish and Israeli days off. On by
+  /// default in Hebrew or in Israel's time zone, until the user chooses.
+  bool? _holidays;
+  bool _inIsrael = false;
 
   /// The semester as the form loaded it; saving writes only what changed.
   SemesterInfo? _loaded;
@@ -58,6 +65,14 @@ class _SemesterFormPageState extends ConsumerState<SemesterFormPage> {
     }
     // Locale-aware defaults: Israeli week (Sun–Thu) for Hebrew.
     final hebrew = Localizations.localeOf(context).languageCode == 'he';
+    _inIsrael = hebrew;
+    FlutterTimezone.getLocalTimezone().then((zone) {
+      final israel = const {
+        'Asia/Jerusalem',
+        'Asia/Tel_Aviv',
+      }.contains(zone.identifier);
+      if (israel && mounted) setState(() => _inIsrael = true);
+    }, onError: (Object _) {});
     _name.text = AppLocalizations.of(context).semesterDefaultName;
     _weekStart = hebrew ? DateTime.sunday : DateTime.monday;
     _days = hebrew ? {7, 1, 2, 3, 4} : {1, 2, 3, 4, 5};
@@ -105,6 +120,14 @@ class _SemesterFormPageState extends ConsumerState<SemesterFormPage> {
       ),
       base: _loaded,
     );
+    if (widget.semesterId == null && (_holidays ?? _inIsrael) && mounted) {
+      await applyHolidayPreset(
+        repo,
+        ref.read(sharedPrefsProvider),
+        SemesterInfo(id: id, name: '', start: _start, end: _end),
+        AppLocalizations.of(context),
+      );
+    }
     ref.read(activeSemesterChoiceProvider.notifier).select(id);
     if (!mounted) return;
     if (widget.semesterId == null) {
@@ -232,6 +255,16 @@ class _SemesterFormPageState extends ConsumerState<SemesterFormPage> {
                       ),
                   ],
                 ),
+                if (widget.semesterId == null) ...[
+                  const SizedBox(height: 16),
+                  SwitchListTile.adaptive(
+                    contentPadding: EdgeInsets.zero,
+                    title: Text(l.semesterHolidays),
+                    subtitle: Text(l.semesterHolidaysSubtitle),
+                    value: _holidays ?? _inIsrael,
+                    onChanged: (on) => setState(() => _holidays = on),
+                  ),
+                ],
               ],
             ),
           ),

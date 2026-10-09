@@ -52,7 +52,8 @@ These are built and compile, but have only been exercised in tests so far:
 
 ## Ideas (not planned)
 
-Exams and assignments, grades / GPA, automatic holiday import (Hebcal), sharing a course
+Exams and assignments, grades / GPA, holidays of other calendars (Muslim, Christian,
+Druze) and partial no-class days ("no classes after 13:00"), sharing a course
 with classmates by link/QR, a calendar (ICS) feed.
 
 ## Known limitations

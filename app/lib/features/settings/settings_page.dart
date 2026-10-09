@@ -19,12 +19,14 @@ import '../../core/backup/snapshot_service.dart';
 import '../../core/home_widget/today_widget.dart';
 import '../../core/db/schedule_repository.dart';
 import '../../core/icons/lec_icons.dart';
+import '../../domain/holidays/jewish_holidays.dart';
 import '../../domain/local_date.dart';
 import '../../domain/schedule_types.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../developer/developer_page.dart';
 import '../session/session_actions.dart';
 import 'account_section.dart';
+import 'holidays_sheet.dart';
 import 'notifications_section.dart';
 
 final _versionProvider = FutureProvider<String>((ref) async {
@@ -542,6 +544,7 @@ class _NoClassSection extends ConsumerWidget {
     final data = ref.watch(semesterDataProvider).value;
     if (data == null) return const SizedBox.shrink();
     final repo = ref.read(repositoryProvider);
+    final holidays = data.noClassRanges.where(isGeneratedHoliday).length;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -550,21 +553,35 @@ class _NoClassSection extends ConsumerWidget {
           title: Text(l.noClassDays),
           subtitle: Text(l.noClassDaysSubtitle),
         ),
-        for (final r in data.noClassRanges)
-          ListTile(
-            contentPadding: const EdgeInsetsDirectional.only(start: 72, end: 8),
-            title: Text(r.label.isEmpty ? l.markNoClassDay : r.label),
-            subtitle: Text(
-              r.start == r.end
-                  ? fmt.weekdayDayMonth(r.start)
-                  : '${fmt.dayMonth(r.start)} – ${fmt.dayMonth(r.end)}',
-            ),
-            trailing: IconButton(
-              tooltip: l.delete,
-              icon: const Icon(LecIcons.delete),
-              onPressed: () => repo.deleteNoClassRange(r.id),
-            ),
+        // Generated holidays are a row per day: one entry for all of them.
+        ListTile(
+          contentPadding: const EdgeInsetsDirectional.only(start: 72, end: 8),
+          title: Text(l.holidaysTitle),
+          subtitle: Text(
+            holidays == 0 ? l.holidaysAdd : l.holidaysApplied(holidays),
           ),
+          trailing: const Icon(LecIcons.chevronEnd),
+          onTap: () => showHolidaysSheet(context, ref, data.semester),
+        ),
+        for (final r in data.noClassRanges)
+          if (!isGeneratedHoliday(r))
+            ListTile(
+              contentPadding: const EdgeInsetsDirectional.only(
+                start: 72,
+                end: 8,
+              ),
+              title: Text(r.label.isEmpty ? l.markNoClassDay : r.label),
+              subtitle: Text(
+                r.start == r.end
+                    ? fmt.weekdayDayMonth(r.start)
+                    : '${fmt.dayMonth(r.start)} – ${fmt.dayMonth(r.end)}',
+              ),
+              trailing: IconButton(
+                tooltip: l.delete,
+                icon: const Icon(LecIcons.delete),
+                onPressed: () => repo.deleteNoClassRange(r.id),
+              ),
+            ),
         Padding(
           padding: const EdgeInsetsDirectional.only(start: 64),
           child: TextButton.icon(

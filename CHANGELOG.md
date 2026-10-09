@@ -11,6 +11,10 @@
   (or "swipe away" on some phones), missing alarms are found and scheduled again. Android
   plans three weeks ahead instead of two, and tops reminders up once a day in the
   background and after each notification button.
+- **Holidays**: Settings → Semester → **Jewish and Israeli holidays** cancels classes on
+  the holidays you tick, with the usual days off at Israeli universities suggested.
+  Dates follow Israel by default, or two-day festivals as abroad. A new semester can
+  start with them. Session details and the Week's day headers show the holiday's name.
 - **Sync server**: health checks, and automatic deploys that are tested first, checked
   live, and rolled back by themselves if the new version fails. App releases wait until
   their server is live.

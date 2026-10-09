@@ -1124,6 +1124,12 @@ abstract class AppLocalizations {
   /// **'Canceled because of a no-class day'**
   String get canceledByHolidayHint;
 
+  /// No description provided for @canceledForHoliday.
+  ///
+  /// In en, this message translates to:
+  /// **'No class: {name}'**
+  String canceledForHoliday(String name);
+
   /// No description provided for @removeOneTime.
   ///
   /// In en, this message translates to:
@@ -1435,6 +1441,66 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Add dates'**
   String get addNoClassRange;
+
+  /// No description provided for @holidaysTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Jewish and Israeli holidays'**
+  String get holidaysTitle;
+
+  /// No description provided for @holidaysAdd.
+  ///
+  /// In en, this message translates to:
+  /// **'Add the usual days off for this semester'**
+  String get holidaysAdd;
+
+  /// No description provided for @holidaysApplied.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 day without classes} other{{count} days without classes}}'**
+  String holidaysApplied(int count);
+
+  /// No description provided for @holidaysIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'Classes are canceled on the ticked holidays. Suggested: the usual days off at Israeli universities.'**
+  String get holidaysIntro;
+
+  /// No description provided for @holidaysInIsrael.
+  ///
+  /// In en, this message translates to:
+  /// **'Dates as in Israel'**
+  String get holidaysInIsrael;
+
+  /// No description provided for @holidaysInIsraelSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'When off: two-day festivals, as abroad'**
+  String get holidaysInIsraelSubtitle;
+
+  /// No description provided for @holidaysNone.
+  ///
+  /// In en, this message translates to:
+  /// **'No holidays fall in this semester\'s dates.'**
+  String get holidaysNone;
+
+  /// No description provided for @semesterHolidays.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Jewish and Israeli holidays'**
+  String get semesterHolidays;
+
+  /// No description provided for @semesterHolidaysSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancels classes on the usual days off. You can change this in Settings.'**
+  String get semesterHolidaysSubtitle;
+
+  /// No description provided for @holidayName.
+  ///
+  /// In en, this message translates to:
+  /// **'{name, select, erevRoshHashana{Erev Rosh Hashana} roshHashana{Rosh Hashana} fastOfGedaliah{Fast of Gedaliah} erevYomKippur{Erev Yom Kippur} yomKippur{Yom Kippur} erevSukkot{Erev Sukkot} sukkot{Sukkot} cholHamoedSukkot{Sukkot (Chol HaMoed)} hoshanaRabba{Hoshana Rabba} sheminiAtzeret{Shemini Atzeret} simchatTorah{Simchat Torah} sheminiAtzeretSimchatTorah{Simchat Torah} chanukah{Hanukkah} tenthOfTevet{Fast of 10 Tevet} fastOfEsther{Fast of Esther} purim{Purim} shushanPurim{Shushan Purim} erevPesach{Erev Pesach} pesach{Pesach} cholHamoedPesach{Pesach (Chol HaMoed)} yomHaShoah{Holocaust Remembrance Day} yomHaZikaron{Memorial Day} yomHaAtzmaut{Independence Day} lagBaOmer{Lag BaOmer} yomYerushalayim{Jerusalem Day} erevShavuot{Erev Shavuot} shavuot{Shavuot} seventeenTammuz{Fast of 17 Tammuz} tishaBav{Tisha B’Av} fasts{Minor fasts} other{Holiday}}'**
+  String holidayName(String name);
 
   /// No description provided for @data.
   ///

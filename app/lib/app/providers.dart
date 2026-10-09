@@ -240,6 +240,21 @@ final meetingProvider = Provider.family<MeetingRule?, String>(
       ref.watch(semesterDataProvider.select((d) => d.value?.meeting(id))),
 );
 
+/// Why [date] has no classes: the label of its no-class day ('' without
+/// one, null when it isn't one).
+final noClassLabelProvider = Provider.family<String?, LocalDate>(
+  (ref, date) => ref.watch(
+    semesterDataProvider.select((d) {
+      final labels = [
+        for (final r in d.value?.noClassRanges ?? const <NoClassRange>[])
+          if (r.contains(date)) r.label,
+      ];
+      if (labels.isEmpty) return null;
+      return labels.firstWhere((l) => l.isNotEmpty, orElse: () => '');
+    }),
+  ),
+);
+
 final occurrenceIndexProvider = Provider<OccurrenceIndex>((ref) {
   final data = ref.watch(semesterDataProvider).value;
   if (data == null) return OccurrenceIndex.empty;
