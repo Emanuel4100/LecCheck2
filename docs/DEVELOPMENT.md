@@ -152,7 +152,7 @@ After the restore, sign in again (the sign-in token isn't backed up).
 | `ci.yml` | push to main, PRs | analyze + test the app, typecheck + test the server, check generated Drift code |
 | `deploy-server.yml` | push to main touching `server/`, manual, and every release | test, deploy, smoke-test, roll back on failure (see below) |
 | `server-health.yml` | every 6 hours, manual | deep health check of the live server; a failure emails you |
-| `release.yml` | tag `v*` | signed Android APKs, unsigned iOS IPA, Linux tarball, AltStore source → GitHub Release, after the server for that commit is live |
+| `release.yml` | tag `v*` | signed Android APKs, unsigned iOS IPA, Linux tarball, AltStore source → GitHub Release, after the server for that commit is live; `altstore-source.json` and `update.json` (the apps' update check) on the `altstore` branch |
 
 To release: bump `version:` in `app/pubspec.yaml`, then `git tag vX.Y.Z && git push --tags`.
 Required secrets and variables are listed in [SETUP.md](SETUP.md).
@@ -192,3 +192,13 @@ URLs to Workers with Durable Objects. That's why the tests run against the real
 - *Require a newer app*: set `MIN_APP_BUILD` (a var in `wrangler.jsonc`, or a secret)
   to a build number. Older apps then get `upgrade_required` instead of syncing; apps
   before 2.0.0-beta.5 don't send their build, so they count as older.
+
+## Update notice
+
+`update.json` on the `altstore` branch has a `beta` and a `stable` channel
+(`scripts/update_manifest.py`): betas update `beta`, stable releases both. The apps read
+it at most once a day (`app/update_controller.dart`). To try the notice, serve a manifest
+with a higher build and point a build at it:
+`flutter run --dart-define=UPDATE_URL=http://<your-ip>:8000/update.json`. Android's
+per-ABI APKs report 1000 × ABI + build as their version code; `installedBuild()` undoes
+that.

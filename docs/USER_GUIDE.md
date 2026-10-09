@@ -146,6 +146,17 @@ Reminders are planned up to three weeks ahead (two on iPhone) and kept up to dat
 edit, when you open the app, and once a day in the background. On Linux they fire while
 LecCheck is running.
 
+## Updates
+
+On Android and Linux, LecCheck checks for a new version once a day. When there is one,
+**LecCheck X is available** appears at the top of Settings and once on Today:
+**Download** gets the right file for your device (on Linux, download it, extract it and
+run `./install.sh` again; your data stays), **What's new** opens the release notes, and
+**Skip this version** hides it until the next one. Betas get betas and stable releases;
+stable versions get stable releases. Turn it off, or check right away, in
+**Settings → About**. If you installed LecCheck with Obtainium, Obtainium updates it
+instead. On iPhone, AltStore and SideStore handle updates.
+
 ## Home-screen widget (Android)
 
 Long-press your home screen → Widgets → **LecCheck**. The widget lists today's sessions

@@ -15,6 +15,9 @@
   the holidays you tick, with the usual days off at Israeli universities suggested.
   Dates follow Israel by default, or two-day festivals as abroad. A new semester can
   start with them. Session details and the Week's day headers show the holiday's name.
+- **Update notice** (Android and Linux): "LecCheck X is available" at the top of Settings
+  and once on Today, with a download for your device. Checked once a day; turn it off in
+  Settings → About. Obtainium installs and iPhone keep updating as before.
 - **Sync server**: health checks, and automatic deploys that are tested first, checked
   live, and rolled back by themselves if the new version fails. App releases wait until
   their server is live.
