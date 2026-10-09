@@ -9,6 +9,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 import '../../app/adaptive.dart';
 import '../../app/format.dart';
 import '../../app/providers.dart';
+import '../../app/update_controller.dart';
 import '../../app/shortcuts.dart';
 import '../../app/theme/app_theme.dart';
 import '../../app/theme/colors.dart';
@@ -27,6 +28,7 @@ import '../developer/developer_page.dart';
 import '../session/session_actions.dart';
 import 'account_section.dart';
 import 'holidays_sheet.dart';
+import 'update_card.dart';
 import 'notifications_section.dart';
 
 final _versionProvider = FutureProvider<String>((ref) async {
@@ -101,6 +103,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 maxWidth: 720,
                 sliver: SliverList.list(
                   children: [
+                    const UpdateCard(),
                     for (final section in sections) ...[
                       SectionHeader(title: section.title),
                       ...section.children,
@@ -154,6 +157,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                     key: ValueKey(selected),
                     padding: const EdgeInsets.only(bottom: 48),
                     children: [
+                      const UpdateCard(),
                       SectionHeader(title: sections[selected].title),
                       ...sections[selected].children,
                     ],
@@ -230,6 +234,31 @@ class _AboutSectionState extends ConsumerState<_AboutSection> {
           subtitle: const Text('github.com/Emanuel4100/LecCheck2'),
           onTap: () => openUrl('https://github.com/Emanuel4100/LecCheck2'),
         ),
+        if (UpdateController.supported) ...[
+          SwitchListTile.adaptive(
+            secondary: const Icon(LecIcons.refresh),
+            title: Text(l.checkForUpdates),
+            subtitle: Text(l.checkForUpdatesSubtitle),
+            value: ref.watch(updateProvider.select((s) => s.enabled)),
+            onChanged: (on) => ref.read(updateProvider.notifier).setEnabled(on),
+          ),
+          ListTile(
+            contentPadding: const EdgeInsetsDirectional.only(
+              start: 72,
+              end: 16,
+            ),
+            title: Text(l.checkNow),
+            onTap: () async {
+              final messenger = ScaffoldMessenger.of(context);
+              final update = await ref
+                  .read(updateProvider.notifier)
+                  .check(force: true);
+              if (update == null) {
+                messenger.showSnackBar(SnackBar(content: Text(l.upToDate)));
+              }
+            },
+          ),
+        ],
       ],
     );
   }

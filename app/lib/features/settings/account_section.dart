@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 
+import '../../app/update_controller.dart';
 import '../../app/adaptive.dart';
 import '../../app/format.dart';
 import '../../app/sync_providers.dart';
@@ -47,6 +48,7 @@ Future<bool> signIn(
 
 String syncStatusText(SyncState state, AppLocalizations l, Fmt fmt) {
   final pending = state.pending > 0 ? ' · ${l.syncPending(state.pending)}' : '';
+  if (state.upgradeRequired) return '${l.upgradeRequired}$pending';
   final held = state.heldUntil;
   if (held != null) {
     return '${l.syncPaused(fmt.time(held.hour * 60 + held.minute))}$pending';
@@ -130,10 +132,16 @@ class AccountSection extends ConsumerWidget {
             subtitle: state.heldUntil == null
                 ? null
                 : Text(l.syncPausedSubtitle),
-            trailing: TextButton(
-              onPressed: () => ref.read(syncEngineProvider)?.syncNow(),
-              child: Text(l.syncNow),
-            ),
+            trailing: state.upgradeRequired
+                ? TextButton(
+                    onPressed: () =>
+                        ref.read(updateProvider.notifier).check(force: true),
+                    child: Text(l.checkForUpdates),
+                  )
+                : TextButton(
+                    onPressed: () => ref.read(syncEngineProvider)?.syncNow(),
+                    child: Text(l.syncNow),
+                  ),
           ),
         if (state != null && state.failed > 0)
           ListTile(

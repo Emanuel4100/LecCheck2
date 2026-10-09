@@ -78,7 +78,9 @@ jobs:
           flutter-version: ${{ env.FLUTTER_VERSION }}
           cache: true
       - run: flutter pub get
-      - run: flutter build linux --release $DEFINES
+      # The full tag (e.g. 2.0.0-beta.1), like Android: About shows it, and the
+      # update notice reads the channel from it.
+      - run: flutter build linux --release $DEFINES --build-name="${GITHUB_REF_NAME#v}"
       - name: Package
         run: |
           V="${GITHUB_REF_NAME#v}"
@@ -174,15 +176,21 @@ jobs:
           files: out/*
       # GitHub's "latest" release links skip pre-releases, so AltStore / SideStore
       # read the source from the altstore branch, which always has the newest one.
-      - name: Update the permanent AltStore / SideStore source
+      # update.json there tells the Android and Linux apps about new releases.
+      - name: Update the AltStore / SideStore source and update.json
         if: startsWith(github.ref, 'refs/tags/')
         run: |
+          V="${GITHUB_REF_NAME#v}"
+          BUILD="$(grep -E '^version:' app/pubspec.yaml | sed 's/.*+//')"
           git config user.name "github-actions[bot]"
           git config user.email "41898299+github-actions[bot]@users.noreply.github.com"
           git fetch --depth 1 origin altstore
           git worktree add --detach "$RUNNER_TEMP/altstore" FETCH_HEAD
           cp out/altstore-source.json "$RUNNER_TEMP/altstore/"
+          python3 scripts/update_manifest.py "$RUNNER_TEMP/altstore/update.json" "$V" "$BUILD" \
+            "https://github.com/${GITHUB_REPOSITORY}" > "$RUNNER_TEMP/update.json"
+          mv "$RUNNER_TEMP/update.json" "$RUNNER_TEMP/altstore/update.json"
           cd "$RUNNER_TEMP/altstore"
-          git add altstore-source.json
+          git add altstore-source.json update.json
           git commit -m "LecCheck ${GITHUB_REF_NAME}" || exit 0
           git push origin HEAD:refs/heads/altstore

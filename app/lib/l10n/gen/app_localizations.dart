@@ -2072,6 +2072,72 @@ abstract class AppLocalizations {
   /// **'How?'**
   String get howTo;
 
+  /// No description provided for @updateAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'LecCheck {version} is available'**
+  String updateAvailable(String version);
+
+  /// No description provided for @updateLinuxHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Download it, extract it and run ./install.sh again: your data stays.'**
+  String get updateLinuxHint;
+
+  /// No description provided for @updateDownload.
+  ///
+  /// In en, this message translates to:
+  /// **'Download'**
+  String get updateDownload;
+
+  /// No description provided for @updateWhatsNew.
+  ///
+  /// In en, this message translates to:
+  /// **'What\'s new'**
+  String get updateWhatsNew;
+
+  /// No description provided for @updateLater.
+  ///
+  /// In en, this message translates to:
+  /// **'Later'**
+  String get updateLater;
+
+  /// No description provided for @updateSkip.
+  ///
+  /// In en, this message translates to:
+  /// **'Skip this version'**
+  String get updateSkip;
+
+  /// No description provided for @checkForUpdates.
+  ///
+  /// In en, this message translates to:
+  /// **'Check for updates'**
+  String get checkForUpdates;
+
+  /// No description provided for @checkForUpdatesSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Once a day, from GitHub'**
+  String get checkForUpdatesSubtitle;
+
+  /// No description provided for @checkNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Check now'**
+  String get checkNow;
+
+  /// No description provided for @upToDate.
+  ///
+  /// In en, this message translates to:
+  /// **'LecCheck is up to date'**
+  String get upToDate;
+
+  /// No description provided for @upgradeRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Update LecCheck to keep syncing'**
+  String get upgradeRequired;
+
   /// No description provided for @presetAccent.
   ///
   /// In en, this message translates to:

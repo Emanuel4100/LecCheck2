@@ -46,7 +46,7 @@ available from the <a href="${REPO}/releases">releases page</a>.</p>`,
 const privacy = page(
   "LecCheck privacy policy",
   `<h1>Privacy policy</h1>
-<p class="muted">Last updated: October 5, 2026</p>
+<p class="muted">Last updated: October 9, 2026</p>
 
 <h2>Summary</h2>
 <p>LecCheck works without an account, and then everything stays on your device. If you sign
@@ -78,9 +78,16 @@ restored for 30 days; after that it is erased permanently. Signing out lets you 
 the copy on the device.
 Uninstalling the app removes local data.</p>
 
+<h2>Update checks</h2>
+<p>On Android and Linux, the app checks for a new version at most once a day by downloading
+a small file from GitHub (raw.githubusercontent.com). GitHub sees your IP address, as with
+any download; nothing about you or your schedule is sent. Turn it off in
+<b>Settings → About → Check for updates</b>.</p>
+
 <h2>Third parties</h2>
-<p>Google (sign-in) and Cloudflare (hosting) process data as needed to provide those
-services, under their own privacy policies. No other parties receive your data.</p>
+<p>Google (sign-in), Cloudflare (hosting) and GitHub (update checks) process data as needed
+to provide those services, under their own privacy policies. No other parties receive your
+data.</p>
 
 <h2>Children</h2>
 <p>LecCheck is meant for students and isn't directed at children under 13.</p>

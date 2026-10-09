@@ -554,6 +554,24 @@
     }
   },
   "howTo": "How?",
+  "updateAvailable": "LecCheck {version} is available",
+  "@updateAvailable": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "updateLinuxHint": "Download it, extract it and run ./install.sh again: your data stays.",
+  "updateDownload": "Download",
+  "updateWhatsNew": "What's new",
+  "updateLater": "Later",
+  "updateSkip": "Skip this version",
+  "checkForUpdates": "Check for updates",
+  "checkForUpdatesSubtitle": "Once a day, from GitHub",
+  "checkNow": "Check now",
+  "upToDate": "LecCheck is up to date",
+  "upgradeRequired": "Update LecCheck to keep syncing",
   "presetAccent": "System accent",
   "importTitle": "Import this backup?",
   "importPreview": "This backup has {semesters} semesters: {added} new items and {changed} that differ from yours.\n\n“Add missing” only adds what you don't have. “Replace” overwrites your versions on all your devices; an automatic backup is saved first.",

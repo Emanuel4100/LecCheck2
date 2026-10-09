@@ -1181,6 +1181,42 @@ class AppLocalizationsEn extends AppLocalizations {
   String get howTo => 'How?';
 
   @override
+  String updateAvailable(String version) {
+    return 'LecCheck $version is available';
+  }
+
+  @override
+  String get updateLinuxHint =>
+      'Download it, extract it and run ./install.sh again: your data stays.';
+
+  @override
+  String get updateDownload => 'Download';
+
+  @override
+  String get updateWhatsNew => 'What\'s new';
+
+  @override
+  String get updateLater => 'Later';
+
+  @override
+  String get updateSkip => 'Skip this version';
+
+  @override
+  String get checkForUpdates => 'Check for updates';
+
+  @override
+  String get checkForUpdatesSubtitle => 'Once a day, from GitHub';
+
+  @override
+  String get checkNow => 'Check now';
+
+  @override
+  String get upToDate => 'LecCheck is up to date';
+
+  @override
+  String get upgradeRequired => 'Update LecCheck to keep syncing';
+
+  @override
   String get presetAccent => 'System accent';
 
   @override

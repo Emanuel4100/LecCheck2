@@ -24,6 +24,7 @@ class SyncState {
     this.pending = 0,
     this.failed = 0,
     this.heldUntil,
+    this.upgradeRequired = false,
   });
 
   final SyncPhase phase;
@@ -39,6 +40,10 @@ class SyncState {
   /// Local changes the server refused; kept on this device until retried.
   final int failed;
 
+  /// The server only syncs with newer apps (`MIN_APP_BUILD`): changes stay
+  /// on this device until LecCheck is updated.
+  final bool upgradeRequired;
+
   @override
   bool operator ==(Object other) =>
       other is SyncState &&
@@ -46,11 +51,18 @@ class SyncState {
       other.lastSyncedAt == lastSyncedAt &&
       other.pending == pending &&
       other.failed == failed &&
-      other.heldUntil == heldUntil;
+      other.heldUntil == heldUntil &&
+      other.upgradeRequired == upgradeRequired;
 
   @override
-  int get hashCode =>
-      Object.hash(phase, lastSyncedAt, pending, failed, heldUntil);
+  int get hashCode => Object.hash(
+    phase,
+    lastSyncedAt,
+    pending,
+    failed,
+    heldUntil,
+    upgradeRequired,
+  );
 }
 
 /// Keeps this device's database in sync with the user's Durable Object.
@@ -121,6 +133,7 @@ class SyncEngine {
 
   /// See [SyncState.heldUntil]; [_holds] counts holds in a row.
   DateTime? _heldUntil;
+  bool _upgradeRequired = false;
   int _holds = 0;
 
   bool get _held => _heldUntil != null && DateTime.now().isBefore(_heldUntil!);
@@ -403,6 +416,7 @@ class SyncEngine {
         );
         if (catchUp && !more) {
           _caughtUp = true;
+          _upgradeRequired = false;
           if (_pending == 0) _holds = 0;
           if (_reoffer) {
             _reoffer = false;
@@ -426,6 +440,16 @@ class SyncEngine {
         _schedulePush(immediate: true);
       case 'error':
         debugPrint('Sync error: ${message['code']} ${message['message']}');
+        if (message['code'] == 'upgrade_required') {
+          // Only a newer app helps: ask again in a few hours, not every minute.
+          _upgradeRequired = true;
+          _hold(
+            retryAt: DateTime.now()
+                .add(const Duration(hours: 6))
+                .millisecondsSinceEpoch,
+          );
+          return;
+        }
         final retryAt = message['retryAt'];
         if (retryAt is num) _hold(retryAt: retryAt.toInt());
     }
@@ -579,6 +603,7 @@ class SyncEngine {
       pending: _pending,
       failed: _failed,
       heldUntil: _held ? _heldUntil : null,
+      upgradeRequired: _upgradeRequired,
     );
     if (next == _state || _states.isClosed) return;
     _state = next;

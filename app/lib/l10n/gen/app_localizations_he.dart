@@ -1177,6 +1177,42 @@ class AppLocalizationsHe extends AppLocalizations {
   String get howTo => 'איך?';
 
   @override
+  String updateAvailable(String version) {
+    return 'גרסה $version של LecCheck זמינה';
+  }
+
+  @override
+  String get updateLinuxHint =>
+      'יש להוריד, לחלץ ולהריץ שוב את ‎./install.sh. הנתונים נשמרים.';
+
+  @override
+  String get updateDownload => 'הורדה';
+
+  @override
+  String get updateWhatsNew => 'מה חדש';
+
+  @override
+  String get updateLater => 'אחר כך';
+
+  @override
+  String get updateSkip => 'לדלג על הגרסה הזו';
+
+  @override
+  String get checkForUpdates => 'בדיקת עדכונים';
+
+  @override
+  String get checkForUpdatesSubtitle => 'פעם ביום, מ-GitHub';
+
+  @override
+  String get checkNow => 'לבדוק עכשיו';
+
+  @override
+  String get upToDate => 'LecCheck מעודכנת';
+
+  @override
+  String get upgradeRequired => 'יש לעדכן את LecCheck כדי להמשיך לסנכרן';
+
+  @override
   String get presetAccent => 'צבע המערכת';
 
   @override

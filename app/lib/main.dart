@@ -9,6 +9,7 @@ import 'app/app.dart';
 import 'app/background_reminders.dart';
 import 'app/notification_controller.dart';
 import 'app/providers.dart';
+import 'app/update_controller.dart';
 import 'app/widget_controller.dart';
 import 'core/dev/dev_log.dart';
 
@@ -42,6 +43,7 @@ Future<void> main() async {
     scheduleDailyTopUp();
     WidgetController(container).start();
     _dailySnapshots(container);
+    _updateChecks(container);
   });
 }
 
@@ -54,6 +56,14 @@ void _dailySnapshots(ProviderContainer container) {
       .catchError((Object e) => debugPrint('Daily snapshot failed: $e'));
   take();
   AppLifecycleListener(onResume: take);
+}
+
+/// Looks for a new release (at most once a day) at startup and when the app
+/// comes back.
+void _updateChecks(ProviderContainer container) {
+  void check() => container.read(updateProvider.notifier).check();
+  check();
+  AppLifecycleListener(onResume: check);
 }
 
 /// The app's own license notice (full text: LICENSE in the repository).

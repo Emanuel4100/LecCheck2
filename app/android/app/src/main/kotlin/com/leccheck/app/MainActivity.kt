@@ -73,6 +73,8 @@ class MainActivity : FlutterActivity() {
                 "model" to Build.MODEL,
                 // Battery optimization can delay reminders.
                 "batteryOptimized" to !power.isIgnoringBatteryOptimizations(packageName),
+                // The update notice: which APK fits this phone.
+                "abis" to Build.SUPPORTED_ABIS.toList(),
             )
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             // "Restricted" background use (Samsung: deep sleeping apps) stops
