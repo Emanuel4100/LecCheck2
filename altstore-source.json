@@ -1,0 +1,36 @@
+{
+  "name": "LecCheck",
+  "identifier": "com.leccheck.app.source",
+  "subtitle": "Lecture attendance tracker",
+  "iconURL": "https://raw.githubusercontent.com/Emanuel4100/LecCheck2/main/design/app-icon/icon_full.png",
+  "website": "https://github.com/Emanuel4100/LecCheck2",
+  "tintColor": "#4F66D2",
+  "apps": [
+    {
+      "name": "LecCheck",
+      "bundleIdentifier": "com.leccheck.app",
+      "developerName": "Emanuel",
+      "subtitle": "Mark every class you attend",
+      "localizedDescription": "Track the lectures, practices and labs you attend. Works offline and syncs live between your devices.",
+      "iconURL": "https://raw.githubusercontent.com/Emanuel4100/LecCheck2/main/design/app-icon/icon_full.png",
+      "tintColor": "#4F66D2",
+      "category": "education",
+      "versions": [
+        {
+          "version": "2.0.0",
+          "buildVersion": "12",
+          "date": "2026-10-07",
+          "localizedDescription": "LecCheck 2.0.0-beta.4",
+          "downloadURL": "https://github.com/Emanuel4100/LecCheck2/releases/download/v2.0.0-beta.4/LecCheck-2.0.0-beta.4-ios.ipa",
+          "size": 10787849,
+          "minOSVersion": "15.0"
+        }
+      ],
+      "appPermissions": {
+        "entitlements": [],
+        "privacy": {}
+      }
+    }
+  ],
+  "news": []
+}
