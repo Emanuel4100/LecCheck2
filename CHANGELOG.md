@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 2.0.0-beta.5 — 2026-10-09
 
 - **Reminders on Android**: when Android blocked LecCheck's notifications, nothing said
   so: the only warning was inside Settings, and the test button reported success. Today

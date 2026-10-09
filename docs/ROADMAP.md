@@ -23,14 +23,21 @@
   hidden developer mode for testing on real phones (test notifications, sync, backups,
   device details, a log); database migration tests against every earlier schema;
   GPL-3.0-or-later license.
+- **Reliability, holidays, updates** (2.0.0-beta.5): Today warns when Android blocks
+  reminders, and reminders are re-armed after a force stop and topped up in the
+  background; Jewish and Israeli holidays as no-class days; an update notice for Android
+  and Linux; opt-in bug reports; a smoother Week view and rendering stats; server health
+  checks and automatic deploys with smoke tests and rollback.
 
 ## Not yet verified on real hardware
 
 These are built and compile, but have only been exercised in tests so far:
 
 - The iOS build (first run happens in the release workflow on a macOS runner).
-- Reminders and their action buttons on a phone; the Android widget on a home screen
-  (Settings → Developer has tools for testing both).
+- Reminders work on a phone (a Samsung, once notifications are allowed); their action
+  buttons with the app closed and the daily background top-up are untested
+  (Settings → Developer has tools for testing them).
+- The Android widget on a home screen.
 - Google sign-in end-to-end (needs the Cloudflare + Google setup in [SETUP.md](SETUP.md));
   sync itself is verified end-to-end with the dev sign-in against a local Worker.
 
