@@ -16,6 +16,7 @@ import '../../domain/occurrence.dart';
 import '../../domain/schedule_types.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../session/session_actions.dart';
+import '../settings/reminder_access.dart';
 import '../session/session_menu.dart';
 import '../session/session_sheet.dart';
 import '../session/session_tile.dart';
@@ -74,6 +75,7 @@ class TodayPage extends ConsumerWidget {
                     flex: 5,
                     sliver: SliverMainAxisGroup(
                       slivers: [
+                        const SliverToBoxAdapter(child: RemindersBlockedCard()),
                         const SliverToBoxAdapter(child: _WeekProgress()),
                         const SliverToBoxAdapter(child: _NowNextCard()),
                         const _NeedsMarkingSection(),
@@ -99,6 +101,7 @@ class TodayPage extends ConsumerWidget {
               maxWidth: 720,
               sliver: SliverMainAxisGroup(
                 slivers: [
+                  const SliverToBoxAdapter(child: RemindersBlockedCard()),
                   const SliverToBoxAdapter(child: _WeekProgress()),
                   const SliverToBoxAdapter(child: _NowNextCard()),
                   const _NeedsMarkingSection(),

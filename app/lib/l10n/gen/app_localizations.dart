@@ -1928,6 +1928,84 @@ abstract class AppLocalizations {
   /// **'On this computer, reminders appear while LecCheck is open.'**
   String get remindersWhileOpen;
 
+  /// No description provided for @openSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Open settings'**
+  String get openSettings;
+
+  /// No description provided for @notificationsOffOpenSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn on notifications for LecCheck in the system settings, then come back.'**
+  String get notificationsOffOpenSettings;
+
+  /// No description provided for @reminderChannelOff.
+  ///
+  /// In en, this message translates to:
+  /// **'“{channel}” notifications are turned off in the system settings.'**
+  String reminderChannelOff(String channel);
+
+  /// No description provided for @exactAlarmsOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Reminders may come late'**
+  String get exactAlarmsOff;
+
+  /// No description provided for @exactAlarmsOffSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow “Alarms & reminders” so they appear on the minute.'**
+  String get exactAlarmsOffSubtitle;
+
+  /// No description provided for @backgroundRestricted.
+  ///
+  /// In en, this message translates to:
+  /// **'Background use is restricted'**
+  String get backgroundRestricted;
+
+  /// No description provided for @backgroundRestrictedSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Reminders can\'t appear while LecCheck is restricted. Set its battery use to “Unrestricted”.'**
+  String get backgroundRestrictedSubtitle;
+
+  /// No description provided for @batteryOptimized.
+  ///
+  /// In en, this message translates to:
+  /// **'Battery optimization is on'**
+  String get batteryOptimized;
+
+  /// No description provided for @batteryOptimizedSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Android may delay reminders. Turn optimization off for LecCheck.'**
+  String get batteryOptimizedSubtitle;
+
+  /// No description provided for @batteryOptimizedSamsung.
+  ///
+  /// In en, this message translates to:
+  /// **'Samsung phones may delay or skip reminders. Turn optimization off, and keep LecCheck out of “Sleeping apps” (Settings → Battery → Background usage limits).'**
+  String get batteryOptimizedSamsung;
+
+  /// No description provided for @turnOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn off'**
+  String get turnOff;
+
+  /// No description provided for @autostartHint.
+  ///
+  /// In en, this message translates to:
+  /// **'On {maker} phones, also allow LecCheck to start automatically (Autostart), or reminders can stop.'**
+  String autostartHint(String maker);
+
+  /// No description provided for @howTo.
+  ///
+  /// In en, this message translates to:
+  /// **'How?'**
+  String get howTo;
+
   /// No description provided for @presetAccent.
   ///
   /// In en, this message translates to:

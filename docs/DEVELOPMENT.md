@@ -107,11 +107,15 @@ dart run flutter_native_splash:create
 Turn on developer mode (**Settings → About → Version** 7 times) and open **Settings →
 Developer → Developer tools**:
 
-- **Notifications**: whether they're set up (and the error if not), permission, exact
-  alarms, time zone, what's scheduled. Show one now, schedule one in a minute, or an
-  after-class reminder in a minute. Close the app before it arrives, press a button, then
-  check the session and the log. Its buttons mark the latest session that needs marking;
-  if none does, they only log.
+- **Notifications**: whether they're set up (and the error if not), permission, channels
+  turned off, exact alarms, time zone, what's scheduled, and how much of it still has an
+  alarm in the system. Show one now, schedule one in a minute, or an after-class reminder
+  in a minute. Go to the home screen before it arrives (don't swipe LecCheck away: some
+  phones, e.g. Xiaomi, force-stop it, and a force stop drops every alarm until the app
+  is opened again), press a button, then check the session and the log. Its buttons mark
+  the latest session that needs marking; if none does, they only log. Check permission
+  first: when Android blocks LecCheck's notifications, nothing appears at all (Today
+  shows a warning while reminders are on).
 - **Sync**: state, cursor, dataset, clock correction; **Sync now**; **Pretend the server
   is busy** for 2 minutes. Account then shows "Sync paused until…", and sync resumes by
   itself.

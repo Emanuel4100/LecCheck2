@@ -4,8 +4,11 @@ import 'package:material_ui/material_ui.dart';
 import '../../app/adaptive.dart';
 import '../../app/notification_controller.dart';
 import '../../core/icons/lec_icons.dart';
+import '../../core/notifications/android_device.dart';
 import '../../core/notifications/notification_service.dart';
 import '../../l10n/gen/app_localizations.dart';
+import '../session/session_actions.dart';
+import 'reminder_access.dart';
 
 class NotificationsSection extends ConsumerStatefulWidget {
   const NotificationsSection({super.key});
@@ -19,54 +22,31 @@ class _NotificationsSectionState extends ConsumerState<NotificationsSection> {
   static const _beforeOptions = [5, 10, 15, 30];
   static const _afterOptions = [0, 5, 10, 15, 30];
 
-  /// Whether the OS lets LecCheck notify. Checked again when the app comes
-  /// back from the system settings.
-  bool _osAllowed = true;
-  late final AppLifecycleListener _lifecycle;
-
-  @override
-  void initState() {
-    super.initState();
-    _lifecycle = AppLifecycleListener(onResume: _check);
-    _check();
-  }
-
-  @override
-  void dispose() {
-    _lifecycle.dispose();
-    super.dispose();
-  }
-
-  Future<void> _check() async {
-    final allowed = await NotificationService.instance.enabled();
-    if (mounted && allowed != _osAllowed) setState(() => _osAllowed = allowed);
-  }
-
-  /// Enabling a reminder is the moment to ask for permission (not at launch).
-  Future<bool> _allowed() async {
-    final ok = await NotificationService.instance.requestPermission();
-    await _check();
-    if (!ok && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(AppLocalizations.of(context).notificationsBlocked),
-        ),
-      );
-    }
-    return ok;
-  }
+  /// Makers whose phones stop apps (and their alarms) unless they're allowed
+  /// to start automatically: dontkillmyapp.com explains each one.
+  static const _autostartMakers = {
+    'xiaomi',
+    'huawei',
+    'honor',
+    'oppo',
+    'vivo',
+    'oneplus',
+    'realme',
+  };
 
   /// Says why when nothing could be shown (v2.0.0-beta.3 on Android showed
-  /// nothing at all, silently).
+  /// nothing at all, silently; beta.4 said nothing while Android blocked it).
   Future<void> _sendTest() async {
     final l = AppLocalizations.of(context);
     final messenger = ScaffoldMessenger.of(context);
-    if (!await _allowed()) return;
+    if (!await allowReminders(context, ref)) return;
     try {
       await NotificationService.instance.showTest(
         l.notifyTestTitle,
         l.notifyTestBody,
       );
+    } on RemindersBlocked {
+      if (mounted) await allowReminders(context, ref);
     } on Object catch (e) {
       debugPrint('Test notification failed: $e');
       messenger.showSnackBar(
@@ -75,11 +55,68 @@ class _NotificationsSectionState extends ConsumerState<NotificationsSection> {
     }
   }
 
+  /// What else can stop reminders on this phone, each with its fix.
+  List<Widget> _checks(AppLocalizations l, ReminderHealth health) {
+    final checks = ref.read(reminderHealthProvider.notifier);
+    final maker = health.maker?.toLowerCase() ?? '';
+    Widget check(
+      String title,
+      String subtitle,
+      String action,
+      Future<void> Function() fix,
+    ) => ListTile(
+      leading: const Icon(LecIcons.warning),
+      title: Text(title),
+      subtitle: Text(subtitle),
+      trailing: TextButton(
+        onPressed: () async {
+          await fix();
+          await checks.refresh();
+        },
+        child: Text(action),
+      ),
+    );
+    return [
+      if (health.exactAlarms == false)
+        check(
+          l.exactAlarmsOff,
+          l.exactAlarmsOffSubtitle,
+          l.allow,
+          NotificationService.instance.requestExactAlarms,
+        ),
+      if (health.backgroundRestricted ?? false)
+        check(
+          l.backgroundRestricted,
+          l.backgroundRestrictedSubtitle,
+          l.openSettings,
+          AndroidDevice.openAppSettings,
+        ),
+      if (health.batteryOptimized ?? false)
+        check(
+          l.batteryOptimized,
+          maker == 'samsung'
+              ? l.batteryOptimizedSamsung
+              : l.batteryOptimizedSubtitle,
+          l.turnOff,
+          AndroidDevice.requestIgnoreBatteryOptimizations,
+        ),
+      if (_autostartMakers.contains(maker))
+        ListTile(
+          leading: const Icon(LecIcons.info),
+          subtitle: Text(l.autostartHint(health.maker!)),
+          trailing: TextButton(
+            onPressed: () => openUrl('https://dontkillmyapp.com/$maker'),
+            child: Text(l.howTo),
+          ),
+        ),
+    ];
+  }
+
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
-    final theme = Theme.of(context);
     final settings = ref.watch(reminderSettingsProvider);
+    final health = ref.watch(reminderHealthProvider);
     final controller = ref.read(reminderSettingsProvider.notifier);
 
     Widget minutes(
@@ -105,38 +142,14 @@ class _NotificationsSectionState extends ConsumerState<NotificationsSection> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (settings.any && !_osAllowed)
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-            child: Card(
-              color: theme.colorScheme.errorContainer,
-              child: ListTile(
-                leading: Icon(
-                  LecIcons.warning,
-                  color: theme.colorScheme.onErrorContainer,
-                ),
-                title: Text(
-                  l.notificationsOff,
-                  style: TextStyle(color: theme.colorScheme.onErrorContainer),
-                ),
-                subtitle: Text(
-                  l.notificationsOffSubtitle,
-                  style: TextStyle(color: theme.colorScheme.onErrorContainer),
-                ),
-                trailing: FilledButton(
-                  onPressed: _allowed,
-                  child: Text(l.allow),
-                ),
-              ),
-            ),
-          ),
+        const RemindersBlockedCard(),
         SwitchListTile.adaptive(
           secondary: const Icon(LecIcons.time),
           title: Text(l.beforeClass),
           subtitle: Text(l.beforeClassSubtitle),
           value: settings.before,
           onChanged: (on) async {
-            if (on && !await _allowed()) return;
+            if (on && !await allowReminders(context, ref)) return;
             controller.update(before: on);
           },
         ),
@@ -152,7 +165,7 @@ class _NotificationsSectionState extends ConsumerState<NotificationsSection> {
           subtitle: Text(l.afterClassSubtitle),
           value: settings.after,
           onChanged: (on) async {
-            if (on && !await _allowed()) return;
+            if (on && !await allowReminders(context, ref)) return;
             controller.update(after: on);
           },
         ),
@@ -162,6 +175,7 @@ class _NotificationsSectionState extends ConsumerState<NotificationsSection> {
             settings.afterMinutes,
             (m) => controller.update(afterMinutes: m),
           ),
+        if (settings.any && AppIdiom.isAndroid) ..._checks(l, health),
         if (settings.any)
           ListTile(
             leading: const Icon(LecIcons.celebrate),

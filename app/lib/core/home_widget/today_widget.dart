@@ -170,14 +170,7 @@ Future<void> refreshTodayWidget(
   ScheduleRepository repo,
   SharedPreferencesWithCache prefs,
 ) async {
-  final semesters = await repo.semesters();
-  if (semesters.isEmpty) return;
-  final chosen = prefs.getString('semester.active');
-  final semester = semesters.firstWhere(
-    (s) => s.id == chosen,
-    orElse: () => semesters.first,
-  );
-  final data = await repo.loadSemesterData(semester.id);
+  final data = await repo.loadShownSemester(prefs.getString('semester.active'));
   if (data == null) return;
   final code =
       prefs.getString('appearance.locale') ??

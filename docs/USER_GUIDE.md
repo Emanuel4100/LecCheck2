@@ -120,8 +120,15 @@ recording link).
   (and syncs if you're signed in). Only sessions still pending get this reminder.
 - **Send a test notification** to check it works. If nothing can be shown, it says why.
 
-Permission is requested when you switch a reminder on. Reminders are planned two weeks
-ahead and kept up to date as you edit. On Linux they fire while LecCheck is running.
+Permission is requested when you switch a reminder on. If the phone blocks LecCheck's
+notifications later, **Today** shows a warning with an **Allow** button (it opens the
+system settings when Android won't ask again). On Android, **Settings → Notifications**
+also points out what can delay or stop reminders: exact alarms, battery optimization,
+restricted background use, and, on some phones, autostart.
+
+Reminders are planned up to three weeks ahead (two on iPhone) and kept up to date as you
+edit, when you open the app, and once a day in the background. On Linux they fire while
+LecCheck is running.
 
 ## Home-screen widget (Android)
 

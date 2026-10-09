@@ -7,6 +7,9 @@
          (fine outside the Play Store; revisit before publishing there). -->
     <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" android:maxSdkVersion="32" />
+    <!-- Settings → Reminders asks to turn battery optimization off in one
+         system dialog (like USE_EXACT_ALARM, revisit before the Play Store). -->
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
     <!-- enableOnBackInvokedCallback: predictive back (Android 13+): the
          back gesture previews the previous screen.
          Backup: Android's own backup to Google Drive keeps a copy of the data

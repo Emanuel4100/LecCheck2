@@ -1052,6 +1052,54 @@ class AppLocalizationsEn extends AppLocalizations {
       'On this computer, reminders appear while LecCheck is open.';
 
   @override
+  String get openSettings => 'Open settings';
+
+  @override
+  String get notificationsOffOpenSettings =>
+      'Turn on notifications for LecCheck in the system settings, then come back.';
+
+  @override
+  String reminderChannelOff(String channel) {
+    return '“$channel” notifications are turned off in the system settings.';
+  }
+
+  @override
+  String get exactAlarmsOff => 'Reminders may come late';
+
+  @override
+  String get exactAlarmsOffSubtitle =>
+      'Allow “Alarms & reminders” so they appear on the minute.';
+
+  @override
+  String get backgroundRestricted => 'Background use is restricted';
+
+  @override
+  String get backgroundRestrictedSubtitle =>
+      'Reminders can\'t appear while LecCheck is restricted. Set its battery use to “Unrestricted”.';
+
+  @override
+  String get batteryOptimized => 'Battery optimization is on';
+
+  @override
+  String get batteryOptimizedSubtitle =>
+      'Android may delay reminders. Turn optimization off for LecCheck.';
+
+  @override
+  String get batteryOptimizedSamsung =>
+      'Samsung phones may delay or skip reminders. Turn optimization off, and keep LecCheck out of “Sleeping apps” (Settings → Battery → Background usage limits).';
+
+  @override
+  String get turnOff => 'Turn off';
+
+  @override
+  String autostartHint(String maker) {
+    return 'On $maker phones, also allow LecCheck to start automatically (Autostart), or reminders can stop.';
+  }
+
+  @override
+  String get howTo => 'How?';
+
+  @override
   String get presetAccent => 'System accent';
 
   @override

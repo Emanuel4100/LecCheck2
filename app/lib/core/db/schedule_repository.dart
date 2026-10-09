@@ -209,6 +209,18 @@ class ScheduleRepository {
       .watch()
       .asyncMap((_) => loadSemesterData(semesterId));
 
+  /// The semester the app shows ([chosenId] if it still exists, otherwise
+  /// the most recent), for background work without providers.
+  Future<SemesterData?> loadShownSemester(String? chosenId) async {
+    final all = await semesters();
+    if (all.isEmpty) return null;
+    final shown = all.firstWhere(
+      (s) => s.id == chosenId,
+      orElse: () => all.first,
+    );
+    return loadSemesterData(shown.id);
+  }
+
   Future<SemesterData?> loadSemesterData(String semesterId) async {
     final semester =
         await (db.select(db.semesters)

@@ -8,6 +8,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../core/notifications/notification_actions.dart';
 import '../core/notifications/notification_service.dart';
+import 'adaptive.dart';
+import 'background_reminders.dart';
 import '../domain/occurrence.dart';
 import '../domain/reminder_plan.dart';
 import '../domain/schedule_types.dart';
@@ -27,13 +29,17 @@ class ReminderSettingsController extends Notifier<ReminderSettings> {
 
   SharedPreferencesWithCache get _prefs => ref.read(sharedPrefsProvider);
 
+  /// The saved settings, also for background work without providers.
+  static ReminderSettings read(SharedPreferencesWithCache prefs) =>
+      ReminderSettings(
+        before: prefs.getBool(_before) ?? false,
+        beforeMinutes: prefs.getInt(_beforeMin) ?? 10,
+        after: prefs.getBool(_after) ?? false,
+        afterMinutes: prefs.getInt(_afterMin) ?? 5,
+      );
+
   @override
-  ReminderSettings build() => ReminderSettings(
-    before: _prefs.getBool(_before) ?? false,
-    beforeMinutes: _prefs.getInt(_beforeMin) ?? 10,
-    after: _prefs.getBool(_after) ?? false,
-    afterMinutes: _prefs.getInt(_afterMin) ?? 5,
-  );
+  ReminderSettings build() => read(_prefs);
 
   void update({
     bool? before,
@@ -59,6 +65,49 @@ final reminderSettingsProvider =
     NotifierProvider<ReminderSettingsController, ReminderSettings>(
       ReminderSettingsController.new,
     );
+
+/// What can stop reminders on this device ([NotificationService.health]),
+/// checked once notifications are set up (after the first frame) and
+/// whenever the app comes back (e.g. from the system settings). Unknown until
+/// then.
+class ReminderHealthController extends Notifier<ReminderHealth> {
+  @override
+  ReminderHealth build() {
+    final lifecycle = AppLifecycleListener(onResume: refresh);
+    ref.onDispose(lifecycle.dispose);
+    return const ReminderHealth();
+  }
+
+  Future<ReminderHealth> refresh() async {
+    final health = await NotificationService.instance.health();
+    if (ref.mounted) state = health;
+    return health;
+  }
+}
+
+final reminderHealthProvider =
+    NotifierProvider<ReminderHealthController, ReminderHealth>(
+      ReminderHealthController.new,
+    );
+
+/// How far ahead reminders are scheduled. iOS keeps at most 64 pending
+/// notifications. Android has no such cap, but the notifications plugin
+/// rewrites its whole list for each one, so about 100 (10 days of a full
+/// timetable with both reminders); the daily background top-up keeps them
+/// coming.
+({int limit, int horizonDays}) reminderWindow() => AppIdiom.isAndroid
+    ? (limit: 100, horizonDays: 21)
+    : (limit: 60, horizonDays: 14);
+
+/// The channel names and buttons in [l]'s language.
+NotificationLabels notificationLabels(AppLocalizations l) => NotificationLabels(
+  channelBefore: l.channelBefore,
+  channelAfter: l.channelAfter,
+  attended: l.markAttended,
+  missed: l.markMissed,
+  watched: l.markWatched,
+  openLink: l.openLink,
+);
 
 /// Reminder texts in the app's language.
 class LocalizedReminderTexts implements ReminderTexts {
@@ -88,14 +137,17 @@ class LocalizedReminderTexts implements ReminderTexts {
 /// action buttons while the app is running. Started after the first frame,
 /// so notification setup never delays startup.
 class NotificationController {
-  NotificationController(this.container);
+  NotificationController(this.container, {NotificationService? service})
+    : service = service ?? NotificationService.instance;
 
   /// The one `main` started (Settings → Developer reschedules with it).
   static NotificationController? current;
 
   final ProviderContainer container;
+  final NotificationService service;
   Timer? _debounce;
   Timer? _hourly;
+  AppLifecycleListener? _lifecycle;
 
   AppLocalizations get _l {
     final code =
@@ -106,34 +158,39 @@ class NotificationController {
 
   Future<void> start() async {
     current = this;
-    final l = _l;
-    await NotificationService.instance.init(
-      labels: NotificationLabels(
-        channelBefore: l.channelBefore,
-        channelAfter: l.channelAfter,
-        attended: l.markAttended,
-        missed: l.markMissed,
-        watched: l.markWatched,
-        openLink: l.openLink,
-      ),
+    await service.init(
+      labels: notificationLabels(_l),
       onResponse: _onResponse,
+      onBackgroundResponse: onNotificationActionInBackground,
     );
+    unawaited(container.read(reminderHealthProvider.notifier).refresh());
     void replan(Object? _, Object? _) => schedule();
     container
       ..listen(occurrenceIndexProvider, replan)
       ..listen(semesterDataProvider, replan)
       ..listen(reminderSettingsProvider, replan)
-      ..listen(appearanceProvider, replan)
-      ..listen(userPrefsProvider, replan);
+      ..listen(userPrefsProvider, replan)
+      ..listen(appearanceProvider, (_, _) {
+        // New language: rename the channels, then re-plan the texts.
+        service.init(
+          labels: notificationLabels(_l),
+          onResponse: _onResponse,
+          onBackgroundResponse: onNotificationActionInBackground,
+        );
+        schedule();
+      });
     _hourly = Timer.periodic(const Duration(hours: 1), (_) => schedule());
+    // Coming back after a while: the day moved on, or the alarms are gone.
+    _lifecycle = AppLifecycleListener(onResume: schedule);
     schedule();
-    final launch = await NotificationService.instance.launchResponse();
+    final launch = await service.launchResponse();
     if (launch != null) await _onResponse(launch);
   }
 
   void dispose() {
     _debounce?.cancel();
     _hourly?.cancel();
+    _lifecycle?.dispose();
   }
 
   void schedule() {
@@ -141,17 +198,27 @@ class NotificationController {
     _debounce = Timer(const Duration(seconds: 2), _apply);
   }
 
-  /// Plans and schedules reminders right away. Returns how many.
+  /// Plans and reschedules every reminder right away (Settings →
+  /// Developer). Returns how many.
   Future<int> rescheduleNow() {
     _debounce?.cancel();
-    return _apply();
+    return _apply(force: true);
   }
 
-  Future<int> _apply() async {
+  Future<int> _apply({bool force = false}) async {
     final settings = container.read(reminderSettingsProvider);
+    if (!settings.any) {
+      await service.cancelReminders();
+      return 0;
+    }
     final data = container.read(semesterDataProvider).value;
-    if (!settings.any || data == null) {
-      await NotificationService.instance.cancelAll();
+    if (data == null) {
+      // No semester: nothing to remind about. Still loading (at startup):
+      // keep what's scheduled; the data arriving re-plans.
+      final semesters = container.read(semestersProvider);
+      if (semesters.hasValue && semesters.value!.isEmpty) {
+        await service.cancelReminders();
+      }
       return 0;
     }
     final l = _l;
@@ -165,8 +232,10 @@ class NotificationController {
       settings: settings,
       texts: LocalizedReminderTexts(l, Fmt(l.localeName, use24h: use24h)),
       now: DateTime.now(),
+      limit: reminderWindow().limit,
+      horizonDays: reminderWindow().horizonDays,
     );
-    await NotificationService.instance.apply(plan);
+    await service.apply(plan, force: force);
     return plan.length;
   }
 

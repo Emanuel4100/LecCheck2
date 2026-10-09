@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'app/adaptive.dart';
 import 'app/app.dart';
+import 'app/background_reminders.dart';
 import 'app/notification_controller.dart';
 import 'app/providers.dart';
 import 'app/widget_controller.dart';
@@ -38,6 +39,7 @@ Future<void> main() async {
   );
   WidgetsBinding.instance.addPostFrameCallback((_) {
     NotificationController(container).start();
+    scheduleDailyTopUp();
     WidgetController(container).start();
     _dailySnapshots(container);
   });

@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+- **Reminders on Android**: when Android blocked LecCheck's notifications, nothing said
+  so: the only warning was inside Settings, and the test button reported success. Today
+  now warns while reminders are on but blocked, with an **Allow** button that opens the
+  system settings when Android won't ask again. Both test buttons say why nothing appears.
+- **Reminders keep coming**: they're no longer cancelled while the app starts up, and
+  turning them off no longer dismisses notifications already on screen. After a force stop
+  (or "swipe away" on some phones), missing alarms are found and scheduled again. Android
+  plans three weeks ahead instead of two, and tops reminders up once a day in the
+  background and after each notification button.
+- **Settings → Notifications** points out what else can delay reminders on Android:
+  exact alarms, battery optimization (one tap to turn it off), restricted background use,
+  and autostart on phones that need it.
 - **iPhone**: the AltStore / SideStore source now has a permanent address that always
   lists the newest build, betas included:
   `https://raw.githubusercontent.com/Emanuel4100/LecCheck2/altstore/altstore-source.json`.

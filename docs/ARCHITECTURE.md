@@ -211,12 +211,25 @@ scheme. The Google client secret exists only in the Worker. Sessions renew after
 ## Notifications and widget
 
 - `NotificationController` re-plans reminders (debounced 2 s) when data, settings or
-  language change, and hourly. `NotificationService.apply` compares the plan with the
-  OS's pending notifications (each carries a signature in its payload) and only cancels or
-  schedules the differences. Linux has no OS scheduler, so reminders due within a day are
-  shown from in-app timers.
+  language change, hourly, and when the app comes back. While the semester is still
+  loading it leaves scheduled reminders alone; turning reminders off cancels them without
+  dismissing notifications already on screen.
+- `NotificationService.apply` compares the plan with the plugin's list of scheduled
+  notifications (each carries a signature in its payload) and only cancels or schedules
+  the differences. That list survives a force stop while Android drops the alarms, so
+  once per process it also asks the system which alarms still exist
+  (`MainActivity.armedReminders`, a `PendingIntent` lookup) and re-arms the missing ones.
+  Android plans up to 100 reminders over 21 days (the plugin rewrites its whole list for
+  each one); iOS 60 over 14 days (its cap is 64). Linux has no OS scheduler, so reminders
+  due within a day are shown from in-app timers.
+- Reminders are also topped up without the UI (`app/background_reminders.dart`): after a
+  notification button, and once a day from WorkManager (`scheduleDailyTopUp`).
+- `ReminderHealth` (permission, blocked channels, exact alarms, battery optimization,
+  restricted background use) comes from the plugin and `MainActivity`'s
+  `com.leccheck.app/device` channel. Today warns when reminders are on but blocked, and
+  Settings → Notifications offers a fix for each problem.
 - Action buttons call `onNotificationActionInBackground` in a background isolate: it opens
-  the shared database, sets the status, and tries an HTTP sync.
+  the shared database, sets the status, tries an HTTP sync, then tops up reminders.
 - The status-bar icon (`ic_stat_leccheck`) is named only from Dart, so
   `res/raw/keep.xml` stops release builds from stripping it. Without it, the plugin can't
   start, and nothing is shown or scheduled (as in v2.0.0-beta.3 on Android). A failed

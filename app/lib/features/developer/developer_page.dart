@@ -18,6 +18,7 @@ import '../../app/widgets/common.dart';
 import '../../core/dev/dev_log.dart';
 import '../../core/home_widget/today_widget.dart';
 import '../../core/icons/lec_icons.dart';
+import '../../core/notifications/android_device.dart';
 import '../../core/notifications/notification_service.dart';
 import '../../core/sync/sync_config.dart';
 import '../../domain/reminder_plan.dart';
@@ -41,7 +42,6 @@ final devModeProvider = NotifierProvider<DevModeController, bool>(
 );
 
 /// Android details only the platform knows (MainActivity.kt).
-const _device = MethodChannel('com.leccheck.app/device');
 
 /// Files and sync bookkeeping, read when the page opens.
 class _Storage {
@@ -91,11 +91,7 @@ class _DeveloperPageState extends ConsumerState<DeveloperPage> {
 
   static Future<Map<String, Object?>?> _readAndroid() async {
     if (!AppIdiom.isAndroid) return null;
-    try {
-      return await _device.invokeMapMethod<String, Object?>('info');
-    } on Object {
-      return null;
-    }
+    return AndroidDevice.info();
   }
 
   static String _androidLine(Map<String, Object?> info) =>
@@ -169,7 +165,7 @@ class _DeveloperPageState extends ConsumerState<DeveloperPage> {
       ),
       test: true,
     );
-    return 'Scheduled for ${_clock(at)}. Close the app and wait.';
+    return 'Scheduled for ${_clock(at)}. Go to the home screen and wait.';
   }
 
   /// An after-class reminder with real buttons, for the latest session that
@@ -226,16 +222,22 @@ class _DeveloperPageState extends ConsumerState<DeveloperPage> {
               s.ready ? 'Yes' : 'No: ${s.error ?? 'not started yet'}',
               warn: !s.ready,
             ),
-            _info(
-              'Allowed by the system',
-              s.allowed ? 'Yes' : 'No',
-              warn: !s.allowed,
-            ),
-            if (s.exactAlarms != null)
+            _info('Allowed by the system', switch (s.health.allowed) {
+              true => 'Yes',
+              false => 'No: nothing can appear',
+              null => 'Unknown',
+            }, warn: s.health.allowed != true),
+            if (s.health.blockedChannels.isNotEmpty)
+              _info(
+                'Channels turned off',
+                s.health.blockedChannels.join(', '),
+                warn: true,
+              ),
+            if (s.health.exactAlarms != null)
               _info(
                 'Exact alarms',
-                s.exactAlarms! ? 'Yes' : 'No: reminders may come late',
-                warn: !s.exactAlarms!,
+                s.health.exactAlarms! ? 'Yes' : 'No: reminders may come late',
+                warn: !s.health.exactAlarms!,
               ),
             _info('Time zone', s.timeZone),
             _info(
@@ -245,6 +247,15 @@ class _DeveloperPageState extends ConsumerState<DeveloperPage> {
                   : '${s.pending.length}; next: ${next.title ?? '?'} at '
                         '${next.at == null ? '?' : _clock(next.at!)}',
             ),
+            if (s.armed != null)
+              _info(
+                'Armed in the system',
+                s.armed == s.pending.length
+                    ? 'All ${s.armed}'
+                    : '${s.armed} of ${s.pending.length}: tap "Reschedule all '
+                          'reminders"',
+                warn: s.armed != s.pending.length,
+              ),
           ],
           _action(
             LecIcons.notifications,
@@ -255,7 +266,10 @@ class _DeveloperPageState extends ConsumerState<DeveloperPage> {
             LecIcons.time,
             'Notification in 1 minute',
             () => _run('Scheduling', _inAMinute),
-            subtitle: 'Close the app while waiting: checks the OS scheduler',
+            subtitle:
+                'Go to the home screen while waiting: checks the OS '
+                'scheduler (swiping LecCheck away force-stops it on some '
+                'phones, which drops its alarms)',
           ),
           _action(
             LecIcons.attended,
@@ -404,8 +418,11 @@ class _DeveloperPageState extends ConsumerState<DeveloperPage> {
           '@${media.devicePixelRatio}, text ×${media.textScaler.scale(10) / 10}',
       'Layout: $layout',
       'Notifications: ready ${notifications.ready}, allowed '
-          '${notifications.allowed}, exact ${notifications.exactAlarms}, '
-          '${notifications.pending.length} scheduled'
+          '${notifications.health.allowed}, channels off '
+          '${notifications.health.blockedChannels}, exact '
+          '${notifications.health.exactAlarms}, '
+          '${notifications.pending.length} scheduled, '
+          '${notifications.armed ?? '?'} armed'
           '${notifications.error == null ? '' : ', error ${notifications.error}'}',
       'Sync: ${SyncConfig.enabled ? state?.phase.name ?? 'signed out' : 'off'}'
           '${state == null ? '' : ', ${state.pending} waiting, ${state.failed} refused'}',
@@ -467,7 +484,7 @@ class _DeveloperPageState extends ConsumerState<DeveloperPage> {
             LecIcons.settings,
             'Open LecCheck\'s system settings',
             () => _run('Opening', () async {
-              await _device.invokeMethod<void>('openSettings');
+              await AndroidDevice.openAppSettings();
               return 'Tap refresh when you come back';
             }),
             subtitle: 'Notifications, alarms & reminders, battery',

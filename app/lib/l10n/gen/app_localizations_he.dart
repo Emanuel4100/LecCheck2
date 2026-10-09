@@ -1049,6 +1049,54 @@ class AppLocalizationsHe extends AppLocalizations {
       'במחשב הזה התזכורות מופיעות כש-LecCheck פתוחה.';
 
   @override
+  String get openSettings => 'לפתוח את ההגדרות';
+
+  @override
+  String get notificationsOffOpenSettings =>
+      'יש להפעיל את ההתראות של LecCheck בהגדרות המערכת ולחזור לכאן.';
+
+  @override
+  String reminderChannelOff(String channel) {
+    return 'ההתראות „$channel” כבויות בהגדרות המערכת.';
+  }
+
+  @override
+  String get exactAlarmsOff => 'תזכורות עלולות להגיע באיחור';
+
+  @override
+  String get exactAlarmsOffSubtitle =>
+      'יש לאפשר „שעונים מעוררים ותזכורות” כדי שיגיעו בדיוק בזמן.';
+
+  @override
+  String get backgroundRestricted => 'השימוש ברקע מוגבל';
+
+  @override
+  String get backgroundRestrictedSubtitle =>
+      'התזכורות לא יופיעו כל עוד LecCheck מוגבלת. יש להגדיר את השימוש בסוללה כ„ללא הגבלה”.';
+
+  @override
+  String get batteryOptimized => 'אופטימיזציית הסוללה פועלת';
+
+  @override
+  String get batteryOptimizedSubtitle =>
+      'אנדרואיד עלולה לעכב תזכורות. כדאי לכבות את האופטימיזציה עבור LecCheck.';
+
+  @override
+  String get batteryOptimizedSamsung =>
+      'בטלפונים של סמסונג תזכורות עלולות להתעכב או להתפספס. כדאי לכבות את האופטימיזציה ולהוציא את LecCheck מ„אפליקציות במצב שינה” (הגדרות ← סוללה ← הגבלות שימוש ברקע).';
+
+  @override
+  String get turnOff => 'לכבות';
+
+  @override
+  String autostartHint(String maker) {
+    return 'בטלפונים של $maker יש לאפשר גם הפעלה אוטומטית (Autostart) של LecCheck, אחרת התזכורות עלולות להיפסק.';
+  }
+
+  @override
+  String get howTo => 'איך?';
+
+  @override
   String get presetAccent => 'צבע המערכת';
 
   @override

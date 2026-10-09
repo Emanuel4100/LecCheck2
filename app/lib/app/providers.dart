@@ -124,7 +124,10 @@ class AppearanceController extends Notifier<AppearanceSettings> {
   static const _preset = 'appearance.preset';
   static const _mode = 'appearance.mode';
   static const _black = 'appearance.pureBlack';
-  static const _locale = 'appearance.locale';
+  static const _locale = localeKey;
+
+  /// The app's language ('en', 'he', or none for the system's).
+  static const localeKey = 'appearance.locale';
 
   SharedPreferencesWithCache get _prefs => ref.read(sharedPrefsProvider);
 
@@ -177,7 +180,10 @@ final semestersProvider = StreamProvider<List<SemesterInfo>>(
 
 /// The semester chosen on this device (persisted); may be stale.
 class ActiveSemesterController extends Notifier<String?> {
-  static const _key = 'semester.active';
+  static const _key = key;
+
+  /// The chosen semester's id.
+  static const key = 'semester.active';
 
   @override
   String? build() => ref.read(sharedPrefsProvider).getString(_key);

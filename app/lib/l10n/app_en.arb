@@ -495,6 +495,33 @@
   "notificationsOffSubtitle": "Reminders can't appear until you allow them.",
   "allow": "Allow",
   "remindersWhileOpen": "On this computer, reminders appear while LecCheck is open.",
+  "openSettings": "Open settings",
+  "notificationsOffOpenSettings": "Turn on notifications for LecCheck in the system settings, then come back.",
+  "reminderChannelOff": "“{channel}” notifications are turned off in the system settings.",
+  "@reminderChannelOff": {
+    "placeholders": {
+      "channel": {
+        "type": "String"
+      }
+    }
+  },
+  "exactAlarmsOff": "Reminders may come late",
+  "exactAlarmsOffSubtitle": "Allow “Alarms & reminders” so they appear on the minute.",
+  "backgroundRestricted": "Background use is restricted",
+  "backgroundRestrictedSubtitle": "Reminders can't appear while LecCheck is restricted. Set its battery use to “Unrestricted”.",
+  "batteryOptimized": "Battery optimization is on",
+  "batteryOptimizedSubtitle": "Android may delay reminders. Turn optimization off for LecCheck.",
+  "batteryOptimizedSamsung": "Samsung phones may delay or skip reminders. Turn optimization off, and keep LecCheck out of “Sleeping apps” (Settings → Battery → Background usage limits).",
+  "turnOff": "Turn off",
+  "autostartHint": "On {maker} phones, also allow LecCheck to start automatically (Autostart), or reminders can stop.",
+  "@autostartHint": {
+    "placeholders": {
+      "maker": {
+        "type": "String"
+      }
+    }
+  },
+  "howTo": "How?",
   "presetAccent": "System accent",
   "importTitle": "Import this backup?",
   "importPreview": "This backup has {semesters} semesters: {added} new items and {changed} that differ from yours.\n\n“Add missing” only adds what you don't have. “Replace” overwrites your versions on all your devices; an automatic backup is saved first.",
