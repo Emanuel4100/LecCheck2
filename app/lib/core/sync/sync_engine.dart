@@ -238,11 +238,13 @@ class SyncEngine {
         onError: (_) => _onClosed(null),
         cancelOnError: true,
       );
+      final build = await SyncConfig.appBuild;
       socket.add(
         jsonEncode({
           't': 'hello',
           'since': await _cursor(),
           'dataset': await _meta(db, _datasetKey),
+          'app': ?build,
         }),
       );
       _pingTimer = Timer.periodic(_pingEvery, (_) => _ping(socket));
@@ -643,6 +645,7 @@ class SyncEngine {
   }) async {
     final entries = await _nextBatch(db);
     var since = int.tryParse(await _meta(db, _cursorKey) ?? '') ?? 0;
+    final build = await SyncConfig.appBuild;
     final response = await http
         .post(
           SyncConfig.api('/v1/sync'),
@@ -653,6 +656,7 @@ class SyncEngine {
           body: jsonEncode({
             'since': since,
             'dataset': await _meta(db, _datasetKey),
+            'app': ?build,
             'changes': [for (final e in entries) _changeJson(e)],
           }),
         )

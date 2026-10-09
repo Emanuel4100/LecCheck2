@@ -10,6 +10,7 @@ export default defineConfig({
           JWT_SECRET: "test-secret-0123456789abcdef0123456789abcdef",
           DEV_AUTH: "1",
           GOOGLE_CLIENT_ID: "test-client.apps.googleusercontent.com",
+          HEALTH_TOKEN: "test-health-token",
         },
       },
     }),

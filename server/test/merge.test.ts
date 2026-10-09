@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { applyPatch } from "../src/merge";
-import { unavailable, validateChange } from "../src/protocol";
+import { appTooOld, unavailable, validateChange } from "../src/protocol";
 
 const clock = (ms: number, counter = 0, node = "node0001") =>
   `${String(ms).padStart(15, "0")}:${counter.toString(16).padStart(4, "0")}:${node}`;
@@ -106,5 +106,22 @@ describe("unavailable", () => {
     for (const message of ["Network connection lost.", "Durable Object storage operation exceeded timeout"]) {
       expect(unavailable(new Error(message), now)).toEqual({ code: "unavailable", retryAt: now + 60_000 });
     }
+  });
+});
+
+describe("appTooOld (MIN_APP_BUILD)", () => {
+  it("lets every app sync while no minimum is set", () => {
+    expect(appTooOld(undefined, undefined)).toBe(false);
+    expect(appTooOld("", 1)).toBe(false);
+    expect(appTooOld("0", 1)).toBe(false);
+    expect(appTooOld("not a number", 1)).toBe(false);
+  });
+
+  it("stops older builds, and apps that don't send theirs", () => {
+    expect(appTooOld("13", 12)).toBe(true);
+    expect(appTooOld("13", undefined)).toBe(true);
+    expect(appTooOld("13", "13")).toBe(true);
+    expect(appTooOld("13", 13)).toBe(false);
+    expect(appTooOld("13", 20)).toBe(false);
   });
 });

@@ -11,6 +11,9 @@
   (or "swipe away" on some phones), missing alarms are found and scheduled again. Android
   plans three weeks ahead instead of two, and tops reminders up once a day in the
   background and after each notification button.
+- **Sync server**: health checks, and automatic deploys that are tested first, checked
+  live, and rolled back by themselves if the new version fails. App releases wait until
+  their server is live.
 - **Settings → Notifications** points out what else can delay reminders on Android:
   exact alarms, battery optimization (one tap to turn it off), restricted background use,
   and autostart on phones that need it.

@@ -5,7 +5,8 @@ name: Release
 # Repository settings needed:
 #   Variables: API_BASE_URL (your Worker URL, e.g. https://leccheck-sync.you.workers.dev)
 #   Secrets:   ANDROID_KEYSTORE_BASE64, ANDROID_KEYSTORE_PASSWORD,
-#              ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD
+#              ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD, and the server deploy
+#              secrets (deploy-server.yml)
 on:
   push:
     tags: ["v*"]
@@ -119,8 +120,14 @@ jobs:
           name: ios
           path: out/
 
+  # The sync server for this commit must be live and healthy before an app
+  # that may depend on it is published (a no-op when it already is).
+  server:
+    uses: ./.github/workflows/deploy-server.yml
+    secrets: inherit
+
   publish:
-    needs: [android, linux, ios]
+    needs: [android, linux, ios, server]
     runs-on: ubuntu-latest
     permissions:
       contents: write # create the GitHub Release

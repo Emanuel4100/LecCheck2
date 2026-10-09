@@ -12,6 +12,10 @@ export const SYNCED_TABLES = new Set([
   "user_settings",
 ]);
 
+/** Bumped when the sync messages change incompatibly. `GET /v1/health`
+ * reports it. */
+export const PROTOCOL_VERSION = 1;
+
 export const MAX_CHANGES_PER_PUSH = 500;
 export const MAX_PATCH_BYTES = 16 * 1024;
 export const MAX_MESSAGE_BYTES = 1024 * 1024;
@@ -49,7 +53,13 @@ export interface Rejected {
 }
 
 export type ClientMessage =
-  | { t: "hello"; since: number; dataset?: string }
+  | {
+      t: "hello";
+      since: number;
+      dataset?: string;
+      /** The app's build number (from 2.0.0-beta.5): see [appTooOld]. */
+      app?: number;
+    }
   | { t: "push"; batchId: string; changes: Change[] };
 
 export type ServerMessage =
@@ -161,4 +171,13 @@ export function validateChange(raw: unknown, now: number): Validation {
       ...(c.ifAbsent ? { ifAbsent: true } : {}),
     },
   };
+}
+
+/** Whether an app build is older than `MIN_APP_BUILD` (unset: none is). Apps
+ * before 2.0.0-beta.5 don't send their build, so they count as too old once
+ * a minimum is set. Such apps get `upgrade_required` instead of syncing. */
+export function appTooOld(minAppBuild: string | undefined, build: unknown): boolean {
+  const min = Number(minAppBuild);
+  if (!minAppBuild || !Number.isFinite(min) || min <= 0) return false;
+  return !(typeof build === "number" && build >= min);
 }

@@ -1,0 +1,33 @@
+name: Server health
+
+# Checks the live sync server every 6 hours: secrets and Durable Object
+# storage (/v1/health/deep). A failure emails you (GitHub notifies whoever
+# last changed this schedule). Free on a public repository.
+on:
+  schedule:
+    - cron: "17 */6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deep health check
+        env:
+          BASE: ${{ vars.API_BASE_URL }}
+          HEALTH_TOKEN: ${{ secrets.HEALTH_TOKEN }}
+        run: |
+          if [ -z "$HEALTH_TOKEN" ]; then
+            echo "::warning::No HEALTH_TOKEN secret (docs/SETUP.md §4): checking the basic endpoint only"
+            curl -fsS --max-time 10 "$BASE/v1/health"
+            exit 0
+          fi
+          body="$(curl -sS --max-time 20 -H "Authorization: Bearer $HEALTH_TOKEN" "$BASE/v1/health/deep" || true)"
+          echo "$body"
+          echo "$body" | jq -e '.ok == true' >/dev/null || {
+            echo "::error::The sync server is unhealthy: $body"
+            exit 1
+          }

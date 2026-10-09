@@ -329,3 +329,32 @@ describe("public pages", () => {
     }
   });
 });
+
+describe("health", () => {
+  it("says which code is live, without touching storage", async () => {
+    const res = await SELF.fetch(`${base}/v1/health`);
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ ok: true, rev: "dev", protocol: 1 });
+  });
+
+  it("checks secrets and storage only with the health token", async () => {
+    expect((await SELF.fetch(`${base}/v1/health/deep`)).status).toBe(401);
+    const wrong = await SELF.fetch(`${base}/v1/health/deep`, {
+      headers: { Authorization: "Bearer nope" },
+    });
+    expect(wrong.status).toBe(401);
+
+    const res = await SELF.fetch(`${base}/v1/health/deep`, {
+      headers: { Authorization: "Bearer test-health-token" },
+    });
+    // The test Worker has no Google client secret and allows dev sign-in:
+    // both would be wrong in production, so the deploy must fail.
+    expect(res.status).toBe(503);
+    expect(await res.json()).toEqual({
+      ok: false,
+      rev: "dev",
+      checks: { jwtSecret: true, googleClient: false, devAuthOff: false, storage: true },
+    });
+  });
+});
+

@@ -1,3 +1,5 @@
+import 'package:package_info_plus/package_info_plus.dart';
+
 /// Build-time sync settings, passed with `--dart-define`:
 ///
 /// ```sh
@@ -16,4 +18,12 @@ abstract final class SyncConfig {
 
   static Uri socket(String path) =>
       Uri.parse(apiBase.replaceFirst(RegExp('^http'), 'ws') + path);
+
+  /// This app's build number (pubspec `+N`), sent with every sync so the
+  /// server can ask apps that are too old to update (`MIN_APP_BUILD`). Null
+  /// where it's unknown (tests).
+  static final Future<int?> appBuild = PackageInfo.fromPlatform().then(
+    (info) => int.tryParse(info.buildNumber),
+    onError: (Object _) => null,
+  );
 }

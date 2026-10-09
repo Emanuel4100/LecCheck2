@@ -81,8 +81,24 @@ Repository **Settings → Secrets and variables → Actions**:
 | Secret | `ANDROID_KEYSTORE_PASSWORD` | keystore password |
 | Secret | `ANDROID_KEY_ALIAS` | e.g. `leccheck` |
 | Secret | `ANDROID_KEY_PASSWORD` | key password |
-| Secret | `CLOUDFLARE_API_TOKEN` | Cloudflare → My Profile → API Tokens → "Edit Cloudflare Workers" template |
+| Secret | `CLOUDFLARE_API_TOKEN` | Cloudflare → My Profile → API Tokens → "Edit Cloudflare Workers" template, limited to your account |
 | Secret | `CLOUDFLARE_ACCOUNT_ID` | Cloudflare dashboard → Workers → Account ID |
+| Secret | `HEALTH_TOKEN` | a random value, also set on the Worker (below) |
+
+The deploy workflow checks the live server with `HEALTH_TOKEN`. Create it once, set it
+on both sides without printing it, then delete the file:
+
+```bash
+openssl rand -hex 32 > health-token
+(cd server && npx wrangler secret put HEALTH_TOKEN < ../health-token)
+gh secret set HEALTH_TOKEN < health-token
+rm health-token
+```
+
+Then **Settings → Environments → New environment** `production-approval`, with yourself
+as a **required reviewer**. Deploys that change `server/wrangler.jsonc` (bindings,
+Durable Object migrations) run there and wait for your approval, because Cloudflare
+can't roll them back.
 
 Create the Android signing key once:
 

@@ -1,6 +1,7 @@
 import { DurableObject } from "cloudflare:workers";
 import { applyPatch, type RowState } from "./merge";
 import {
+  appTooOld,
   MAX_CHANGES_PER_PUSH,
   MAX_MESSAGE_BYTES,
   PAGE_SIZE,
@@ -20,6 +21,12 @@ export interface Env {
   GOOGLE_CLIENT_ID?: string;
   GOOGLE_CLIENT_SECRET?: string;
   DEV_AUTH?: string;
+  /** The deployed commit (set by the deploy workflow). */
+  SERVER_REV?: string;
+  /** Lets deploy and uptime checks call `/v1/health/deep`. */
+  HEALTH_TOKEN?: string;
+  /** Apps older than this build get `upgrade_required` instead of syncing. */
+  MIN_APP_BUILD?: string;
 }
 
 export interface SyncResult {
@@ -54,6 +61,7 @@ interface Incoming {
   t?: string;
   since?: unknown;
   dataset?: unknown;
+  app?: unknown;
   batchId?: unknown;
   changes?: unknown;
 }
@@ -103,6 +111,13 @@ export class UserStore extends DurableObject<Env> {
       .exec<{ v: string }>("SELECT v FROM meta WHERE k = ?", key)
       .toArray()[0];
     return row?.v ?? null;
+  }
+
+  /** Deep health check (only the reserved `__health__` instance): one write
+   * and one read of this object's storage. Returns the time it wrote. */
+  async probe(): Promise<number> {
+    this.setMeta("probe", String(Date.now()));
+    return Number(this.meta("probe"));
   }
 
   private setMeta(key: string, value: string): void {
@@ -472,6 +487,14 @@ export class UserStore extends DurableObject<Env> {
   private handle(ws: WebSocket, msg: Incoming): void {
     switch (msg.t) {
       case "hello": {
+        if (appTooOld(this.env.MIN_APP_BUILD, msg.app)) {
+          this.send(ws, {
+            t: "error",
+            code: "upgrade_required",
+            message: "Update LecCheck to keep syncing",
+          });
+          return;
+        }
         const dataset = this.dataset();
         // A device that synced with another copy of the data (before a reset
         // or restore) starts over, so it can't skip versions.

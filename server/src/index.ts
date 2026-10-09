@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import { auth, issueSession, sessionFromRequest } from "./auth";
 import { pages } from "./pages";
-import { unavailable, unavailableResponse } from "./protocol";
+import { appTooOld, PROTOCOL_VERSION, unavailable, unavailableResponse } from "./protocol";
 import { UserStore, type Env } from "./user-store";
 
 export { UserStore };
@@ -15,6 +15,36 @@ app.route("/v1/auth", auth);
 function storeFor(env: Env, userId: string) {
   return env.USER_STORE.get(env.USER_STORE.idFromName(userId));
 }
+
+/** Which code is live, for deploy smoke tests and uptime checks. Touches no
+ * storage, so it costs nothing on the free plan. */
+app.get("/v1/health", (c) =>
+  c.json({ ok: true, rev: c.env.SERVER_REV ?? "dev", protocol: PROTOCOL_VERSION }),
+);
+
+/** Checks the secrets and Durable Object storage (one write and one read in a
+ * reserved object). Needs `HEALTH_TOKEN`, since each call writes a row. */
+app.get("/v1/health/deep", async (c) => {
+  const token = c.env.HEALTH_TOKEN;
+  if (!token || c.req.header("Authorization") !== `Bearer ${token}`) {
+    return c.text("Unauthorized", 401);
+  }
+  const checks = {
+    jwtSecret: !!c.env.JWT_SECRET,
+    googleClient: !!c.env.GOOGLE_CLIENT_ID && !!c.env.GOOGLE_CLIENT_SECRET,
+    // POST /v1/auth/dev signs anyone in as anyone: never in production.
+    devAuthOff: c.env.DEV_AUTH !== "1",
+    storage: false,
+  };
+  try {
+    const wrote = await storeFor(c.env, "__health__").probe();
+    checks.storage = Math.abs(Date.now() - wrote) < 60_000;
+  } catch (error) {
+    console.error("health probe failed", error);
+  }
+  const ok = Object.values(checks).every(Boolean);
+  return c.json({ ok, rev: c.env.SERVER_REV ?? "dev", checks }, ok ? 200 : 503);
+});
 
 /** Live sync over a WebSocket, handled by the user's Durable Object. */
 app.get("/v1/sync", async (c) => {
@@ -39,9 +69,12 @@ app.post("/v1/sync", async (c) => {
   const session = await sessionFromRequest(c.req.raw, c.env);
   if (!session) return c.text("Unauthorized", 401);
   const body = await c.req
-    .json<{ since?: number; changes?: unknown[]; dataset?: unknown }>()
+    .json<{ since?: number; changes?: unknown[]; dataset?: unknown; app?: unknown }>()
     .catch(() => null);
   if (!body) return c.json({ error: "bad_json" }, 400);
+  if (appTooOld(c.env.MIN_APP_BUILD, body.app)) {
+    return c.json({ error: "upgrade_required" }, 426);
+  }
   let result;
   try {
     result = await storeFor(c.env, session.sub).sync(

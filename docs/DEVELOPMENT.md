@@ -150,8 +150,45 @@ After the restore, sign in again (the sign-in token isn't backed up).
 | Workflow | Trigger | Does |
 |---|---|---|
 | `ci.yml` | push to main, PRs | analyze + test the app, typecheck + test the server, check generated Drift code |
-| `deploy-server.yml` | push to main touching `server/` | test, then `wrangler deploy` (skipped until Cloudflare secrets exist) |
-| `release.yml` | tag `v*` | signed Android APKs, unsigned iOS IPA, Linux tarball, AltStore source → GitHub Release |
+| `deploy-server.yml` | push to main touching `server/`, manual, and every release | test, deploy, smoke-test, roll back on failure (see below) |
+| `server-health.yml` | every 6 hours, manual | deep health check of the live server; a failure emails you |
+| `release.yml` | tag `v*` | signed Android APKs, unsigned iOS IPA, Linux tarball, AltStore source → GitHub Release, after the server for that commit is live |
 
 To release: bump `version:` in `app/pubspec.yaml`, then `git tag vX.Y.Z && git push --tags`.
 Required secrets and variables are listed in [SETUP.md](SETUP.md).
+
+## Server deploys
+
+Deploy through GitHub, not with `npx wrangler deploy` from a laptop:
+`deploy-server.yml` stamps the version (`SERVER_REV`, the last commit that changed
+`server/`), which is how it knows what's live.
+
+1. **verify**: typecheck, tests, and a dry-run bundle. Nothing is uploaded if they fail.
+2. **plan**: `GET /v1/health` reports the live `rev`. The same rev means nothing to do (so
+   releases can call the workflow for free). If `server/wrangler.jsonc` changed since the
+   live rev, or the live rev is unknown, the deploy runs in the `production-approval`
+   environment and waits for you: Cloudflare can't roll back across binding or Durable
+   Object class changes.
+3. **deploy**: `wrangler deploy --var SERVER_REV:<rev>`, then
+   `scripts/server-smoke-test.sh`. It waits until `/v1/health` reports the new rev, then
+   checks `/v1/health/deep` (secrets present, `DEV_AUTH` off, a Durable Object write and
+   read), the public pages, and that sync without a token gets 401. If that fails, it
+   runs `wrangler rollback` to the version that was live before and fails the run, so
+   GitHub emails you.
+
+Worker versions can't be tried before they take traffic: Cloudflare gives no preview
+URLs to Workers with Durable Objects. That's why the tests run against the real
+`workerd` runtime (`@cloudflare/vitest-pool-workers`) first.
+
+**Runbook**
+
+- *Roll back by hand*: `cd server && npx wrangler deployments list` shows the versions;
+  `npx wrangler rollback <version-id> -m "why"`. Then fix the code on main: the next
+  deploy replaces the rolled-back version.
+- *Check the live server*: `HEALTH_TOKEN=… scripts/server-smoke-test.sh <url>`.
+- *Rotate a secret*: `npx wrangler secret put NAME` takes effect at once (it creates a new
+  version). Rotating `JWT_SECRET` signs every device out. For `HEALTH_TOKEN`, set the
+  Worker secret and the GitHub secret to the same new value.
+- *Require a newer app*: set `MIN_APP_BUILD` (a var in `wrangler.jsonc`, or a secret)
+  to a build number. Older apps then get `upgrade_required` instead of syncing; apps
+  before 2.0.0-beta.5 don't send their build, so they count as older.

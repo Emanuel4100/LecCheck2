@@ -1,26 +1,34 @@
 name: Deploy sync server
 
-# Deploys the Worker when server/ changes on main. Skips the deploy (without
-# failing) until the CLOUDFLARE_API_TOKEN / CLOUDFLARE_ACCOUNT_ID secrets are
-# set — see docs/SETUP.md.
+# Deploys the Worker when server/ changes on main, and before every app release
+# (release.yml calls this workflow). Nothing reaches production untested:
+#
+#   verify: typecheck, tests and a dry-run bundle.
+#   plan:   skip when the live server already runs this code (so calling it
+#           again is free); a change to wrangler.jsonc (bindings, Durable
+#           Object migrations) can't be rolled back, so it waits for approval.
+#   deploy: deploy, smoke-test the live server (scripts/server-smoke-test.sh),
+#           and roll back automatically if that fails.
+#
+# Setup (docs/SETUP.md §4): repository secrets CLOUDFLARE_API_TOKEN,
+# CLOUDFLARE_ACCOUNT_ID and HEALTH_TOKEN, the API_BASE_URL variable, and a
+# `production-approval` environment that requires your review.
 on:
   push:
     branches: [main]
     paths: ["server/**"]
   workflow_dispatch:
+  workflow_call:
 
 permissions:
   contents: read
 
 jobs:
-  deploy:
+  verify:
     runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: server
-    env:
-      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -29,10 +37,102 @@ jobs:
           cache: npm
           cache-dependency-path: server/package-lock.json
       - run: npm ci
+      - run: npm run typecheck
       - run: npm test
-      - name: Deploy to Cloudflare Workers
-        if: env.CLOUDFLARE_API_TOKEN != ''
-        run: npx wrangler deploy
-      - name: Deploy skipped
-        if: env.CLOUDFLARE_API_TOKEN == ''
-        run: echo "::notice::Add CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID secrets to deploy (docs/SETUP.md)."
+      - name: Bundle (dry run)
+        run: npx wrangler deploy --dry-run --outdir dist
+
+  plan:
+    needs: verify
+    runs-on: ubuntu-latest
+    outputs:
+      rev: ${{ steps.plan.outputs.rev }}
+      skip: ${{ steps.plan.outputs.skip }}
+      risky: ${{ steps.plan.outputs.risky }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Compare with the live server
+        id: plan
+        env:
+          BASE: ${{ vars.API_BASE_URL }}
+        run: |
+          [ -n "$BASE" ] || { echo "::error::Set the API_BASE_URL variable (docs/SETUP.md §4)"; exit 1; }
+          # The last commit that changed the server: the same code gives the same rev.
+          rev="$(git log -1 --format=%H -- server)"
+          live="$(curl -fsS --max-time 10 "$BASE/v1/health" | jq -r '.rev // empty' || true)"
+          echo "rev=$rev" >> "$GITHUB_OUTPUT"
+          echo "Live: ${live:-unknown}, this commit: $rev"
+          if [ "$live" = "$rev" ]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::The live server already runs $rev"
+          elif ! git cat-file -e "$live^{commit}" 2>/dev/null \
+            || ! git diff --quiet "$live" "$rev" -- server/wrangler.jsonc; then
+            echo "risky=true" >> "$GITHUB_OUTPUT"
+            echo "::warning::wrangler.jsonc changed since the live version (or that version is unknown): this deploy waits for approval and can't be rolled back automatically"
+          fi
+
+  deploy:
+    needs: plan
+    if: needs.plan.outputs.skip != 'true'
+    runs-on: ubuntu-latest
+    environment:
+      name: ${{ needs.plan.outputs.risky == 'true' && 'production-approval' || 'production' }}
+      url: ${{ vars.API_BASE_URL }}
+    # Never two deploys at once (a push and a release can overlap).
+    concurrency:
+      group: deploy-server
+      cancel-in-progress: false
+    defaults:
+      run:
+        working-directory: server
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      HEALTH_TOKEN: ${{ secrets.HEALTH_TOKEN }}
+      BASE: ${{ vars.API_BASE_URL }}
+      REV: ${{ needs.plan.outputs.rev }}
+      RISKY: ${{ needs.plan.outputs.risky }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: server/package-lock.json
+      - run: npm ci
+      - name: Check the setup
+        run: |
+          missing=""
+          for name in CLOUDFLARE_API_TOKEN CLOUDFLARE_ACCOUNT_ID HEALTH_TOKEN BASE; do
+            [ -n "${!name}" ] || missing="$missing $name"
+          done
+          if [ -n "$missing" ]; then
+            echo "::error::Missing:$missing (docs/SETUP.md §4)"
+            exit 1
+          fi
+      - name: Remember the live version
+        id: before
+        run: |
+          version="$(npx wrangler deployments status --json | jq -r '.versions[0].version_id // empty')"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "Live version: ${version:-none}"
+      - name: Deploy
+        run: npx wrangler deploy --var "SERVER_REV:$REV" --message "Deploy $REV"
+      - name: Smoke test
+        id: smoke
+        run: ../scripts/server-smoke-test.sh "$BASE" "$REV"
+      - name: Roll back
+        if: failure() && steps.smoke.outcome == 'failure' && env.RISKY != 'true' && steps.before.outputs.version != ''
+        env:
+          PREVIOUS: ${{ steps.before.outputs.version }}
+        run: |
+          npx wrangler rollback "$PREVIOUS" -y --message "Auto-rollback: $REV failed its smoke test"
+          sleep 10
+          curl -fsS "$BASE/v1/health" | jq .
+          echo "::error::$REV failed its smoke test; rolled back to version $PREVIOUS"
+      - name: Not rolled back
+        if: failure() && steps.smoke.outcome == 'failure' && (env.RISKY == 'true' || steps.before.outputs.version == '')
+        run: |
+          echo "::error::$REV failed its smoke test and was NOT rolled back automatically (wrangler.jsonc changed, or no earlier version). See docs/DEVELOPMENT.md \"Server deploys\"."
