@@ -140,13 +140,12 @@ jobs:
           IPA="out/LecCheck-$V-ios.ipa"
           python3 scripts/altstore_source.py "$APP_VERSION" "$BUILD" "$IPA" \
             "$BASE/download/${GITHUB_REF_NAME}/LecCheck-$V-ios.ipa" "$V" > out/altstore-source.json
-          # "latest" links skip pre-releases, so betas link to their own tag.
+          # The altstore branch always holds the newest source (see the last step).
+          SOURCE="https://raw.githubusercontent.com/${GITHUB_REPOSITORY}/altstore/altstore-source.json"
           if [[ "$V" == *-* ]]; then
-            SOURCE="$BASE/download/${GITHUB_REF_NAME}/altstore-source.json"
             BETA=$'> **Beta.** Not yet verified on every device: reminders and their buttons, the Android widget and the iPhone build. Please report problems in Issues.\n'
             OBTAINIUM=' Turn on **Include prereleases** to get betas.'
           else
-            SOURCE="$BASE/latest/download/altstore-source.json"
             BETA=''
             OBTAINIUM=''
           fi
@@ -166,3 +165,17 @@ jobs:
           generate_release_notes: true
           body_path: notes.md
           files: out/*
+      # GitHub's "latest" release links skip pre-releases, so AltStore / SideStore
+      # read the source from the altstore branch, which always has the newest one.
+      - name: Update the permanent AltStore / SideStore source
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898299+github-actions[bot]@users.noreply.github.com"
+          git fetch --depth 1 origin altstore
+          git worktree add --detach "$RUNNER_TEMP/altstore" FETCH_HEAD
+          cp out/altstore-source.json "$RUNNER_TEMP/altstore/"
+          cd "$RUNNER_TEMP/altstore"
+          git add altstore-source.json
+          git commit -m "LecCheck ${GITHUB_REF_NAME}" || exit 0
+          git push origin HEAD:refs/heads/altstore

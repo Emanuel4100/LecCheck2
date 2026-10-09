@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- **iPhone**: the AltStore / SideStore source now has a permanent address that always
+  lists the newest build, betas included:
+  `https://raw.githubusercontent.com/Emanuel4100/LecCheck2/altstore/altstore-source.json`.
+  The old "latest" address didn't work while every release was a beta.
+
 ## 2.0.0-beta.4 — 2026-10-08
 
 - **Reminders on Android**: in 2.0.0-beta.3 (and beta.2), release builds left out the

@@ -108,7 +108,7 @@ and a Linux tarball, and publishes them with an AltStore/SideStore source.
 - **iPhone** (no $99 developer account): install
   [AltStore](https://altstore.io) or [SideStore](https://sidestore.io), then
   add this source once:
-  `https://github.com/Emanuel4100/LecCheck2/releases/latest/download/altstore-source.json`.
+  `https://raw.githubusercontent.com/Emanuel4100/LecCheck2/altstore/altstore-source.json`.
   Free Apple IDs need the app refreshed every 7 days; AltStore/SideStore do
   that in the background.
 - **Linux**: extract `LecCheck-*-linux-x64.tar.gz` and run `./install.sh`

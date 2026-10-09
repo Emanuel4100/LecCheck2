@@ -53,7 +53,7 @@ fields in the background — so it is instant, works offline, and never loses ed
 | Platform | How |
 |---|---|
 | Android | APK from [Releases](https://github.com/Emanuel4100/LecCheck2/releases), or [Obtainium](https://obtainium.imranr.dev) for auto-updates |
-| iPhone | Add this source in [AltStore](https://altstore.io) / [SideStore](https://sidestore.io): `https://github.com/Emanuel4100/LecCheck2/releases/latest/download/altstore-source.json` |
+| iPhone | Add this source in [AltStore](https://altstore.io) / [SideStore](https://sidestore.io): `https://raw.githubusercontent.com/Emanuel4100/LecCheck2/altstore/altstore-source.json` |
 | Linux | Download the `linux-x64.tar.gz` from Releases, extract, run `./install.sh` |
 
 ## Documentation

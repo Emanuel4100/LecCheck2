@@ -6,8 +6,9 @@
 <version> must match the IPA's CFBundleShortVersionString (numbers only, e.g. 2.0.0);
 <release> is the name shown in the notes (e.g. 2.0.0-beta.1), defaulting to <version>.
 
-Published as a release asset, so the source URL never changes:
-https://github.com/Emanuel4100/LecCheck2/releases/latest/download/altstore-source.json
+Attached to each release, and copied to the `altstore` branch so the source URL
+never changes (GitHub's "latest" release links skip pre-releases):
+https://raw.githubusercontent.com/Emanuel4100/LecCheck2/altstore/altstore-source.json
 """
 import datetime
 import json
