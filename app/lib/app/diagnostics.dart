@@ -5,6 +5,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
 import '../core/dev/dev_log.dart';
+import '../core/dev/frame_stats.dart';
 import '../core/notifications/android_device.dart';
 import '../core/notifications/notification_service.dart';
 import '../core/sync/sync_config.dart';
@@ -29,6 +30,11 @@ Future<String> collectDiagnostics(
   final notifications = await NotificationService.instance.status();
   final log = (await DevLog.read()).trimRight().split('\n');
   final android = AppIdiom.isAndroid ? await AndroidDevice.info() : null;
+  if (!context.mounted) return '';
+  final view = View.of(context);
+  final frames = FrameStats.instance.summary(
+    refreshRate: view.display.refreshRate,
+  );
   final version = await PackageInfo.fromPlatform().then(
     (i) => '${i.version} (${i.buildNumber})',
     onError: (Object e) => '? ($e)',
@@ -47,6 +53,7 @@ Future<String> collectDiagnostics(
     'Screen: ${media.size.width.round()}×${media.size.height.round()} '
         '@${media.devicePixelRatio}, text ×${media.textScaler.scale(10) / 10}',
     'Layout: $layout',
+    'Frames: ${frames ?? 'not enough yet'}',
     'Notifications: ready ${notifications.ready}, allowed '
         '${notifications.health.allowed}, channels off '
         '${notifications.health.blockedChannels}, exact '

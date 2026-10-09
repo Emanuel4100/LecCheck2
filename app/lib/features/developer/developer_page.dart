@@ -17,6 +17,7 @@ import '../../app/sync_providers.dart';
 import '../../app/widget_controller.dart';
 import '../../app/widgets/common.dart';
 import '../../core/dev/dev_log.dart';
+import '../../core/dev/frame_stats.dart';
 import '../../core/home_widget/today_widget.dart';
 import '../../core/icons/lec_icons.dart';
 import '../../core/notifications/android_device.dart';
@@ -392,6 +393,47 @@ class _DeveloperPageState extends ConsumerState<DeveloperPage> {
 
   // ------------------------------------------------------------- device --
 
+  /// How smooth the app is here: the display's rate, and the frames since
+  /// start (or since Reset). Scroll or swipe the Week view, then refresh.
+  Widget _renderingTools() {
+    final view = View.of(context);
+    final rate = view.display.refreshRate;
+    final summary = FrameStats.instance.summary(refreshRate: rate);
+    final fps = summary?.fps;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _info(
+          'Display',
+          '${rate.round()} Hz, ${view.devicePixelRatio}× pixels',
+        ),
+        _info(
+          'While animating',
+          fps == null
+              ? 'Nothing measured yet: swipe the Week view, then refresh'
+              : '${fps.round()} fps (a frame every '
+                    '${(summary!.interval!.inMicroseconds / 1000).toStringAsFixed(1)} ms)',
+          // Flutter's Linux engine draws at 60 fps whatever the display.
+          warn: fps != null && fps < rate * 0.9,
+        ),
+        if (summary != null) ...[
+          _info('Build', '${summary.build}'),
+          _info('Raster', '${summary.raster}'),
+          _info(
+            'Over budget',
+            '${(summary.overBudget * 100).toStringAsFixed(1)}% of '
+                '${summary.frames} frames took longer than one refresh',
+            warn: summary.overBudget > 0.05,
+          ),
+        ],
+        _action(LecIcons.refresh, 'Reset the frame counts', () {
+          FrameStats.instance.reset();
+          _refresh();
+        }),
+      ],
+    );
+  }
+
   Widget _deviceTools() {
     final media = MediaQuery.of(context);
     final now = DateTime.now();
@@ -582,6 +624,8 @@ class _DeveloperPageState extends ConsumerState<DeveloperPage> {
                     }),
                   ),
                 ],
+                const SectionHeader(title: 'Rendering'),
+                _renderingTools(),
                 const SectionHeader(title: 'This device'),
                 _deviceTools(),
                 const SectionHeader(title: 'Log (newest first)'),

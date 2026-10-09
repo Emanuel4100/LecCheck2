@@ -97,6 +97,10 @@ class _WeekPageState extends ConsumerState<WeekPage> {
   PageController? _controller;
   late final _commands = ref.read(weekCommandsProvider);
   int _page = 0;
+
+  /// The week shown, for the app bar: swiping changes only it, not the grid
+  /// (a rebuild of both visible weeks halfway through each swipe).
+  final _shown = ValueNotifier<int>(0);
   int _weekCountCache = 1;
   int _currentWeekCache = 1;
 
@@ -131,6 +135,7 @@ class _WeekPageState extends ConsumerState<WeekPage> {
   void dispose() {
     if (_commands._page == this) _commands._page = null;
     _controller?.dispose();
+    _shown.dispose();
     super.dispose();
   }
 
@@ -188,10 +193,9 @@ class _WeekPageState extends ConsumerState<WeekPage> {
     _currentWeekCache = currentWeek;
     if (_controller == null) {
       _page = currentWeek - 1;
+      _shown.value = _page;
       _controller = PageController(initialPage: _page);
     }
-    final shownWeek = _page + 1;
-    final weekStart = calendar.weekStartOf(shownWeek);
     final size = WindowSize.of(context);
     final compact = size == WindowSize.compact;
     final panel = size == WindowSize.large;
@@ -241,7 +245,7 @@ class _WeekPageState extends ConsumerState<WeekPage> {
             child: PageView.builder(
               controller: _controller,
               itemCount: weekCount,
-              onPageChanged: (i) => setState(() => _page = i),
+              onPageChanged: (i) => _shown.value = _page = i,
               itemBuilder: (context, i) => _WeekGrid(
                 weekStart: calendar.weekStartOf(i + 1),
                 hourHeight: hourHeight,
@@ -255,47 +259,63 @@ class _WeekPageState extends ConsumerState<WeekPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: AnimatedSwitcher(
-          duration: motion.medium,
-          transitionBuilder: (child, animation) => FadeTransition(
-            opacity: animation,
-            child: SlideTransition(
-              position: Tween(
-                begin: const Offset(0, 0.3),
-                end: Offset.zero,
-              ).animate(animation),
-              child: child,
-            ),
-          ),
-          child: Column(
-            key: ValueKey(shownWeek),
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(l.weekNumber(shownWeek)),
-              Text(
-                '${fmt.dayMonth(weekStart)} – ${fmt.dayMonth(weekStart.addDays(6))}',
-                style: Theme.of(context).textTheme.bodySmall,
+        title: ValueListenableBuilder(
+          valueListenable: _shown,
+          builder: (context, page, _) {
+            final weekStart = calendar.weekStartOf(page + 1);
+            return AnimatedSwitcher(
+              duration: motion.medium,
+              transitionBuilder: (child, animation) => FadeTransition(
+                opacity: animation,
+                child: SlideTransition(
+                  position: Tween(
+                    begin: const Offset(0, 0.3),
+                    end: Offset.zero,
+                  ).animate(animation),
+                  child: child,
+                ),
               ),
-            ],
-          ),
+              child: Column(
+                key: ValueKey(page + 1),
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(l.weekNumber(page + 1)),
+                  Text(
+                    '${fmt.dayMonth(weekStart)} – ${fmt.dayMonth(weekStart.addDays(6))}',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ],
+              ),
+            );
+          },
         ),
         actions: [
-          if (shownWeek != currentWeek)
-            IconButton(
-              tooltip: l.goToToday,
-              icon: const Icon(LecIcons.today),
-              onPressed: _thisWeek,
-            ),
+          ValueListenableBuilder(
+            valueListenable: _shown,
+            builder: (context, page, _) => page + 1 == currentWeek
+                ? const SizedBox.shrink()
+                : IconButton(
+                    tooltip: l.goToToday,
+                    icon: const Icon(LecIcons.today),
+                    onPressed: _thisWeek,
+                  ),
+          ),
           if (arrows) ...[
-            IconButton(
-              tooltip: l.previousWeek,
-              icon: const Icon(LecIcons.chevronStart),
-              onPressed: shownWeek > 1 ? () => _step(-1) : null,
+            ValueListenableBuilder(
+              valueListenable: _shown,
+              builder: (context, page, _) => IconButton(
+                tooltip: l.previousWeek,
+                icon: const Icon(LecIcons.chevronStart),
+                onPressed: page > 0 ? () => _step(-1) : null,
+              ),
             ),
-            IconButton(
-              tooltip: l.nextWeek,
-              icon: const Icon(LecIcons.chevronEnd),
-              onPressed: shownWeek < weekCount ? () => _step(1) : null,
+            ValueListenableBuilder(
+              valueListenable: _shown,
+              builder: (context, page, _) => IconButton(
+                tooltip: l.nextWeek,
+                icon: const Icon(LecIcons.chevronEnd),
+                onPressed: page + 1 < weekCount ? () => _step(1) : null,
+              ),
             ),
           ],
           IconButton(
@@ -671,34 +691,38 @@ class _DayColumn extends ConsumerWidget {
     final placed = _layoutDay(sessions);
     double y(int minutes) => (minutes - startHour * 60) / 60 * hourHeight;
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final width = constraints.maxWidth;
-        return SizedBox(
-          height: height,
-          child: Stack(
-            clipBehavior: Clip.none,
-            children: [
-              for (final p in placed)
-                PositionedDirectional(
-                  key: ValueKey(p.session.id),
-                  top: y(p.session.startMin).clamp(0, height - 20),
-                  height: math.max(
-                    22,
-                    y(p.session.endMin) -
-                        y(p.session.startMin).clamp(0, height) -
-                        2,
+    // Its own layer: a hover or splash on a tile repaints this day, not the
+    // whole week.
+    return RepaintBoundary(
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final width = constraints.maxWidth;
+          return SizedBox(
+            height: height,
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                for (final p in placed)
+                  PositionedDirectional(
+                    key: ValueKey(p.session.id),
+                    top: y(p.session.startMin).clamp(0, height - 20),
+                    height: math.max(
+                      22,
+                      y(p.session.endMin) -
+                          y(p.session.startMin).clamp(0, height) -
+                          2,
+                    ),
+                    start: 2 + p.lane * (width - 4) / p.lanes,
+                    width: (width - 4) / p.lanes - 2,
+                    child: _GridTile(sessionId: p.session.id),
                   ),
-                  start: 2 + p.lane * (width - 4) / p.lanes,
-                  width: (width - 4) / p.lanes - 2,
-                  child: _GridTile(sessionId: p.session.id),
-                ),
-              if (date == today)
-                _NowLine(startHour: startHour, hourHeight: hourHeight),
-            ],
-          ),
-        );
-      },
+                if (date == today)
+                  _NowLine(startHour: startHour, hourHeight: hourHeight),
+              ],
+            ),
+          );
+        },
+      ),
     );
   }
 }
@@ -930,7 +954,53 @@ final _widestWords = <(String, TextStyle, TextScaler), double>{};
 /// come the room and the start time; the time is dropped first, since the
 /// grid already shows when a session starts. The status icon goes after the
 /// name's first line, into free space at the bottom, or after the last line.
+/// Tile layouts already measured: a week's tiles are rebuilt when the page
+/// or the data changes, but their text and size rarely do.
+final _tileLayouts = <Object, TileLayout>{};
+
 TileLayout layoutTile({
+  required String name,
+  required String shortName,
+  required String time,
+  required String room,
+  required bool badge,
+  required TextStyle nameStyle,
+  required TextStyle detailStyle,
+  required Size size,
+  required TextScaler scaler,
+  required TextDirection direction,
+}) {
+  final key = (
+    name,
+    shortName,
+    time,
+    room,
+    badge,
+    nameStyle,
+    detailStyle,
+    size,
+    scaler,
+    direction,
+  );
+  final known = _tileLayouts[key];
+  if (known != null) return known;
+  // Zooming measures every tile at each new size.
+  if (_tileLayouts.length > 600) _tileLayouts.clear();
+  return _tileLayouts[key] = _measureTile(
+    name: name,
+    shortName: shortName,
+    time: time,
+    room: room,
+    badge: badge,
+    nameStyle: nameStyle,
+    detailStyle: detailStyle,
+    size: size,
+    scaler: scaler,
+    direction: direction,
+  );
+}
+
+TileLayout _measureTile({
   required String name,
   required String shortName,
   required String time,

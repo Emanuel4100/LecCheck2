@@ -68,6 +68,13 @@ static void my_application_activate(GApplication* application) {
   g_autoptr(FlDartProject) project = fl_dart_project_new();
   fl_dart_project_set_dart_entrypoint_arguments(
       project, self->dart_entrypoint_arguments);
+  // Dart runs on GTK's main thread by default, so a slow frame also delays
+  // GTK's drawing. LECCHECK_UI_THREAD=separate tries its own thread: compare
+  // Settings → Developer → Rendering with and without it.
+  if (g_strcmp0(g_getenv("LECCHECK_UI_THREAD"), "separate") == 0) {
+    fl_dart_project_set_ui_thread_policy(
+        project, FL_UI_THREAD_POLICY_RUN_ON_SEPARATE_THREAD);
+  }
 
   FlView* view = fl_view_new(project);
   GdkRGBA background_color;

@@ -12,6 +12,7 @@ import 'app/providers.dart';
 import 'app/update_controller.dart';
 import 'app/widget_controller.dart';
 import 'core/dev/dev_log.dart';
+import 'core/dev/frame_stats.dart';
 import 'core/report/report_sender.dart';
 import 'features/settings/report_page.dart';
 
@@ -21,6 +22,7 @@ import 'features/settings/report_page.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   DevLog.start();
+  FrameStats.instance.start();
   if (AppIdiom.isAndroid) {
     // Draw behind the status and navigation bars on every Android version
     // (15+ enforces it); the theme makes the bars transparent.

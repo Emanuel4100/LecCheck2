@@ -202,3 +202,21 @@ with a higher build and point a build at it:
 `flutter run --dart-define=UPDATE_URL=http://<your-ip>:8000/update.json`. Android's
 per-ABI APKs report 1000 × ABI + build as their version code; `installedBuild()` undoes
 that.
+
+## Smoothness (Linux)
+
+Flutter 3.47's Linux engine has no vsync: it draws at a fixed 60 fps whatever the
+display's rate (`VsyncWaiterFallback`; upstream issue flutter/flutter#183703). On a
+100 Hz monitor, 60 frames spread over 100 refreshes as 20/20/10 ms, which looks like
+judder; at 60 Hz, or with VRR/FreeSync on, it's smooth. The app can't change that, but it
+can avoid slow frames on top:
+
+- **Settings → Developer → Rendering** shows the display's rate, the frame rate while
+  animating, build and raster times (p50/p90/max) and the share of frames over budget
+  (`core/dev/frame_stats.dart`, also in diagnostics and bug reports).
+- `LECCHECK_UI_THREAD=separate leccheck` runs Dart on its own thread instead of GTK's
+  main thread; compare the numbers with and without it.
+- Profile builds: `flutter run --profile -d linux`, with DevTools' frame chart.
+
+At a fractional scale (e.g. 1.25 on Hyprland), GTK3 renders at 2× and the compositor
+scales down: slightly softer text, not slower frames.

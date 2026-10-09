@@ -49,7 +49,8 @@ abstract final class AppTheme {
       fontFamily: 'Rubik',
       textTheme: text,
       scaffoldBackgroundColor: scheme.surface,
-      splashFactory: InkSparkle.splashFactory,
+      // The default: InkSparkle (a shader) on Android, a plain ripple on
+      // desktop and iPhone.
       appBarTheme: AppBarTheme(
         backgroundColor: scheme.surface,
         surfaceTintColor: Colors.transparent,

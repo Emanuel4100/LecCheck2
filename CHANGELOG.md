@@ -21,6 +21,12 @@
 - **Report a problem** (Settings → About): sends a description and, if you leave it on,
   diagnostics you can read first; they go privately to the developer, and wait on the
   device while offline. After an error, Today offers to report it.
+- **Week**: smoother swipes and zoom: changing weeks no longer rebuilds both visible
+  weeks, tile layouts are measured once, and a tap or hover repaints only its day. On
+  desktop and iPhone, taps show a plain ripple instead of Android's sparkle effect.
+- **Settings → Developer → Rendering**: the display's refresh rate, frames per second while
+  animating, and frame times, also included in bug reports. On Linux, Flutter draws at
+  60 fps whatever the monitor's rate (an upstream limit).
 - **Sync server**: health checks, and automatic deploys that are tested first, checked
   live, and rolled back by themselves if the new version fails. App releases wait until
   their server is live.
