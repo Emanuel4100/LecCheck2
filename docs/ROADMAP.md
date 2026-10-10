@@ -34,6 +34,13 @@
   widget's buttons can't be triggered by other apps. The server has per-account limits
   (so one account can't use up the free plan for everyone) and refuses revoked sessions
   for every account action.
+- **Reminders that follow the semester, history-safe edits** (2.0.0-beta.7): reminders
+  and the widget cover every semester running then, whichever one is shown; mute a
+  course's reminders; the widget moves on at midnight by itself; Linux reminders survive
+  sleep. Moving a meeting to another day keeps its marks, removing one can end it
+  instead, and changing a semester's dates warns and extends its holidays. Today shows
+  when changes can't sync. Rows the app can't read are skipped instead of hiding a
+  semester.
 
 ## Not yet verified on real hardware
 

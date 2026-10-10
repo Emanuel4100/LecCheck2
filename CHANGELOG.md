@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 2.0.0-beta.7 — 2026-10-11
 
 - **Reminders follow the semester running now**: looking at last semester (its stats, say)
   stopped this semester's reminders and emptied the widget until you switched back. Both
