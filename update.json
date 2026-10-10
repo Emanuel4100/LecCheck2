@@ -1,11 +1,11 @@
 {
   "beta": {
-    "version": "2.0.0-beta.6",
-    "build": 14,
+    "version": "2.0.0-beta.7",
+    "build": 15,
     "date": "2026-10-10",
-    "notesUrl": "https://github.com/Emanuel4100/LecCheck2/releases/tag/v2.0.0-beta.6",
-    "androidArm64": "https://github.com/Emanuel4100/LecCheck2/releases/download/v2.0.0-beta.6/LecCheck-2.0.0-beta.6-android-arm64.apk",
-    "androidUniversal": "https://github.com/Emanuel4100/LecCheck2/releases/download/v2.0.0-beta.6/LecCheck-2.0.0-beta.6-android.apk",
-    "linux": "https://github.com/Emanuel4100/LecCheck2/releases/download/v2.0.0-beta.6/LecCheck-2.0.0-beta.6-linux-x64.tar.gz"
+    "notesUrl": "https://github.com/Emanuel4100/LecCheck2/releases/tag/v2.0.0-beta.7",
+    "androidArm64": "https://github.com/Emanuel4100/LecCheck2/releases/download/v2.0.0-beta.7/LecCheck-2.0.0-beta.7-android-arm64.apk",
+    "androidUniversal": "https://github.com/Emanuel4100/LecCheck2/releases/download/v2.0.0-beta.7/LecCheck-2.0.0-beta.7-android.apk",
+    "linux": "https://github.com/Emanuel4100/LecCheck2/releases/download/v2.0.0-beta.7/LecCheck-2.0.0-beta.7-linux-x64.tar.gz"
   }
 }
