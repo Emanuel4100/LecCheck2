@@ -178,14 +178,25 @@ auth.post("/dev", async (c) => {
   return c.json({ token, user: { id: sub, name, email: `${name}@dev.local` } });
 });
 
+/** The signed session in the `Authorization` header (never the URL, which
+ * can end up in logs). Doesn't check revocation: see [activeSession]. */
 export async function sessionFromRequest(
   request: Request,
   env: Env,
 ): Promise<SessionClaims | null> {
   const header = request.headers.get("Authorization") ?? "";
-  const token = header.startsWith("Bearer ")
-    ? header.slice(7)
-    : (new URL(request.url).searchParams.get("token") ?? "");
-  if (!token) return null;
-  return verifyToken<SessionClaims>(token, env.JWT_SECRET, "session");
+  if (!header.startsWith("Bearer ")) return null;
+  return verifyToken<SessionClaims>(header.slice(7), env.JWT_SECRET, "session");
+}
+
+/** [sessionFromRequest], and not revoked since ("sign out everywhere",
+ * "Delete cloud data"). Costs one request to the user's Durable Object. */
+export async function activeSession(
+  request: Request,
+  env: Env,
+): Promise<SessionClaims | null> {
+  const session = await sessionFromRequest(request, env);
+  if (!session) return null;
+  const store = env.USER_STORE.get(env.USER_STORE.idFromName(session.sub));
+  return session.epoch === (await store.epoch()) ? session : null;
 }

@@ -84,6 +84,9 @@ describe("validateChange", () => {
     [{ ...ok, hlc: clock(now + 10 * 60 * 1000) }, "clock_skew"],
     [{ ...ok, patch: { notes: "x".repeat(20_000) } }, "patch_too_large"],
     [{ ...ok, ifAbsent: "yes" }, "malformed"],
+    [{ ...ok, patch: JSON.parse('{"__proto__": {"x": 1}}') }, "bad_field"],
+    [{ ...ok, patch: { ["n".repeat(65)]: 1 } }, "bad_field"],
+    [{ ...ok, patch: { "semester id": 1 } }, "bad_field"],
   ])("rejects %j", (change, reason) => {
     expect(validateChange(change, now)).toEqual({ ok: false, reason });
   });

@@ -78,6 +78,12 @@ describe("bug reports", () => {
     expect(calls).toHaveLength(0);
   });
 
+  it("refuse huge bodies without reading them all", async () => {
+    github();
+    const res = await send("x".repeat(MAX_REPORT_BYTES * 3 + 1));
+    expect(res.status).toBe(413);
+  });
+
   it("are limited per sender and day", async () => {
     github();
     for (let i = 0; i < REPORTS_PER_SENDER; i++) {

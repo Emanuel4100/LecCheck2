@@ -93,8 +93,9 @@ Server → client:
   or rolled back; a client that sends an older one is caught up from version 0 and
   re-offers its own rows (`ifAbsent`), so it can't skip versions or lose edits.
 - An `error` with `retryAt` means storage can't be used right now (`quota`: the free
-  plan's daily limit, until 00:00 UTC; `unavailable`: anything else, in a minute).
-  Nothing from the push was saved; the client keeps its changes and comes back then.
+  plan's daily limit, until 00:00 UTC; `user_quota`: this account's own daily write
+  limit, until 00:00 UTC; `unavailable`: anything else, in a minute). Nothing from the
+  push was saved; the client keeps its changes and comes back then.
 
 HTTP `POST /v1/sync` returns `{rows, upto, more, rejected, corrections, clock, dataset,
 now}` for the same push + pull in one request, or `503 {error, retryAt}` with a
@@ -128,12 +129,27 @@ compares clocks.
 |---|---|
 | Changes per push | 500 |
 | Patch size | 16 KB |
-| Message size | 1 MB |
+| Field names | letters, digits and `_`, starting with a letter, up to 64 (`bad_field`) |
+| Message size | 1 MB (the app sends at most 512 KB) |
 | Clock skew | changes stamped > 5 minutes in the future are rejected (`clock_skew`) |
+| Rows written per account per day | 10,000, counting `meta`; then `user_quota` until 00:00 UTC |
+| Rows per account | 50,000 (new rows past it: `account_full`) |
+| Data per account | 25 MB (growing rows past it: `account_full`) |
+| Row size | 64 KB (`row_too_large`) |
 | Tables | `semesters`, `courses`, `meetings`, `session_overrides`, `no_class_ranges`, `requirements`, `user_settings` |
 
 The server never interprets row contents beyond `id`, so client schema changes need no
 server migration.
+
+The per-account limits keep one account (a bug, or someone abusing sign-in) from using
+up the free plan for everyone. Each Durable Object keeps its counts (`usage` in `meta`)
+in memory and saves them only every 200 written rows, so they cost almost no writes;
+storage is recounted once a day. Refused rows stay in the app's outbox (Account →
+Retry), so nothing is lost.
+
+Session tokens are only read from the `Authorization` header (never from the URL,
+which can end up in logs). Renewing, signing out everywhere, deleting cloud data and
+restoring all check that the session wasn't revoked.
 
 ## Free plan limits
 

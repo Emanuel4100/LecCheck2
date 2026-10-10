@@ -2,10 +2,15 @@ import { DurableObject } from "cloudflare:workers";
 import { applyPatch, type RowState } from "./merge";
 import {
   appTooOld,
+  MAX_ACCOUNT_BYTES,
+  MAX_ACCOUNT_ROWS,
   MAX_CHANGES_PER_PUSH,
   MAX_MESSAGE_BYTES,
+  MAX_ROW_BYTES,
   PAGE_SIZE,
   unavailable,
+  USER_ROWS_WRITTEN_PER_DAY,
+  UserQuotaExceeded,
   validateChange,
   type Change,
   type Rejected,
@@ -59,7 +64,26 @@ interface TouchedRow {
   dataChanged: boolean;
   clockChanged: boolean;
   lost: boolean;
+  /** Not stored yet. */
+  isNew: boolean;
+  /** Size of the stored `data`, before this batch. */
+  bytes: number;
+  /** Positions of this row's changes in the batch. */
+  changes: number[];
 }
+
+/** What this account stores, and how many rows it wrote today (UTC day). */
+interface Usage {
+  day: number;
+  written: number;
+  rows: number;
+  bytes: number;
+}
+
+/** [Usage] is kept in memory and saved only every this many written rows (or
+ * when the day changes), so tracking it adds almost no writes. A restart can
+ * forget up to this many; the counts are recomputed every day anyway. */
+const USAGE_SAVE_EVERY = 200;
 
 /** A message from a device (validated field by field where it's used). */
 interface Incoming {
@@ -79,6 +103,9 @@ interface Incoming {
  */
 export class UserStore extends DurableObject<Env> {
   private readonly sql: SqlStorage;
+  private usage: Usage | null = null;
+  /** `usage.written` when it was last saved. */
+  private savedWritten = 0;
 
   constructor(ctx: DurableObjectState, env: Env) {
     super(ctx, env);
@@ -210,9 +237,14 @@ export class UserStore extends DurableObject<Env> {
       );
       this.sql.exec("DELETE FROM rows");
       this.setMeta("dataset", crypto.randomUUID());
+      // Today's writes still count, so delete and push again can't skip the limit.
+      this.saveUsage({ ...this.currentUsage(now), rows: 0, bytes: 0 });
     });
     await this.bumpEpoch();
-    await this.ctx.storage.setAlarm(now + TRASH_DAYS * DAY_MS);
+    // An earlier delete's alarm comes first; [alarm] re-arms for the rest.
+    if ((await this.ctx.storage.getAlarm()) === null) {
+      await this.ctx.storage.setAlarm(now + TRASH_DAYS * DAY_MS);
+    }
   }
 
   /** Brings back data removed by [deleteAccount] (rows not re-created since).
@@ -241,6 +273,7 @@ export class UserStore extends DurableObject<Env> {
       }
       this.sql.exec("DELETE FROM trash");
       this.setMeta("version", String(version));
+      this.saveUsage(this.countUsage(Date.now(), this.currentUsage(Date.now()).written));
     });
     if (restored.length) this.broadcast(restored);
     return restored.length;
@@ -262,12 +295,15 @@ export class UserStore extends DurableObject<Env> {
     return this.ctx.storage.getBookmarkForTime(at);
   }
 
-  /**
-   * Rolls the whole store back to [bookmark]. The object restarts (so this
-   * call fails by design); the caller must then call [afterRestore].
-   */
-  async restoreBookmark(bookmark: string): Promise<void> {
+  /** Rolls the whole store back to [bookmark] at the next restart, which
+   * [abortForRestore] causes. Fails if the bookmark can't be used. */
+  async setRestoreBookmark(bookmark: string): Promise<void> {
     await this.ctx.storage.onNextSessionRestoreBookmark(bookmark);
+  }
+
+  /** Restarts the object to load the restored state (so this call fails by
+   * design); the caller must then call [afterRestore]. */
+  async abortForRestore(): Promise<void> {
     this.ctx.abort("restoring");
   }
 
@@ -278,6 +314,51 @@ export class UserStore extends DurableObject<Env> {
     if ((await this.epoch()) < minEpoch) this.setMeta("epoch", String(minEpoch));
     this.setMeta("dataset", crypto.randomUUID());
     for (const ws of this.ctx.getWebSockets()) ws.close(1012, "restored");
+  }
+
+  // ------------------------------------------------------------ usage --
+
+  /** Counts what's stored now (one read per row: done once a day at most). */
+  private countUsage(now: number, written: number): Usage {
+    const r = this.sql
+      .exec<{ n: number; b: number | null }>("SELECT COUNT(*) AS n, SUM(length(data)) AS b FROM rows")
+      .one();
+    return { day: Math.floor(now / DAY_MS), written, rows: r.n, bytes: r.b ?? 0 };
+  }
+
+  /** This account's usage for today: from memory, else the saved copy, else
+   * counted. A new day starts the write count over and recounts storage. */
+  private currentUsage(now: number): Usage {
+    const day = Math.floor(now / DAY_MS);
+    if (!this.usage) {
+      try {
+        const saved = JSON.parse(this.meta("usage") ?? "null") as Usage | null;
+        if (saved && typeof saved.day === "number") {
+          this.usage = saved;
+          this.savedWritten = saved.written;
+        }
+      } catch {
+        // Counted below.
+      }
+    }
+    if (this.usage?.day === day) return this.usage;
+    this.savedWritten = -USAGE_SAVE_EVERY; // Not saved for today yet.
+    return (this.usage = this.countUsage(now, 0));
+  }
+
+  /** Keeps [usage] in memory, and saves it if it moved enough (one write).
+   * Returns how many rows that wrote. Call last inside the transaction. */
+  private saveUsage(usage: Usage, force = true): number {
+    const save = force || usage.written - this.savedWritten >= USAGE_SAVE_EVERY;
+    if (save) this.setMeta("usage", JSON.stringify(usage));
+    this.usage = usage;
+    if (save) this.savedWritten = usage.written;
+    return save ? 1 : 0;
+  }
+
+  /** For monitoring and tests. */
+  async usageNow(): Promise<Usage> {
+    return { ...this.currentUsage(Date.now()) };
   }
 
   // ------------------------------------------------------------- sync --
@@ -314,6 +395,11 @@ export class UserStore extends DurableObject<Env> {
    * batch touches is read once, merged in memory and written once, so several
    * queued edits to the same item cost one write: the free plan allows
    * 100,000 rows written a day, shared by all users.
+   *
+   * Throws [UserQuotaExceeded] (nothing saved) when the batch would go over
+   * this account's daily write budget. Rows that would go over the account's
+   * storage limits, or grow too large, are refused (`account_full`,
+   * `row_too_large`); the app keeps those changes.
    */
   private applyChanges(changes: unknown[]): {
     changedRows: WireRow[];
@@ -332,6 +418,7 @@ export class UserStore extends DurableObject<Env> {
     const changedRows: WireRow[] = [];
     const corrections: WireRow[] = [];
     this.ctx.storage.transactionSync(() => {
+      const usage = this.currentUsage(now);
       const touched = new Map<string, TouchedRow>();
       const startVersion = this.version();
       const startClock = this.clock();
@@ -372,9 +459,13 @@ export class UserStore extends DurableObject<Env> {
             dataChanged: false,
             clockChanged: false,
             lost: false,
+            isNew: !existing,
+            bytes: existing?.data.length ?? 0,
+            changes: [],
           };
           touched.set(key, row);
         }
+        row.changes.push(i);
         const merged = applyPatch(row.state, change);
         if (merged.lost) row.lost = true;
         if (!merged.clockChanged) continue;
@@ -383,9 +474,41 @@ export class UserStore extends DurableObject<Env> {
         if (merged.dataChanged) row.dataChanged = true;
       }
 
+      // Limits first, so a refused batch writes nothing.
+      let rows = usage.rows;
+      let bytes = usage.bytes;
+      const writes: Array<{ row: TouchedRow; data: string }> = [];
       for (const row of touched.values()) {
-        if (row.state === null) continue;
-        const clocks = JSON.stringify(row.state.clocks);
+        if (row.state === null || !row.clockChanged) {
+          if (row.lost && row.state !== null) {
+            corrections.push({ tbl: row.tbl, id: row.id, data: row.state.data, v: row.version });
+          }
+          continue;
+        }
+        const data = JSON.stringify(row.state.data);
+        const grows = data.length - row.bytes;
+        const reason =
+          data.length > MAX_ROW_BYTES
+            ? "row_too_large"
+            : (row.isNew && rows + 1 > MAX_ACCOUNT_ROWS) || (grows > 0 && bytes + grows > MAX_ACCOUNT_BYTES)
+              ? "account_full"
+              : null;
+        if (reason) {
+          for (const i of row.changes) rejected.push({ i, tbl: row.tbl, id: row.id, reason });
+          continue;
+        }
+        if (row.isNew) rows += 1;
+        bytes += grows;
+        writes.push({ row, data });
+      }
+      if (rejected.length) rejected.sort((a, b) => a.i - b.i);
+      // Each row write, plus the version and clock it moves.
+      const cost = writes.length + (writes.length ? 2 : 0);
+      if (usage.written + cost > USER_ROWS_WRITTEN_PER_DAY) throw new UserQuotaExceeded();
+
+      for (const { row, data } of writes) {
+        const state = row.state!;
+        const clocks = JSON.stringify(state.clocks);
         if (row.dataChanged) {
           version += 1;
           row.version = version;
@@ -395,12 +518,12 @@ export class UserStore extends DurableObject<Env> {
                clocks = excluded.clocks, version = excluded.version`,
             row.tbl,
             row.id,
-            JSON.stringify(row.state.data),
+            data,
             clocks,
             version,
           );
-          changedRows.push({ tbl: row.tbl, id: row.id, data: row.state.data, v: version });
-        } else if (row.clockChanged) {
+          changedRows.push({ tbl: row.tbl, id: row.id, data: state.data, v: version });
+        } else {
           this.sql.exec(
             "UPDATE rows SET clocks = ? WHERE tbl = ? AND id = ?",
             clocks,
@@ -411,11 +534,14 @@ export class UserStore extends DurableObject<Env> {
         // Some pushed field lost to a newer write: send the sender the row
         // as it is now, so its copy doesn't keep the losing value.
         if (row.lost) {
-          corrections.push({ tbl: row.tbl, id: row.id, data: row.state.data, v: row.version });
+          corrections.push({ tbl: row.tbl, id: row.id, data: state.data, v: row.version });
         }
       }
       if (version !== startVersion) this.setMeta("version", String(version));
       if (clock !== null && clock !== startClock) this.setMeta("clock", clock);
+      if (writes.length) {
+        this.saveUsage({ ...usage, written: usage.written + cost, rows, bytes }, false);
+      }
     });
     return { changedRows, rejected, corrections };
   }

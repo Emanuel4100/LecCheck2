@@ -106,13 +106,43 @@ async function sha256(value: string): Promise<string> {
   return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
+/** The body as text, or null past [maxBytes] (also without a
+ * `Content-Length`, e.g. chunked). */
+async function readText(request: Request, maxBytes: number): Promise<string | null> {
+  const reader = request.body?.getReader();
+  if (!reader) return "";
+  const chunks: Uint8Array[] = [];
+  let size = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    size += value.byteLength;
+    if (size > maxBytes) {
+      await reader.cancel();
+      return null;
+    }
+    chunks.push(value);
+  }
+  const bytes = new Uint8Array(size);
+  let at = 0;
+  for (const chunk of chunks) {
+    bytes.set(chunk, at);
+    at += chunk.byteLength;
+  }
+  return new TextDecoder().decode(bytes);
+}
+
 export const reports = new Hono<{ Bindings: Env }>();
 
 reports.post("/", async (c) => {
   const token = c.env.REPORTS_GITHUB_TOKEN;
   if (!token) return c.json({ error: "reports_unavailable" }, 503);
-  const raw = await c.req.text();
-  if (raw.length > MAX_REPORT_BYTES) return c.json({ error: "too_large" }, 413);
+  // Checked before reading, so a huge body is never held in memory.
+  if (Number(c.req.header("content-length") ?? 0) > MAX_REPORT_BYTES * 3) {
+    return c.json({ error: "too_large" }, 413);
+  }
+  const raw = await readText(c.req.raw, MAX_REPORT_BYTES * 3);
+  if (raw === null || raw.length > MAX_REPORT_BYTES) return c.json({ error: "too_large" }, 413);
   let report: Report | null = null;
   try {
     report = parseReport(JSON.parse(raw));

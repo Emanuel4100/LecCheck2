@@ -1,6 +1,7 @@
 import { env, runInDurableObject, SELF } from "cloudflare:test";
 import { describe, expect, it } from "vitest";
 import { isAllowedRedirect } from "../src/auth";
+import { MAX_ACCOUNT_ROWS, USER_ROWS_WRITTEN_PER_DAY } from "../src/protocol";
 import { pkceChallenge, randomId, signToken } from "../src/jwt";
 
 const base = "https://sync.test";
@@ -189,6 +190,108 @@ describe("HTTP sync", () => {
     expect(out.status).toBe(204);
     expect((await sync(token, 0)).status).toBe(401);
     expect((await sync(await login("gina"), 0)).status).toBe(200);
+  });
+});
+
+describe("per-account limits", () => {
+  const store = (name: string) => env.USER_STORE.get(env.USER_STORE.idFromName(`dev:${name}`));
+
+  it("counts stored rows and today's writes, and remembers them across restarts", async () => {
+    const token = await login("uma");
+    await sync(token, 0, [
+      { tbl: "courses", id: "c1", patch: { name: "A" }, hlc: clock(-3000) },
+      { tbl: "courses", id: "c2", patch: { name: "B" }, hlc: clock(-2000) },
+      { tbl: "courses", id: "c1", patch: { notes: "n" }, hlc: clock(-1000) },
+    ]);
+    const usage = await store("uma").usageNow();
+    // Two rows, plus the version and clock they moved.
+    expect(usage).toMatchObject({ written: 4, rows: 2 });
+    expect(usage.bytes).toBeGreaterThan(0);
+    await runInDurableObject(store("uma"), (s) => {
+      (s as any).usage = null; // As after a restart.
+    });
+    expect(await store("uma").usageNow()).toEqual(usage);
+    await SELF.fetch(`${base}/v1/account`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } });
+    expect(await store("uma").usageNow()).toMatchObject({ written: 4, rows: 0, bytes: 0 });
+  });
+
+  it("holds an account that used up its daily writes until 00:00 UTC", async () => {
+    const token = await login("vera");
+    await sync(token, 0, [{ tbl: "courses", id: "c1", patch: { name: "A" }, hlc: clock(-2000) }]);
+    await runInDurableObject(store("vera"), (s) => {
+      (s as any).usage.written = USER_ROWS_WRITTEN_PER_DAY - 2;
+    });
+    const res = await SELF.fetch(`${base}/v1/sync`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}`, "content-type": "application/json" },
+      body: JSON.stringify({ since: 0, changes: [{ tbl: "courses", id: "c1", patch: { name: "B" }, hlc: clock() }] }),
+    });
+    expect(res.status).toBe(503);
+    const midnight = (Math.floor(Date.now() / 86_400_000) + 1) * 86_400_000;
+    expect(await res.json()).toEqual({ error: "user_quota", retryAt: midnight });
+    // Nothing was saved, and reading still works.
+    expect((await sync(token, 0)).body.rows[0].data).toEqual({ id: "c1", name: "A" });
+  });
+
+  it("refuses new rows when the account is full, but still takes edits", async () => {
+    const token = await login("walt");
+    await sync(token, 0, [{ tbl: "courses", id: "c1", patch: { name: "A" }, hlc: clock(-2000) }]);
+    await runInDurableObject(store("walt"), (s) => {
+      (s as any).usage.rows = MAX_ACCOUNT_ROWS;
+    });
+    const { body } = await sync(token, 0, [
+      { tbl: "courses", id: "c2", patch: { name: "New" }, hlc: clock(-1000) },
+      { tbl: "courses", id: "c1", patch: { name: "Renamed" }, hlc: clock(-1000) },
+    ]);
+    expect(body.rejected).toEqual([{ i: 0, tbl: "courses", id: "c2", reason: "account_full" }]);
+    expect(body.rows.map((r: any) => r.data.name)).toEqual(["Renamed"]);
+  });
+
+  it("refuses to grow a row past its size limit", async () => {
+    const token = await login("xena");
+    const big = (f: string, i: number) => ({
+      tbl: "courses",
+      id: "c1",
+      patch: { [f]: "x".repeat(15_000) },
+      hlc: clock(-5000 + i),
+    });
+    const { body } = await sync(token, 0, ["a", "b", "c", "d", "e"].map(big));
+    expect(body.rejected.map((r: any) => [r.i, r.reason])).toEqual([
+      [0, "row_too_large"],
+      [1, "row_too_large"],
+      [2, "row_too_large"],
+      [3, "row_too_large"],
+      [4, "row_too_large"],
+    ]);
+    expect(body.rows).toEqual([]);
+  });
+});
+
+describe("revoked sessions", () => {
+  it("can't delete cloud data, sign out others or renew", async () => {
+    const old = await login("yuri");
+    await sync(old, 0, [{ tbl: "courses", id: "c1", patch: { name: "Keep" }, hlc: clock(-1000) }]);
+    const fresh = await login("yuri");
+    await SELF.fetch(`${base}/v1/auth/signout-everywhere`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${fresh}` },
+    });
+    const call = (method: string, path: string) =>
+      SELF.fetch(`${base}${path}`, { method, headers: { Authorization: `Bearer ${old}` } });
+    expect((await call("DELETE", "/v1/account")).status).toBe(401);
+    expect((await call("POST", "/v1/auth/signout-everywhere")).status).toBe(401);
+    expect((await call("POST", "/v1/auth/renew")).status).toBe(401);
+    expect((await sync(await login("yuri"), 0)).body.rows).toHaveLength(1);
+  });
+
+  it("are only read from the Authorization header, never the URL", async () => {
+    const token = await login("zoe");
+    const res = await SELF.fetch(`${base}/v1/sync?token=${token}`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: "{}",
+    });
+    expect(res.status).toBe(401);
   });
 });
 

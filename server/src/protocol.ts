@@ -22,6 +22,18 @@ export const MAX_MESSAGE_BYTES = 1024 * 1024;
 export const MAX_CLOCK_SKEW_MS = 5 * 60 * 1000;
 export const PAGE_SIZE = 500;
 
+/** Per-account limits, so one account can't use up the free plan's shared
+ * daily row writes (100,000 for all users) or its 5 GB of storage. Far above
+ * what a real account needs (a full semester is well under 1,000 rows). */
+export const USER_ROWS_WRITTEN_PER_DAY = 10_000;
+export const MAX_ACCOUNT_ROWS = 50_000;
+export const MAX_ACCOUNT_BYTES = 25 * 1024 * 1024;
+export const MAX_ROW_BYTES = 64 * 1024;
+
+/** Field names: the app's columns are camelCase (`semesterId`). Anything
+ * else (`__proto__`, megabyte-long keys) is refused. */
+const FIELD = /^[A-Za-z][A-Za-z0-9_]{0,63}$/;
+
 /** Hybrid logical clock: `<15-digit ms>:<4 hex counter>:<node id>`. Fixed
  * width, so plain string comparison orders clocks correctly. */
 const HLC = /^(\d{15}):([0-9a-f]{4}):([0-9A-Za-z_-]{4,64})$/;
@@ -100,8 +112,21 @@ export type ServerMessage =
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 export interface Unavailable {
-  code: "quota" | "unavailable";
+  /** `user_quota`: this account wrote [USER_ROWS_WRITTEN_PER_DAY] rows today. */
+  code: "quota" | "user_quota" | "unavailable";
   retryAt: number;
+}
+
+/** Thrown inside a push when the account's daily write budget is used up:
+ * nothing is saved, and the device waits until 00:00 UTC. */
+export class UserQuotaExceeded extends Error {
+  constructor() {
+    super("This account's daily sync limit is used up");
+  }
+}
+
+function nextMidnight(now: number): number {
+  return (Math.floor(now / DAY_MS) + 1) * DAY_MS;
 }
 
 /**
@@ -111,9 +136,10 @@ export interface Unavailable {
  * again after a minute (clients back off further if it keeps failing).
  */
 export function unavailable(error: unknown, now: number): Unavailable {
+  if (error instanceof UserQuotaExceeded) return { code: "user_quota", retryAt: nextMidnight(now) };
   const message = error instanceof Error ? error.message : String(error);
   return /free tier|daily limit|quota|exceeded allowed|SQLITE_FULL|disk is full/i.test(message)
-    ? { code: "quota", retryAt: (Math.floor(now / DAY_MS) + 1) * DAY_MS }
+    ? { code: "quota", retryAt: nextMidnight(now) }
     : { code: "unavailable", retryAt: now + 60_000 };
 }
 
@@ -151,6 +177,9 @@ export function validateChange(raw: unknown, now: number): Validation {
   }
   if (JSON.stringify(c.patch).length > MAX_PATCH_BYTES) {
     return { ok: false, reason: "patch_too_large" };
+  }
+  if (!Object.keys(c.patch).every((field) => FIELD.test(field))) {
+    return { ok: false, reason: "bad_field" };
   }
   const millis = typeof c.hlc === "string" ? hlcMillis(c.hlc) : null;
   if (millis === null) return { ok: false, reason: "bad_clock" };
