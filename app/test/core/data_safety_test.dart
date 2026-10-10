@@ -408,6 +408,66 @@ void main() {
       expect((await repo.watchUserPrefs().first).meetingNumbers, isTrue);
     });
 
+    test('Retry leaves fields edited since then to the newer edit', () async {
+      await repo.setUse24h(false); // The settings row exists (synced).
+      await db.delete(db.outbox).go();
+      await repo.setMeetingNumbers(false);
+      await repo.setUse24h(true);
+      final first = await outbox();
+      expect(first, hasLength(2));
+      // Both refused, then the user changes meeting numbers again.
+      await SyncEngine.settleBatch(
+        db: db,
+        repo: repo,
+        recorder: recorder,
+        seqs: [for (final e in first) e.seq],
+        reply: {
+          'rejected': [
+            for (final (i, e) in first.indexed)
+              {'i': i, 'tbl': e.tbl, 'id': e.rowId, 'reason': 'bad_id'},
+          ],
+          'rows': const [],
+        },
+      );
+      await repo.setMeetingNumbers(true);
+      final newest = (await outbox()).last;
+
+      await recorder.retryRejected();
+      final left = await outbox();
+      // The old meetingNumbers change is gone (the newer one decides); the
+      // use24h one goes out again, before the newer edit's clock no more.
+      expect([for (final e in left) e.seq], [first[1].seq, newest.seq]);
+      expect(jsonDecode(left.first.patch), {'use24h': true});
+      expect(left.every((e) => e.rejected == null), isTrue);
+      expect(
+        Hlc.parse(left.first.hlc).compareTo(Hlc.parse(newest.hlc)),
+        greaterThan(0),
+      );
+    });
+
+    test('a batch stays under the server\'s message size', () async {
+      final note = 'x' * 15000;
+      for (var i = 0; i < 60; i++) {
+        await recorder.record('courses', 'c$i', {'notes': note});
+      }
+      final batch = await SyncEngine.nextBatch(db);
+      expect(batch.length, inInclusiveRange(30, 34));
+      final size = jsonEncode([
+        for (final e in batch)
+          {
+            'tbl': e.tbl,
+            'id': e.rowId,
+            'patch': jsonDecode(e.patch),
+            'hlc': e.hlc,
+          },
+      ]).length;
+      expect(size, lessThan(SyncEngine.maxBatchChars));
+      // One huge change still goes on its own.
+      await db.delete(db.outbox).go();
+      await recorder.record('courses', 'big', {'notes': 'y' * 600000});
+      expect(await SyncEngine.nextBatch(db), hasLength(1));
+    });
+
     test('server rows beat pending add-only offers', () async {
       await recorder.enqueueAll(repo);
       await SyncEngine.applyServerRows(db, repo, [
@@ -492,6 +552,69 @@ void main() {
       );
       expect(await outbox(), hasLength(1));
       await Future<void>.delayed(const Duration(milliseconds: 300));
+      expect(connections, 1);
+    });
+
+    test('a message that fails to apply doesn\'t stop sync', () async {
+      final pushes = <Object?>[];
+      server.listen((request) async {
+        connections++;
+        final socket = await WebSocketTransformer.upgrade(request);
+        socket.listen((data) {
+          final message = jsonDecode(data as String) as Map<String, Object?>;
+          switch (message['t']) {
+            case 'hello':
+              // The first catch-up carries a row this app can't read.
+              socket.add(
+                jsonEncode({
+                  't': 'changes',
+                  'rows': connections == 1
+                      ? [
+                          {'tbl': 'courses', 'id': 42, 'data': 'broken'},
+                        ]
+                      : const [],
+                  'upto': 0,
+                  'more': false,
+                  'clock': null,
+                  'catchUp': true,
+                }),
+              );
+            case 'push':
+              pushes.add(message['changes']);
+              socket.add(
+                jsonEncode({
+                  't': 'ack',
+                  'batchId': message['batchId'],
+                  'rejected': const [],
+                  'rows': const [],
+                  'clock': null,
+                }),
+              );
+          }
+        });
+      });
+      await repo.setMeetingNumbers(false);
+      final engine = start();
+      await engine.states
+          .firstWhere((s) => s.phase == SyncPhase.synced && s.pending == 0)
+          .timeout(const Duration(seconds: 10));
+      // It reconnected and caught up again, then pushed.
+      expect(connections, 2);
+      expect(pushes, hasLength(1));
+      expect(await outbox(), isEmpty);
+    });
+
+    test('"Sync now" while connecting opens only one connection', () async {
+      server.listen((request) async {
+        connections++;
+        await Future<void>.delayed(const Duration(milliseconds: 200));
+        final socket = await WebSocketTransformer.upgrade(request);
+        socket.listen((_) {});
+      });
+      final engine = start();
+      engine.syncNow();
+      engine.syncNow();
+      await Future<void>.delayed(const Duration(milliseconds: 600));
       expect(connections, 1);
     });
 

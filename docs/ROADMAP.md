@@ -65,6 +65,12 @@ with classmates by link/QR, a calendar (ICS) feed.
 
 ## Known limitations
 
+- The free workers.dev plan has no rate limiting in front of the Worker: anyone can spend
+  its 100,000 requests a day with calls that are refused (sync then pauses until 00:00
+  UTC, and nothing is lost), and the 50 bug reports a day can be used up the same way.
+  Per-account limits stop a signed-in account from using up the storage and row-write
+  limits. A custom domain would allow Cloudflare's rate limiting rules.
+
 - Reminders on Linux fire only while the app is running.
 - A new column added to a synced table in a future version is ignored by older app
   versions that receive it (they keep working).

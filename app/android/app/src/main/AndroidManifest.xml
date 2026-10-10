@@ -77,9 +77,11 @@
                 android:name="android.appwidget.provider"
                 android:resource="@xml/today_widget_info" />
         </receiver>
+        <!-- Not exported: only the widget (in this app's process) may mark
+             sessions; other apps can't send it leccheck://mark. -->
         <receiver
             android:name="es.antonborri.home_widget.HomeWidgetBackgroundReceiver"
-            android:exported="true">
+            android:exported="false">
             <intent-filter>
                 <action android:name="es.antonborri.home_widget.action.BACKGROUND" />
             </intent-filter>

@@ -344,7 +344,7 @@ class _HeroSession extends ConsumerWidget {
                     Padding(
                       padding: EdgeInsets.only(top: inProgress ? 8 : 0),
                       child: FilledButton.tonalIcon(
-                        onPressed: () => openUrl(link),
+                        onPressed: () => openUrl(link, context: context),
                         icon: const Icon(LecIcons.openLink),
                         label: Text(l.openLink),
                       ),

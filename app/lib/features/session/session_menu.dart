@@ -91,7 +91,7 @@ Future<void> showSessionMenu(
     case _Extra.details:
       await showSessionSheet(context, session.id);
     case _Extra.link:
-      await openUrl(link!);
+      await openUrl(link!, context: context);
     case _Extra.course:
       openCourse(context, ref, session.courseId);
   }

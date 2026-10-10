@@ -1733,8 +1733,14 @@ abstract class AppLocalizations {
   /// No description provided for @deleteCloudBody.
   ///
   /// In en, this message translates to:
-  /// **'Your synced data will be removed from the server, and your devices will be signed out. This device keeps its copy.'**
+  /// **'Your synced data will be removed from the server, and your devices will be signed out. This device keeps its copy. If another device signs in to this account again, its copy is synced back.'**
   String get deleteCloudBody;
+
+  /// No description provided for @linkNotOpened.
+  ///
+  /// In en, this message translates to:
+  /// **'Can\'t open this link'**
+  String get linkNotOpened;
 
   /// No description provided for @replaceDataTitle.
   ///

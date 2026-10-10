@@ -182,6 +182,18 @@ class AuthController extends AsyncNotifier<Session?> {
     await _detach();
   }
 
+  /// Renews the token if it's a week old (the sync engine asks before each
+  /// connection). Null if the server revoked the session.
+  Future<Session?> renew(Session session) async {
+    final renewed = await _auth.renewIfNeeded(session);
+    if (renewed != null &&
+        renewed.token != session.token &&
+        state.value?.userId == renewed.userId) {
+      state = AsyncData(renewed);
+    }
+    return renewed;
+  }
+
   /// The server revoked this session (e.g. "sign out everywhere" elsewhere).
   void sessionRevoked() {
     unawaited(_auth.clear());
@@ -193,17 +205,20 @@ final authProvider = AsyncNotifierProvider<AuthController, Session?>(
   AuthController.new,
 );
 
-/// Runs while signed in; null otherwise.
+/// Runs while signed in; null otherwise. Rebuilt when the account changes,
+/// not when its token is renewed (the engine renews it itself).
 final syncEngineProvider = Provider<SyncEngine?>((ref) {
-  final session = ref.watch(authProvider).value;
+  final userId = ref.watch(authProvider.select((s) => s.value?.userId));
+  final session = ref.read(authProvider).value;
   final recorder = ref.watch(syncRecorderProvider);
-  if (session == null || recorder == null) return null;
+  if (userId == null || session == null || recorder == null) return null;
   final engine = SyncEngine(
     db: ref.watch(databaseProvider),
     repo: ref.watch(repositoryProvider),
     recorder: recorder,
     session: session,
     onSessionRevoked: () => ref.read(authProvider.notifier).sessionRevoked(),
+    renew: (s) => ref.read(authProvider.notifier).renew(s),
   )..start();
   ref.onDispose(engine.dispose);
   return engine;

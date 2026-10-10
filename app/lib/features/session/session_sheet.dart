@@ -270,7 +270,8 @@ class _SessionSheetState extends ConsumerState<SessionSheet> {
                     : IconButton(
                         tooltip: l.openLink,
                         icon: const Icon(LecIcons.openLink),
-                        onPressed: () => openUrl(_recording.text.trim()),
+                        onPressed: () =>
+                            openUrl(_recording.text.trim(), context: context),
                       ),
               ),
               onChanged: (text) {
@@ -294,7 +295,7 @@ class _SessionSheetState extends ConsumerState<SessionSheet> {
                     ActionChip(
                       avatar: const Icon(LecIcons.link, size: 18),
                       label: Text(link.title.isEmpty ? link.url : link.title),
-                      onPressed: () => openUrl(link.url),
+                      onPressed: () => openUrl(link.url, context: context),
                     ),
                 ],
               ),

@@ -228,7 +228,7 @@ class CourseDetailView extends ConsumerWidget {
                           label: Text(
                             link.title.isEmpty ? link.url : link.title,
                           ),
-                          onPressed: () => openUrl(link.url),
+                          onPressed: () => openUrl(link.url, context: context),
                         ),
                     ],
                   ),

@@ -16,21 +16,33 @@ class AppUpdate {
     this.linux,
   });
 
-  /// Null when [json] isn't a valid entry.
+  /// Null when [json] isn't a valid entry. Every link must be https (they're
+  /// opened as downloads); a missing or broken optional one is left out.
   static AppUpdate? tryParse(Object? json) {
     if (json is! Map<String, Object?>) return null;
     final version = json['version'];
     final build = json['build'];
-    final notes = json['notesUrl'];
-    if (version is! String || build is! int || notes is! String) return null;
+    final notes = _https(json['notesUrl']);
+    if (version is! String || build is! int || notes == null) return null;
+    for (final key in const ['androidArm64', 'androidUniversal', 'linux']) {
+      if (json[key] != null && _https(json[key]) == null) return null;
+    }
     return AppUpdate(
       version: version,
       build: build,
       notesUrl: notes,
-      androidArm64: json['androidArm64'] as String?,
-      androidUniversal: json['androidUniversal'] as String?,
-      linux: json['linux'] as String?,
+      androidArm64: _https(json['androidArm64']),
+      androidUniversal: _https(json['androidUniversal']),
+      linux: _https(json['linux']),
     );
+  }
+
+  static String? _https(Object? value) {
+    if (value is! String) return null;
+    final uri = Uri.tryParse(value);
+    return uri != null && uri.scheme == 'https' && uri.host.isNotEmpty
+        ? value
+        : null;
   }
 
   /// E.g. `2.0.0-beta.5`.

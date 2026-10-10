@@ -1,5 +1,34 @@
 # Changelog
 
+## Unreleased
+
+- **Sync keeps going after an error**: one change or message that failed to apply (a
+  database error, a row it couldn't read) stopped sync until the app was restarted, while
+  it still said "Syncing". Now it reconnects and carries on.
+- **Retry no longer undoes newer edits**: retrying a change the server refused gave it a
+  newer clock than edits made since, so an older value could win. Fields edited since are
+  left to the newer edit.
+- **Big pushes**: changes are sent in batches of at most 512 KB, so a lot of long notes at
+  once (an import) no longer gets stuck resending a batch the server can't take.
+- **Stays signed in**: an app left open for weeks (desktop) renews its sign-in, instead
+  of being signed out when the token runs out after 60 days. Tapping "Sync now" while a
+  connection is opening no longer opens a second one.
+- **Safer links**: only web, mail and phone links open. Links to local files or other
+  apps' screens (e.g. from an imported file) say "Can't open this link".
+- **Android widget**: other apps can no longer mark sessions through the widget's
+  buttons.
+- **Update notice**: ignores an update whose links aren't https.
+- **Sync server**:
+  - per-account limits, so one account can't use up the free plan for everyone:
+    10,000 rows written a day, 50,000 rows, 25 MB, 64 KB per row. Changes over a limit
+    wait on the device;
+  - a revoked session can no longer delete cloud data, sign out other devices or renew;
+  - session tokens are only accepted in the `Authorization` header;
+  - field names are validated;
+  - oversized bug reports are refused before they're read;
+  - a failed point-in-time restore reports the failure;
+  - deleted cloud data is purged 30 days after each delete, not after the last one.
+
 ## 2.0.0-beta.5 — 2026-10-09
 
 - **Reminders on Android**: when Android blocked LecCheck's notifications, nothing said

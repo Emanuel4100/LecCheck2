@@ -71,8 +71,37 @@ Future<void> markSessions(
     );
 }
 
-Future<void> openUrl(String url) async {
-  final uri = Uri.tryParse(url.contains('://') ? url : 'https://$url');
-  if (uri == null) return;
+/// Schemes links may open. Links can come from imported backups, so
+/// anything that could open local files or other apps' screens (`file:`,
+/// `content:`, `intent:`) is refused.
+const _openableSchemes = {'http', 'https', 'mailto', 'tel'};
+
+/// The link [url] as it would be opened, or null if LecCheck doesn't open
+/// it. Text without a scheme is a web address (`example.com`; note that
+/// `example.com:8080/x` parses with the scheme `example.com`).
+Uri? openableLink(String url) {
+  final text = url.trim();
+  final parsed = Uri.tryParse(text);
+  if (parsed != null &&
+      _openableSchemes.contains(parsed.scheme.toLowerCase())) {
+    return parsed;
+  }
+  if (text.isEmpty || text.contains('://')) return null;
+  final web = Uri.tryParse('https://$text');
+  return web == null || web.host.isEmpty ? null : web;
+}
+
+/// Opens [url] in its app (the browser for web links). A link LecCheck
+/// doesn't open shows a snackbar when [context] is given.
+Future<void> openUrl(String url, {BuildContext? context}) async {
+  final uri = openableLink(url);
+  if (uri == null) {
+    if (context != null && context.mounted) {
+      ScaffoldMessenger.maybeOf(context)?.showSnackBar(
+        SnackBar(content: Text(AppLocalizations.of(context).linkNotOpened)),
+      );
+    }
+    return;
+  }
   await launchUrl(uri, mode: LaunchMode.externalApplication);
 }

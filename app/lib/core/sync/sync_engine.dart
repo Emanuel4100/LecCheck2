@@ -11,6 +11,7 @@ import 'package:http/http.dart' as http;
 import '../auth/session.dart';
 import '../db/app_database.dart';
 import '../db/schedule_repository.dart';
+import '../dev/dev_log.dart';
 import 'sync_config.dart';
 import 'sync_recorder.dart';
 
@@ -77,6 +78,7 @@ class SyncEngine {
     required this.recorder,
     required this._session,
     this.onSessionRevoked,
+    this.renew,
     this.watchLifecycle = true,
     bool? pauseWhenHidden,
     this._socketUri,
@@ -88,6 +90,11 @@ class SyncEngine {
   final SyncRecorder recorder;
   final VoidCallback? onSessionRevoked;
   final bool watchLifecycle;
+
+  /// Renews an old session token before connecting (see
+  /// `AuthService.renewIfNeeded`), so an app left open for weeks stays
+  /// signed in. Returns null when the server revoked the session.
+  final Future<Session?> Function(Session session)? renew;
 
   /// Phones drop the connection 30 s after the app goes to the background to
   /// save battery. Desktops keep it: a hidden window (another workspace, or
@@ -122,6 +129,7 @@ class SyncEngine {
   final _random = Random();
 
   int _attempt = 0;
+  bool _connecting = false;
   bool _caughtUp = false;
   bool _paused = false;
   bool _disposed = false;
@@ -226,9 +234,25 @@ class SyncEngine {
   // --------------------------------------------------------- connection --
 
   Future<void> _connect() async {
-    if (_disposed || _paused || _socket != null || _held) return;
+    // One connection at a time: "Sync now" and a return to the app can both
+    // ask while a connection is still opening.
+    if (_disposed || _paused || _socket != null || _connecting || _held) {
+      return;
+    }
+    _connecting = true;
     _emit(SyncPhase.connecting);
     try {
+      final renew = this.renew;
+      if (renew != null) {
+        final renewed = await renew(_session)
+            .timeout(const Duration(seconds: 10), onTimeout: () => _session);
+        if (renewed == null) {
+          onSessionRevoked?.call();
+          return;
+        }
+        _session = renewed;
+      }
+      if (_disposed || _paused) return;
       final socket = await WebSocket.connect(
         (_socketUri ?? SyncConfig.socket('/v1/sync')).toString(),
         headers: {'Authorization': 'Bearer ${_session.token}'},
@@ -245,10 +269,10 @@ class SyncEngine {
       _socketSub = socket.listen(
         (data) {
           _lastHeard = DateTime.now();
-          _queue = _queue.then((_) => _onMessage(data));
+          _enqueue(() => _onMessage(data));
         },
-        onDone: () => _onClosed(socket.closeCode),
-        onError: (_) => _onClosed(null),
+        onDone: () => _onClosed(socket, socket.closeCode),
+        onError: (_) => _onClosed(socket, null),
         cancelOnError: true,
       );
       final build = await SyncConfig.appBuild;
@@ -272,7 +296,25 @@ class SyncEngine {
       _emit(SyncPhase.offline);
       _scheduleReconnect();
       if (_attempt == 3) unawaited(_checkSession());
+    } finally {
+      _connecting = false;
     }
+  }
+
+  /// Runs [task] after the messages and pushes before it. A failure (a
+  /// database error, a malformed message) is logged and drops the
+  /// connection, so catch-up runs again from the saved cursor; it never
+  /// stops the tasks after it.
+  void _enqueue(Future<void> Function() task) {
+    _queue = _queue.then((_) => task()).catchError((Object e, StackTrace st) {
+      debugPrint('Sync step failed: $e\n$st');
+      DevLog.add('Sync step failed: $e');
+      final socket = _socket;
+      if (socket == null || _disposed) return;
+      unawaited(_socketSub?.cancel());
+      unawaited(socket.close().catchError((Object _) {}));
+      _onClosed(socket, null);
+    });
   }
 
   static const _pingEvery = Duration(seconds: 30);
@@ -285,13 +327,15 @@ class SyncEngine {
     if (DateTime.now().difference(_lastHeard) > _pingEvery * 2.5) {
       unawaited(_socketSub?.cancel());
       unawaited(socket.close().catchError((Object _) {}));
-      _onClosed(null);
+      _onClosed(socket, null);
       return;
     }
     socket.add('{"t":"ping"}');
   }
 
-  void _onClosed(int? code) {
+  void _onClosed(WebSocket socket, int? code) {
+    // Events from a connection that was already replaced change nothing.
+    if (_socket != socket) return;
     _socketSub = null;
     _pingTimer?.cancel();
     _ackTimer?.cancel();
@@ -361,7 +405,7 @@ class SyncEngine {
     if (socket != null) {
       unawaited(_socketSub?.cancel());
       unawaited(socket.close().catchError((Object _) {}));
-      _onClosed(null);
+      _onClosed(socket, null);
     } else {
       _emit(SyncPhase.offline);
     }
@@ -451,7 +495,15 @@ class SyncEngine {
           return;
         }
         final retryAt = message['retryAt'];
-        if (retryAt is num) _hold(retryAt: retryAt.toInt());
+        if (retryAt is num) {
+          _hold(retryAt: retryAt.toInt());
+        } else if (_inflight != null &&
+            (message['code'] == 'bad_message' ||
+                message['code'] == 'bad_json')) {
+          // The server couldn't read our push: waiting for its ack is
+          // pointless. Try again later (backing off), not in a tight loop.
+          _hold();
+        }
     }
   }
 
@@ -466,14 +518,14 @@ class SyncEngine {
     _pushTimer?.cancel();
     _pushTimer = Timer(
       immediate ? Duration.zero : const Duration(milliseconds: 150),
-      () => _queue = _queue.then((_) => _pushPending()),
+      () => _enqueue(_pushPending),
     );
   }
 
   Future<void> _pushPending() async {
     final socket = _socket;
     if (socket == null || !_caughtUp || _inflight != null || _disposed) return;
-    final entries = await _nextBatch(db);
+    final entries = await nextBatch(db);
     if (entries.isEmpty) {
       _markSyncedIfIdle();
       return;
@@ -501,13 +553,32 @@ class SyncEngine {
     if (e.ifAbsent) 'ifAbsent': true,
   };
 
-  /// The oldest changes not refused by the server.
-  static Future<List<OutboxEntry>> _nextBatch(AppDatabase db) =>
-      (db.select(db.outbox)
-            ..where((o) => o.rejected.isNull())
-            ..orderBy([(o) => OrderingTerm.asc(o.seq)])
-            ..limit(500))
-          .get();
+  /// Pushes stay well under the server's 1 MB message limit (a bigger one
+  /// would be refused, and sent again, forever).
+  @visibleForTesting
+  static const maxBatchChars = 512 * 1024;
+
+  /// The oldest changes not refused by the server: at most 500, and at most
+  /// [maxBatchChars] of JSON (always at least one).
+  @visibleForTesting
+  static Future<List<OutboxEntry>> nextBatch(AppDatabase db) async {
+    final entries =
+        await (db.select(db.outbox)
+              ..where((o) => o.rejected.isNull())
+              ..orderBy([(o) => OrderingTerm.asc(o.seq)])
+              ..limit(500))
+            .get();
+    final batch = <OutboxEntry>[];
+    var size = 0;
+    for (final e in entries) {
+      // The patch, plus the keys and quotes around it.
+      size +=
+          e.patch.length + e.tbl.length + e.rowId.length + e.hlc.length + 64;
+      if (batch.isNotEmpty && size > maxBatchChars) break;
+      batch.add(e);
+    }
+    return batch;
+  }
 
   /// Handles the server's reply to a pushed batch ([seqs], in push order).
   ///
@@ -668,7 +739,7 @@ class SyncEngine {
     required SyncRecorder recorder,
     required Session session,
   }) async {
-    final entries = await _nextBatch(db);
+    final entries = await nextBatch(db);
     var since = int.tryParse(await _meta(db, _cursorKey) ?? '') ?? 0;
     final build = await SyncConfig.appBuild;
     final response = await http

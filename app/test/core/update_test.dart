@@ -34,8 +34,11 @@ void main() {
   group('pickUpdate', () {
     test('betas follow the beta channel, stable versions stable', () {
       expect(
-        pickUpdate(_manifest, installedVersion: '2.0.0-beta.5', build: 13)
-            ?.version,
+        pickUpdate(
+          _manifest,
+          installedVersion: '2.0.0-beta.5',
+          build: 13,
+        )?.version,
         '2.0.1-beta.1',
       );
       expect(
@@ -95,6 +98,17 @@ void main() {
       update.downloadUrl(android: false, arm64: false),
       'https://example.com/releases/tag/v2.0.0',
     );
+  });
+
+  test('entries with wrong types or links that aren\'t https are ignored', () {
+    AppUpdate? parse(Map<String, Object?> changes) =>
+        AppUpdate.tryParse({..._entry('2.0.0', 20), ...changes});
+    expect(parse({'linux': 42}), isNull);
+    expect(parse({'androidArm64': 'http://example.com/a.apk'}), isNull);
+    expect(parse({'notesUrl': 'javascript:alert(1)'}), isNull);
+    expect(parse({'androidUniversal': 'file:///sdcard/x.apk'}), isNull);
+    // Optional links may be missing.
+    expect(parse({'linux': null})!.linux, isNull);
   });
 
   group('UpdateController', () {

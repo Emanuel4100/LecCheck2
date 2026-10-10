@@ -188,7 +188,9 @@ tap. Tap the widget to open the app.
   in), or remove it (an automatic backup is saved first).
 - **Sign out on all devices** — revokes every session.
 - **Delete cloud data** — removes your data from the server (this device keeps a copy;
-  the server keeps a copy for 30 days in case it was a mistake).
+  the server keeps a copy for 30 days in case it was a mistake). Other devices are signed
+  out but keep their copy; if one of them signs in to the account again, its copy syncs
+  back up.
 
 ## Phones, tablets and desktop
 

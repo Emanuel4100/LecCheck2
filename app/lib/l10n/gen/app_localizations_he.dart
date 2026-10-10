@@ -984,7 +984,10 @@ class AppLocalizationsHe extends AppLocalizations {
 
   @override
   String get deleteCloudBody =>
-      'הנתונים המסונכרנים יימחקו מהשרת, וכל המכשירים יתנתקו. במכשיר הזה יישאר עותק.';
+      'הנתונים המסונכרנים יימחקו מהשרת, וכל המכשירים יתנתקו. במכשיר הזה יישאר עותק. אם מכשיר אחר יתחבר שוב לחשבון, העותק שלו יסונכרן חזרה.';
+
+  @override
+  String get linkNotOpened => 'אי אפשר לפתוח את הקישור הזה';
 
   @override
   String get replaceDataTitle => 'להחליף חשבון?';

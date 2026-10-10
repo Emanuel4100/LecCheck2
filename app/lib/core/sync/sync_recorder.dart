@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:math';
 
-import 'package:drift/drift.dart' show Value;
+import 'package:drift/drift.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../db/app_database.dart';
@@ -85,11 +85,44 @@ class SyncRecorder implements ChangeRecorder {
 
   /// Gives outbox entries a new clock and queues them again (after the
   /// server refused them, e.g. for a wrong device clock).
+  ///
+  /// The new clock is newer than edits queued after the entry, so it would
+  /// win over them on the server. Fields such a later edit also sets are
+  /// left to that edit (the user's newest value); an entry with nothing
+  /// left is removed.
   Future<void> restamp(Iterable<int> seqs) => db.transaction(() async {
     for (final seq in seqs) {
-      await (db.update(db.outbox)..where((o) => o.seq.equals(seq))).write(
-        OutboxCompanion(hlc: Value(_stamp()), rejected: const Value(null)),
-      );
+      final entry = await (db.select(
+        db.outbox,
+      )..where((o) => o.seq.equals(seq))).getSingleOrNull();
+      if (entry == null) continue;
+      final later =
+          await (db.select(db.outbox)..where(
+                (o) =>
+                    o.tbl.equals(entry.tbl) &
+                    o.rowId.equals(entry.rowId) &
+                    o.seq.isBiggerThanValue(seq) &
+                    o.ifAbsent.equals(false),
+              ))
+              .get();
+      final patch = Map<String, Object?>.from(jsonDecode(entry.patch) as Map);
+      for (final e in later) {
+        (jsonDecode(e.patch) as Map).keys.forEach(patch.remove);
+      }
+      final update = db.update(db.outbox)..where((o) => o.seq.equals(seq));
+      if (patch.isEmpty) {
+        await (db.delete(db.outbox)..where((o) => o.seq.equals(seq))).go();
+      } else {
+        await update.write(
+          OutboxCompanion(
+            hlc: Value(_stamp()),
+            rejected: const Value(null),
+            patch: later.isEmpty
+                ? const Value.absent()
+                : Value(jsonEncode(patch)),
+          ),
+        );
+      }
     }
   });
 

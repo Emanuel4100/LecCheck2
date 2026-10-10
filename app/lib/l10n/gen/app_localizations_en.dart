@@ -984,7 +984,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get deleteCloudBody =>
-      'Your synced data will be removed from the server, and your devices will be signed out. This device keeps its copy.';
+      'Your synced data will be removed from the server, and your devices will be signed out. This device keeps its copy. If another device signs in to this account again, its copy is synced back.';
+
+  @override
+  String get linkNotOpened => 'Can\'t open this link';
 
   @override
   String get replaceDataTitle => 'Switch accounts?';
