@@ -19,6 +19,8 @@ import 'package:leccheck/core/sync/hlc.dart';
 import 'package:leccheck/core/sync/sync_engine.dart';
 import 'package:leccheck/core/sync/sync_recorder.dart';
 import 'package:leccheck/domain/local_date.dart';
+import 'package:leccheck/domain/occurrence.dart';
+import 'package:leccheck/domain/occurrence_engine.dart';
 import 'package:leccheck/domain/schedule_types.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shared_preferences_platform_interface/in_memory_shared_preferences_async.dart';
@@ -186,7 +188,11 @@ void main() {
     };
 
     test('preview counts new and different rows', () async {
-      expect(await repo.previewImport(backup()), (added: 1, changed: 1));
+      expect(await repo.previewImport(backup()), (
+        added: 1,
+        changed: 1,
+        skipped: 0,
+      ));
     });
 
     test('merge only adds, and asks the server to only add', () async {
@@ -227,7 +233,11 @@ void main() {
       final service = BackupService(repo);
       expect(await service.importJson(v1), 1);
       final parsed = BackupService.parse(v1);
-      expect(await repo.previewImport(parsed.tables), (added: 0, changed: 0));
+      expect(await repo.previewImport(parsed.tables), (
+        added: 0,
+        changed: 0,
+        skipped: 0,
+      ));
     });
   });
 
@@ -293,6 +303,22 @@ void main() {
       snapshots = SnapshotService(repo, () async => dir);
     });
     tearDown(() => dir.delete(recursive: true));
+
+    test('two daily snapshots asked for at once make one', () async {
+      // Startup and the first resume, a moment apart (Linux).
+      final at = DateTime(2026, 10, 11, 0, 32, 38);
+      await Future.wait([
+        snapshots.takeDailyIfDue(now: at),
+        snapshots.takeDailyIfDue(now: at),
+        snapshots.take(SnapshotReason.beforeImport, now: at),
+      ]);
+      final taken = await snapshots.list();
+      expect([
+        for (final s in taken) s.reason,
+      ], unorderedEquals([SnapshotReason.daily, SnapshotReason.beforeImport]));
+      // No half-written files left behind.
+      expect(dir.listSync().where((f) => f.path.endsWith('.part')), isEmpty);
+    });
 
     test('keeps 7 daily, 4 weekly and 10 others', () async {
       final start = DateTime(2026, 6, 1, 9);
@@ -721,6 +747,241 @@ void main() {
     });
   });
 
+  group('meeting history', () {
+    Future<SessionOverrideRow?> overrideRow(String id) => (db.select(
+      db.sessionOverrides,
+    )..where((o) => o.id.equals(id))).getSingleOrNull();
+
+    Future<void> mark(String date, AttendanceStatus status) =>
+        repo.setStatusFor(
+          meetingId: 'm1',
+          originalDate: LocalDate.parse(date),
+          status: status,
+        );
+
+    const monday = MeetingRule(
+      id: 'm1',
+      courseId: 'c1',
+      type: SessionType.lecture,
+      kind: MeetingKind.weekly,
+      weekday: DateTime.monday,
+      startMin: 600,
+      endMin: 720,
+    );
+    const base = CourseBase(
+      course: course,
+      meetings: [lecture],
+      requirements: [],
+    );
+
+    test('"All weeks": marks move to the new day of their week', () async {
+      await mark('2026-10-18', AttendanceStatus.attended);
+      await repo.setSessionNotes(
+        (await _sessions(repo)).firstWhere((o) => o.id == 'm1_20261018'),
+        'Chapter 1',
+      );
+      await repo.saveCourse(
+        course,
+        meetings: const [monday],
+        requirements: const [],
+        base: base,
+        historyMoves: const [
+          HistoryMove(
+            fromMeetingId: 'm1',
+            toMeetingId: 'm1',
+            toWeekday: DateTime.monday,
+            weekStart: DateTime.sunday,
+          ),
+        ],
+      );
+      final moved = await overrideRow('m1_20261019');
+      expect(moved?.status, 'attended');
+      expect(moved?.notes, 'Chapter 1');
+      expect(moved?.deleted, isFalse);
+      expect((await overrideRow('m1_20261018'))?.deleted, isTrue);
+      final first = (await _sessions(repo)).first;
+      expect(
+        (first.date.toIso(), first.status),
+        ('2026-10-19', AttendanceStatus.attended),
+      );
+    });
+
+    test('"From this week on": later records move to the new meeting, '
+        'earlier ones stay', () async {
+      await mark('2026-10-18', AttendanceStatus.attended);
+      await mark('2026-11-01', AttendanceStatus.canceled);
+      await repo.saveCourse(
+        course,
+        meetings: const [lecture],
+        requirements: const [],
+        base: base,
+        historyMoves: [
+          HistoryMove(
+            fromMeetingId: 'm1',
+            toMeetingId: 'm9',
+            toWeekday: DateTime.monday,
+            weekStart: DateTime.sunday,
+            from: LocalDate.parse('2026-11-01'),
+          ),
+        ],
+      );
+      expect((await overrideRow('m1_20261018'))?.deleted, isFalse);
+      expect((await overrideRow('m1_20261101'))?.deleted, isTrue);
+      final moved = await overrideRow('m9_20261102');
+      expect((moved?.meetingId, moved?.status), ('m9', 'canceled'));
+    });
+
+    test('a session already marked on the new day keeps its mark', () async {
+      await mark('2026-10-18', AttendanceStatus.missed);
+      await repo.setStatusFor(
+        meetingId: 'm1',
+        originalDate: LocalDate.parse('2026-10-19'),
+        status: AttendanceStatus.attended,
+      );
+      await repo.setSessionNotes(
+        (await _sessions(repo)).firstWhere((o) => o.id == 'm1_20261018'),
+        'From the old day',
+      );
+      await repo.saveCourse(
+        course,
+        meetings: const [monday],
+        requirements: const [],
+        base: base,
+        historyMoves: const [
+          HistoryMove(
+            fromMeetingId: 'm1',
+            toMeetingId: 'm1',
+            toWeekday: DateTime.monday,
+            weekStart: DateTime.sunday,
+          ),
+        ],
+      );
+      final kept = await overrideRow('m1_20261019');
+      expect((kept?.status, kept?.notes), ('attended', 'From the old day'));
+    });
+
+    test('marking a session whose record was deleted brings it back', () async {
+      await mark('2026-10-18', AttendanceStatus.attended);
+      await SyncEngine.applyServerRows(db, repo, [
+        {
+          'tbl': 'session_overrides',
+          'id': 'm1_20261018',
+          'data': {'id': 'm1_20261018', 'deleted': true},
+        },
+      ], cursor: null);
+      await mark('2026-10-18', AttendanceStatus.missed);
+      final row = await overrideRow('m1_20261018');
+      expect((row?.deleted, row?.status), (false, 'missed'));
+    });
+  });
+
+  group('rows this version can\'t read', () {
+    test('are skipped instead of hiding the semester', () async {
+      await SyncEngine.applyServerRows(db, repo, [
+        {
+          'tbl': 'semesters',
+          'id': 'bad',
+          'data': {
+            ..._row(semester.toRow()),
+            'id': 'bad',
+            'startDate': '2026-02-30',
+          },
+        },
+        {
+          'tbl': 'session_overrides',
+          'id': 'm1_x',
+          'data': {
+            'id': 'm1_x',
+            'deleted': false,
+            'meetingId': 'm1',
+            'originalDate': 'soon',
+            'notes': '',
+          },
+        },
+      ], cursor: null);
+      expect([for (final s in await repo.semesters()) s.id], ['sem']);
+      final data = await repo.loadSemesterData('sem');
+      expect(data?.courses.single.id, 'c1');
+      expect(data?.overrides, isEmpty);
+    });
+
+    test('are left out of an import, and counted', () async {
+      final tables = {
+        'no_class_ranges': [
+          {
+            'id': 'nc1',
+            'semesterId': 'sem',
+            'startDate': 'next week',
+            'endDate': '2026-11-01',
+          },
+          _row(
+            NoClassRange(
+              id: 'nc2',
+              semesterId: 'sem',
+              start: semester.start,
+              end: semester.start,
+            ).toRow(),
+          ),
+        ],
+        'courses': [
+          {'id': 'c3', 'semesterId': 'sem', 'name': 42},
+        ],
+      };
+      expect(await repo.previewImport(tables), (
+        added: 1,
+        changed: 0,
+        skipped: 2,
+      ));
+      await repo.importRows(tables);
+      final ranges = await db.select(db.noClassRanges).get();
+      expect([for (final r in ranges) r.id], ['nc2']);
+    });
+  });
+
+  group('when a row was deleted (Recently deleted)', () {
+    Future<int> deletedAt(String id) async => (await courseRow(id)).updatedAt;
+
+    test('a row that arrives deleted on a fresh device is not "just '
+        'deleted"', () async {
+      await SyncEngine.applyServerRows(db, repo, [
+        {
+          'tbl': 'courses',
+          'id': 'old',
+          'data': {
+            ..._row(
+              const CourseInfo(
+                id: 'old',
+                semesterId: 'sem',
+                name: 'Deleted long ago',
+              ).toRow(),
+            ),
+            'deleted': true,
+          },
+        },
+      ], cursor: null);
+      expect(await deletedAt('old'), 0);
+      expect(await repo.recentlyDeleted(), isEmpty);
+    });
+
+    test('a delete from another device is listed; resending it keeps its '
+        'time', () async {
+      Future<void> receiveDeleted() => SyncEngine.applyServerRows(db, repo, [
+        {
+          'tbl': 'courses',
+          'id': 'c1',
+          'data': {..._row(course.toRow()), 'deleted': true},
+        },
+      ], cursor: null);
+      await receiveDeleted();
+      final at = await deletedAt('c1');
+      expect(at, greaterThan(0));
+      expect([for (final d in await repo.recentlyDeleted()) d.id], ['c1']);
+      await Future<void>.delayed(const Duration(milliseconds: 5));
+      await receiveDeleted();
+      expect(await deletedAt('c1'), at);
+    });
+  });
+
   test('buttons of test notifications change nothing', () async {
     NotificationResponse press(Map<String, Object?> payload) =>
         NotificationResponse(
@@ -746,3 +1007,14 @@ void main() {
 }
 
 Map<String, Object?> _row(DataClass row) => row.toJson()..remove('updatedAt');
+
+/// The semester's sessions, as the app shows them.
+Future<List<Occurrence>> _sessions(ScheduleRepository repo) async {
+  final data = (await repo.loadSemesterData('sem'))!;
+  return OccurrenceEngine.expand(
+    semester: data.semester,
+    meetings: data.meetings,
+    overrides: data.overrides,
+    noClassRanges: data.noClassRanges,
+  ).all;
+}

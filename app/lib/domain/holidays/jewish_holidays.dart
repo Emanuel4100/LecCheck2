@@ -176,6 +176,32 @@ Map<JewishHoliday, bool> initialHolidayTicks(
 bool _anyOn(List<HolidayDay> days, Map<LocalDate, bool> applied) =>
     days.any((day) => applied[day.date] ?? false);
 
+/// When a semester's dates change, the holiday days to add for the new
+/// range: those of holidays that were ticked (some day applied), and, for
+/// holidays the old dates didn't reach, the preset's. Days removed on their
+/// own stay removed, and a semester without holidays ([applied] empty) gets
+/// none.
+List<HolidayDay> holidaysForNewRange({
+  required LocalDate oldStart,
+  required LocalDate oldEnd,
+  required LocalDate newStart,
+  required LocalDate newEnd,
+  required Map<LocalDate, bool> applied,
+  bool inIsrael = true,
+}) {
+  if (applied.isEmpty) return const [];
+  final ticks = initialHolidayTicks(
+    groupHolidays(jewishHolidays(oldStart, oldEnd, inIsrael: inIsrael)),
+    applied,
+  );
+  return [
+    for (final day in jewishHolidays(newStart, newEnd, inIsrael: inIsrael))
+      if (!applied.containsKey(day.date) &&
+          (ticks[day.holiday] ?? day.holiday.preset))
+        day,
+  ];
+}
+
 /// What applying the holidays sheet writes: the days to add (with their
 /// names) and the days to remove.
 ///

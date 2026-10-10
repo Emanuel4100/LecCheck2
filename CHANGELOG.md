@@ -1,5 +1,44 @@
 # Changelog
 
+## Unreleased
+
+- **Reminders follow the semester running now**: looking at last semester (its stats, say)
+  stopped this semester's reminders and emptied the widget until you switched back. Both
+  now cover every semester running then. A semester starting next week gets its first
+  reminders in time.
+- **Mute a course**: a course page has **Reminders for this course**, to turn them off for
+  one course on this device (Settings → Notifications lists the muted ones).
+- **Marks follow a meeting to its new day**: moving a weekly meeting to another weekday
+  for **All weeks** hid every marked session (they stayed keyed to the old day). Now each
+  session's marks, notes and moves go with it. **From this week on** also moves sessions
+  marked ahead of time, and an every-other-week meeting keeps its weeks instead of
+  restarting the cycle.
+- **Removing a meeting** with marked sessions offers to **end it this week**, keeping its
+  past sessions in your stats. Ended and split meetings show their dates.
+- **Changing a semester's dates** warns when marked sessions would be hidden, and adds the
+  holidays you chose for the new days.
+- **Today** says when this device is signed out with changes waiting (with a **Sign in**
+  button), when changes were refused, and when an update is needed to sync. The update
+  notice and the "report the last error" card now also appear on phones (only the wide
+  layout had them, the update notice twice).
+- **Widget**: it holds a week of days, so it moves on to the next day at midnight without
+  the app (after a week it asks to open LecCheck). Marking from the widget drops that
+  session's "How was class?" reminder.
+- **Linux**: reminders come on time after the computer wakes up (they came late by however
+  long it slept), and stale ones are skipped. No more error at every start (the app then
+  offered to report it each time). The daily backup no longer fails when two start at once.
+- **Recently deleted** lists only what was deleted on or synced to this device recently:
+  on a newly synced device it showed every old delete as new, and restoring a course could
+  bring back things deleted separately.
+- **Sturdier with odd data**: a row with a date that doesn't exist (from a file or
+  another device) no longer hides its whole semester, and imports skip such rows and say
+  how many. Marking a session whose record was deleted with its meeting works again.
+- **Sign out on all devices** asks first, and does nothing if the server can't be
+  reached (it used to sign this device out anyway). Errors from it and from **Delete cloud
+  data** are shown.
+- **Long notes**: notes stop at 10,000 characters; the server takes changes up to 32 KB
+  (16 KB before, so a long pasted note was refused on every retry).
+
 ## 2.0.0-beta.6 — 2026-10-11
 
 - **Sync keeps going after an error**: one change or message that failed to apply (a

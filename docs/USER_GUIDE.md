@@ -26,8 +26,12 @@ Open **Courses → +** (or the button on an empty Today screen).
   (e.g. 80% of practices). Choose whether watching a recording counts as attending.
 
 Editing a meeting's time keeps all its marks and notes. If you move a meeting to another
-**weekday** mid-semester, LecCheck asks whether the change applies to **all weeks** or
-**from this week on** (past weeks then keep their old day and marks).
+**weekday** mid-semester, LecCheck asks whether the change applies to **all weeks** (each
+session's marks and notes move to the new day of its week) or **from this week on** (past
+weeks keep their old day and marks; every-other-week meetings keep their weeks).
+Removing a meeting with marked sessions offers to **end it this week** instead, so its
+past sessions stay in your stats. Changing a semester's dates warns when marked sessions
+would fall outside them, and adds the holidays you chose for the new days.
 
 Leaving the editor with unsaved changes asks first; deleting a course can be undone from
 the snackbar.
@@ -135,6 +139,8 @@ recording link).
   Missed / Watched** buttons. Tapping one records the status without opening the app
   (and syncs if you're signed in). Only sessions still pending get this reminder.
 - **Send a test notification** to check it works. If nothing can be shown, it says why.
+- **Per course**: a course page has **Reminders for this course**, to turn them off for
+  one course (e.g. one you only watch as recordings) on this device.
 
 Permission is requested when you switch a reminder on. If the phone blocks LecCheck's
 notifications later, **Today** shows a warning with an **Allow** button (it opens the
@@ -143,8 +149,10 @@ also points out what can delay or stop reminders: exact alarms, battery optimiza
 restricted background use, and, on some phones, autostart.
 
 Reminders are planned up to three weeks ahead (two on iPhone) and kept up to date as you
-edit, when you open the app, and once a day in the background. On Linux they fire while
-LecCheck is running.
+edit, when you open the app, and once a day in the background. They follow every
+semester running then, whichever semester you're looking at. On Linux they fire while
+LecCheck is running (also right after the computer wakes up; ones that are no longer
+useful, like "class starts soon" for a class already under way, are skipped).
 
 ## Updates
 
@@ -171,7 +179,9 @@ If the app hit an error last time, Today offers to report it (**Not now** dismis
 
 Long-press your home screen → Widgets → **LecCheck**. The widget lists today's sessions
 in your wallpaper colors; once a session starts, ✓ / ✗ buttons appear to mark it in one
-tap. Tap the widget to open the app.
+tap (that session's "how was it?" reminder is then dropped). It holds a week, so it moves
+on to the next day by itself; after a week without opening LecCheck it asks you to open
+it. Tap the widget to open the app.
 
 ## Sync and accounts
 
@@ -186,7 +196,11 @@ tap. Tap the widget to open the app.
   limit), Account shows **Sync paused until** a time; your changes wait on the device.
 - **Sign out** — keep a copy on this device (unsynced changes sync when you sign back
   in), or remove it (an automatic backup is saved first).
-- **Sign out on all devices** — revokes every session.
+- **Sign out on all devices** — revokes every session (it asks first, and does nothing
+  if the server can't be reached).
+- **Signed out on a device that keeps the account's data**: changes you make there wait,
+  and **Today** says how many, with a **Sign in** button. Refused changes and "update
+  LecCheck to keep syncing" also show on Today.
 - **Delete cloud data** — removes your data from the server (this device keeps a copy;
   the server keeps a copy for 30 days in case it was a mistake). Other devices are signed
   out but keep their copy; if one of them signs in to the account again, its copy syncs

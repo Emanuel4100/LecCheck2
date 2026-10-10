@@ -76,7 +76,7 @@ class AccountSection extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l = AppLocalizations.of(context);
     final theme = Theme.of(context);
-    if (!SyncConfig.enabled) {
+    if (!ref.watch(syncConfiguredProvider)) {
       return ListTile(
         leading: const Icon(LecIcons.syncOff),
         title: Text(l.guestMode),
@@ -161,7 +161,7 @@ class AccountSection extends ConsumerWidget {
         ListTile(
           leading: const Icon(LecIcons.syncOff),
           title: Text(l.signOutEverywhere),
-          onTap: () => ref.read(authProvider.notifier).signOutEverywhere(),
+          onTap: () => _signOutEverywhere(context, ref),
         ),
         ListTile(
           leading: Icon(LecIcons.delete, color: theme.colorScheme.error),
@@ -190,8 +190,28 @@ class AccountSection extends ConsumerWidget {
     if (mode != null) await ref.read(authProvider.notifier).signOut(mode);
   }
 
+  Future<void> _signOutEverywhere(BuildContext context, WidgetRef ref) async {
+    final l = AppLocalizations.of(context);
+    final messenger = ScaffoldMessenger.maybeOf(context);
+    final ok = await confirmDialog(
+      context,
+      title: l.signOutEverywhereTitle,
+      body: l.signOutEverywhereBody,
+      confirmLabel: l.signOutEverywhere,
+      destructive: true,
+    );
+    if (!ok) return;
+    try {
+      await ref.read(authProvider.notifier).signOutEverywhere();
+    } on Object catch (e) {
+      debugPrint('Sign out everywhere failed: $e');
+      messenger?.showSnackBar(SnackBar(content: Text(l.accountActionFailed)));
+    }
+  }
+
   Future<void> _deleteCloud(BuildContext context, WidgetRef ref) async {
     final l = AppLocalizations.of(context);
+    final messenger = ScaffoldMessenger.maybeOf(context);
     final ok = await confirmDialog(
       context,
       title: l.deleteCloudTitle,
@@ -199,7 +219,13 @@ class AccountSection extends ConsumerWidget {
       confirmLabel: l.delete,
       destructive: true,
     );
-    if (ok) await ref.read(authProvider.notifier).deleteCloudData();
+    if (!ok) return;
+    try {
+      await ref.read(authProvider.notifier).deleteCloudData();
+    } on Object catch (e) {
+      debugPrint('Delete cloud data failed: $e');
+      messenger?.showSnackBar(SnackBar(content: Text(l.accountActionFailed)));
+    }
   }
 }
 

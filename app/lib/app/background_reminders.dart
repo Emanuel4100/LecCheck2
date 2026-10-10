@@ -10,12 +10,13 @@ import '../core/auth/auth_service.dart';
 import '../core/db/app_database.dart';
 import '../core/db/schedule_repository.dart';
 import '../core/dev/dev_log.dart';
+import '../core/home_widget/today_widget.dart';
 import '../core/notifications/notification_actions.dart';
 import '../core/notifications/notification_service.dart';
 import '../core/sync/sync_config.dart';
 import '../core/sync/sync_engine.dart';
 import '../core/sync/sync_recorder.dart';
-import '../domain/occurrence_engine.dart';
+import '../domain/local_date.dart';
 import '../domain/reminder_plan.dart';
 import '../l10n/gen/app_localizations.dart';
 import 'adaptive.dart';
@@ -38,10 +39,14 @@ Future<int> topUpReminders(
 ) async {
   final settings = ReminderSettingsController.read(prefs);
   if (!settings.any) return 0;
-  final data = await repo.loadShownSemester(
-    prefs.getString(ActiveSemesterController.key),
+  final now = DateTime.now();
+  final today = LocalDate.fromDateTime(now);
+  final window = reminderWindow();
+  // Every semester running soon, like the app (not only the one it shows).
+  final schedule = await repo.loadWindow(
+    today,
+    today.addDays(window.horizonDays),
   );
-  if (data == null) return 0;
   final code =
       prefs.getString(AppearanceController.localeKey) ??
       PlatformDispatcher.instance.locale.languageCode;
@@ -55,16 +60,10 @@ Future<int> topUpReminders(
     onBackgroundResponse: onNotificationActionInBackground,
   );
   final userPrefs = await repo.watchUserPrefs().first;
-  final window = reminderWindow();
   final plan = planReminders(
-    index: OccurrenceEngine.expand(
-      semester: data.semester,
-      meetings: data.meetings,
-      overrides: data.overrides,
-      noClassRanges: data.noClassRanges,
-    ),
-    courses: {for (final c in data.courses) c.id: c},
-    meetings: {for (final m in data.meetings) m.id: m},
+    index: schedule.index,
+    courses: schedule.courses,
+    meetings: schedule.meetings,
     settings: settings,
     texts: LocalizedReminderTexts(
       l,
@@ -75,7 +74,7 @@ Future<int> topUpReminders(
             PlatformDispatcher.instance.alwaysUse24HourFormat,
       ),
     ),
-    now: DateTime.now(),
+    now: now,
     limit: window.limit,
     horizonDays: window.horizonDays,
   );
@@ -140,8 +139,12 @@ void backgroundTaskDispatcher() {
     );
     final db = AppDatabase();
     try {
-      final count = await topUpReminders(ScheduleRepository(db), prefs);
+      final repo = ScheduleRepository(db);
+      final count = await topUpReminders(repo, prefs);
       DevLog.add('Daily top-up: $count reminders planned');
+      // The widget holds a week of days: move it along even when the app
+      // isn't opened.
+      await refreshTodayWidget(repo, prefs);
       return true;
     } on Object catch (e) {
       debugPrint('Daily top-up failed: $e');

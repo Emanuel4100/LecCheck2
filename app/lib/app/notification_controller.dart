@@ -6,10 +6,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../core/db/schedule_repository.dart';
 import '../core/notifications/notification_actions.dart';
 import '../core/notifications/notification_service.dart';
 import 'adaptive.dart';
 import 'background_reminders.dart';
+import '../domain/local_date.dart';
 import '../domain/occurrence.dart';
 import '../domain/reminder_plan.dart';
 import '../domain/schedule_types.dart';
@@ -26,6 +28,7 @@ class ReminderSettingsController extends Notifier<ReminderSettings> {
   static const _beforeMin = 'notify.beforeMin';
   static const _after = 'notify.after';
   static const _afterMin = 'notify.afterMin';
+  static const _muted = 'notify.muted';
 
   SharedPreferencesWithCache get _prefs => ref.read(sharedPrefsProvider);
 
@@ -36,6 +39,7 @@ class ReminderSettingsController extends Notifier<ReminderSettings> {
         beforeMinutes: prefs.getInt(_beforeMin) ?? 10,
         after: prefs.getBool(_after) ?? false,
         afterMinutes: prefs.getInt(_afterMin) ?? 5,
+        mutedCourses: {...?prefs.getStringList(_muted)},
       );
 
   @override
@@ -46,19 +50,29 @@ class ReminderSettingsController extends Notifier<ReminderSettings> {
     int? beforeMinutes,
     bool? after,
     int? afterMinutes,
+    Set<String>? mutedCourses,
   }) {
     state = ReminderSettings(
       before: before ?? state.before,
       beforeMinutes: beforeMinutes ?? state.beforeMinutes,
       after: after ?? state.after,
       afterMinutes: afterMinutes ?? state.afterMinutes,
+      mutedCourses: mutedCourses ?? state.mutedCourses,
     );
     _prefs
       ..setBool(_before, state.before)
       ..setInt(_beforeMin, state.beforeMinutes)
       ..setBool(_after, state.after)
-      ..setInt(_afterMin, state.afterMinutes);
+      ..setInt(_afterMin, state.afterMinutes)
+      ..setStringList(_muted, state.mutedCourses.toList()..sort());
   }
+
+  /// Turns reminders off (or back on) for one course.
+  void setMuted(String courseId, bool muted) => update(
+    mutedCourses: muted
+        ? {...state.mutedCourses, courseId}
+        : ({...state.mutedCourses}..remove(courseId)),
+  );
 }
 
 final reminderSettingsProvider =
@@ -148,6 +162,7 @@ class NotificationController {
   Timer? _debounce;
   Timer? _hourly;
   AppLifecycleListener? _lifecycle;
+  StreamSubscription<void>? _changes;
 
   AppLocalizations get _l {
     final code =
@@ -165,9 +180,13 @@ class NotificationController {
     );
     unawaited(container.read(reminderHealthProvider.notifier).refresh());
     void replan(Object? _, Object? _) => schedule();
+    // Any semester's data (reminders cover every semester running soon, not
+    // only the one shown), from this device or synced.
+    _changes = container
+        .read(repositoryProvider)
+        .watchAnyChange()
+        .listen((_) => schedule());
     container
-      ..listen(occurrenceIndexProvider, replan)
-      ..listen(semesterDataProvider, replan)
       ..listen(reminderSettingsProvider, replan)
       ..listen(userPrefsProvider, replan)
       ..listen(appearanceProvider, (_, _) {
@@ -191,6 +210,7 @@ class NotificationController {
     _debounce?.cancel();
     _hourly?.cancel();
     _lifecycle?.dispose();
+    _changes?.cancel();
   }
 
   void schedule() {
@@ -205,20 +225,26 @@ class NotificationController {
     return _apply(force: true);
   }
 
+  /// Plans from the database: every semester running in the next
+  /// [reminderWindow] days, whichever one the app shows (looking at last
+  /// semester's stats mustn't stop this semester's reminders).
   Future<int> _apply({bool force = false}) async {
     final settings = container.read(reminderSettingsProvider);
     if (!settings.any) {
       await service.cancelReminders();
       return 0;
     }
-    final data = container.read(semesterDataProvider).value;
-    if (data == null) {
-      // No semester: nothing to remind about. Still loading (at startup):
-      // keep what's scheduled; the data arriving re-plans.
-      final semesters = container.read(semestersProvider);
-      if (semesters.hasValue && semesters.value!.isEmpty) {
-        await service.cancelReminders();
-      }
+    final now = DateTime.now();
+    final today = LocalDate.fromDateTime(now);
+    final window = reminderWindow();
+    final ScheduleWindow schedule;
+    try {
+      schedule = await container
+          .read(repositoryProvider)
+          .loadWindow(today, today.addDays(window.horizonDays));
+    } on Object catch (e) {
+      // Keep what's scheduled; the next change or hour tries again.
+      debugPrint('Reminders not planned: $e');
       return 0;
     }
     final l = _l;
@@ -226,15 +252,16 @@ class NotificationController {
         container.read(userPrefsProvider).value?.use24h ??
         PlatformDispatcher.instance.alwaysUse24HourFormat;
     final plan = planReminders(
-      index: container.read(occurrenceIndexProvider),
-      courses: {for (final c in data.courses) c.id: c},
-      meetings: {for (final m in data.meetings) m.id: m},
+      index: schedule.index,
+      courses: schedule.courses,
+      meetings: schedule.meetings,
       settings: settings,
       texts: LocalizedReminderTexts(l, Fmt(l.localeName, use24h: use24h)),
-      now: DateTime.now(),
-      limit: reminderWindow().limit,
-      horizonDays: reminderWindow().horizonDays,
+      now: now,
+      limit: window.limit,
+      horizonDays: window.horizonDays,
     );
+    // No semester running soon: an empty plan cancels what's left.
     await service.apply(plan, force: force);
     return plan.length;
   }

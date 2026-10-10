@@ -191,6 +191,21 @@ class AppLocalizationsEn extends AppLocalizations {
   String get weekStartsOn => 'Week starts on';
 
   @override
+  String get semesterDatesTitle => 'Change the semester\'s dates?';
+
+  @override
+  String semesterDatesBody(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          '$count marked sessions are outside the new dates and will be hidden.',
+      one: '1 marked session is outside the new dates and will be hidden.',
+    );
+    return '$_temp0 Changing the dates back shows them again.';
+  }
+
+  @override
   String get visibleDays => 'Days shown in the week view';
 
   @override
@@ -271,6 +286,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get noClassesToday => 'No classes today';
+
+  @override
+  String get widgetStale => 'Open LecCheck to see today\'s classes';
 
   @override
   String get noUpcoming => 'Nothing scheduled ahead';
@@ -497,6 +515,41 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get removeMeeting => 'Remove meeting';
+
+  @override
+  String get removeMeetingTitle => 'Remove this meeting?';
+
+  @override
+  String removeMeetingBody(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count of its sessions are marked.',
+      one: '1 of its sessions is marked.',
+    );
+    return '$_temp0 Ending it this week keeps them in your stats.';
+  }
+
+  @override
+  String get endThisWeek => 'End it this week';
+
+  @override
+  String get deleteWithHistory => 'Delete with its history';
+
+  @override
+  String meetingFrom(String date) {
+    return 'From $date';
+  }
+
+  @override
+  String meetingUntil(String date) {
+    return 'Until $date';
+  }
+
+  @override
+  String meetingBetween(String from, String until) {
+    return 'From $from until $until';
+  }
 
   @override
   String get meetingLinks => 'Meeting links';
@@ -918,6 +971,20 @@ class AppLocalizationsEn extends AppLocalizations {
       'Couldn\'t sign in. Check your connection and try again.';
 
   @override
+  String get syncSignedOutTitle => 'You\'re signed out';
+
+  @override
+  String syncSignedOutBody(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count changes on this device will sync when you sign in.',
+      one: '1 change on this device will sync when you sign in.',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get devSignIn => 'Developer sign-in';
 
   @override
@@ -977,6 +1044,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get signOutEverywhere => 'Sign out on all devices';
 
   @override
+  String get signOutEverywhereTitle => 'Sign out on all devices?';
+
+  @override
+  String get signOutEverywhereBody =>
+      'Every device signed in to this account, this one included, will have to sign in again. Your data stays in the account and on each device.';
+
+  @override
+  String get accountActionFailed =>
+      'Couldn\'t reach the server, so nothing changed. Try again when you\'re online.';
+
+  @override
   String get deleteCloudData => 'Delete cloud data';
 
   @override
@@ -1018,6 +1096,16 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get afterClassSubtitle =>
       'Mark attendance right from the notification';
+
+  @override
+  String get courseReminders => 'Reminders for this course';
+
+  @override
+  String get courseRemindersSubtitle =>
+      'Before and after its classes, as set in Settings';
+
+  @override
+  String get mutedCourses => 'Courses without reminders';
 
   @override
   String minutesShort(int minutes) {
@@ -1286,6 +1374,17 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get importNothing => 'Everything in this backup is already here.';
+
+  @override
+  String importSkipped(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count items can\'t be read and will be left out.',
+      one: '1 item can\'t be read and will be left out.',
+    );
+    return '$_temp0';
+  }
 
   @override
   String get snapshots => 'Automatic backups';

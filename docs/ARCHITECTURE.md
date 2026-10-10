@@ -45,7 +45,9 @@ These directly fix v1, which serialized the whole app to one JSON blob per chang
 ## Data model
 
 Synced tables (Drift, `core/db/tables.dart`). Every row has `id` (TEXT, UUIDv7),
-`deleted` (tombstone, so deletions sync) and `updatedAt` (local diagnostics only).
+`deleted` (tombstone, so deletions sync) and `updatedAt` (local only, never synced: when
+this device last saw the row change, which for a tombstone is its deletion time; rows
+arriving already deleted get 0).
 
 | Table | Purpose / key columns |
 |---|---|
@@ -131,6 +133,12 @@ minuteClockProvider (ticks on minute boundaries) → todayProvider
   return a `DeletionReceipt`, which `undoDeletion` replays. Tombstones from the last 30
   days are listed in **Recently deleted**, which restores a course or semester with
   everything deleted along with it.
+- Rows this version can't read (a date that doesn't exist, wrong types) are kept but left
+  out when loading, and logged once, so one bad row can't hide a semester; imports and
+  restores count and skip them. `LocalDate.parse` refuses dates that don't exist.
+- A weekly meeting moved to another weekday takes its session records along
+  (`HistoryMove`, in the same `saveCourse` transaction), since records are keyed by the
+  session's original date.
 - Editors pass the state they loaded (`CourseBase`, the loaded `SemesterInfo`): only
   fields the user changed are written, and only meetings/requirements the user removed
   are deleted, so edits that synced in while the editor was open survive.
@@ -217,10 +225,13 @@ scheme. The Google client secret exists only in the Worker. Sessions renew after
 
 ## Notifications and widget
 
-- `NotificationController` re-plans reminders (debounced 2 s) when data, settings or
-  language change, hourly, and when the app comes back. While the semester is still
-  loading it leaves scheduled reminders alone; turning reminders off cancels them without
-  dismissing notifications already on screen.
+- `NotificationController` re-plans reminders (debounced 2 s) when any schedule data
+  (`ScheduleRepository.watchAnyChange`), settings or language change, hourly, and when the
+  app comes back. It plans from the database, not the screens' providers:
+  `ScheduleRepository.loadWindow` merges every semester running in the reminder window,
+  so viewing an old semester never stops the current one's reminders. Muted courses
+  (`ReminderSettings.mutedCourses`, per device) are left out. Turning reminders off
+  cancels them without dismissing notifications already on screen.
 - `NotificationService.apply` compares the plan with the plugin's list of scheduled
   notifications (each carries a signature in its payload) and only cancels or schedules
   the differences. That list survives a force stop while Android drops the alarms, so
@@ -228,7 +239,10 @@ scheme. The Google client secret exists only in the Worker. Sessions renew after
   (`MainActivity.armedReminders`, a `PendingIntent` lookup) and re-arms the missing ones.
   Android plans up to 100 reminders over 21 days (the plugin rewrites its whole list for
   each one); iOS 60 over 14 days (its cap is 64). Linux has no OS scheduler, so reminders
-  due within a day are shown from in-app timers.
+  due within a day are shown while the app runs, by a ticker that reads the wall clock
+  every 30 s (plus a one-shot timer for the next one). Dart timers don't count time while
+  the computer sleeps, so after a suspend `NotificationService.dueReminders` shows what's
+  late and skips what's stale (a "starts soon" for a class that has started).
 - Reminders are also topped up without the UI (`app/background_reminders.dart`): after a
   notification button, and once a day from WorkManager (`scheduleDailyTopUp`).
 - `ReminderHealth` (permission, blocked channels, exact alarms, battery optimization,
@@ -247,8 +261,11 @@ scheme. The Google client secret exists only in the Worker. Sessions renew after
   start, and nothing is shown or scheduled (as in v2.0.0-beta.3 on Android). A failed
   setup is logged and shown in Settings → Developer, and the test button reports it.
 - The Android widget (`android/.../widget/TodayWidget.kt`, Jetpack Glance) renders a JSON
-  snapshot written by `WidgetController`; it decides at render time which sessions have
-  started, and its buttons call `todayWidgetCallback` in the background.
+  snapshot written by `WidgetController` (and by the daily background task): seven days
+  from `loadWindow`, keyed by date. It picks today's entry and decides which sessions have
+  started at render time (every 30 minutes), so it moves on at midnight without the app.
+  Its buttons call `todayWidgetCallback` in the background, which marks the session,
+  syncs, and tops up reminders (dropping that session's "How was class?").
 
 ## UI
 

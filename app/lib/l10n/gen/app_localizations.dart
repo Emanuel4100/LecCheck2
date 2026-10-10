@@ -434,6 +434,18 @@ abstract class AppLocalizations {
   /// **'Week starts on'**
   String get weekStartsOn;
 
+  /// No description provided for @semesterDatesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Change the semester\'s dates?'**
+  String get semesterDatesTitle;
+
+  /// No description provided for @semesterDatesBody.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 marked session is outside the new dates and will be hidden.} other{{count} marked sessions are outside the new dates and will be hidden.}} Changing the dates back shows them again.'**
+  String semesterDatesBody(int count);
+
   /// No description provided for @visibleDays.
   ///
   /// In en, this message translates to:
@@ -547,6 +559,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No classes today'**
   String get noClassesToday;
+
+  /// No description provided for @widgetStale.
+  ///
+  /// In en, this message translates to:
+  /// **'Open LecCheck to see today\'s classes'**
+  String get widgetStale;
 
   /// No description provided for @noUpcoming.
   ///
@@ -949,6 +967,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Remove meeting'**
   String get removeMeeting;
+
+  /// No description provided for @removeMeetingTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove this meeting?'**
+  String get removeMeetingTitle;
+
+  /// No description provided for @removeMeetingBody.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 of its sessions is marked.} other{{count} of its sessions are marked.}} Ending it this week keeps them in your stats.'**
+  String removeMeetingBody(int count);
+
+  /// No description provided for @endThisWeek.
+  ///
+  /// In en, this message translates to:
+  /// **'End it this week'**
+  String get endThisWeek;
+
+  /// No description provided for @deleteWithHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete with its history'**
+  String get deleteWithHistory;
+
+  /// No description provided for @meetingFrom.
+  ///
+  /// In en, this message translates to:
+  /// **'From {date}'**
+  String meetingFrom(String date);
+
+  /// No description provided for @meetingUntil.
+  ///
+  /// In en, this message translates to:
+  /// **'Until {date}'**
+  String meetingUntil(String date);
+
+  /// No description provided for @meetingBetween.
+  ///
+  /// In en, this message translates to:
+  /// **'From {from} until {until}'**
+  String meetingBetween(String from, String until);
 
   /// No description provided for @meetingLinks.
   ///
@@ -1622,6 +1682,18 @@ abstract class AppLocalizations {
   /// **'Couldn\'t sign in. Check your connection and try again.'**
   String get signInFailed;
 
+  /// No description provided for @syncSignedOutTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re signed out'**
+  String get syncSignedOutTitle;
+
+  /// No description provided for @syncSignedOutBody.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 change on this device will sync when you sign in.} other{{count} changes on this device will sync when you sign in.}}'**
+  String syncSignedOutBody(int count);
+
   /// No description provided for @devSignIn.
   ///
   /// In en, this message translates to:
@@ -1718,6 +1790,24 @@ abstract class AppLocalizations {
   /// **'Sign out on all devices'**
   String get signOutEverywhere;
 
+  /// No description provided for @signOutEverywhereTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign out on all devices?'**
+  String get signOutEverywhereTitle;
+
+  /// No description provided for @signOutEverywhereBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Every device signed in to this account, this one included, will have to sign in again. Your data stays in the account and on each device.'**
+  String get signOutEverywhereBody;
+
+  /// No description provided for @accountActionFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t reach the server, so nothing changed. Try again when you\'re online.'**
+  String get accountActionFailed;
+
   /// No description provided for @deleteCloudData.
   ///
   /// In en, this message translates to:
@@ -1795,6 +1885,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Mark attendance right from the notification'**
   String get afterClassSubtitle;
+
+  /// No description provided for @courseReminders.
+  ///
+  /// In en, this message translates to:
+  /// **'Reminders for this course'**
+  String get courseReminders;
+
+  /// No description provided for @courseRemindersSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Before and after its classes, as set in Settings'**
+  String get courseRemindersSubtitle;
+
+  /// No description provided for @mutedCourses.
+  ///
+  /// In en, this message translates to:
+  /// **'Courses without reminders'**
+  String get mutedCourses;
 
   /// No description provided for @minutesShort.
   ///
@@ -2269,6 +2377,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Everything in this backup is already here.'**
   String get importNothing;
+
+  /// No description provided for @importSkipped.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 item can\'t be read and will be left out.} other{{count} items can\'t be read and will be left out.}}'**
+  String importSkipped(int count);
 
   /// No description provided for @snapshots.
   ///

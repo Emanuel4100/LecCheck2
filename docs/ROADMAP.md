@@ -53,12 +53,10 @@ These are built and compile, but have only been exercised in tests so far:
   shortcuts, Windows build + installer, AUR package, Flatpak.
 - **iPhone widget** (WidgetKit) — needs App Group support from AltStore/SideStore.
 - **Data safety, part 3**: SQLite WAL + `quick_check` on startup (offer the latest
-  automatic backup if it fails; the check exists in Settings → Developer), keep server
-  rows the app can't read yet (and re-fetch after an update), server-side value
-  validation, HLC stored in SQLite, a multi-device convergence fuzz test, and an in-app
-  "restore deleted cloud data" button (the server side exists).
-- **Reminders**: mute per course; daily background top-up (workmanager) so reminders stay
-  scheduled even if the app isn't opened for two weeks.
+  automatic backup if it fails; the check exists in Settings → Developer), re-fetch rows
+  the app couldn't read after an update (they're kept and skipped since 2.0.0-beta.7),
+  server-side value validation, HLC stored in SQLite, a multi-device convergence fuzz
+  test, and an in-app "restore deleted cloud data" button (the server side exists).
 - **Stats v2**: per-week heatmap, requirement projections.
 - **Polish**: accessibility pass (semantics, large fonts), more animations, tablet
   two-pane layouts.

@@ -42,6 +42,17 @@ class SnapshotService {
   final ScheduleRepository repo;
   final Future<Directory> Function() _directory;
 
+  /// Snapshots are taken (and pruned) one at a time: the daily one is
+  /// asked for at startup and again on resume, which on Linux comes a
+  /// moment later, and two at once wrote the same file.
+  Future<void> _queue = Future.value();
+
+  Future<T> _serial<T>(Future<T> Function() task) {
+    final result = _queue.then((_) => task());
+    _queue = result.then((_) {}, onError: (Object _) {});
+    return result;
+  }
+
   static const keepDaily = 7;
   static const keepWeekly = 4;
   static const keepEvents = 10;
@@ -49,7 +60,10 @@ class SnapshotService {
   static final _name = RegExp(r'^snapshot-(\d{8}T\d{6})-([a-z]+)\.json\.gz$');
 
   /// Saves the current data. Returns null when there's nothing to save.
-  Future<Snapshot?> take(SnapshotReason reason, {DateTime? now}) async {
+  Future<Snapshot?> take(SnapshotReason reason, {DateTime? now}) =>
+      _serial(() => _take(reason, now: now));
+
+  Future<Snapshot?> _take(SnapshotReason reason, {DateTime? now}) async {
     final tables = await repo.exportRows(includeDeleted: true);
     if (tables.values.every((rows) => rows.isEmpty)) return null;
     final at = now ?? DateTime.now();
@@ -60,7 +74,10 @@ class SnapshotService {
     );
     final json = await BackupService(repo).exportJson(includeDeleted: true);
     // Write then rename, so a crash never leaves a half-written snapshot.
-    final partial = File('${file.path}.part');
+    // (Unique, in case another process writes one in the same second.)
+    final partial = File(
+      '${file.path}.${DateTime.now().microsecondsSinceEpoch}.part',
+    );
     await partial.writeAsBytes(gzip.encode(utf8.encode(json)), flush: true);
     await partial.rename(file.path);
     await _prune();
@@ -68,7 +85,7 @@ class SnapshotService {
   }
 
   /// Takes the daily snapshot unless today's exists.
-  Future<void> takeDailyIfDue({DateTime? now}) async {
+  Future<void> takeDailyIfDue({DateTime? now}) => _serial(() async {
     final at = now ?? DateTime.now();
     final today = _stamp(at).substring(0, 8);
     final taken = (await list()).any(
@@ -76,8 +93,8 @@ class SnapshotService {
           s.reason == SnapshotReason.daily &&
           _stamp(s.takenAt).startsWith(today),
     );
-    if (!taken) await take(SnapshotReason.daily, now: at);
-  }
+    if (!taken) await _take(SnapshotReason.daily, now: at);
+  });
 
   /// Newest first.
   Future<List<Snapshot>> list() async {
@@ -101,7 +118,7 @@ class SnapshotService {
     final backup = BackupService.parse(
       utf8.decode(gzip.decode(await snapshot.file.readAsBytes())),
     );
-    await take(SnapshotReason.beforeRestore);
+    await _serial(() => _take(SnapshotReason.beforeRestore));
     await repo.restoreAll(backup.tables);
   }
 
@@ -122,7 +139,12 @@ class SnapshotService {
       all.where((s) => s.reason != SnapshotReason.daily).take(keepEvents),
     );
     for (final s in all) {
-      if (!keep.contains(s)) await s.file.delete();
+      if (keep.contains(s)) continue;
+      try {
+        await s.file.delete();
+      } on FileSystemException {
+        // Already gone.
+      }
     }
   }
 

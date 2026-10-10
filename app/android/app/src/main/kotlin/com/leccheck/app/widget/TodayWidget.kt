@@ -45,6 +45,9 @@ import com.leccheck.app.R
 import es.antonborri.home_widget.HomeWidgetBackgroundIntent
 import es.antonborri.home_widget.HomeWidgetGlanceState
 import es.antonborri.home_widget.HomeWidgetGlanceStateDefinition
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -81,7 +84,17 @@ class TodayWidget : GlanceAppWidget() {
     val data = state.preferences.getString("today", null)?.let {
       runCatching { JSONObject(it) }.getOrNull()
     }
-    val sessions = data?.optJSONArray("sessions")?.let(::parseSessions).orEmpty()
+    // The app writes a week of days; today's is picked here, so the widget
+    // moves on at midnight without the app. Past that week: ask to open it.
+    val days = data?.optJSONObject("days")
+    val today = days?.optJSONObject(
+      SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date()),
+    )
+    val stale = days != null && today == null
+    val day = today ?: data
+    val sessions =
+      if (stale) emptyList()
+      else day?.optJSONArray("sessions")?.let(::parseSessions).orEmpty()
     // Decided at render time, so buttons appear once a session starts.
     val now = System.currentTimeMillis()
 
@@ -93,7 +106,7 @@ class TodayWidget : GlanceAppWidget() {
         .clickable(actionStartActivity<MainActivity>()),
     ) {
       Text(
-        text = data?.optString("title").orEmpty().ifEmpty { "LecCheck" },
+        text = (if (stale) "" else day?.optString("title").orEmpty()).ifEmpty { "LecCheck" },
         style = TextStyle(
           color = GlanceTheme.colors.onSurface,
           fontSize = 16.sp,
@@ -101,7 +114,7 @@ class TodayWidget : GlanceAppWidget() {
         ),
         maxLines = 1,
       )
-      val subtitle = data?.optString("subtitle").orEmpty()
+      val subtitle = if (stale) "" else day?.optString("subtitle").orEmpty()
       if (subtitle.isNotEmpty()) {
         Text(
           text = subtitle,
@@ -112,7 +125,7 @@ class TodayWidget : GlanceAppWidget() {
       Spacer(GlanceModifier.height(8.dp))
       if (sessions.isEmpty()) {
         Text(
-          text = data?.optString("empty").orEmpty(),
+          text = data?.optString(if (stale) "stale" else "empty").orEmpty(),
           style = TextStyle(color = GlanceTheme.colors.onSurfaceVariant, fontSize = 14.sp),
         )
       } else {

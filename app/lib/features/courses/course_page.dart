@@ -4,6 +4,7 @@ import 'package:material_ui/material_ui.dart';
 
 import '../../app/format.dart';
 import '../../app/labels.dart';
+import '../../app/notification_controller.dart';
 import '../../app/providers.dart';
 import '../../app/shortcuts.dart';
 import '../../app/theme/colors.dart';
@@ -73,6 +74,7 @@ class CourseDetailView extends ConsumerWidget {
       ),
     );
     final progress = summary.progress;
+    final reminders = ref.watch(reminderSettingsProvider);
 
     final links = <NamedLink>[
       if (course.website.isNotEmpty)
@@ -194,11 +196,25 @@ class CourseDetailView extends ConsumerWidget {
                   fmt.timeRange(m.startMin, m.endMin),
                   if (m.location.isNotEmpty) m.location,
                   if (m.intervalWeeks == 2) l.everyOtherWeek,
+                  if (m.validUntil case final until?)
+                    l.meetingUntil(fmt.dayMonth(until)),
                 ].join(' · '),
               ),
             ),
         ],
       ),
+      if (reminders.any)
+        SliverToBoxAdapter(
+          child: SwitchListTile.adaptive(
+            secondary: const Icon(LecIcons.notifications),
+            title: Text(l.courseReminders),
+            subtitle: Text(l.courseRemindersSubtitle),
+            value: !reminders.isMuted(courseId),
+            onChanged: (on) => ref
+                .read(reminderSettingsProvider.notifier)
+                .setMuted(courseId, !on),
+          ),
+        ),
       if (course.lecturer.isNotEmpty ||
           course.code.isNotEmpty ||
           links.isNotEmpty ||

@@ -1,3 +1,5 @@
+import 'package:collection/collection.dart';
+
 import 'local_date.dart';
 import 'occurrence.dart';
 import 'schedule_types.dart';
@@ -10,6 +12,7 @@ class ReminderSettings {
     this.beforeMinutes = 10,
     this.after = false,
     this.afterMinutes = 5,
+    this.mutedCourses = const {},
   });
 
   final bool before;
@@ -17,7 +20,14 @@ class ReminderSettings {
   final bool after;
   final int afterMinutes;
 
+  /// Courses without reminders (e.g. one only watched as recordings).
+  final Set<String> mutedCourses;
+
   bool get any => before || after;
+
+  bool isMuted(String courseId) => mutedCourses.contains(courseId);
+
+  static const _setEq = SetEquality<String>();
 
   @override
   bool operator ==(Object other) =>
@@ -25,10 +35,17 @@ class ReminderSettings {
       other.before == before &&
       other.beforeMinutes == beforeMinutes &&
       other.after == after &&
-      other.afterMinutes == afterMinutes;
+      other.afterMinutes == afterMinutes &&
+      _setEq.equals(other.mutedCourses, mutedCourses);
 
   @override
-  int get hashCode => Object.hash(before, beforeMinutes, after, afterMinutes);
+  int get hashCode => Object.hash(
+    before,
+    beforeMinutes,
+    after,
+    afterMinutes,
+    _setEq.hash(mutedCourses),
+  );
 }
 
 class PlannedReminder {
@@ -77,8 +94,9 @@ int reminderId(String sessionId, ReminderKind kind) {
 
 /// The next reminders to schedule, soonest first.
 ///
-/// Canceled sessions get none; "how was class" reminders only for sessions
-/// still pending. [limit] stays under iOS's cap of 64 pending notifications.
+/// Canceled sessions and muted courses get none; "how was class" reminders
+/// only for sessions still pending. [limit] stays under iOS's cap of 64
+/// pending notifications.
 List<PlannedReminder> planReminders({
   required OccurrenceIndex index,
   required Map<String, CourseInfo> courses,
@@ -93,7 +111,7 @@ List<PlannedReminder> planReminders({
   final today = LocalDate.fromDateTime(now);
   final plan = <PlannedReminder>[];
   for (final session in index.between(today, today.addDays(horizonDays))) {
-    if (session.isCanceled) continue;
+    if (session.isCanceled || settings.isMuted(session.courseId)) continue;
     final course = courses[session.courseId];
     if (course == null) continue;
     if (settings.before) {

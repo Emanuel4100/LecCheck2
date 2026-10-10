@@ -142,11 +142,17 @@ class AuthService {
     }
   }
 
+  /// Revokes every session of the account. Throws when the server couldn't
+  /// do it (offline, an error), so the caller doesn't sign out thinking the
+  /// other devices were. A 401 means this session was revoked already.
   Future<void> signOutEverywhere(Session session) async {
-    await _http.post(
+    final response = await _http.post(
       SyncConfig.api('/v1/auth/signout-everywhere'),
       headers: {'Authorization': 'Bearer ${session.token}'},
     );
+    if (response.statusCode >= 300 && response.statusCode != 401) {
+      throw AuthException('http_${response.statusCode}');
+    }
   }
 
   Future<void> deleteAccount(Session session) async {

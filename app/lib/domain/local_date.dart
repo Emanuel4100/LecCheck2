@@ -20,17 +20,22 @@ class LocalDate implements Comparable<LocalDate> {
     return LocalDate(d.year, d.month, d.day);
   }
 
-  /// Parses `yyyy-MM-dd`.
+  /// Parses `yyyy-MM-dd`. Throws [FormatException] for anything else,
+  /// including dates that don't exist (`2026-02-30`, `2026-13-01`), which
+  /// would otherwise roll over into another date.
   factory LocalDate.parse(String iso) {
     final parts = iso.split('-');
     if (parts.length != 3) {
       throw FormatException('Expected yyyy-MM-dd', iso);
     }
-    return LocalDate(
-      int.parse(parts[0]),
-      int.parse(parts[1]),
-      int.parse(parts[2]),
-    );
+    final year = int.parse(parts[0]);
+    final month = int.parse(parts[1]);
+    final day = int.parse(parts[2]);
+    final check = DateTime.utc(year, month, day);
+    if (check.year != year || check.month != month || check.day != day) {
+      throw FormatException('No such date', iso);
+    }
+    return LocalDate(year, month, day);
   }
 
   static LocalDate? tryParse(String? iso) {

@@ -8,15 +8,14 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:material_ui/material_ui.dart' show ColorScheme;
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../app/background_reminders.dart';
 import '../../app/format.dart';
 import '../../app/labels.dart';
 import '../../app/theme/colors.dart';
 import '../../domain/local_date.dart';
 import '../../domain/occurrence.dart';
-import '../../domain/occurrence_engine.dart';
 import '../../domain/schedule_types.dart';
 import '../../domain/semester_calendar.dart';
-import '../../domain/semester_data.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../auth/auth_service.dart';
 import '../db/app_database.dart';
@@ -51,24 +50,27 @@ abstract final class TodayWidget {
   static Future<void> requestPin() =>
       HomeWidget.requestPinWidget(qualifiedAndroidName: _receiver);
 
+  /// How many days the snapshot holds, from today: the widget picks the
+  /// current one when it redraws (every 30 minutes), so it moves on to the
+  /// next day at midnight even if the app isn't opened.
+  static const days = 7;
+
+  /// What the widget shows: [days] days of sessions from every semester
+  /// running then ([window]), and today's at the top level too.
   static Map<String, Object?> snapshot({
-    required SemesterData data,
-    required OccurrenceIndex index,
+    required ScheduleWindow window,
     required DateTime now,
     required AppLocalizations l,
     required Fmt fmt,
     required bool numbers,
   }) {
     final today = LocalDate.fromDateTime(now);
-    final calendar = SemesterCalendar(data.semester);
-    final week = calendar.weekNumberOf(today);
-    final courses = {for (final c in data.courses) c.id: c};
     // Widgets aren't themed by the app; use the light course tones.
     final palette = CourseColors.build(
       ColorScheme.fromSeed(seedColor: ThemePreset.ocean.seed),
     );
     Map<String, Object?> session(Occurrence o) {
-      final course = courses[o.courseId];
+      final course = window.courses[o.courseId];
       return {
         'meeting': o.meetingId,
         'date': o.originalDate.toIso(),
@@ -85,16 +87,32 @@ abstract final class TodayWidget {
       };
     }
 
+    Map<String, Object?> day(LocalDate date) {
+      final semester = window.semesterOn(date);
+      final calendar = semester == null ? null : SemesterCalendar(semester);
+      final week = calendar?.weekNumberOf(date) ?? 0;
+      return {
+        'title': fmt.longDate(date),
+        'subtitle': calendar == null
+            ? ''
+            : week >= 1 && week <= calendar.weekCount
+            ? l.weekOfTotal(week, calendar.weekCount)
+            : semester!.name,
+        'sessions': [for (final o in window.index.onDay(date)) session(o)],
+      };
+    }
+
     return {
-      'title': fmt.longDate(today),
-      'subtitle': week >= 1 && week <= calendar.weekCount
-          ? l.weekOfTotal(week, calendar.weekCount)
-          : data.semester.name,
+      ...day(today),
       'empty': l.noClassesToday,
+      'stale': l.widgetStale,
       'attended': l.markAttended,
       'missed': l.markMissed,
       'rtl': l.localeName == 'he',
-      'sessions': [for (final o in index.onDay(today)) session(o)],
+      'days': {
+        for (var i = 0; i < days; i++)
+          today.addDays(i).toIso(): day(today.addDays(i)),
+      },
     };
   }
 
@@ -145,6 +163,8 @@ Future<void> todayWidgetCallback(Uri? uri) async {
     );
     await refreshTodayWidget(repo, prefs);
     DevLog.add('Saved');
+    // A marked session needs no "How was class?" any more.
+    DevLog.add('Reminders topped up: ${await topUpReminders(repo, prefs)}');
     if (recorder != null) {
       final session = await AuthService().load();
       if (session != null) {
@@ -170,8 +190,13 @@ Future<void> refreshTodayWidget(
   ScheduleRepository repo,
   SharedPreferencesWithCache prefs,
 ) async {
-  final data = await repo.loadShownSemester(prefs.getString('semester.active'));
-  if (data == null) return;
+  if (!TodayWidget.supported) return;
+  final now = DateTime.now();
+  final today = LocalDate.fromDateTime(now);
+  final window = await repo.loadWindow(
+    today,
+    today.addDays(TodayWidget.days - 1),
+  );
   final code =
       prefs.getString('appearance.locale') ??
       PlatformDispatcher.instance.locale.languageCode;
@@ -181,16 +206,15 @@ Future<void> refreshTodayWidget(
   final prefsSettings = await repo.watchUserPrefs().first;
   await TodayWidget.push(
     TodayWidget.snapshot(
-      data: data,
-      index: OccurrenceEngine.expand(
-        semester: data.semester,
-        meetings: data.meetings,
-        overrides: data.overrides,
-        noClassRanges: data.noClassRanges,
-      ),
-      now: DateTime.now(),
+      window: window,
+      now: now,
       l: l,
-      fmt: Fmt(locale, use24h: prefsSettings.use24h ?? true),
+      fmt: Fmt(
+        locale,
+        use24h:
+            prefsSettings.use24h ??
+            PlatformDispatcher.instance.alwaysUse24HourFormat,
+      ),
       numbers: prefsSettings.meetingNumbers,
     ),
   );

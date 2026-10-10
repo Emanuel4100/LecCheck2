@@ -167,8 +167,10 @@ abstract interface class ReminderOs {
 /// all 48 on every tap). The plugin's own list survives a force stop while
 /// the system drops the alarms, so on Android [apply] also asks the system
 /// which alarms are still there, once per process. Linux has no OS
-/// scheduler, so reminders due in the next day are shown from in-app timers
-/// while the app runs.
+/// scheduler, so reminders due in the next day are shown while the app runs,
+/// by a ticker that reads the wall clock ([dueReminders]): Dart timers don't
+/// count time while the computer sleeps, so a timer set before a suspend
+/// would fire late.
 class NotificationService {
   NotificationService._() : _osSchedules = !kIsWeb && !Platform.isLinux {
     _os = _PluginOs(this);
@@ -189,8 +191,19 @@ class NotificationService {
   NotificationLabels? _labels;
   bool _ready = false;
   Object? _initError;
-  final _timers = <int, Timer>{};
-  final _timerSignatures = <int, String>{};
+
+  /// Linux: reminders due in the next day, and the Developer tests (with
+  /// whether their buttons only log).
+  List<PlannedReminder> _due = const [];
+  final _dueTests = <(PlannedReminder, bool)>[];
+
+  /// Signatures of the reminders [_tick] showed.
+  final _shown = <String>{};
+
+  /// Every 30 s, by the wall clock; [_next] also wakes it up for the next
+  /// reminder, so they come on time while the computer is awake.
+  Timer? _ticker;
+  Timer? _next;
 
   /// Reminders this process scheduled, or found armed in the system, with
   /// their signatures: [apply] trusts these without asking again.
@@ -317,12 +330,18 @@ class NotificationService {
     }
   }
 
+  /// The notification that started the app, if one did. Linux can't tell
+  /// (the plugin doesn't implement it, and asking threw on every start).
   Future<NotificationResponse?> launchResponse() async {
-    if (!_ready) return null;
-    final details = await _plugin.getNotificationAppLaunchDetails();
-    return details?.didNotificationLaunchApp ?? false
-        ? details!.notificationResponse
-        : null;
+    if (!_ready || !_osSchedules) return null;
+    try {
+      final details = await _plugin.getNotificationAppLaunchDetails();
+      return details?.didNotificationLaunchApp ?? false
+          ? details!.notificationResponse
+          : null;
+    } on UnimplementedError {
+      return null;
+    }
   }
 
   /// Asks the OS for permission (Android 13+, iOS, macOS). True if allowed.
@@ -489,11 +508,8 @@ class NotificationService {
   /// Cancels every scheduled reminder (reminders turned off, or no semester).
   /// Notifications already on screen and the Developer tests stay.
   Future<void> cancelReminders() async {
-    for (final t in _timers.values) {
-      t.cancel();
-    }
-    _timers.clear();
-    _timerSignatures.clear();
+    _due = const [];
+    if (_dueTests.isEmpty) _next?.cancel();
     _armedHere.clear();
     if (!_ready || !_osSchedules) return;
     try {
@@ -528,17 +544,10 @@ class NotificationService {
   Future<void> scheduleTest(PlannedReminder r, {bool test = false}) async {
     _checkReady();
     if (!_osSchedules) {
-      _timers.remove(r.id)?.cancel();
-      _timers[r.id] = Timer(r.at.difference(DateTime.now()), () {
-        _timers.remove(r.id);
-        _plugin.show(
-          id: r.id,
-          title: r.title,
-          body: r.body,
-          notificationDetails: _details(r.kind, link: r.link),
-          payload: _payload(r, test: test),
-        );
-      });
+      _dueTests
+        ..removeWhere((t) => t.$1.id == r.id)
+        ..add((r, test));
+      _startTicker();
       return;
     }
     await _plugin.zonedSchedule(
@@ -596,32 +605,79 @@ class NotificationService {
 
   void _applyTimers(List<PlannedReminder> plan) {
     final horizon = DateTime.now().add(const Duration(hours: 24));
-    final wanted = {
+    _due = [
       for (final r in plan)
-        if (r.at.isBefore(horizon)) r.id: r,
-    };
-    for (final id in _timers.keys.toList()) {
-      if (wanted[id]?.signature != _timerSignatures[id]) {
-        _timers.remove(id)!.cancel();
-        _timerSignatures.remove(id);
-      }
+        if (r.at.isBefore(horizon)) r,
+    ];
+    // Shown ones leave the plan once their time passes.
+    _shown.retainAll({for (final r in _due) r.signature});
+    _startTicker();
+  }
+
+  void _startTicker() {
+    _ticker ??= Timer.periodic(const Duration(seconds: 30), (_) => _tick());
+    _tick();
+  }
+
+  /// Shows what's due by the wall clock (also right after waking up).
+  void _tick() {
+    final now = DateTime.now();
+    for (final r in dueReminders(_due, _shown, now)) {
+      _shown.add(r.signature);
+      _show(r);
     }
-    for (final r in wanted.values) {
-      if (_timers.containsKey(r.id)) continue;
-      _timerSignatures[r.id] = r.signature;
-      _timers[r.id] = Timer(r.at.difference(DateTime.now()), () {
-        _timers.remove(r.id);
-        _timerSignatures.remove(r.id);
-        _plugin.show(
+    // Tests are shown when due, whatever their session's time.
+    for (final t in [..._dueTests]) {
+      if (t.$1.at.isAfter(now)) continue;
+      _dueTests.remove(t);
+      _show(t.$1, test: t.$2);
+    }
+    final upcoming = [
+      for (final r in _due)
+        if (r.at.isAfter(now) && !_shown.contains(r.signature)) r.at,
+      for (final (r, _) in _dueTests) r.at,
+    ];
+    _next?.cancel();
+    _next = upcoming.isEmpty
+        ? null
+        : Timer(
+            upcoming.reduce((a, b) => a.isBefore(b) ? a : b).difference(now),
+            _tick,
+          );
+  }
+
+  void _show(PlannedReminder r, {bool test = false}) => unawaited(
+    _plugin
+        .show(
           id: r.id,
           title: r.title,
           body: r.body,
           notificationDetails: _details(r.kind, link: r.link),
-          payload: _payload(r),
-        );
-      });
-    }
-  }
+          payload: _payload(r, test: test),
+        )
+        .catchError((Object e) => debugPrint('Reminder not shown: $e')),
+  );
+
+  /// The reminders of [planned] to show at [now]: due, not [shown] yet, and
+  /// not stale. After a sleep, a "class starts soon" for a class that has
+  /// already started is skipped, and so is a "how was class?" more than two
+  /// hours late.
+  @visibleForTesting
+  static List<PlannedReminder> dueReminders(
+    Iterable<PlannedReminder> planned,
+    Set<String> shown,
+    DateTime now,
+  ) => [
+    for (final r in planned)
+      if (!r.at.isAfter(now) &&
+          !shown.contains(r.signature) &&
+          !switch (r.kind) {
+            ReminderKind.before => !now.isBefore(r.session.start),
+            ReminderKind.after =>
+              now.difference(r.at) > const Duration(hours: 2),
+          })
+        r,
+  ];
 
   static AndroidScheduleMode _scheduleMode({required bool exact}) => exact
       ? AndroidScheduleMode.exactAllowWhileIdle

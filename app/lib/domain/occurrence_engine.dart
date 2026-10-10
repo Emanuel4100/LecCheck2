@@ -64,8 +64,27 @@ abstract final class OccurrenceEngine {
       }
     }
 
-    sessions.sort(_chronological);
+    sessions.sort(compareChronological);
     return OccurrenceIndex(_numbered(sessions));
+  }
+
+  /// The first week from [week] (a week's first day) on in which [meeting]
+  /// has a session. An every-other-week meeting that continues as a new
+  /// rule ("from this week on") starts there, so its classes don't move to
+  /// the other weeks.
+  static LocalDate nextWeekOnCycle(
+    MeetingRule meeting,
+    SemesterInfo semester,
+    LocalDate week,
+  ) {
+    final interval = math.max(1, meeting.intervalWeeks);
+    if (interval == 1) return week;
+    final anchor = startOfWeek(
+      meeting.validFrom ?? semester.start,
+      semester.weekStart,
+    );
+    final offset = (anchor.daysUntil(week) ~/ 7) % interval;
+    return offset == 0 ? week : week.addDays(7 * (interval - offset));
   }
 
   /// Dates a meeting rule produces, before overrides. Weekly rules run from
@@ -111,7 +130,8 @@ abstract final class OccurrenceEngine {
     }
   }
 
-  static int _chronological(Occurrence a, Occurrence b) {
+  /// The order sessions are listed in (also when merging semesters).
+  static int compareChronological(Occurrence a, Occurrence b) {
     var c = a.date.compareTo(b.date);
     if (c != 0) return c;
     c = a.startMin.compareTo(b.startMin);

@@ -11,7 +11,9 @@ import '../../app/providers.dart';
 import '../../app/shortcuts.dart';
 import '../../core/db/schedule_repository.dart';
 import '../../core/icons/lec_icons.dart';
+import '../../domain/holidays/jewish_holidays.dart';
 import '../../domain/local_date.dart';
+import '../../domain/occurrence_engine.dart';
 import '../../domain/schedule_types.dart';
 import '../../domain/semester_calendar.dart';
 import '../../l10n/gen/app_localizations.dart';
@@ -106,9 +108,16 @@ class _SemesterFormPageState extends ConsumerState<SemesterFormPage> {
   }
 
   Future<void> _save() async {
-    setState(() => _saving = true);
     final repo = ref.read(repositoryProvider);
+    final loaded = _loaded;
+    final datesChanged =
+        loaded != null && (loaded.start != _start || loaded.end != _end);
+    if (datesChanged && !await _confirmHiddenSessions(repo, loaded)) return;
+    setState(() => _saving = true);
     final id = widget.semesterId ?? ScheduleRepository.newId();
+    final applied = datesChanged
+        ? await repo.generatedHolidays(id)
+        : const <LocalDate, bool>{};
     await repo.saveSemester(
       SemesterInfo(
         id: id,
@@ -128,6 +137,24 @@ class _SemesterFormPageState extends ConsumerState<SemesterFormPage> {
         AppLocalizations.of(context),
       );
     }
+    // New dates: the holidays chosen for this semester cover them too.
+    if (datesChanged && applied.isNotEmpty && mounted) {
+      final l = AppLocalizations.of(context);
+      await repo.applyHolidays(
+        id,
+        add: {
+          for (final day in holidaysForNewRange(
+            oldStart: loaded.start,
+            oldEnd: loaded.end,
+            newStart: _start,
+            newEnd: _end,
+            applied: applied,
+            inIsrael: holidaysInIsrael(ref.read(sharedPrefsProvider)),
+          ))
+            day.date: l.holidayName(day.name),
+        },
+      );
+    }
     ref.read(activeSemesterChoiceProvider.notifier).select(id);
     if (!mounted) return;
     if (widget.semesterId == null) {
@@ -135,6 +162,39 @@ class _SemesterFormPageState extends ConsumerState<SemesterFormPage> {
     } else {
       context.pop();
     }
+  }
+
+  /// Weekly sessions only exist between the semester's dates: when marked
+  /// ones would fall outside the new dates, asks first (they're kept, and
+  /// show again if the dates change back).
+  Future<bool> _confirmHiddenSessions(
+    ScheduleRepository repo,
+    SemesterInfo loaded,
+  ) async {
+    final data = await repo.loadSemesterData(loaded.id);
+    if (data == null || !mounted) return mounted;
+    final hidden =
+        OccurrenceEngine.expand(
+              semester: data.semester,
+              meetings: data.meetings,
+              overrides: data.overrides,
+              noClassRanges: data.noClassRanges,
+            ).all
+            .where(
+              (o) =>
+                  !o.isOneOff &&
+                  (o.explicitStatus?.isDecided ?? false) &&
+                  !o.originalDate.isWithin(_start, _end),
+            )
+            .length;
+    if (hidden == 0) return true;
+    final l = AppLocalizations.of(context);
+    return confirmDialog(
+      context,
+      title: l.semesterDatesTitle,
+      body: l.semesterDatesBody(hidden),
+      confirmLabel: l.save,
+    );
   }
 
   @override

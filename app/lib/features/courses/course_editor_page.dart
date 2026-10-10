@@ -15,6 +15,7 @@ import '../../app/widgets/common.dart';
 import '../../core/db/schedule_repository.dart';
 import '../../core/icons/lec_icons.dart';
 import '../../domain/local_date.dart';
+import '../../domain/occurrence_engine.dart';
 import '../../domain/schedule_types.dart';
 import '../../domain/semester_calendar.dart';
 import '../../domain/semester_data.dart';
@@ -263,6 +264,7 @@ class _CourseEditorPageState extends ConsumerState<CourseEditorPage> {
     for (final m in _meetings)
       '${m.id}|${m.type}|${m.kind}|${m.weekday}|${m.date}|${m.startMin}|'
           '${m.endMin}|${m.location.text}|${m.intervalWeeks}|${m.validFrom}|'
+          '${m.validUntil}|'
           '${m.links.map((l) => '${l.title.text}>${l.url.text}').join(',')}',
     for (final r in _requirements)
       '${r.id}|${r.type}|${r.minPercent}|${r.recordingsCount}',
@@ -313,27 +315,30 @@ class _CourseEditorPageState extends ConsumerState<CourseEditorPage> {
             links: [for (final l in _links) ?l.toLink()],
             sortOrder: _sortOrder,
           ),
-          meetings: split,
+          meetings: split.meetings,
           requirements: [for (final r in _requirements) r.toRequirement(id)],
           base: _base,
+          historyMoves: split.moves,
         );
     _initialSnapshot = _snapshot();
     if (mounted) context.pop();
   }
 
-  /// When a weekly meeting moves to another weekday mid-semester, asks whether
-  /// the change applies to all weeks or only from this week on. "From this
-  /// week on" keeps past sessions (and their marks) on the old day.
-  Future<List<MeetingRule>?> _confirmWeekdayChanges(
-    List<MeetingRule> meetings,
-  ) async {
+  /// When a weekly meeting moves to another weekday, asks (mid-semester)
+  /// whether the change applies to all weeks or only from this week on, and
+  /// says which session records move with it:
+  /// - all weeks: every session moves to the new day of its week, marks
+  ///   and notes included;
+  /// - from this week on: past sessions (and their marks) stay on the old
+  ///   day, which ends last week; this week's and later ones move to the
+  ///   new meeting.
+  Future<({List<MeetingRule> meetings, List<HistoryMove> moves})?>
+  _confirmWeekdayChanges(List<MeetingRule> meetings) async {
     final data = _data;
-    if (data == null || widget.courseId == null) return meetings;
-    final today = ref.read(todayProvider);
+    if (data == null || widget.courseId == null) {
+      return (meetings: meetings, moves: const <HistoryMove>[]);
+    }
     final semester = data.semester;
-    final thisWeek = startOfWeek(today, semester.weekStart);
-    if (!thisWeek.isAfter(semester.start)) return meetings;
-
     final changed = [
       for (final m in meetings)
         if (data.meeting(m.id) case final old?
@@ -342,7 +347,25 @@ class _CourseEditorPageState extends ConsumerState<CourseEditorPage> {
                 old.weekday != m.weekday)
           m,
     ];
-    if (changed.isEmpty) return meetings;
+    if (changed.isEmpty) {
+      return (meetings: meetings, moves: const <HistoryMove>[]);
+    }
+    HistoryMove allWeeks(MeetingRule m) => HistoryMove(
+      fromMeetingId: m.id,
+      toMeetingId: m.id,
+      toWeekday: m.weekday!,
+      weekStart: semester.weekStart,
+    );
+
+    final today = ref.read(todayProvider);
+    final thisWeek = startOfWeek(today, semester.weekStart);
+    // Before the semester starts, the new day simply applies to every week.
+    if (!thisWeek.isAfter(semester.start)) {
+      return (
+        meetings: meetings,
+        moves: [for (final m in changed) allWeeks(m)],
+      );
+    }
 
     final l = AppLocalizations.of(context);
     final fromThisWeek = await showChoiceDialog<bool?>(
@@ -355,15 +378,26 @@ class _CourseEditorPageState extends ConsumerState<CourseEditorPage> {
       ],
     );
     if (fromThisWeek == null) return null;
-    if (!fromThisWeek) return meetings;
+    if (!fromThisWeek) {
+      return (
+        meetings: meetings,
+        moves: [for (final m in changed) allWeeks(m)],
+      );
+    }
 
     final result = <MeetingRule>[];
+    final moves = <HistoryMove>[];
     for (final m in meetings) {
       if (!changed.contains(m)) {
         result.add(m);
         continue;
       }
       final old = data.meeting(m.id)!;
+      final next = ScheduleRepository.newId();
+      // Every other week: keep the same weeks, not a cycle restarting now.
+      final from = m.intervalWeeks == old.intervalWeeks
+          ? OccurrenceEngine.nextWeekOnCycle(old, semester, thisWeek)
+          : thisWeek;
       result
         ..add(
           MeetingRule(
@@ -383,7 +417,7 @@ class _CourseEditorPageState extends ConsumerState<CourseEditorPage> {
         )
         ..add(
           MeetingRule(
-            id: ScheduleRepository.newId(),
+            id: next,
             courseId: m.courseId,
             type: m.type,
             kind: m.kind,
@@ -392,13 +426,69 @@ class _CourseEditorPageState extends ConsumerState<CourseEditorPage> {
             endMin: m.endMin,
             location: m.location,
             intervalWeeks: m.intervalWeeks,
-            validFrom: thisWeek,
+            validFrom: from,
             validUntil: m.validUntil,
             links: m.links,
           ),
         );
+      moves.add(
+        HistoryMove(
+          fromMeetingId: old.id,
+          toMeetingId: next,
+          toWeekday: m.weekday!,
+          weekStart: semester.weekStart,
+          from: thisWeek,
+        ),
+      );
     }
-    return result;
+    return (meetings: result, moves: moves);
+  }
+
+  /// Removing a weekly meeting with marked past sessions would take them out
+  /// of the stats: offers to end it this week instead (it keeps its past
+  /// sessions and stops from this week on).
+  Future<void> _removeMeeting(_MeetingDraft m) async {
+    final data = _data;
+    final saved = data?.meeting(m.id);
+    if (data != null &&
+        saved != null &&
+        saved.kind == MeetingKind.weekly &&
+        m.kind == MeetingKind.weekly) {
+      final thisWeek = startOfWeek(
+        ref.read(todayProvider),
+        data.semester.weekStart,
+      );
+      final marked = data.overrides
+          .where(
+            (o) =>
+                o.meetingId == m.id &&
+                o.originalDate.isBefore(thisWeek) &&
+                (o.status?.isDecided ?? false),
+          )
+          .length;
+      if (marked > 0) {
+        final l = AppLocalizations.of(context);
+        final end = await showChoiceDialog<bool?>(
+          context,
+          title: l.removeMeetingTitle,
+          body: l.removeMeetingBody(marked),
+          choices: [
+            DialogChoice(l.cancel, null),
+            DialogChoice(l.deleteWithHistory, false, destructive: true),
+            DialogChoice(l.endThisWeek, true, primary: true),
+          ],
+        );
+        if (end == null || !mounted) return;
+        if (end) {
+          setState(() => m.validUntil = thisWeek.addDays(-1));
+          return;
+        }
+      }
+    }
+    setState(() {
+      _meetings.remove(m);
+      m.dispose();
+    });
   }
 
   Future<void> _delete() async {
@@ -558,10 +648,7 @@ class _CourseEditorPageState extends ConsumerState<CourseEditorPage> {
                         semester: _data?.semester,
                         showErrors: _showErrors,
                         onChanged: () => setState(() {}),
-                        onRemove: () => setState(() {
-                          _meetings.remove(m);
-                          m.dispose();
-                        }),
+                        onRemove: () => _removeMeeting(m),
                       ),
                     ),
                   Wrap(
@@ -616,6 +703,8 @@ class _CourseEditorPageState extends ConsumerState<CourseEditorPage> {
                     controller: _notes,
                     minLines: 3,
                     maxLines: 8,
+                    maxLength: notesMaxLength,
+                    buildCounter: notesCounter,
                     textCapitalization: TextCapitalization.sentences,
                     decoration: InputDecoration(hintText: l.courseNotesHint),
                   ),
@@ -735,6 +824,15 @@ class _MeetingCard extends StatelessWidget {
     final timeError = showErrors && draft.endMin <= draft.startMin;
     final dateError =
         showErrors && draft.kind == MeetingKind.once && draft.date == null;
+    // "Second week" stores the semester's second week as validFrom. Any
+    // other start (or an end) comes from changing the day mid-semester, or
+    // ending the meeting: shown as text, and kept as it is.
+    final secondWeek = semester == null
+        ? null
+        : startOfWeek(semester!.start, semester!.weekStart).addDays(7);
+    final split =
+        draft.validUntil != null ||
+        (draft.validFrom != null && draft.validFrom != secondWeek);
 
     return Card(
       color: theme.colorScheme.surfaceContainer,
@@ -808,6 +906,26 @@ class _MeetingCard extends StatelessWidget {
                         draft.weekday = d;
                         onChanged();
                       },
+                    ),
+                  if (split)
+                    Padding(
+                      padding: const EdgeInsetsDirectional.only(top: 6),
+                      child: Text(
+                        switch ((draft.validFrom, draft.validUntil)) {
+                          (final from?, final until?) => l.meetingBetween(
+                            fmt.dayMonth(from),
+                            fmt.dayMonth(until),
+                          ),
+                          (_, final until?) => l.meetingUntil(
+                            fmt.dayMonth(until),
+                          ),
+                          (final from?, _) => l.meetingFrom(fmt.dayMonth(from)),
+                          _ => '',
+                        },
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
                     ),
                 ],
               )
@@ -883,11 +1001,11 @@ class _MeetingCard extends StatelessWidget {
                 value: draft.intervalWeeks == 2,
                 onChanged: (on) {
                   draft.intervalWeeks = on ? 2 : 1;
-                  if (!on) draft.validFrom = null;
+                  if (!on && !split) draft.validFrom = null;
                   onChanged();
                 },
               ),
-              if (draft.intervalWeeks == 2 && semester != null)
+              if (draft.intervalWeeks == 2 && semester != null && !split)
                 Wrap(
                   spacing: 8,
                   children: [

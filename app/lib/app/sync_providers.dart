@@ -14,6 +14,10 @@ import 'providers.dart';
 
 final authServiceProvider = Provider<AuthService>((ref) => AuthService());
 
+/// Whether this build syncs at all ([SyncConfig.enabled], set at build
+/// time); a provider so tests can turn it on.
+final syncConfiguredProvider = Provider<bool>((ref) => SyncConfig.enabled);
+
 /// The account whose data this device holds (persisted). While set, every
 /// local change is recorded for sync — even when signed out with "keep on
 /// this device", so those edits sync when the same account signs in again.
@@ -40,7 +44,8 @@ final attachedAccountProvider =
     );
 
 final syncRecorderProvider = Provider<SyncRecorder?>((ref) {
-  if (!SyncConfig.enabled || ref.watch(attachedAccountProvider) == null) {
+  if (!ref.watch(syncConfiguredProvider) ||
+      ref.watch(attachedAccountProvider) == null) {
     return null;
   }
   return SyncRecorder(
@@ -62,7 +67,7 @@ class AuthController extends AsyncNotifier<Session?> {
 
   @override
   Future<Session?> build() async {
-    if (!SyncConfig.enabled) return null;
+    if (!ref.watch(syncConfiguredProvider)) return null;
     final session = await _auth.load();
     if (session == null) return null;
     final renewed = await _auth
@@ -222,6 +227,27 @@ final syncEngineProvider = Provider<SyncEngine?>((ref) {
   )..start();
   ref.onDispose(engine.dispose);
   return engine;
+});
+
+/// Changes waiting to sync, and refused ones, straight from the outbox:
+/// also while signed out, when there's no engine (or sync state) at all.
+final outboxCountsProvider = StreamProvider<({int pending, int refused})>((
+  ref,
+) {
+  final db = ref.watch(databaseProvider);
+  return db
+      .customSelect(
+        'SELECT COUNT(*) - COUNT(rejected) AS pending, COUNT(rejected) AS '
+        'refused FROM outbox',
+        readsFrom: {db.outbox},
+      )
+      .watch()
+      .map(
+        (rows) => (
+          pending: rows.first.read<int>('pending'),
+          refused: rows.first.read<int>('refused'),
+        ),
+      );
 });
 
 final syncStateProvider = StreamProvider<SyncState?>((ref) {

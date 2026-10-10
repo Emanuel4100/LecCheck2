@@ -56,6 +56,19 @@ void main() {
     expect(plan(const ReminderSettings()), isEmpty);
   });
 
+  test('nothing for a muted course', () {
+    expect(
+      plan(
+        const ReminderSettings(before: true, after: true, mutedCourses: {'c1'}),
+      ),
+      isEmpty,
+    );
+    expect(
+      const ReminderSettings(mutedCourses: {'c1'}),
+      const ReminderSettings(mutedCourses: {'c1'}),
+    );
+  });
+
   test('before-class reminders, soonest first, with the course link', () {
     final reminders = plan(const ReminderSettings(before: true));
     expect(reminders.first.at, DateTime(2026, 10, 18, 9, 50));

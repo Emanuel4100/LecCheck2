@@ -95,22 +95,48 @@ void main() {
     }
   }
 
-  test('keeps scheduled reminders while the semester loads', () async {
+  test('plans from the database right away, replacing what is stale', () async {
     await addSemester();
     os.listed[42] = 'from before the app was closed';
     final c = container();
     final controller = NotificationController(c, service: service);
-
-    // At startup the data isn't there yet: nothing is cancelled (beta.4
-    // cancelled everything here, and dismissed what was on screen).
-    expect(await controller.rescheduleNow(), 0);
-    expect(os.cancelled, isEmpty);
-
-    // Once it's loaded, the plan replaces what's stale.
-    await loaded(c);
+    // No waiting for the screens' providers: the plan reads the database.
     expect(await controller.rescheduleNow(), greaterThan(0));
     expect(os.cancelled, [42]);
     expect(os.scheduled, isNotEmpty);
+  });
+
+  test('follows the semester running now, not the one shown', () async {
+    await addSemester();
+    final start = LocalDate.fromDateTime(DateTime.now()).addDays(-300);
+    await repo.saveSemester(
+      SemesterInfo(
+        id: 'old',
+        name: 'Last year',
+        start: start,
+        end: start.addDays(100),
+      ),
+    );
+    final c = container();
+    // Looking at last year's stats…
+    c.read(activeSemesterChoiceProvider.notifier).select('old');
+    final controller = NotificationController(c, service: service);
+    // …keeps this semester's reminders.
+    expect(await controller.rescheduleNow(), greaterThan(0));
+    expect(os.scheduled, isNotEmpty);
+  });
+
+  test('a muted course gets no reminders', () async {
+    await addSemester();
+    final c = container();
+    c.read(reminderSettingsProvider.notifier).setMuted('c1', true);
+    expect(c.read(reminderSettingsProvider).isMuted('c1'), isTrue);
+    expect(
+      await NotificationController(c, service: service).rescheduleNow(),
+      0,
+    );
+    // Saved, so background top-ups skip it too.
+    expect(ReminderSettingsController.read(prefs).mutedCourses, {'c1'});
   });
 
   test('cancels reminders when there is no semester', () async {

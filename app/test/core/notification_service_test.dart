@@ -36,6 +36,33 @@ void main() {
     now: DateTime(2026, 10, 18, 9, 0),
   );
 
+  group('Linux: what the wall-clock ticker shows', () {
+    // Sun 2026-10-18: before-class at 9:50 (class 10:00–12:00), after-class
+    // at 12:05.
+    final reminders = plan();
+    final before = reminders.first;
+    final after = reminders.firstWhere((r) => r.kind == ReminderKind.after);
+    List<PlannedReminder> due(DateTime now, [Set<String> shown = const {}]) =>
+        NotificationService.dueReminders([before, after], shown, now);
+
+    test('nothing early; each one once, when due', () {
+      expect(due(DateTime(2026, 10, 18, 9, 49)), isEmpty);
+      expect(due(DateTime(2026, 10, 18, 9, 50)), [before]);
+      expect(due(DateTime(2026, 10, 18, 9, 51), {before.signature}), isEmpty);
+    });
+
+    test('after a sleep: late reminders still come, stale ones are '
+        'skipped', () {
+      // Woke at 9:58: class hasn't started, so the reminder still helps.
+      expect(due(DateTime(2026, 10, 18, 9, 58)), [before]);
+      // Woke at 10:30: class started; "starts in 10 minutes" is wrong now.
+      expect(due(DateTime(2026, 10, 18, 10, 30)), isEmpty);
+      // "How was class?" within two hours, but not the next morning.
+      expect(due(DateTime(2026, 10, 18, 13, 0)), [after]);
+      expect(due(DateTime(2026, 10, 19, 8, 0)), isEmpty);
+    });
+  });
+
   late FakeReminderOs os;
   late NotificationService service;
 

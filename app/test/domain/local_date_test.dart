@@ -10,6 +10,19 @@ void main() {
     expect(LocalDate.tryParse(null), isNull);
   });
 
+  test('dates that don\'t exist are refused, not rolled over', () {
+    for (final iso in [
+      '2026-02-30',
+      '2026-13-01',
+      '2026-00-10',
+      '2026-04-31',
+    ]) {
+      expect(() => LocalDate.parse(iso), throwsFormatException, reason: iso);
+      expect(LocalDate.tryParse(iso), isNull, reason: iso);
+    }
+    expect(LocalDate.parse('2028-02-29'), const LocalDate(2028, 2, 29));
+  });
+
   test('ISO weekdays', () {
     expect(LocalDate.parse('2026-10-18').weekday, DateTime.sunday);
     expect(LocalDate.parse('2026-10-19').weekday, DateTime.monday);

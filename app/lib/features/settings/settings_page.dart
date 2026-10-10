@@ -771,13 +771,16 @@ class _DataSection extends ConsumerWidget {
     final file = await FilePicker.pickFile(allowedExtensions: const ['json']);
     if (file == null || !context.mounted) return;
     final ParsedBackup backup;
+    final ({int added, int changed, int skipped}) preview;
     try {
       backup = BackupService.parse(utf8.decode(await file.readAsBytes()));
-    } on FormatException {
+      preview = await repo.previewImport(backup.tables);
+    } on Object catch (e) {
+      // Not JSON, or JSON of another shape (wrong types throw TypeError).
+      debugPrint('Import refused: $e');
       messenger.showSnackBar(SnackBar(content: Text(l.importFailed)));
       return;
     }
-    final preview = await repo.previewImport(backup.tables);
     if (preview.added == 0 && preview.changed == 0) {
       messenger.showSnackBar(SnackBar(content: Text(l.importNothing)));
       return;
@@ -786,7 +789,10 @@ class _DataSection extends ConsumerWidget {
     final mode = await showChoiceDialog<ImportMode?>(
       context,
       title: l.importTitle,
-      body: l.importPreview(backup.semesters, preview.added, preview.changed),
+      body: [
+        l.importPreview(backup.semesters, preview.added, preview.changed),
+        if (preview.skipped > 0) l.importSkipped(preview.skipped),
+      ].join('\n\n'),
       choices: [
         DialogChoice(l.cancel, null),
         if (preview.changed > 0)

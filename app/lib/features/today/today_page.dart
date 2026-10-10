@@ -23,6 +23,7 @@ import '../session/session_menu.dart';
 import '../session/session_sheet.dart';
 import '../session/session_tile.dart';
 import '../session/status_buttons.dart';
+import 'sync_notice_card.dart';
 
 class TodayPage extends ConsumerWidget {
   const TodayPage({super.key});
@@ -77,14 +78,7 @@ class TodayPage extends ConsumerWidget {
                     flex: 5,
                     sliver: SliverMainAxisGroup(
                       slivers: [
-                        const SliverToBoxAdapter(child: RemindersBlockedCard()),
-                        const SliverToBoxAdapter(
-                          child: UpdateCard(onToday: true),
-                        ),
-                        const SliverToBoxAdapter(child: LastErrorCard()),
-                        const SliverToBoxAdapter(
-                          child: UpdateCard(onToday: true),
-                        ),
+                        ..._notices,
                         const SliverToBoxAdapter(child: _WeekProgress()),
                         const SliverToBoxAdapter(child: _NowNextCard()),
                         const _NeedsMarkingSection(),
@@ -110,7 +104,7 @@ class TodayPage extends ConsumerWidget {
               maxWidth: 720,
               sliver: SliverMainAxisGroup(
                 slivers: [
-                  const SliverToBoxAdapter(child: RemindersBlockedCard()),
+                  ..._notices,
                   const SliverToBoxAdapter(child: _WeekProgress()),
                   const SliverToBoxAdapter(child: _NowNextCard()),
                   const _NeedsMarkingSection(),
@@ -125,6 +119,15 @@ class TodayPage extends ConsumerWidget {
     );
   }
 }
+
+/// What needs attention, at the top of Today in both layouts (each is
+/// empty when there's nothing to say).
+const _notices = <Widget>[
+  SliverToBoxAdapter(child: RemindersBlockedCard()),
+  SliverToBoxAdapter(child: SyncNoticeCard()),
+  SliverToBoxAdapter(child: UpdateCard(onToday: true)),
+  SliverToBoxAdapter(child: LastErrorCard()),
+];
 
 class _WeekProgress extends ConsumerWidget {
   const _WeekProgress();

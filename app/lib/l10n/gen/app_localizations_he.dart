@@ -190,6 +190,20 @@ class AppLocalizationsHe extends AppLocalizations {
   String get weekStartsOn => 'תחילת שבוע';
 
   @override
+  String get semesterDatesTitle => 'לשנות את תאריכי הסמסטר?';
+
+  @override
+  String semesterDatesBody(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count מפגשים מסומנים נמצאים מחוץ לתאריכים החדשים ויוסתרו.',
+      one: 'מפגש מסומן אחד נמצא מחוץ לתאריכים החדשים ויוסתר.',
+    );
+    return '$_temp0 החזרת התאריכים תציג אותם שוב.';
+  }
+
+  @override
   String get visibleDays => 'ימים בתצוגה השבועית';
 
   @override
@@ -271,6 +285,9 @@ class AppLocalizationsHe extends AppLocalizations {
 
   @override
   String get noClassesToday => 'אין שיעורים היום';
+
+  @override
+  String get widgetStale => 'פתחו את LecCheck כדי לראות את השיעורים של היום';
 
   @override
   String get noUpcoming => 'אין מפגשים מתוכננים';
@@ -497,6 +514,41 @@ class AppLocalizationsHe extends AppLocalizations {
 
   @override
   String get removeMeeting => 'הסרת המפגש';
+
+  @override
+  String get removeMeetingTitle => 'להסיר את המפגש?';
+
+  @override
+  String removeMeetingBody(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count מפגשים שלו מסומנים.',
+      one: 'מפגש אחד שלו מסומן.',
+    );
+    return '$_temp0 סיום מהשבוע הזה ישאיר אותם בסטטיסטיקה.';
+  }
+
+  @override
+  String get endThisWeek => 'לסיים מהשבוע';
+
+  @override
+  String get deleteWithHistory => 'למחוק עם ההיסטוריה';
+
+  @override
+  String meetingFrom(String date) {
+    return 'החל מ־$date';
+  }
+
+  @override
+  String meetingUntil(String date) {
+    return 'עד $date';
+  }
+
+  @override
+  String meetingBetween(String from, String until) {
+    return 'מ־$from עד $until';
+  }
 
   @override
   String get meetingLinks => 'קישורים למפגש';
@@ -917,6 +969,20 @@ class AppLocalizationsHe extends AppLocalizations {
   String get signInFailed => 'ההתחברות נכשלה. בדקו את החיבור ונסו שוב.';
 
   @override
+  String get syncSignedOutTitle => 'אין חיבור לחשבון';
+
+  @override
+  String syncSignedOutBody(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count שינויים במכשיר הזה יסונכרנו אחרי ההתחברות.',
+      one: 'שינוי אחד במכשיר הזה יסונכרן אחרי ההתחברות.',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get devSignIn => 'התחברות מפתחים';
 
   @override
@@ -977,6 +1043,17 @@ class AppLocalizationsHe extends AppLocalizations {
   String get signOutEverywhere => 'התנתקות מכל המכשירים';
 
   @override
+  String get signOutEverywhereTitle => 'להתנתק בכל המכשירים?';
+
+  @override
+  String get signOutEverywhereBody =>
+      'כל המכשירים שמחוברים לחשבון, כולל המכשיר הזה, יצטרכו להתחבר מחדש. הנתונים יישארו בחשבון ובכל מכשיר.';
+
+  @override
+  String get accountActionFailed =>
+      'אין חיבור לשרת, ולכן שום דבר לא השתנה. אפשר לנסות שוב כשיהיה חיבור.';
+
+  @override
   String get deleteCloudData => 'מחיקת הנתונים בענן';
 
   @override
@@ -1017,6 +1094,16 @@ class AppLocalizationsHe extends AppLocalizations {
 
   @override
   String get afterClassSubtitle => 'סימון נוכחות ישר מההתראה';
+
+  @override
+  String get courseReminders => 'תזכורות לקורס הזה';
+
+  @override
+  String get courseRemindersSubtitle =>
+      'לפני השיעורים שלו ואחריהם, לפי ההגדרות';
+
+  @override
+  String get mutedCourses => 'קורסים בלי תזכורות';
 
   @override
   String minutesShort(int minutes) {
@@ -1281,6 +1368,17 @@ class AppLocalizationsHe extends AppLocalizations {
 
   @override
   String get importNothing => 'כל מה שבגיבוי כבר נמצא כאן.';
+
+  @override
+  String importSkipped(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count פריטים לא קריאים ולא ייובאו.',
+      one: 'פריט אחד לא קריא ולא ייובא.',
+    );
+    return '$_temp0';
+  }
 
   @override
   String get snapshots => 'גיבויים אוטומטיים';

@@ -113,6 +113,48 @@ void main() {
     );
   });
 
+  group('holidaysForNewRange', () {
+    final oldStart = d('2026-10-18');
+    final oldEnd = d('2027-01-22');
+    // Chanukah ticked by hand, one of its days then restored on its own.
+    final chanukah = [
+      for (final day in jewishHolidays(oldStart, oldEnd))
+        if (day.holiday == JewishHoliday.chanukah) day.date,
+    ];
+    final applied = {for (final date in chanukah) date: date != chanukah.first};
+
+    test('moving the start earlier adds the preset for the new holidays', () {
+      final added = holidaysForNewRange(
+        oldStart: oldStart,
+        oldEnd: oldEnd,
+        newStart: d('2026-09-01'),
+        newEnd: oldEnd,
+        applied: applied,
+      );
+      expect(added.map((day) => day.holiday).toSet(), {
+        JewishHoliday.roshHashana,
+        JewishHoliday.yomKippur,
+        JewishHoliday.sukkot,
+      });
+      // Not the fasts (in the old dates, never ticked), and Chanukah's
+      // restored day stays restored.
+      expect(added.any((day) => chanukah.contains(day.date)), isFalse);
+    });
+
+    test('a semester without holidays gets none', () {
+      expect(
+        holidaysForNewRange(
+          oldStart: oldStart,
+          oldEnd: oldEnd,
+          newStart: d('2026-09-01'),
+          newEnd: oldEnd,
+          applied: const {},
+        ),
+        isEmpty,
+      );
+    });
+  });
+
   group('holidayChanges', () {
     // The spring semester of 2027: Purim through Shavuot.
     final groups = groupHolidays(

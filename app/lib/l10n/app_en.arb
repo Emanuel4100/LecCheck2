@@ -73,6 +73,15 @@
   "startDate": "Start date",
   "endDate": "End date",
   "weekStartsOn": "Week starts on",
+  "semesterDatesTitle": "Change the semester's dates?",
+  "semesterDatesBody": "{count, plural, =1{1 marked session is outside the new dates and will be hidden.} other{{count} marked sessions are outside the new dates and will be hidden.}} Changing the dates back shows them again.",
+  "@semesterDatesBody": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "visibleDays": "Days shown in the week view",
   "semesterLength": "{weeks, plural, =1{1 week} other{{weeks} weeks}}",
   "@semesterLength": {
@@ -161,6 +170,7 @@
     }
   },
   "noClassesToday": "No classes today",
+  "widgetStale": "Open LecCheck to see today's classes",
   "noUpcoming": "Nothing scheduled ahead",
   "needsMarking": "Needs marking",
   "needsMarkingCount": "{count, plural, =1{1 session} other{{count} sessions}}",
@@ -256,6 +266,44 @@
   "location": "Room / location",
   "endAfterStartError": "End time must be after the start time",
   "removeMeeting": "Remove meeting",
+  "removeMeetingTitle": "Remove this meeting?",
+  "removeMeetingBody": "{count, plural, =1{1 of its sessions is marked.} other{{count} of its sessions are marked.}} Ending it this week keeps them in your stats.",
+  "@removeMeetingBody": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "endThisWeek": "End it this week",
+  "deleteWithHistory": "Delete with its history",
+  "meetingFrom": "From {date}",
+  "@meetingFrom": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "meetingUntil": "Until {date}",
+  "@meetingUntil": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "meetingBetween": "From {from} until {until}",
+  "@meetingBetween": {
+    "placeholders": {
+      "from": {
+        "type": "String"
+      },
+      "until": {
+        "type": "String"
+      }
+    }
+  },
   "meetingLinks": "Meeting links",
   "requirementsSection": "Attendance requirement",
   "requirementsHint": "Set a minimum attendance and LecCheck tells you how many sessions you can still miss.",
@@ -417,6 +465,15 @@
   "devModeOn": "Developer mode is on",
   "devModeAlreadyOn": "Developer mode is already on",
   "signInFailed": "Couldn't sign in. Check your connection and try again.",
+  "syncSignedOutTitle": "You're signed out",
+  "syncSignedOutBody": "{count, plural, =1{1 change on this device will sync when you sign in.} other{{count} changes on this device will sync when you sign in.}}",
+  "@syncSignedOutBody": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "devSignIn": "Developer sign-in",
   "restoringData": "Restoring your data…",
   "syncSynced": "Synced {time}",
@@ -447,6 +504,9 @@
   "keepData": "Keep on this device",
   "removeData": "Remove from this device",
   "signOutEverywhere": "Sign out on all devices",
+  "signOutEverywhereTitle": "Sign out on all devices?",
+  "signOutEverywhereBody": "Every device signed in to this account, this one included, will have to sign in again. Your data stays in the account and on each device.",
+  "accountActionFailed": "Couldn't reach the server, so nothing changed. Try again when you're online.",
   "deleteCloudData": "Delete cloud data",
   "deleteCloudTitle": "Delete your cloud data?",
   "deleteCloudBody": "Your synced data will be removed from the server, and your devices will be signed out. This device keeps its copy. If another device signs in to this account again, its copy is synced back.",
@@ -460,6 +520,9 @@
   "beforeClassSubtitle": "A reminder with the room and link",
   "afterClass": "After class: how was it?",
   "afterClassSubtitle": "Mark attendance right from the notification",
+  "courseReminders": "Reminders for this course",
+  "courseRemindersSubtitle": "Before and after its classes, as set in Settings",
+  "mutedCourses": "Courses without reminders",
   "minutesShort": "{minutes} min",
   "@minutesShort": {
     "placeholders": {
@@ -607,6 +670,14 @@
   },
   "importMerge": "Add missing",
   "importNothing": "Everything in this backup is already here.",
+  "importSkipped": "{count, plural, =1{1 item can't be read and will be left out.} other{{count} items can't be read and will be left out.}}",
+  "@importSkipped": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "snapshots": "Automatic backups",
   "snapshotsSubtitle": "Saved daily and before imports or sign-out. Go back to an earlier state.",
   "snapshotsEmpty": "No automatic backups yet.",

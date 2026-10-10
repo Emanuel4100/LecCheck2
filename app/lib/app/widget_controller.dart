@@ -4,6 +4,7 @@ import 'dart:ui' show Locale, PlatformDispatcher;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/home_widget/today_widget.dart';
+import '../domain/local_date.dart';
 import '../l10n/gen/app_localizations.dart';
 import 'format.dart';
 import 'providers.dart';
@@ -18,19 +19,28 @@ class WidgetController {
 
   final ProviderContainer container;
   Timer? _debounce;
+  StreamSubscription<void>? _changes;
 
   Future<void> start() async {
     if (!TodayWidget.supported) return;
     current = this;
     await TodayWidget.registerCallback();
     void refresh(Object? _, Object? _) => schedule();
+    // Any semester's data: the widget shows every semester running today.
+    _changes = container
+        .read(repositoryProvider)
+        .watchAnyChange()
+        .listen((_) => schedule());
     container
-      ..listen(occurrenceIndexProvider, refresh)
-      ..listen(semesterDataProvider, refresh)
       ..listen(userPrefsProvider, refresh)
       ..listen(appearanceProvider, refresh)
       ..listen(todayProvider, refresh);
     schedule();
+  }
+
+  void dispose() {
+    _debounce?.cancel();
+    _changes?.cancel();
   }
 
   void schedule() {
@@ -45,8 +55,11 @@ class WidgetController {
   }
 
   Future<void> _push() async {
-    final data = container.read(semesterDataProvider).value;
-    if (data == null) return;
+    final now = DateTime.now();
+    final today = LocalDate.fromDateTime(now);
+    final window = await container
+        .read(repositoryProvider)
+        .loadWindow(today, today.addDays(TodayWidget.days - 1));
     final code =
         container.read(appearanceProvider).localeCode ??
         PlatformDispatcher.instance.locale.languageCode;
@@ -54,9 +67,8 @@ class WidgetController {
     final prefs = container.read(userPrefsProvider).value;
     await TodayWidget.push(
       TodayWidget.snapshot(
-        data: data,
-        index: container.read(occurrenceIndexProvider),
-        now: DateTime.now(),
+        window: window,
+        now: now,
         l: l,
         fmt: Fmt(
           l.localeName,

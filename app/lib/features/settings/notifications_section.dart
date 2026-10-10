@@ -3,6 +3,7 @@ import 'package:material_ui/material_ui.dart';
 
 import '../../app/adaptive.dart';
 import '../../app/notification_controller.dart';
+import '../../app/providers.dart';
 import '../../core/icons/lec_icons.dart';
 import '../../core/notifications/android_device.dart';
 import '../../core/notifications/notification_service.dart';
@@ -175,6 +176,17 @@ class _NotificationsSectionState extends ConsumerState<NotificationsSection> {
             settings.afterMinutes,
             (m) => controller.update(afterMinutes: m),
           ),
+        if (settings.any)
+          if ([
+                for (final c in ref.watch(coursesProvider).items)
+                  if (settings.isMuted(c.id)) c.name,
+              ]
+              case final muted when muted.isNotEmpty)
+            ListTile(
+              leading: const Icon(LecIcons.notifications),
+              title: Text(l.mutedCourses),
+              subtitle: Text(muted.join(', ')),
+            ),
         if (settings.any && AppIdiom.isAndroid) ..._checks(l, health),
         if (settings.any)
           ListTile(

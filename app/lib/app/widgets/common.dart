@@ -197,3 +197,17 @@ class Centered extends StatelessWidget {
     ),
   );
 }
+
+/// Notes hold at most this many characters: one synced change may carry
+/// 32 KB, and a longer note would be refused by the server every time.
+const notesMaxLength = 10000;
+
+/// The character count of a notes field, shown only near [notesMaxLength].
+Widget? notesCounter(
+  BuildContext context, {
+  required int currentLength,
+  required int? maxLength,
+  required bool isFocused,
+}) => currentLength < notesMaxLength * 0.9
+    ? null
+    : Text('$currentLength / $maxLength');

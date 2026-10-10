@@ -5,6 +5,33 @@ import 'package:leccheck/domain/schedule_types.dart';
 import 'helpers.dart';
 
 void main() {
+  group('every other week, continued from a later week', () {
+    test('starts on the next week of the same cycle', () {
+      final rule = weekly(intervalWeeks: 2);
+      final sem = semester();
+      // Classes in weeks 1, 3, 5… (from 2026-10-18).
+      expect(
+        OccurrenceEngine.nextWeekOnCycle(rule, sem, d('2026-10-25')),
+        d('2026-11-01'),
+      );
+      expect(
+        OccurrenceEngine.nextWeekOnCycle(rule, sem, d('2026-11-01')),
+        d('2026-11-01'),
+      );
+      // "Second week": weeks 2, 4, 6…
+      final second = weekly(intervalWeeks: 2, validFrom: '2026-10-25');
+      expect(
+        OccurrenceEngine.nextWeekOnCycle(second, sem, d('2026-11-01')),
+        d('2026-11-08'),
+      );
+      // Every week: from the week asked for.
+      expect(
+        OccurrenceEngine.nextWeekOnCycle(weekly(), sem, d('2026-10-25')),
+        d('2026-10-25'),
+      );
+    });
+  });
+
   group('weekly meetings', () {
     test('one session per week across the October DST change', () {
       final index = OccurrenceEngine.expand(

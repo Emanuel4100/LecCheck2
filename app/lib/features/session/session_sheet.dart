@@ -242,6 +242,8 @@ class _SessionSheetState extends ConsumerState<SessionSheet> {
               focusNode: _notesFocus,
               minLines: 2,
               maxLines: 6,
+              maxLength: notesMaxLength,
+              buildCounter: notesCounter,
               textCapitalization: TextCapitalization.sentences,
               decoration: InputDecoration(
                 labelText: l.sessionNotes,

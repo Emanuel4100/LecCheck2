@@ -5,8 +5,11 @@ import 'package:uuid/uuid.dart';
 import '../../domain/holidays/jewish_holidays.dart';
 import '../../domain/local_date.dart';
 import '../../domain/occurrence.dart';
+import '../../domain/occurrence_engine.dart';
 import '../../domain/schedule_types.dart';
+import '../../domain/semester_calendar.dart';
 import '../../domain/semester_data.dart';
+import '../dev/dev_log.dart';
 import 'app_database.dart';
 import 'mappers.dart';
 import 'tables.dart';
@@ -45,6 +48,60 @@ class CourseBase {
   final CourseInfo course;
   final List<MeetingRule> meetings;
   final List<AttendanceRequirement> requirements;
+}
+
+/// A weekly meeting's sessions moving to another weekday (the course editor
+/// changed its day), so their marks, notes and moves stay with them.
+/// Sessions are keyed by their original date, so without this they would
+/// be left behind on the old day, out of sight.
+class HistoryMove {
+  const HistoryMove({
+    required this.fromMeetingId,
+    required this.toMeetingId,
+    required this.toWeekday,
+    required this.weekStart,
+    this.from,
+  });
+
+  final String fromMeetingId;
+
+  /// The same meeting ("all weeks"), or the one that continues it ("from
+  /// this week on").
+  final String toMeetingId;
+
+  /// ISO weekday each session moves to, within its own week.
+  final int toWeekday;
+
+  /// The semester's first day of the week.
+  final int weekStart;
+
+  /// Only sessions from this date on (null: all of them).
+  final LocalDate? from;
+}
+
+/// The sessions of every semester that runs between two dates, merged:
+/// what reminders and the home-screen widget work from, whichever semester
+/// the app happens to show.
+class ScheduleWindow {
+  const ScheduleWindow({
+    required this.index,
+    required this.courses,
+    required this.meetings,
+    required this.semesters,
+  });
+
+  final OccurrenceIndex index;
+  final Map<String, CourseInfo> courses;
+  final Map<String, MeetingRule> meetings;
+
+  /// The semesters in the window, newest first.
+  final List<SemesterData> semesters;
+
+  /// The semester running on [date], if any.
+  SemesterInfo? semesterOn(LocalDate date) => semesters
+      .map((d) => d.semester)
+      .where((s) => date.isWithin(s.start, s.end))
+      .firstOrNull;
 }
 
 /// A deleted semester or course that can still be restored.
@@ -102,7 +159,12 @@ class DeletionReceipt {
 }
 
 class _Adapter<D extends DataClass> {
-  const _Adapter(this.table, this.fromJson, [this.added = const {}]);
+  const _Adapter(
+    this.table,
+    this.fromJson, {
+    this.added = const {},
+    this.check,
+  });
   final TableInfo<Table, D> table;
   final D Function(Map<String, dynamic> json) fromJson;
 
@@ -110,10 +172,21 @@ class _Adapter<D extends DataClass> {
   /// older app versions (synced rows, backups, snapshots) don't have them,
   /// and must still load.
   final Map<String, Object?> added;
+
+  /// Throws if the app couldn't use the row (e.g. a date that doesn't
+  /// exist), so files with such rows are refused row by row.
+  final void Function(D row)? check;
   String get name => table.actualTableName;
 
   /// A row from JSON, with [added] columns filled in when missing.
   D parse(Map<String, dynamic> json) => fromJson({...added, ...json});
+
+  /// [parse], and [check]ed.
+  D readable(Map<String, dynamic> json) {
+    final row = parse(json);
+    check?.call(row);
+    return row;
+  }
 
   /// Upserts a full row. Lives here so [D] is the real row type even when
   /// the adapter is reached through a `_Adapter<DataClass>` reference.
@@ -146,20 +219,23 @@ class ScheduleRepository {
   late final _semesters = _Adapter<SemesterRow>(
     db.semesters,
     SemesterRow.fromJson,
+    check: (r) => r.toDomain(),
   );
   late final _courses = _Adapter<CourseRow>(
     db.courses,
     CourseRow.fromJson,
-    const {'shortName': ''},
+    added: const {'shortName': ''},
   );
   late final _meetings = _Adapter<MeetingRow>(db.meetings, MeetingRow.fromJson);
   late final _overrides = _Adapter<SessionOverrideRow>(
     db.sessionOverrides,
     SessionOverrideRow.fromJson,
+    check: (r) => r.toDomain(),
   );
   late final _noClass = _Adapter<NoClassRangeRow>(
     db.noClassRanges,
     NoClassRangeRow.fromJson,
+    check: (r) => r.toDomain(),
   );
   late final _requirements = _Adapter<RequirementRow>(
     db.requirements,
@@ -190,7 +266,7 @@ class ScheduleRepository {
             ..where((s) => s.deleted.equals(false))
             ..orderBy([(s) => OrderingTerm.desc(s.startDate)]))
           .watch()
-          .map((rows) => [for (final r in rows) r.toDomain()]);
+          .map((rows) => _readable(rows, (r) => r.toDomain()));
 
   Future<List<SemesterInfo>> semesters() => watchSemesters().first;
 
@@ -228,6 +304,8 @@ class ScheduleRepository {
               ..where((s) => s.id.equals(semesterId) & s.deleted.equals(false)))
             .getSingleOrNull();
     if (semester == null) return null;
+    final info = _readable([semester], (r) => r.toDomain()).firstOrNull;
+    if (info == null) return null;
 
     final courses =
         await (db.select(db.courses)
@@ -270,14 +348,89 @@ class ScheduleRepository {
               .get();
 
     return SemesterData(
-      semester: semester.toDomain(),
-      courses: [for (final r in courses) r.toDomain()],
-      meetings: [for (final r in meetings) r.toDomain()],
-      overrides: [for (final r in overrides) r.toDomain()],
-      noClassRanges: [for (final r in ranges) r.toDomain()],
-      requirements: [for (final r in requirements) r.toDomain()],
+      semester: info,
+      courses: _readable(courses, (r) => r.toDomain()),
+      meetings: _readable(meetings, (r) => r.toDomain()),
+      overrides: _readable(overrides, (r) => r.toDomain()),
+      noClassRanges: _readable(ranges, (r) => r.toDomain()),
+      requirements: _readable(requirements, (r) => r.toDomain()),
     );
   }
+
+  /// Rows this version couldn't read, already logged.
+  static final _unreadable = <String>{};
+
+  /// [rows] mapped with [toDomain], leaving out rows that can't be read (a
+  /// date that doesn't exist, from an imported file or another device), so
+  /// one bad row can't hide a whole semester. Each is logged once.
+  static List<T> _readable<R extends DataClass, T>(
+    Iterable<R> rows,
+    T Function(R row) toDomain,
+  ) {
+    final out = <T>[];
+    for (final row in rows) {
+      try {
+        out.add(toDomain(row));
+      } on Object catch (e) {
+        final json = row.toJson();
+        final key = '${row.runtimeType}/${json['id']}';
+        if (_unreadable.add(key)) {
+          debugPrint('Skipping unreadable $key: $e');
+          DevLog.add('Skipping unreadable $key: $e');
+        }
+      }
+    }
+    return out;
+  }
+
+  /// Every semester running between [from] and [to], loaded and merged.
+  Future<ScheduleWindow> loadWindow(LocalDate from, LocalDate to) async {
+    final data = <SemesterData>[];
+    for (final s in await semesters()) {
+      if (s.end.isBefore(from) || s.start.isAfter(to)) continue;
+      if (await loadSemesterData(s.id) case final d?) data.add(d);
+    }
+    // Each semester numbers its own sessions; merged in time order.
+    final sessions = [
+      for (final d in data)
+        ...OccurrenceEngine.expand(
+          semester: d.semester,
+          meetings: d.meetings,
+          overrides: d.overrides,
+          noClassRanges: d.noClassRanges,
+        ).all,
+    ]..sort(OccurrenceEngine.compareChronological);
+    return ScheduleWindow(
+      index: OccurrenceIndex(sessions),
+      courses: {
+        for (final d in data)
+          for (final c in d.courses) c.id: c,
+      },
+      meetings: {
+        for (final d in data)
+          for (final m in d.meetings) m.id: m,
+      },
+      semesters: data,
+    );
+  }
+
+  /// Fires whenever schedule data changes (once per transaction), and once
+  /// right away.
+  Stream<void> watchAnyChange() => db
+      .customSelect(
+        'SELECT 1',
+        readsFrom: {
+          db.semesters,
+          db.courses,
+          db.meetings,
+          db.sessionOverrides,
+          db.noClassRanges,
+          db.requirements,
+          db.userSettings,
+        },
+      )
+      .watch()
+      .map((_) {});
 
   Stream<UserPrefs> watchUserPrefs() =>
       (db.select(
@@ -333,6 +486,7 @@ class ScheduleRepository {
     required List<MeetingRule> meetings,
     required List<AttendanceRequirement> requirements,
     CourseBase? base,
+    List<HistoryMove> historyMoves = const [],
   }) => db.transaction(() async {
     await _saveEdited(_courses, course.toRow(), base?.course.toRow());
 
@@ -341,6 +495,9 @@ class ScheduleRepository {
     };
     for (final m in meetings) {
       await _saveEdited(_meetings, m.toRow(), baseMeetings[m.id]?.toRow());
+    }
+    for (final move in historyMoves) {
+      await _moveHistory(move);
     }
     final keepMeetings = {for (final m in meetings) m.id};
     final oldMeetings = base != null
@@ -469,7 +626,8 @@ class ScheduleRepository {
     )..where((t) => t.semesterId.equals(semesterId))).get();
     return {
       for (final r in rows)
-        if (r.id.startsWith(prefix)) LocalDate.parse(r.startDate): !r.deleted,
+        if (r.id.startsWith(prefix))
+          ?LocalDate.tryParse(r.startDate): !r.deleted,
     };
   }
 
@@ -508,7 +666,8 @@ class ScheduleRepository {
         return receipt;
       });
 
-  /// Writes full rows (backup import). Unknown tables are ignored.
+  /// Writes full rows (backup import). Unknown tables and rows this version
+  /// can't read ([previewImport] counts them) are left out.
   ///
   /// [ImportMode.merge] only adds rows that don't exist here, and asks the
   /// server to do the same, so an old backup can't overwrite newer data.
@@ -520,7 +679,8 @@ class ScheduleRepository {
       final adapter = _byName[table];
       if (adapter == null) continue;
       for (final row in rows) {
-        final next = _normalize(adapter, row);
+        final next = _tryNormalize(adapter, row);
+        if (next == null) continue;
         if (mode == ImportMode.replace) {
           await _upsert(adapter, adapter.parse({...next, 'updatedAt': 0}));
         } else if (await _find(adapter, next['id']! as String) == null) {
@@ -530,18 +690,24 @@ class ScheduleRepository {
     }
   });
 
-  /// How many backup rows are new here, and how many differ from this
-  /// device's copy (what [ImportMode.replace] would overwrite).
-  Future<({int added, int changed})> previewImport(
+  /// How many backup rows are new here, how many differ from this device's
+  /// copy (what [ImportMode.replace] would overwrite), and how many can't be
+  /// read (left out).
+  Future<({int added, int changed, int skipped})> previewImport(
     Map<String, List<Map<String, Object?>>> tables,
   ) async {
     var added = 0;
     var changed = 0;
+    var skipped = 0;
     for (final MapEntry(key: table, value: rows) in tables.entries) {
       final adapter = _byName[table];
       if (adapter == null) continue;
       for (final row in rows) {
-        final next = _normalize(adapter, row);
+        final next = _tryNormalize(adapter, row);
+        if (next == null) {
+          skipped++;
+          continue;
+        }
         final existing = await _find(adapter, next['id']! as String);
         if (existing == null) {
           added++;
@@ -553,7 +719,7 @@ class ScheduleRepository {
         }
       }
     }
-    return (added: added, changed: changed);
+    return (added: added, changed: changed, skipped: skipped);
   }
 
   /// Makes this device's data equal [tables] (a snapshot, tombstones
@@ -564,8 +730,10 @@ class ScheduleRepository {
         for (final adapter in _byName.values) {
           final ids = <String>{};
           for (final row in tables[adapter.name] ?? const []) {
-            final next = _normalize(adapter, row);
-            ids.add(next['id']! as String);
+            // A row that can't be read is left as it is here.
+            if (row['id'] case final String id) ids.add(id);
+            final next = _tryNormalize(adapter, row);
+            if (next == null) continue;
             await _upsert(adapter, adapter.parse({...next, 'updatedAt': 0}));
           }
           final live = await (db.select(
@@ -578,13 +746,20 @@ class ScheduleRepository {
         }
       });
 
-  /// A row from a file as this app version stores it.
-  Map<String, Object?> _normalize<D extends DataClass>(
+  /// A row from a file as this app version stores it, or null if it can't
+  /// be read (wrong types, a date that doesn't exist).
+  Map<String, Object?>? _tryNormalize<D extends DataClass>(
     _Adapter<D> a,
     Map<String, Object?> row,
-  ) =>
-      a.parse({'deleted': false, ...row, 'updatedAt': 0}).toJson()
+  ) {
+    try {
+      return a.readable({'deleted': false, ...row, 'updatedAt': 0}).toJson()
         ..remove('updatedAt');
+    } on Object catch (e) {
+      debugPrint('Skipping unreadable ${a.name} row ${row['id']}: $e');
+      return null;
+    }
+  }
 
   // ------------------------------------------------------ recently deleted --
 
@@ -710,14 +885,29 @@ class ScheduleRepository {
 
   /// Writes a row received from the sync server (already merged with any
   /// pending local patches). Not recorded, so it isn't sent back.
+  ///
+  /// `updatedAt` doubles as the time a row was deleted (Recently deleted,
+  /// and restoring what was deleted along with it), so it only moves when
+  /// this device sees a row change: a row that was already deleted keeps
+  /// its time, and one that arrives deleted (a fresh device catching up)
+  /// gets 0, so years of old deletes don't show up as deleted just now.
   Future<void> applyRemoteRow(String table, Map<String, Object?> row) async {
     final adapter = _byName[table];
     final id = row['id'];
     if (adapter == null || id is! String) return;
     final existing = await _find(adapter, id);
-    final merged = {...?existing?.toJson(), ...row}..remove('updatedAt');
+    final current = existing?.toJson();
+    final merged = {...?current, ...row}..remove('updatedAt');
+    final deleted = merged['deleted'] == true;
+    final updatedAt = !deleted
+        ? _now()
+        : current == null
+        ? 0
+        : current['deleted'] == true
+        ? current['updatedAt']
+        : _now();
     try {
-      await adapter.upsert(db, {...merged, 'updatedAt': _now()});
+      await adapter.upsert(db, {...merged, 'updatedAt': updatedAt});
     } on Object catch (e) {
       // A row from a newer app version may miss columns this version needs.
       debugPrint('Skipping remote $table/$id: $e');
@@ -851,8 +1041,14 @@ class ScheduleRepository {
     Map<String, Object?> patch,
   ) async {
     final id = sessionId(meetingId, originalDate);
-    if (await _find(_overrides, id) != null) {
-      await _patch(_overrides, id, patch);
+    final existing = await _find(_overrides, id);
+    if (existing != null) {
+      // Deleted along with its meeting once (and the meeting came back on
+      // its own): marking the session brings the row back too.
+      await _patch(_overrides, id, {
+        ...patch,
+        if (existing.deleted) 'deleted': false,
+      });
       return;
     }
     final fresh = SessionOverrideRow(
@@ -880,6 +1076,62 @@ class ScheduleRepository {
     ).toJson()..remove('updatedAt');
     final full = {...fresh, ...patch};
     await _write(_settings, full, full);
+  }
+
+  /// Moves each session record of [move] to its week's new weekday: the
+  /// record is copied to the new session and the old one deleted. A session
+  /// that already has its own record there keeps it, filled in with what
+  /// the old one had where it's empty.
+  Future<void> _moveHistory(HistoryMove move) async {
+    final rows =
+        await (db.select(db.sessionOverrides)..where(
+              (o) =>
+                  o.meetingId.equals(move.fromMeetingId) &
+                  o.deleted.equals(false),
+            ))
+            .get();
+    for (final row in rows) {
+      final original = LocalDate.tryParse(row.originalDate);
+      if (original == null) continue;
+      if (move.from case final from? when original.isBefore(from)) continue;
+      final target = startOfWeek(
+        original,
+        move.weekStart,
+      ).addDays((move.toWeekday - move.weekStart + 7) % 7);
+      final sameMeeting = move.toMeetingId == move.fromMeetingId;
+      if (sameMeeting && target == original) continue;
+
+      final targetId = sessionId(move.toMeetingId, target);
+      final old = row.toJson()..remove('updatedAt');
+      final existing = await _find(_overrides, targetId);
+      if (existing == null || existing.deleted) {
+        await _upsert(
+          _overrides,
+          _overrides.parse({
+            ...old,
+            'id': targetId,
+            'meetingId': move.toMeetingId,
+            'originalDate': target.toIso(),
+            'deleted': false,
+            'updatedAt': 0,
+          }),
+        );
+      } else {
+        final current = existing.toJson();
+        await _patch(_overrides, targetId, {
+          for (final MapEntry(:key, :value) in old.entries)
+            if (key != 'id' &&
+                key != 'meetingId' &&
+                key != 'originalDate' &&
+                key != 'deleted' &&
+                value != null &&
+                value != '' &&
+                (current[key] == null || current[key] == ''))
+              key: value,
+        });
+      }
+      await _patch(_overrides, row.id, {'deleted': true});
+    }
   }
 
   Future<void> _deleteCourseTree(
