@@ -17,7 +17,9 @@ export const SYNCED_TABLES = new Set([
 export const PROTOCOL_VERSION = 1;
 
 export const MAX_CHANGES_PER_PUSH = 500;
-export const MAX_PATCH_BYTES = 16 * 1024;
+/** One change: room for the app's longest note (10,000 characters, even
+ * with JSON escapes). Rows are capped at [MAX_ROW_BYTES] anyway. */
+export const MAX_PATCH_BYTES = 32 * 1024;
 export const MAX_MESSAGE_BYTES = 1024 * 1024;
 export const MAX_CLOCK_SKEW_MS = 5 * 60 * 1000;
 export const PAGE_SIZE = 500;

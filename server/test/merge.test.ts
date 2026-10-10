@@ -76,13 +76,18 @@ describe("validateChange", () => {
     expect(validateChange(ok, now).ok).toBe(true);
   });
 
+  it("takes the app's longest note (10,000 characters, even with escapes)", () => {
+    const notes = '"\n'.repeat(5_000);
+    expect(validateChange({ ...ok, patch: { notes } }, now).ok).toBe(true);
+  });
+
   it.each([
     [{ ...ok, tbl: "users" }, "unknown_table"],
     [{ ...ok, id: "" }, "bad_id"],
     [{ ...ok, patch: [] }, "bad_patch"],
     [{ ...ok, hlc: "yesterday" }, "bad_clock"],
     [{ ...ok, hlc: clock(now + 10 * 60 * 1000) }, "clock_skew"],
-    [{ ...ok, patch: { notes: "x".repeat(20_000) } }, "patch_too_large"],
+    [{ ...ok, patch: { notes: "x".repeat(40_000) } }, "patch_too_large"],
     [{ ...ok, ifAbsent: "yes" }, "malformed"],
     [{ ...ok, patch: JSON.parse('{"__proto__": {"x": 1}}') }, "bad_field"],
     [{ ...ok, patch: { ["n".repeat(65)]: 1 } }, "bad_field"],

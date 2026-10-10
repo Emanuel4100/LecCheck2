@@ -128,7 +128,7 @@ compares clocks.
 | Limit | Value |
 |---|---|
 | Changes per push | 500 |
-| Patch size | 16 KB |
+| Patch size | 32 KB (the app caps notes at 10,000 characters) |
 | Field names | letters, digits and `_`, starting with a letter, up to 64 (`bad_field`) |
 | Message size | 1 MB (the app sends at most 512 KB) |
 | Clock skew | changes stamped > 5 minutes in the future are rejected (`clock_skew`) |
