@@ -28,6 +28,12 @@
   background; Jewish and Israeli holidays as no-class days; an update notice for Android
   and Linux; opt-in bug reports; a smoother Week view and rendering stats; server health
   checks and automatic deploys with smoke tests and rollback.
+- **Security and sync fixes** (2.0.0-beta.6): sync recovers from a failed step instead
+  of stopping until a restart; Retry no longer undoes newer edits; pushes are capped in
+  size; long-running apps renew their sign-in; only web, mail and phone links open; the
+  widget's buttons can't be triggered by other apps. The server has per-account limits
+  (so one account can't use up the free plan for everyone) and refuses revoked sessions
+  for every account action.
 
 ## Not yet verified on real hardware
 

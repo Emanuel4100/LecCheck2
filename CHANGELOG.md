@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 2.0.0-beta.6 — 2026-10-11
 
 - **Sync keeps going after an error**: one change or message that failed to apply (a
   database error, a row it couldn't read) stopped sync until the app was restarted, while
