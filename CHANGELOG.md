@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 2.0.0-beta.9 — 2026-10-12
 
 - **No more empty semesters when signing in** (issue #2). Signing in on a new device
   sometimes opened the semester setup before the account's data arrived, and creating

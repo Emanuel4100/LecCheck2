@@ -45,6 +45,12 @@
   `install.sh`, Update downloads the release, checks its SHA-256 (now in `update.json`)
   and installs it: Android's installer, or the tarball's own `install.sh` plus Restart.
   Check now shows that it's checking and what it found.
+- **Sign-in without stray semesters, an app tour** (2.0.0-beta.9): signing in asks what
+  to do when the device and the account both have data, waits for the account's data,
+  then asks which semester to open (issue #2); a tour after the first setup (issue #1).
+  Deleted cloud data can be brought back from Settings, long course names are shortened
+  in Week instead of cut off, What's new shows the changes, and "remove animations" is
+  respected.
 
 ## Not yet verified on real hardware
 
