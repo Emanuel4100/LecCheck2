@@ -99,8 +99,10 @@ rm health-token
 fine-grained token (GitHub → Settings → Developer settings → Fine-grained tokens) with
 access to that repository only and **Issues: Read and write**. Set it on the Worker:
 `npx wrangler secret put REPORTS_GITHUB_TOKEN`. Without it, the app's **Report a problem**
-says reports aren't available; with it, each report is an issue there (and an email to
-you). A different repository: set `REPORTS_REPO` (e.g. `you/reports`) the same way.
+says reports aren't available; with it, each report is an issue there. The issues are
+filed with your own token, so GitHub counts them as your own activity and doesn't email
+you unless you turn on **Settings → Notifications → Include your own updates**. A
+different repository: set `REPORTS_REPO` (e.g. `you/reports`) the same way.
 Fine-grained tokens expire: the server health check warns when it's rejected.
 
 Then **Settings → Environments → New environment** `production-approval`, with yourself
