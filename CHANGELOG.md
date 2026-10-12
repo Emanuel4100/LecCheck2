@@ -10,6 +10,8 @@
   account silently: when the account has data too, you choose **Use my account's** (the
   device's data is backed up first) or **Keep both**. An account whose data was deleted
   in the last 30 days offers to bring it back.
+- **Bring back deleted cloud data**: Settings → Account offers it for 30 days after
+  **Delete cloud data** (until now only the server could).
 
 ## 2.0.0-beta.8 — 2026-10-12
 

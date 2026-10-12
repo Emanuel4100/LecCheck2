@@ -301,6 +301,14 @@ class AuthController extends AsyncNotifier<Session?> {
     await _afterFirstSync(const {});
   }
 
+  /// Brings back what "Delete cloud data" removed (within 30 days); it then
+  /// syncs down. Returns how many rows came back.
+  Future<int> restoreDeleted() async {
+    final session = state.value;
+    if (session == null) return 0;
+    return _auth.restoreDeleted(session);
+  }
+
   /// Signs out. With [SignOutMode.keepData] the device stays attached to the
   /// account: edits keep queueing (nothing unsynced is dropped) and sync when
   /// the account signs in again. [SignOutMode.removeData] saves a snapshot
@@ -366,6 +374,17 @@ class AuthController extends AsyncNotifier<Session?> {
 final authProvider = AsyncNotifierProvider<AuthController, Session?>(
   AuthController.new,
 );
+
+/// What the signed-in account holds, for Settings → Account (asked each time
+/// it's shown; null when signed out or the server can't say).
+final accountSummaryProvider = FutureProvider.autoDispose<AccountSummary?>((
+  ref,
+) async {
+  final userId = ref.watch(authProvider.select((s) => s.value?.userId));
+  final session = ref.read(authProvider).value;
+  if (userId == null || session == null) return null;
+  return ref.read(authServiceProvider).accountSummary(session);
+});
 
 /// Runs while signed in; null otherwise. Rebuilt when the account changes,
 /// not when its token is renewed (the engine renews it itself).

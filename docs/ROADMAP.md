@@ -69,8 +69,8 @@ These are built and compile, but have only been exercised in tests so far:
 - **Data safety, part 3**: SQLite WAL + `quick_check` on startup (offer the latest
   automatic backup if it fails; the check exists in Settings → Developer), re-fetch rows
   the app couldn't read after an update (they're kept and skipped since 2.0.0-beta.7),
-  server-side value validation, HLC stored in SQLite, a multi-device convergence fuzz
-  test, and an in-app "restore deleted cloud data" button (the server side exists).
+  server-side value validation, HLC stored in SQLite, and a multi-device convergence
+  fuzz test.
 - **Stats v2**: per-week heatmap, requirement projections.
 - **Polish**: accessibility pass (semantics, large fonts), more animations, tablet
   two-pane layouts.

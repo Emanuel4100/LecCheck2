@@ -222,6 +222,9 @@ it. Tap the widget to open the app.
   the server keeps a copy for 30 days in case it was a mistake). Other devices are signed
   out but keep their copy; if one of them signs in to the account again, its copy syncs
   back up.
+- **Bring back deleted cloud data** — within those 30 days, Settings → Account shows when
+  the data was deleted and brings it back to every device (signing in to the emptied
+  account offers the same).
 
 ## Phones, tablets and desktop
 

@@ -191,6 +191,20 @@ class AccountSection extends ConsumerWidget {
               child: Text(l.retry),
             ),
           ),
+        // "Delete cloud data" keeps the data on the server for 30 days.
+        if (ref.watch(accountSummaryProvider).value?.deletedAt
+            case final deletedAt?)
+          ListTile(
+            leading: const Icon(LecIcons.restore),
+            title: Text(l.restoreDeletedRow),
+            subtitle: Text(
+              l.restoreDeletedRowSubtitle(
+                fmt.yearMonthDay(LocalDate.fromDateTime(deletedAt)),
+                fmt.yearMonthDay(LocalDate.fromDateTime(deletedAt).addDays(30)),
+              ),
+            ),
+            onTap: () => _restoreDeleted(context, ref, deletedAt),
+          ),
         ListTile(
           leading: const Icon(LecIcons.close),
           title: Text(l.signOut),
@@ -245,6 +259,34 @@ class AccountSection extends ConsumerWidget {
       debugPrint('Sign out everywhere failed: $e');
       messenger?.showSnackBar(SnackBar(content: Text(l.accountActionFailed)));
     }
+  }
+
+  Future<void> _restoreDeleted(
+    BuildContext context,
+    WidgetRef ref,
+    DateTime deletedAt,
+  ) async {
+    final l = AppLocalizations.of(context);
+    final messenger = ScaffoldMessenger.maybeOf(context);
+    final ok = await confirmDialog(
+      context,
+      title: l.restoreDeletedTitle,
+      body: l.restoreDeletedBody(
+        Fmt.of(context).yearMonthDay(LocalDate.fromDateTime(deletedAt)),
+      ),
+      confirmLabel: l.bringBack,
+    );
+    if (!ok) return;
+    try {
+      final restored = await ref.read(authProvider.notifier).restoreDeleted();
+      messenger?.showSnackBar(
+        SnackBar(content: Text(l.restoredCount(restored))),
+      );
+    } on Object catch (e) {
+      debugPrint('Bringing back deleted data failed: $e');
+      messenger?.showSnackBar(SnackBar(content: Text(l.accountActionFailed)));
+    }
+    ref.invalidate(accountSummaryProvider);
   }
 
   Future<void> _deleteCloud(BuildContext context, WidgetRef ref) async {
