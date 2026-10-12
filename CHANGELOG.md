@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 2.0.0-beta.10 — 2026-10-13
 
 - **A roomier course editor**. Meetings are one line each ("Lecture · Sunday,
   10:00–12:00 · 201") and open in a sheet (a dialog on wide screens) where the type and

@@ -51,6 +51,12 @@
   Deleted cloud data can be brought back from Settings, long course names are shortened
   in Week instead of cut off, What's new shows the changes, and "remove animations" is
   respected.
+- **A roomier course editor, adding from Week** (2.0.0-beta.10): meetings are one-line
+  rows that open a sheet (type and repeat as menus, several days at once), optional
+  fields wait behind "+" chips, and the requirement, notes and links fold into rows; two
+  columns on wide windows. Tapping an empty spot in Week adds a course, a meeting or a
+  one-time session there. Today, Stats, the course page and the welcome screen got a
+  tidy-up from a UI review.
 
 ## Not yet verified on real hardware
 
