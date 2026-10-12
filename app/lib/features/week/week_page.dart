@@ -22,18 +22,20 @@ import '../../domain/schedule_types.dart';
 import '../../domain/semester_calendar.dart';
 import '../../domain/short_name.dart';
 import '../../l10n/gen/app_localizations.dart';
+import '../courses/course_actions.dart';
 import '../session/session_menu.dart';
 import '../session/session_sheet.dart';
 import '../settings/account_section.dart';
 import '../session/session_tile.dart';
 import '../session/status_buttons.dart';
 
-/// First and last hour shown in the grid, fitted to the semester's sessions.
+/// First and last hour shown in the grid: at least 8:00–18:00, so there's
+/// room to tap and add a class, and more when the semester's sessions need
+/// it.
 final hourRangeProvider = Provider<(int, int)>((ref) {
   final index = ref.watch(occurrenceIndexProvider);
-  if (index.all.isEmpty) return (8, 18);
-  var minStart = 24 * 60;
-  var maxEnd = 0;
+  var minStart = 8 * 60;
+  var maxEnd = 18 * 60;
   for (final o in index.all) {
     minStart = math.min(minStart, o.startMin);
     maxEnd = math.max(maxEnd, o.endMin);
@@ -675,7 +677,7 @@ List<_Placed> _layoutDay(List<Occurrence> sessions) {
   return placed;
 }
 
-class _DayColumn extends ConsumerWidget {
+class _DayColumn extends ConsumerStatefulWidget {
   const _DayColumn({
     required this.date,
     required this.startHour,
@@ -689,13 +691,49 @@ class _DayColumn extends ConsumerWidget {
   final double height;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_DayColumn> createState() => _DayColumnState();
+}
+
+class _DayColumnState extends ConsumerState<_DayColumn> {
+  /// The empty slot tapped, marked while its menu is open.
+  ({int start, int end})? _slot;
+
+  /// A tap on empty space: adds a course or meeting at that time, from the
+  /// half hour before it, for the usual two hours.
+  Future<void> _onTapEmpty(TapUpDetails details) async {
+    final (_, endHour) = ref.read(hourRangeProvider);
+    final tapped =
+        widget.startHour * 60 +
+        (details.localPosition.dy / widget.hourHeight * 60).floor();
+    final start = (tapped ~/ 30 * 30).clamp(
+      widget.startHour * 60,
+      endHour * 60 - 30,
+    );
+    final slot = (start: start, end: math.min(start + 120, 24 * 60 - 1));
+    setState(() => _slot = slot);
+    await addAtSlot(
+      context,
+      ref,
+      date: widget.date,
+      startMin: slot.start,
+      endMin: slot.end,
+      position: details.globalPosition,
+    );
+    if (mounted) setState(() => _slot = null);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final date = widget.date;
+    final height = widget.height;
     final ids = ref.watch(dayIdsProvider(date)).items;
     final index = ref.read(occurrenceIndexProvider);
     final sessions = [for (final id in ids) ?index.byId[id]];
     final today = ref.watch(todayProvider);
     final placed = _layoutDay(sessions);
-    double y(int minutes) => (minutes - startHour * 60) / 60 * hourHeight;
+    final scheme = Theme.of(context).colorScheme;
+    double y(int minutes) =>
+        (minutes - widget.startHour * 60) / 60 * widget.hourHeight;
 
     // Its own layer: a hover or splash on a tile repaints this day, not the
     // whole week.
@@ -708,6 +746,27 @@ class _DayColumn extends ConsumerWidget {
             child: Stack(
               clipBehavior: Clip.none,
               children: [
+                // Behind the tiles: only taps on empty space reach it.
+                Positioned.fill(
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTapUp: _onTapEmpty,
+                  ),
+                ),
+                if (_slot case final slot?)
+                  PositionedDirectional(
+                    top: y(slot.start),
+                    height: y(slot.end) - y(slot.start) - 2,
+                    start: 2,
+                    end: 2,
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: scheme.primary.withValues(alpha: 0.12),
+                        border: Border.all(color: scheme.primary, width: 2),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                  ),
                 for (final p in placed)
                   PositionedDirectional(
                     key: ValueKey(p.session.id),
@@ -723,7 +782,10 @@ class _DayColumn extends ConsumerWidget {
                     child: _GridTile(sessionId: p.session.id),
                   ),
                 if (date == today)
-                  _NowLine(startHour: startHour, hourHeight: hourHeight),
+                  _NowLine(
+                    startHour: widget.startHour,
+                    hourHeight: widget.hourHeight,
+                  ),
               ],
             ),
           );

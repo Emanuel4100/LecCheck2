@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:drift/drift.dart' show driftRuntimeOptions;
 import 'package:drift/native.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -361,6 +363,53 @@ void main() {
     await _tap(tester, find.byTooltip('Add one-time session'));
     expect(find.text('New meeting'), findsOneWidget);
     expect(find.text('One-time'), findsOneWidget);
+  });
+
+  testWidgets('tapping empty space in Week adds a course or a meeting there', (
+    tester,
+  ) async {
+    final (c, _) = await _start(tester);
+    c.read(routerProvider).go('/week');
+    await _settle(tester);
+    // Thursday, October 22: no classes.
+    final thursday = tester.getRect(
+      find
+          .byWidgetPredicate((w) => w.runtimeType.toString() == '_DayColumn')
+          .at(4),
+    );
+    // A spot on screen; the grid starts at 8:00, 60 px an hour.
+    final y = (thursday.top + 6 * 60 + 10).clamp(
+      math.max(thursday.top, 200.0) + 1,
+      math.min(thursday.bottom, 760.0) - 1,
+    );
+    final spot = Offset(thursday.center.dx, y);
+    final expected =
+        (8 * 60 + ((y - thursday.top) / 60 * 60).floor()) ~/ 30 * 30;
+    await tester.tapAt(spot);
+    await _settle(tester);
+    expect(find.textContaining('Thu, Oct 22 · '), findsOneWidget);
+    expect(find.text('Add to a course…'), findsOneWidget);
+    await _tap(tester, find.text('New course here'));
+    final uri = c.read(routerProvider).state.uri;
+    expect(uri.path, '/course-editor');
+    final start = int.parse(uri.queryParameters['start']!);
+    expect(
+      (uri.queryParameters['day'], start, uri.queryParameters['end']),
+      ('4', expected, '${expected + 120}'),
+    );
+    expect(find.text('Lecture · Thursday'), findsOneWidget);
+    expect(find.text('New meeting'), findsNothing);
+
+    // Back in Week: a one-time session of Calculus on that date.
+    await tester.state<NavigatorState>(find.byType(Navigator).last).maybePop();
+    await _settle(tester);
+    await tester.tapAt(spot);
+    await _settle(tester);
+    await _tap(tester, find.text('One-time session…'));
+    await _tap(tester, find.text('Calculus'));
+    expect(find.text('New meeting'), findsOneWidget);
+    expect(find.text('One-time'), findsOneWidget);
+    expect(find.text('Thursday, October 22'), findsOneWidget);
   });
 
   testWidgets('in Hebrew', (tester) async {

@@ -325,6 +325,18 @@ void main() {
     await _settle(tester);
     await _go(tester, c, '/week');
     await _shot(tester, 'en_light_week');
+    // An empty slot: Thursday 13:10 (the grid starts at 8:00, 60 px an
+    // hour).
+    final thursday = tester.getRect(
+      find
+          .byWidgetPredicate((w) => w.runtimeType.toString() == '_DayColumn')
+          .at(4),
+    );
+    await tester.tapAt(Offset(thursday.center.dx, thursday.top + 5 * 60 + 10));
+    await _settle(tester);
+    await _shot(tester, 'en_light_week_add');
+    await tester.tapAt(const Offset(20, 20));
+    await _settle(tester);
     await _go(tester, c, '/courses');
     await _shot(tester, 'en_light_courses');
     await _go(tester, c, '/courses/calc');
