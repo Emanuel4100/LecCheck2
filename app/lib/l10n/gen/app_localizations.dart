@@ -2186,6 +2186,96 @@ abstract class AppLocalizations {
   /// **'How?'**
   String get howTo;
 
+  /// No description provided for @tourWelcomeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Take a quick tour?'**
+  String get tourWelcomeTitle;
+
+  /// No description provided for @tourWelcomeBody.
+  ///
+  /// In en, this message translates to:
+  /// **'See where everything is in half a minute, then add your first course.'**
+  String get tourWelcomeBody;
+
+  /// No description provided for @tourStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Start'**
+  String get tourStart;
+
+  /// No description provided for @tourTodayBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Today\'s classes. Tap one to mark it: attended, watched as a recording, or missed.'**
+  String get tourTodayBody;
+
+  /// No description provided for @tourWeekBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Your timetable, a week at a time. Swipe to another week, pinch to zoom in.'**
+  String get tourWeekBody;
+
+  /// No description provided for @tourCoursesBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Every course with its meetings, attendance requirements, notes and links.'**
+  String get tourCoursesBody;
+
+  /// No description provided for @tourStatsBody.
+  ///
+  /// In en, this message translates to:
+  /// **'How you\'re doing: attendance per course, and against each requirement.'**
+  String get tourStatsBody;
+
+  /// No description provided for @tourSettingsBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Reminders, sync, themes and backups. You can see this tour again from Settings → About.'**
+  String get tourSettingsBody;
+
+  /// No description provided for @tourAddTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Add your first course'**
+  String get tourAddTitle;
+
+  /// No description provided for @tourAddBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Give it a name, then add when it meets: lectures, practices or labs.'**
+  String get tourAddBody;
+
+  /// No description provided for @tourAddMoreTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Add courses'**
+  String get tourAddMoreTitle;
+
+  /// No description provided for @tourAddMoreBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Add more courses, or a one-time session, from here.'**
+  String get tourAddMoreBody;
+
+  /// No description provided for @tourStepOf.
+  ///
+  /// In en, this message translates to:
+  /// **'Step {step} of {total}'**
+  String tourStepOf(int step, int total);
+
+  /// No description provided for @showTour.
+  ///
+  /// In en, this message translates to:
+  /// **'Show the app tour'**
+  String get showTour;
+
+  /// No description provided for @showTourSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'A quick look at where everything is'**
+  String get showTourSubtitle;
+
   /// No description provided for @updateAvailable.
   ///
   /// In en, this message translates to:

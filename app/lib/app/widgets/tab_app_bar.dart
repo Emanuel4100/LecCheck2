@@ -10,10 +10,19 @@ import 'common.dart';
 /// settings button; wider layouts have settings in the navigation rail, and
 /// the large sidebar also shows the sync status.
 class TabAppBar extends StatelessWidget {
-  const TabAppBar({super.key, required this.title, this.actions = const []});
+  const TabAppBar({
+    super.key,
+    required this.title,
+    this.actions = const [],
+    this.settingsKey,
+  });
 
   final String title;
   final List<Widget> actions;
+
+  /// On the phone's settings button, for the app tour (one tab only: keys
+  /// are unique).
+  final GlobalKey? settingsKey;
 
   @override
   Widget build(BuildContext context) {
@@ -25,10 +34,13 @@ class TabAppBar extends StatelessWidget {
         ...actions,
         if (size != WindowSize.large) const SyncIndicator(),
         if (compact)
-          IconButton(
-            tooltip: AppLocalizations.of(context).settings,
-            icon: const Icon(LecIcons.settings),
-            onPressed: () => context.push('/settings'),
+          KeyedSubtree(
+            key: settingsKey,
+            child: IconButton(
+              tooltip: AppLocalizations.of(context).settings,
+              icon: const Icon(LecIcons.settings),
+              onPressed: () => context.push('/settings'),
+            ),
           ),
         const SizedBox(width: 4),
       ],

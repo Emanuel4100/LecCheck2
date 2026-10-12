@@ -10,6 +10,11 @@
   account silently: when the account has data too, you choose **Use my account's** (the
   device's data is backed up first) or **Keep both**. An account whose data was deleted
   in the last 30 days offers to bring it back.
+- **A quick tour of the app** (issue #1) after setting up the first semester: each step
+  dims the app around one item (Today, Week, Courses, Stats, Settings) and explains it,
+  and the last one opens **Add course**. Replay it from Settings → About → **Show the app
+  tour**. Works on phones and wide windows, in English and Hebrew, and with the keyboard
+  (arrows, Enter, Esc).
 - **Bring back deleted cloud data**: Settings → Account offers it for 30 days after
   **Delete cloud data** (until now only the server could).
 

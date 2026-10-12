@@ -618,6 +618,31 @@
     }
   },
   "howTo": "How?",
+  "tourWelcomeTitle": "Take a quick tour?",
+  "tourWelcomeBody": "See where everything is in half a minute, then add your first course.",
+  "tourStart": "Start",
+  "tourTodayBody": "Today's classes. Tap one to mark it: attended, watched as a recording, or missed.",
+  "tourWeekBody": "Your timetable, a week at a time. Swipe to another week, pinch to zoom in.",
+  "tourCoursesBody": "Every course with its meetings, attendance requirements, notes and links.",
+  "tourStatsBody": "How you're doing: attendance per course, and against each requirement.",
+  "tourSettingsBody": "Reminders, sync, themes and backups. You can see this tour again from Settings → About.",
+  "tourAddTitle": "Add your first course",
+  "tourAddBody": "Give it a name, then add when it meets: lectures, practices or labs.",
+  "tourAddMoreTitle": "Add courses",
+  "tourAddMoreBody": "Add more courses, or a one-time session, from here.",
+  "tourStepOf": "Step {step} of {total}",
+  "@tourStepOf": {
+    "placeholders": {
+      "step": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "showTour": "Show the app tour",
+  "showTourSubtitle": "A quick look at where everything is",
   "updateAvailable": "LecCheck {version} is available",
   "@updateAvailable": {
     "placeholders": {

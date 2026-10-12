@@ -13,6 +13,7 @@ import '../../core/icons/lec_icons.dart';
 import '../../domain/schedule_types.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../session/session_tile.dart';
+import '../tour/tour_controller.dart';
 import 'course_actions.dart';
 import 'course_page.dart';
 import 'requirement_chip.dart';
@@ -279,6 +280,7 @@ class _AddFabMenuState extends ConsumerState<_AddFabMenu> {
           ),
         ),
         FloatingActionButton(
+          key: TourTargets.addFab,
           tooltip: l.add,
           onPressed: () => setState(() => _open = !_open),
           child: AnimatedRotation(

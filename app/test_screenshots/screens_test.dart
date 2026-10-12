@@ -19,6 +19,7 @@ import 'package:leccheck/core/db/schedule_repository.dart';
 import 'package:leccheck/domain/local_date.dart';
 import 'package:leccheck/domain/occurrence_engine.dart';
 import 'package:leccheck/domain/schedule_types.dart';
+import 'package:leccheck/features/tour/tour_controller.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -340,6 +341,51 @@ void main() {
     await _go(tester, c, '/settings');
     await _shot(tester, 'ios_settings');
   }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+  /// Starts the tour and moves on [steps] steps (as Next does).
+  Future<void> tour(WidgetTester tester, ProviderContainer c, int steps) async {
+    final controller = c.read(tourProvider.notifier);
+    if (c.read(tourProvider) == null) controller.start();
+    for (var i = 0; i < steps; i++) {
+      controller.next();
+    }
+    await _settle(tester);
+  }
+
+  testWidgets('Tour', (tester) async {
+    final c = await _pumpApp(tester, locale: 'en', mode: ThemeMode.light);
+    await tour(tester, c, 0);
+    await _shot(tester, 'en_light_tour_welcome');
+    await tour(tester, c, 2);
+    await _shot(tester, 'en_light_tour_week');
+    await tour(tester, c, 3);
+    await _shot(tester, 'en_light_tour_settings');
+    await tour(tester, c, 1);
+    await _shot(tester, 'en_light_tour_add');
+  });
+
+  testWidgets('Tour · Hebrew · dark', (tester) async {
+    final c = await _pumpApp(
+      tester,
+      locale: 'he',
+      mode: ThemeMode.dark,
+      preset: ThemePreset.grape,
+    );
+    await tour(tester, c, 1);
+    await _shot(tester, 'he_dark_tour_today');
+  });
+
+  testWidgets('Tour · Desktop', (tester) async {
+    final c = await _pumpApp(
+      tester,
+      locale: 'en',
+      mode: ThemeMode.light,
+      size: const Size(1440, 900),
+      pixelRatio: 1,
+    );
+    await tour(tester, c, 5);
+    await _shot(tester, 'desktop_tour_settings');
+  }, variant: TargetPlatformVariant.only(TargetPlatform.linux));
 
   testWidgets('Onboarding', (tester) async {
     tester.view.physicalSize = const Size(412 * 2.6, 915 * 2.6);

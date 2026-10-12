@@ -6,6 +6,8 @@ import 'package:material_ui/material_ui.dart';
 import '../core/icons/lec_icons.dart';
 import '../features/courses/course_actions.dart';
 import '../features/settings/account_section.dart';
+import '../features/tour/tour_controller.dart';
+import '../features/tour/tour_overlay.dart';
 import '../features/week/week_page.dart';
 import '../l10n/gen/app_localizations.dart';
 import 'shortcuts.dart';
@@ -103,10 +105,10 @@ class AppShell extends ConsumerWidget {
           selectedIndex: shell.currentIndex,
           onDestinationSelected: _go,
           destinations: [
-            for (final (icon, selected, label) in destinations)
+            for (final (i, (icon, selected, label)) in destinations.indexed)
               NavigationDestination(
-                icon: Icon(icon),
-                selectedIcon: Icon(selected),
+                icon: _tourTarget(i, Icon(icon)),
+                selectedIcon: _tourTarget(i, Icon(selected)),
                 label: label,
               ),
           ],
@@ -126,10 +128,10 @@ class AppShell extends ConsumerWidget {
               groupAlignment: -1,
               leading: _RailHeader(extended: extended),
               destinations: [
-                for (final (icon, selected, label) in destinations)
+                for (final (i, (icon, selected, label)) in destinations.indexed)
                   NavigationRailDestination(
-                    icon: Icon(icon),
-                    selectedIcon: Icon(selected),
+                    icon: _tourTarget(i, Icon(icon)),
+                    selectedIcon: _tourTarget(i, Icon(selected)),
                     label: Text(label),
                   ),
               ],
@@ -145,17 +147,20 @@ class AppShell extends ConsumerWidget {
                       12,
                       20,
                     ),
-                    child: extended
-                        ? TextButton.icon(
-                            onPressed: () => context.push('/settings'),
-                            icon: const Icon(LecIcons.settings),
-                            label: Text(l.settings),
-                          )
-                        : IconButton(
-                            tooltip: l.settings,
-                            icon: const Icon(LecIcons.settings),
-                            onPressed: () => context.push('/settings'),
-                          ),
+                    child: KeyedSubtree(
+                      key: TourTargets.settings,
+                      child: extended
+                          ? TextButton.icon(
+                              onPressed: () => context.push('/settings'),
+                              icon: const Icon(LecIcons.settings),
+                              label: Text(l.settings),
+                            )
+                          : IconButton(
+                              tooltip: l.settings,
+                              icon: const Icon(LecIcons.settings),
+                              onPressed: () => context.push('/settings'),
+                            ),
+                    ),
                   ),
                 ),
               ),
@@ -168,9 +173,22 @@ class AppShell extends ConsumerWidget {
 
     return CallbackShortcuts(
       bindings: _shortcuts(context, ref),
-      child: Focus(autofocus: true, child: scaffold),
+      child: Focus(
+        autofocus: true,
+        child: Stack(
+          children: [
+            scaffold,
+            Positioned.fill(child: TourOverlay(goBranch: shell.goBranch)),
+          ],
+        ),
+      ),
     );
   }
+
+  /// The tour points at navigation item [i]. Only the selected or the
+  /// unselected icon is built at a time, so they can share the key.
+  static Widget _tourTarget(int i, Widget icon) =>
+      KeyedSubtree(key: TourTargets.destinations[i], child: icon);
 }
 
 /// Logo (extended sidebar only) and the Add button.
@@ -184,7 +202,10 @@ class _RailHeader extends StatelessWidget {
     final theme = Theme.of(context);
     final add = Padding(
       padding: const EdgeInsets.only(top: 8, bottom: 16),
-      child: _AddMenuButton(extended: extended),
+      child: KeyedSubtree(
+        key: TourTargets.addRail,
+        child: _AddMenuButton(extended: extended),
+      ),
     );
     if (!extended) return add;
     return SizedBox(

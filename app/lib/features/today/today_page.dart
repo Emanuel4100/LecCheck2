@@ -23,6 +23,7 @@ import '../session/session_menu.dart';
 import '../session/session_sheet.dart';
 import '../session/session_tile.dart';
 import '../session/status_buttons.dart';
+import '../tour/tour_controller.dart';
 import 'sync_notice_card.dart';
 
 class TodayPage extends ConsumerWidget {
@@ -51,7 +52,10 @@ class TodayPage extends ConsumerWidget {
     return Scaffold(
       body: CustomScrollView(
         slivers: [
-          TabAppBar(title: fmt.longDate(today)),
+          TabAppBar(
+            title: fmt.longDate(today),
+            settingsKey: TourTargets.settings,
+          ),
           if (!loaded)
             const SliverToBoxAdapter(child: SizedBox.shrink())
           else if (!hasCourses)
@@ -62,6 +66,7 @@ class TodayPage extends ConsumerWidget {
                 title: l.noCoursesYet,
                 subtitle: l.addCourseFirst,
                 action: FilledButton.icon(
+                  key: TourTargets.addFirst,
                   onPressed: () => context.push('/course-editor'),
                   icon: const Icon(LecIcons.add),
                   label: Text(l.addCourse),

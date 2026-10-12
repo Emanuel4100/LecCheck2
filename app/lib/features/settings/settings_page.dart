@@ -26,6 +26,7 @@ import '../../domain/schedule_types.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../developer/developer_page.dart';
 import '../session/session_actions.dart';
+import '../tour/tour_controller.dart';
 import 'account_section.dart';
 import 'holidays_sheet.dart';
 import 'update_card.dart';
@@ -273,6 +274,15 @@ class _AboutSectionState extends ConsumerState<_AboutSection> {
           title: Text(l.reportProblem),
           subtitle: Text(l.reportProblemSubtitle),
           onTap: () => context.push('/report'),
+        ),
+        ListTile(
+          leading: const Icon(LecIcons.celebrate),
+          title: Text(l.showTour),
+          subtitle: Text(l.showTourSubtitle),
+          onTap: () {
+            context.go('/today');
+            ref.read(tourProvider.notifier).start();
+          },
         ),
         if (UpdateController.supported) ...[
           SwitchListTile.adaptive(

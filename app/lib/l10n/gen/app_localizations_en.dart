@@ -1272,6 +1272,61 @@ class AppLocalizationsEn extends AppLocalizations {
   String get howTo => 'How?';
 
   @override
+  String get tourWelcomeTitle => 'Take a quick tour?';
+
+  @override
+  String get tourWelcomeBody =>
+      'See where everything is in half a minute, then add your first course.';
+
+  @override
+  String get tourStart => 'Start';
+
+  @override
+  String get tourTodayBody =>
+      'Today\'s classes. Tap one to mark it: attended, watched as a recording, or missed.';
+
+  @override
+  String get tourWeekBody =>
+      'Your timetable, a week at a time. Swipe to another week, pinch to zoom in.';
+
+  @override
+  String get tourCoursesBody =>
+      'Every course with its meetings, attendance requirements, notes and links.';
+
+  @override
+  String get tourStatsBody =>
+      'How you\'re doing: attendance per course, and against each requirement.';
+
+  @override
+  String get tourSettingsBody =>
+      'Reminders, sync, themes and backups. You can see this tour again from Settings → About.';
+
+  @override
+  String get tourAddTitle => 'Add your first course';
+
+  @override
+  String get tourAddBody =>
+      'Give it a name, then add when it meets: lectures, practices or labs.';
+
+  @override
+  String get tourAddMoreTitle => 'Add courses';
+
+  @override
+  String get tourAddMoreBody =>
+      'Add more courses, or a one-time session, from here.';
+
+  @override
+  String tourStepOf(int step, int total) {
+    return 'Step $step of $total';
+  }
+
+  @override
+  String get showTour => 'Show the app tour';
+
+  @override
+  String get showTourSubtitle => 'A quick look at where everything is';
+
+  @override
   String updateAvailable(String version) {
     return 'LecCheck $version is available';
   }

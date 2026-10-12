@@ -1267,6 +1267,59 @@ class AppLocalizationsHe extends AppLocalizations {
   String get howTo => 'איך?';
 
   @override
+  String get tourWelcomeTitle => 'סיור קצר באפליקציה?';
+
+  @override
+  String get tourWelcomeBody =>
+      'חצי דקה כדי לראות איפה כל דבר נמצא, ואז מוסיפים את הקורס הראשון.';
+
+  @override
+  String get tourStart => 'להתחיל';
+
+  @override
+  String get tourTodayBody =>
+      'השיעורים של היום. הקשה על שיעור מסמנת אותו: נוכחות, צפייה בהקלטה או היעדרות.';
+
+  @override
+  String get tourWeekBody =>
+      'מערכת השעות, שבוע אחרי שבוע. החלקה עוברת לשבוע אחר, וצביטה מגדילה.';
+
+  @override
+  String get tourCoursesBody =>
+      'כל הקורסים, עם המפגשים, דרישות הנוכחות, ההערות והקישורים.';
+
+  @override
+  String get tourStatsBody => 'איך זה הולך: נוכחות בכל קורס, ומול כל דרישה.';
+
+  @override
+  String get tourSettingsBody =>
+      'תזכורות, סנכרון, ערכות נושא וגיבויים. אפשר לראות את הסיור שוב מהגדרות ← אודות.';
+
+  @override
+  String get tourAddTitle => 'הוספת הקורס הראשון';
+
+  @override
+  String get tourAddBody =>
+      'נותנים לו שם, ואז מוסיפים מתי הוא מתקיים: הרצאות, תרגולים או מעבדות.';
+
+  @override
+  String get tourAddMoreTitle => 'הוספת קורסים';
+
+  @override
+  String get tourAddMoreBody => 'מכאן מוסיפים עוד קורסים, או מפגש חד-פעמי.';
+
+  @override
+  String tourStepOf(int step, int total) {
+    return 'שלב $step מתוך $total';
+  }
+
+  @override
+  String get showTour => 'הצגת הסיור באפליקציה';
+
+  @override
+  String get showTourSubtitle => 'מבט קצר על מה נמצא איפה';
+
+  @override
   String updateAvailable(String version) {
     return 'גרסה $version של LecCheck זמינה';
   }

@@ -18,6 +18,7 @@ import '../../domain/schedule_types.dart';
 import '../../domain/semester_calendar.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../settings/holidays_sheet.dart';
+import '../tour/tour_controller.dart';
 
 /// Creates (onboarding, "add semester") or edits a semester.
 class SemesterFormPage extends ConsumerStatefulWidget {
@@ -114,6 +115,8 @@ class _SemesterFormPageState extends ConsumerState<SemesterFormPage> {
         loaded != null && (loaded.start != _start || loaded.end != _end);
     if (datesChanged && !await _confirmHiddenSessions(repo, loaded)) return;
     setState(() => _saving = true);
+    // The first semester on this device: the app tour follows.
+    final first = widget.semesterId == null && (await repo.semesters()).isEmpty;
     final id = widget.semesterId ?? ScheduleRepository.newId();
     final applied = datesChanged
         ? await repo.generatedHolidays(id)
@@ -159,6 +162,7 @@ class _SemesterFormPageState extends ConsumerState<SemesterFormPage> {
     if (!mounted) return;
     if (widget.semesterId == null) {
       context.go('/today');
+      if (first) ref.read(tourProvider.notifier).startFirstTime();
     } else {
       context.pop();
     }
