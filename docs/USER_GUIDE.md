@@ -16,19 +16,30 @@
 
 ## Courses and meetings
 
-Open **Courses → +** (or the button on an empty Today screen).
+Open **Courses → +** (or the button on an empty Today screen), or tap an empty spot in
+**Week** (see below).
 
-- **Course info** — name, optional short name, code and lecturer, color, notes, website
-  and extra links. The **short name** (e.g. "Calc 1") is shown in the Week view when the
-  full name doesn't fit. For a long name, the editor suggests one (**Use "…"**).
-- **Weekly schedule** — add each recurring meeting: type (Lecture / Practice / Lab /
-  Other), day, start and end time, room, and links (e.g. the Zoom link). Turn on
-  **Every other week** for alternating meetings and choose whether it starts in the first
-  or second week.
+- **Course info** — the name, with its color as a dot at the end of the name field (tap
+  it for the palette). **Short name**, **Course code** and **Lecturer** wait behind
+  **+** chips until you need them. The short name (e.g. "Calc 1") is shown in the Week
+  view when the full name doesn't fit; for a long name, the chip suggests one
+  (**Use "…"**).
+- **Weekly schedule** — each meeting is one line ("Lecture · Sunday, 10:00–12:00 ·
+  201"). Tap it, or **Add meeting**, to edit it in a sheet (a dialog on wide screens):
+  the type (Lecture / Practice / Lab / Other), how it **repeats** (weekly, every other
+  week from week 1 or from week 2, or once), the day, start and end time (the length
+  shows under the end), room, and links (e.g. the Zoom link). A new meeting can be on
+  several days at once (same time and room): LecCheck adds one meeting per day. A
+  meeting is added only with **Add**; changes to an existing one apply as you make them.
 - **One-time sessions** — a single date (a make-up class, an exam review). Add them from
-  the editor, the Courses menu, or a course page.
+  the editor, the Courses menu, a course page (the clock button), or Week.
 - **Attendance requirement** — set a minimum (50–100%) for all sessions or one type
   (e.g. 80% of practices). Choose whether watching a recording counts as attending.
+- **Notes & links** — notes, the course website and extra links.
+
+The requirement and the notes and links are rows with a summary that open when tapped.
+On wide windows, the editor shows two columns: the course on the left, its schedule on
+the right.
 
 Editing a meeting's time keeps all its marks and notes. If you move a meeting to another
 **weekday** mid-semester, LecCheck asks whether the change applies to **all weeks** (each
@@ -103,7 +114,11 @@ Tap any session to see its date, time, room and lecturer, and to:
   shown; without one, LecCheck shortens the name itself: small words go first ("to",
   "of"; "של", "על"), then long words are cut ("Infin. Calc. 1", "חשבון אינפי׳ 1"). Then come the room and the start time; the time is left out first in
   short sessions. A ✓ / ✗ shows how you marked it.
-- The hour range fits your schedule; pinch with two fingers to zoom (desktop: Ctrl +
+- **Tap an empty spot** to add something there: **New course here**, **Add to a
+  course…** (a weekly meeting) or **One-time session…** (on that date). The slot starts
+  at the half hour before the tap and lasts two hours; the editor opens with it filled
+  in.
+- The hours shown are at least 8:00–18:00, more when your schedule needs it; pinch with two fingers to zoom (desktop: Ctrl +
   mouse wheel or a trackpad pinch). The zoom is remembered on each device; on desktop the
   default fills the window.
 - On large windows, a click shows the session's details in a panel beside the grid.

@@ -1,5 +1,21 @@
 # Changelog
 
+## Unreleased
+
+- **A roomier course editor**. Meetings are one line each ("Lecture · Sunday,
+  10:00–12:00 · 201") and open in a sheet (a dialog on wide screens) where the type and
+  how it repeats are menus, and the length shows under the end time. A new meeting can be
+  on several days at once. Short name, code and lecturer wait behind **+** chips, the
+  color is a dot in the name field, and the attendance requirement, notes and links fold
+  into rows. Wide windows get two columns.
+- **Add from Week**: tap an empty spot to add a new course, a meeting of a course, or a
+  one-time session there, with the day and time filled in. The grid always shows at
+  least 8:00–18:00 so there's room to tap.
+- **Course page**: sessions are listed by type ("Lecture #3") instead of repeating the
+  course name, and on phones **Add one-time session** moved to the app bar instead of
+  covering the list. Meetings that start mid-semester or every other week from week 2
+  now say so.
+
 ## 2.0.0-beta.9 — 2026-10-12
 
 - **No more empty semesters when signing in** (issue #2). Signing in on a new device
