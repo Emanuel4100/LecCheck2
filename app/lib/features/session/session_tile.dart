@@ -306,7 +306,10 @@ class AppearIn extends StatelessWidget {
     final motion = AppMotion.of(context);
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0, end: 1),
-      duration: motion.medium + Duration(milliseconds: 30 * index.clamp(0, 8)),
+      duration: motion.staggered(
+        index.clamp(0, 8),
+        step: const Duration(milliseconds: 30),
+      ),
       curve: motion.spatial,
       builder: (context, t, child) => Opacity(
         opacity: t.clamp(0, 1),

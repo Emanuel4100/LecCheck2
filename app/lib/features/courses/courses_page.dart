@@ -235,7 +235,7 @@ class _AddFabMenuState extends ConsumerState<_AddFabMenu> {
     Widget item(IconData icon, String label, VoidCallback onTap, int order) =>
         AnimatedSlide(
           offset: _open ? Offset.zero : const Offset(0, 0.4),
-          duration: motion.medium + Duration(milliseconds: 40 * order),
+          duration: motion.staggered(order),
           curve: motion.spatial,
           child: AnimatedOpacity(
             opacity: _open ? 1 : 0,

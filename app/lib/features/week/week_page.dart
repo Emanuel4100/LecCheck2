@@ -147,6 +147,11 @@ class _WeekPageState extends ConsumerState<WeekPage> {
   }
 
   void _goToWeek(int week) {
+    // Reduced motion: no page turn (it can't take a zero duration).
+    if (AppMotion.of(context).reduced) {
+      _controller?.jumpToPage(week - 1);
+      return;
+    }
     _controller?.animateToPage(
       week - 1,
       duration: const Duration(milliseconds: 450),

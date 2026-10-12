@@ -7,6 +7,7 @@ import '../../app/update_controller.dart';
 import '../../app/adaptive.dart';
 import '../../app/format.dart';
 import '../../app/sync_providers.dart';
+import '../../app/theme/motion.dart';
 import '../../core/icons/lec_icons.dart';
 import '../../core/sync/sync_config.dart';
 import '../../core/sync/sync_engine.dart';
@@ -334,7 +335,8 @@ class SyncIndicator extends ConsumerWidget {
       tooltip: syncStatusText(state, l, Fmt.of(context)),
       onPressed: () => context.push('/settings'),
       icon: AnimatedSwitcher(
-        duration: const Duration(milliseconds: 250),
+        duration: AppMotion.of(context)
+            .duration(const Duration(milliseconds: 250)),
         child: KeyedSubtree(
           key: ValueKey(state.phase),
           child: icon(state, Theme.of(context)),

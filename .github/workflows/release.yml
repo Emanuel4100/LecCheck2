@@ -158,8 +158,16 @@ jobs:
             BETA=''
             OBTAINIUM=''
           fi
+          # This version's CHANGELOG section: the apps' "What's new" opens this page.
+          CHANGES="$(awk -v h="## $V " 'index($0,h)==1{f=1;next} /^## /{if(f)exit} f' CHANGELOG.md)"
+          if [[ -n "${CHANGES//[[:space:]]/}" ]]; then
+            CHANGES=$'## What\'s new\n'"${CHANGES}"$'\n'
+          else
+            CHANGES=''
+          fi
           cat > notes.md <<EOF
           ${BETA}
+          ${CHANGES}
           ## Downloads
           - **Android**: \`LecCheck-$V-android-arm64.apk\` for most phones, or the universal \`LecCheck-$V-android.apk\`.
             Tip: add this repo to [Obtainium](https://obtainium.imranr.dev) for automatic updates.${OBTAINIUM}

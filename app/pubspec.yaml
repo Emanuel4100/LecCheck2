@@ -7,7 +7,6 @@ environment:
   sdk: ^3.13.5
 
 dependencies:
-  animations: ^3.0.0
   collection: ^1.19.1
   crypto: ^3.0.7
   cupertino_ui: ^1.1.1
@@ -18,7 +17,6 @@ dependencies:
   fl_chart: ^1.2.0
   flutter:
     sdk: flutter
-  flutter_animate: ^4.5.2
   flutter_local_notifications: ^22.3.1
   flutter_localizations:
     sdk: flutter

@@ -12,6 +12,7 @@ import '../features/week/week_page.dart';
 import '../l10n/gen/app_localizations.dart';
 import 'shortcuts.dart';
 import 'sync_providers.dart';
+import 'theme/motion.dart';
 import 'widgets/common.dart';
 import 'widgets/lec_logo.dart';
 
@@ -330,6 +331,13 @@ class _BranchFadeState extends State<_BranchFade>
     curve: Curves.easeOutCubic,
   );
   late final _scale = Tween(begin: 0.97, end: 1.0).animate(_curve);
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _controller.duration = AppMotion.of(context)
+        .duration(const Duration(milliseconds: 280));
+  }
 
   @override
   void didUpdateWidget(_BranchFade oldWidget) {

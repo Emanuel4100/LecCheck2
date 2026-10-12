@@ -558,7 +558,8 @@ class _WeeklyTrend extends StatelessWidget {
                     ),
                 ],
               ),
-              duration: const Duration(milliseconds: 450),
+              duration: AppMotion.of(context)
+                  .duration(const Duration(milliseconds: 450)),
               curve: Curves.easeOutCubic,
             ),
           ),

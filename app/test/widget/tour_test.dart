@@ -5,11 +5,13 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:leccheck/app/app.dart';
 import 'package:leccheck/app/providers.dart';
 import 'package:leccheck/app/router.dart';
+import 'package:leccheck/app/theme/motion.dart';
 import 'package:leccheck/core/db/app_database.dart';
 import 'package:leccheck/core/db/schedule_repository.dart';
 import 'package:leccheck/domain/local_date.dart';
 import 'package:leccheck/domain/schedule_types.dart';
 import 'package:leccheck/features/tour/tour_controller.dart';
+import 'package:leccheck/features/week/week_page.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -177,6 +179,36 @@ void main() {
     expect(find.text('סיור קצר באפליקציה?'), findsOneWidget);
     await next(tester, 'להתחיל');
     expect(find.textContaining('השיעורים של היום'), findsOneWidget);
+  });
+
+  testWidgets('with "remove animations": no motion, nothing breaks', (
+    tester,
+  ) async {
+    tester.platformDispatcher.accessibilityFeaturesTestValue =
+        const FakeAccessibilityFeatures(disableAnimations: true);
+    addTearDown(tester.platformDispatcher.clearAccessibilityFeaturesTestValue);
+    final c = await _start(tester);
+    final context = tester.element(find.byType(NavigationBar));
+    expect(AppMotion.of(context).reduced, isTrue);
+    expect(AppMotion.of(context).medium, Duration.zero);
+    expect(AppMotion.of(context).staggered(3), Duration.zero);
+
+    c.read(tourProvider.notifier).start();
+    await _settle(tester);
+    for (final label in ['Start', 'Next', 'Next', 'Next', 'Next', 'Next']) {
+      await next(tester, label);
+    }
+    expect(find.text('Add your first course'), findsOneWidget);
+    await tester.tap(find.byTooltip('Close'));
+    await _settle(tester);
+
+    // Week turns pages without animating (animateToPage can't take zero).
+    c.read(routerProvider).go('/week');
+    await _settle(tester);
+    expect(find.text('Week 1'), findsOneWidget);
+    c.read(weekCommandsProvider).step(1);
+    await _settle(tester);
+    expect(find.text('Week 2'), findsOneWidget);
   });
 
   testWidgets('starts after setting up the first semester', (tester) async {

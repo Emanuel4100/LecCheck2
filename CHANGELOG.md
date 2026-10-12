@@ -20,6 +20,10 @@
   ("Infinitesimal Calculus 1" → "Infin. Calc. 1", "חשבון אינפיניטסימלי 1" → "חשבון
   אינפי׳ 1"), instead of cutting it off. The course editor suggests a short name for
   long names.
+- **Respects "remove animations"**: with the system's reduced-motion setting on, LecCheck
+  switches tabs, turns week pages and draws charts without animating.
+- **What's new** on the update card now shows the release's changes (the release notes
+  carry this CHANGELOG section), not just the download links.
 - **Bring back deleted cloud data**: Settings → Account offers it for 30 days after
   **Delete cloud data** (until now only the server could).
 

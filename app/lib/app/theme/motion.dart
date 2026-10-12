@@ -29,7 +29,19 @@ class AppMotion extends ThemeExtension<AppMotion> {
     required this.spatial,
     required this.spatialSlow,
     required this.effects,
+    this.reduced = false,
   });
+
+  /// For the system's "remove animations" setting: everything is instant.
+  const AppMotion.none()
+    : fast = Duration.zero,
+      medium = Duration.zero,
+      slow = Duration.zero,
+      spatialFast = Curves.linear,
+      spatial = Curves.linear,
+      spatialSlow = Curves.linear,
+      effects = Curves.linear,
+      reduced = true;
 
   factory AppMotion.standard() {
     SpringCurve spring(int ms, double bounce) => SpringCurve(
@@ -58,8 +70,25 @@ class AppMotion extends ThemeExtension<AppMotion> {
   final Curve spatialSlow;
   final Curve effects;
 
+  /// The system asks for less motion ([AppMotion.none]).
+  final bool reduced;
+
+  /// [standard] for an animation the tokens don't cover; nothing with
+  /// reduced motion.
+  Duration duration(Duration standard) => reduced ? Duration.zero : standard;
+
+  /// Items appearing one after another, [step] apart.
+  Duration staggered(
+    int index, {
+    Duration step = const Duration(milliseconds: 40),
+  }) => reduced ? Duration.zero : medium + step * index;
+
+  /// The theme's motion, or none when the system asks to remove animations
+  /// (Android's accessibility setting, reduced motion elsewhere).
   static AppMotion of(BuildContext context) =>
-      Theme.of(context).extension<AppMotion>() ?? AppMotion.standard();
+      (MediaQuery.maybeDisableAnimationsOf(context) ?? false)
+      ? const AppMotion.none()
+      : Theme.of(context).extension<AppMotion>() ?? AppMotion.standard();
 
   @override
   AppMotion copyWith() => this;
