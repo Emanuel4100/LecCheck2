@@ -1,6 +1,9 @@
 # Changelog
 
-## Unreleased
+## 2.0.0-beta.8 — 2026-10-12
+
+Coming from beta.7 or older: install this version as before (Download, or
+`./install.sh` on Linux). From the next release on, **Update** does it inside the app.
 
 - **Update from inside the app** (Android, and Linux installed with `./install.sh`):
   **Update** on the update card downloads the new version with a progress bar, checks it

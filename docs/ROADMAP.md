@@ -41,6 +41,10 @@
   instead, and changing a semester's dates warns and extends its holidays. Today shows
   when changes can't sync. Rows the app can't read are skipped instead of hiding a
   semester.
+- **Update from inside the app** (2.0.0-beta.8): on Android, and on Linux installs made by
+  `install.sh`, Update downloads the release, checks its SHA-256 (now in `update.json`)
+  and installs it: Android's installer, or the tarball's own `install.sh` plus Restart.
+  Check now shows that it's checking and what it found.
 
 ## Not yet verified on real hardware
 
@@ -51,6 +55,9 @@ These are built and compile, but have only been exercised in tests so far:
   buttons with the app closed and the daily background top-up are untested
   (Settings → Developer has tools for testing them).
 - The Android widget on a home screen.
+- Updating from inside the app (Android's installer, Linux's Restart): the first real
+  update is beta.8 → the next release, or earlier with a test manifest (see
+  [DEVELOPMENT.md](DEVELOPMENT.md) "Update notice").
 - Google sign-in end-to-end (needs the Cloudflare + Google setup in [SETUP.md](SETUP.md));
   sync itself is verified end-to-end with the dev sign-in against a local Worker.
 
