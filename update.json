@@ -1,16 +1,16 @@
 {
   "beta": {
-    "version": "2.0.0-beta.8",
-    "build": 16,
+    "version": "2.0.0-beta.9",
+    "build": 17,
     "date": "2026-10-12",
-    "notesUrl": "https://github.com/Emanuel4100/LecCheck2/releases/tag/v2.0.0-beta.8",
-    "androidArm64": "https://github.com/Emanuel4100/LecCheck2/releases/download/v2.0.0-beta.8/LecCheck-2.0.0-beta.8-android-arm64.apk",
-    "androidUniversal": "https://github.com/Emanuel4100/LecCheck2/releases/download/v2.0.0-beta.8/LecCheck-2.0.0-beta.8-android.apk",
-    "linux": "https://github.com/Emanuel4100/LecCheck2/releases/download/v2.0.0-beta.8/LecCheck-2.0.0-beta.8-linux-x64.tar.gz",
+    "notesUrl": "https://github.com/Emanuel4100/LecCheck2/releases/tag/v2.0.0-beta.9",
+    "androidArm64": "https://github.com/Emanuel4100/LecCheck2/releases/download/v2.0.0-beta.9/LecCheck-2.0.0-beta.9-android-arm64.apk",
+    "androidUniversal": "https://github.com/Emanuel4100/LecCheck2/releases/download/v2.0.0-beta.9/LecCheck-2.0.0-beta.9-android.apk",
+    "linux": "https://github.com/Emanuel4100/LecCheck2/releases/download/v2.0.0-beta.9/LecCheck-2.0.0-beta.9-linux-x64.tar.gz",
     "sha256": {
-      "androidArm64": "bbe2081777bd2e32e1a90f549d6a1e026515488fd244228ed34ca4113aea115d",
-      "androidUniversal": "74846faf24da25cc30641952f710ec0bd5e43b8480e43bbdfacdb10f7c7a654d",
-      "linux": "79afb0e1c16a6215dd73d62042b464847660e5c844d270559eceafb41948a750"
+      "androidArm64": "50a3beb629821f4252ca4a326f09fd47fa04558a085a0830593fc2d537b9c6be",
+      "androidUniversal": "8122238f145690772860e7f753893e43cd9e37fd2197b0255090c8c64a57e049",
+      "linux": "10120c942f6745e1f7b62aed57a0bc7a367f2ceb4ac1d41b8e41fb378dbbc700"
     }
   }
 }
