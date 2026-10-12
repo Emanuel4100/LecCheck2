@@ -10,6 +10,10 @@
     <!-- Settings → Reminders asks to turn battery optimization off in one
          system dialog (like USE_EXACT_ALARM, revisit before the Play Store). -->
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+    <!-- Update on the update card: LecCheck downloads the new APK and opens
+         Android's installer, which asks once to allow "Install unknown apps"
+         (fine outside the Play Store; revisit before publishing there). -->
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
     <!-- enableOnBackInvokedCallback: predictive back (Android 13+): the
          back gesture previews the previous screen.
          Backup: Android's own backup to Google Drive keeps a copy of the data
@@ -86,6 +90,16 @@
                 <action android:name="es.antonborri.home_widget.action.BACKGROUND" />
             </intent-filter>
         </receiver>
+        <!-- Lets the installer read a downloaded update (cache/updates only). -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.updates"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/update_paths" />
+        </provider>
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
         <meta-data

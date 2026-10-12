@@ -83,4 +83,7 @@ flutter {
 dependencies {
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
     implementation("androidx.glance:glance-appwidget:1.2.0")
+    // FileProvider: hands a downloaded update to Android's installer
+    // (the version the other libraries already use).
+    implementation("androidx.core:core:1.18.0")
 }

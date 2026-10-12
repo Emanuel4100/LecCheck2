@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+- **Update from inside the app** (Android, and Linux installed with `./install.sh`):
+  **Update** on the update card downloads the new version with a progress bar, checks it
+  against the release's SHA-256, then opens Android's installer (one tap to confirm) or,
+  on Linux, installs it and offers **Restart**. Older releases still open the browser.
+  Updating on Linux now swaps the app folder only after the copy succeeds.
+
 ## 2.0.0-beta.7 — 2026-10-11
 
 - **Reminders follow the semester running now**: looking at last semester (its stats, say)

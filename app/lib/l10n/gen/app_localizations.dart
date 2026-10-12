@@ -2222,6 +2222,60 @@ abstract class AppLocalizations {
   /// **'Skip this version'**
   String get updateSkip;
 
+  /// No description provided for @updateInstall.
+  ///
+  /// In en, this message translates to:
+  /// **'Update'**
+  String get updateInstall;
+
+  /// No description provided for @updateDownloading.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloading…'**
+  String get updateDownloading;
+
+  /// No description provided for @updateInstalling.
+  ///
+  /// In en, this message translates to:
+  /// **'Installing…'**
+  String get updateInstalling;
+
+  /// No description provided for @updateInstallNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Install'**
+  String get updateInstallNow;
+
+  /// No description provided for @updateInstallHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm the update in Android\'s installer. The first time, allow LecCheck to install apps.'**
+  String get updateInstallHint;
+
+  /// No description provided for @updateRestart.
+  ///
+  /// In en, this message translates to:
+  /// **'Restart'**
+  String get updateRestart;
+
+  /// No description provided for @updateRestartHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Installed. Restart LecCheck to use the new version.'**
+  String get updateRestartHint;
+
+  /// No description provided for @updateFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t update. Try again, or download it in the browser.'**
+  String get updateFailed;
+
+  /// No description provided for @updateInBrowser.
+  ///
+  /// In en, this message translates to:
+  /// **'Open in browser'**
+  String get updateInBrowser;
+
   /// No description provided for @checkForUpdates.
   ///
   /// In en, this message translates to:

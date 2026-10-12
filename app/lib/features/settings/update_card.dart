@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../app/adaptive.dart';
@@ -8,7 +9,8 @@ import '../../l10n/gen/app_localizations.dart';
 import '../session/session_actions.dart';
 
 /// "LecCheck X is available", at the top of Settings and, until "Later", of
-/// Today.
+/// Today. Update downloads and installs it (Android, and Linux installed by
+/// install.sh); otherwise Download opens it in the browser.
 class UpdateCard extends ConsumerWidget {
   const UpdateCard({super.key, this.onToday = false});
 
@@ -25,6 +27,26 @@ class UpdateCard extends ConsumerWidget {
     final controller = ref.read(updateProvider.notifier);
     final scheme = Theme.of(context).colorScheme;
     final text = TextStyle(color: scheme.onPrimaryContainer);
+    final progress = state.progress;
+    final percent = NumberFormat.percentPattern(
+      Localizations.localeOf(context).toString(),
+    );
+    final status = switch (state.phase) {
+      UpdatePhase.idle =>
+        AppIdiom.isLinux && state.file == null ? l.updateLinuxHint : null,
+      UpdatePhase.downloading =>
+        progress == null
+            ? l.updateDownloading
+            : '${l.updateDownloading} ${percent.format(progress)}',
+      UpdatePhase.installing => l.updateInstalling,
+      UpdatePhase.downloaded => l.updateInstallHint,
+      UpdatePhase.restart => l.updateRestartHint,
+      UpdatePhase.failed => l.updateFailed,
+    };
+    final whatsNew = TextButton(
+      onPressed: () => openUrl(update.notesUrl),
+      child: Text(l.updateWhatsNew),
+    );
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
       child: Card(
@@ -40,36 +62,80 @@ class UpdateCard extends ConsumerWidget {
                   color: scheme.onPrimaryContainer,
                 ),
                 title: Text(l.updateAvailable(update.version), style: text),
-                subtitle: AppIdiom.isLinux
-                    ? Text(l.updateLinuxHint, style: text)
-                    : null,
+                subtitle: status == null ? null : Text(status, style: text),
               ),
+              if (state.phase
+                  case UpdatePhase.downloading || UpdatePhase.installing)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                  child: LinearProgressIndicator(
+                    value: state.phase == UpdatePhase.downloading
+                        ? progress
+                        : null,
+                  ),
+                ),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 8),
                 child: Wrap(
                   alignment: WrapAlignment.end,
                   spacing: 4,
-                  children: [
-                    if (onToday)
+                  children: switch (state.phase) {
+                    UpdatePhase.idle => [
+                      if (onToday)
+                        TextButton(
+                          onPressed: controller.later,
+                          child: Text(l.updateLater),
+                        )
+                      else
+                        TextButton(
+                          onPressed: controller.skip,
+                          child: Text(l.updateSkip),
+                        ),
+                      whatsNew,
+                      if (state.file != null)
+                        FilledButton(
+                          onPressed: controller.install,
+                          child: Text(l.updateInstall),
+                        )
+                      else
+                        FilledButton(
+                          onPressed: () async =>
+                              openUrl(await controller.downloadUrl(update)),
+                          child: Text(l.updateDownload),
+                        ),
+                    ],
+                    UpdatePhase.downloading => [
                       TextButton(
-                        onPressed: controller.later,
-                        child: Text(l.updateLater),
-                      )
-                    else
-                      TextButton(
-                        onPressed: controller.skip,
-                        child: Text(l.updateSkip),
+                        onPressed: controller.cancel,
+                        child: Text(l.cancel),
                       ),
-                    TextButton(
-                      onPressed: () => openUrl(update.notesUrl),
-                      child: Text(l.updateWhatsNew),
-                    ),
-                    FilledButton(
-                      onPressed: () async =>
-                          openUrl(await controller.downloadUrl(update)),
-                      child: Text(l.updateDownload),
-                    ),
-                  ],
+                    ],
+                    UpdatePhase.installing => const [],
+                    UpdatePhase.downloaded => [
+                      whatsNew,
+                      FilledButton(
+                        onPressed: controller.install,
+                        child: Text(l.updateInstallNow),
+                      ),
+                    ],
+                    UpdatePhase.restart => [
+                      FilledButton(
+                        onPressed: controller.restart,
+                        child: Text(l.updateRestart),
+                      ),
+                    ],
+                    UpdatePhase.failed => [
+                      TextButton(
+                        onPressed: () async =>
+                            openUrl(await controller.downloadUrl(update)),
+                        child: Text(l.updateInBrowser),
+                      ),
+                      FilledButton(
+                        onPressed: controller.install,
+                        child: Text(l.retry),
+                      ),
+                    ],
+                  },
                 ),
               ),
             ],

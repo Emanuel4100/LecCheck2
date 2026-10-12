@@ -14,19 +14,31 @@ class AppUpdate {
     this.androidArm64,
     this.androidUniversal,
     this.linux,
+    this.sha256 = const {},
   });
 
+  static const _files = ['androidArm64', 'androidUniversal', 'linux'];
+  static final _hex64 = RegExp(r'^[0-9a-fA-F]{64}$');
+
   /// Null when [json] isn't a valid entry. Every link must be https (they're
-  /// opened as downloads); a missing or broken optional one is left out.
+  /// opened as downloads); a missing or broken optional one is left out, and
+  /// so is a hash that isn't 64 hex digits.
   static AppUpdate? tryParse(Object? json) {
     if (json is! Map<String, Object?>) return null;
     final version = json['version'];
     final build = json['build'];
     final notes = _https(json['notesUrl']);
     if (version is! String || build is! int || notes == null) return null;
-    for (final key in const ['androidArm64', 'androidUniversal', 'linux']) {
+    for (final key in _files) {
       if (json[key] != null && _https(json[key]) == null) return null;
     }
+    final hashes = json['sha256'];
+    final sha256 = <String, String>{
+      if (hashes is Map<String, Object?>)
+        for (final key in _files)
+          if (hashes[key] case final String hash when _hex64.hasMatch(hash))
+            key: hash.toLowerCase(),
+    };
     return AppUpdate(
       version: version,
       build: build,
@@ -34,6 +46,7 @@ class AppUpdate {
       androidArm64: _https(json['androidArm64']),
       androidUniversal: _https(json['androidUniversal']),
       linux: _https(json['linux']),
+      sha256: sha256,
     );
   }
 
@@ -57,6 +70,29 @@ class AppUpdate {
   final String? androidUniversal;
   final String? linux;
 
+  /// The SHA-256 (hex) of each file, keyed like the links (`androidArm64`,
+  /// …). Releases before 2.0.0-beta.8 have none.
+  final Map<String, String> sha256;
+
+  /// What Update installs from inside the app: the same APK as Download, or
+  /// the Linux tarball. Null when that file has no hash (an older manifest):
+  /// Download opens the browser instead. Never the universal APK in place of
+  /// the arm64 one, whose version codes are higher (Android would refuse it).
+  UpdateFile? installFile({required bool android, required bool arm64}) {
+    final key = !android
+        ? 'linux'
+        : arm64 && androidArm64 != null
+        ? 'androidArm64'
+        : 'androidUniversal';
+    final url = switch (key) {
+      'androidArm64' => androidArm64,
+      'androidUniversal' => androidUniversal,
+      _ => linux,
+    };
+    final hash = sha256[key];
+    return url == null || hash == null ? null : UpdateFile(url, hash);
+  }
+
   /// What Download opens: the APK for this phone, or the release page (Linux
   /// installs from its tarball with `./install.sh`).
   String downloadUrl({required bool android, required bool arm64}) {
@@ -74,7 +110,8 @@ class AppUpdate {
       other.notesUrl == notesUrl &&
       other.androidArm64 == androidArm64 &&
       other.androidUniversal == androidUniversal &&
-      other.linux == linux;
+      other.linux == linux &&
+      mapEquals(other.sha256, sha256);
 
   @override
   int get hashCode => Object.hash(
@@ -84,7 +121,26 @@ class AppUpdate {
     androidArm64,
     androidUniversal,
     linux,
+    Object.hashAllUnordered(
+      sha256.entries.map((e) => Object.hash(e.key, e.value)),
+    ),
   );
+}
+
+/// A file Update downloads and installs, with the SHA-256 it must match.
+@immutable
+class UpdateFile {
+  const UpdateFile(this.url, this.sha256);
+
+  final String url;
+  final String sha256;
+
+  @override
+  bool operator ==(Object other) =>
+      other is UpdateFile && other.url == url && other.sha256 == sha256;
+
+  @override
+  int get hashCode => Object.hash(url, sha256);
 }
 
 /// The build number of the installed app. Android's per-ABI APKs report

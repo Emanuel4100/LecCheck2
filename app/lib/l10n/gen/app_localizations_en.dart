@@ -1293,6 +1293,36 @@ class AppLocalizationsEn extends AppLocalizations {
   String get updateSkip => 'Skip this version';
 
   @override
+  String get updateInstall => 'Update';
+
+  @override
+  String get updateDownloading => 'Downloading…';
+
+  @override
+  String get updateInstalling => 'Installing…';
+
+  @override
+  String get updateInstallNow => 'Install';
+
+  @override
+  String get updateInstallHint =>
+      'Confirm the update in Android\'s installer. The first time, allow LecCheck to install apps.';
+
+  @override
+  String get updateRestart => 'Restart';
+
+  @override
+  String get updateRestartHint =>
+      'Installed. Restart LecCheck to use the new version.';
+
+  @override
+  String get updateFailed =>
+      'Couldn\'t update. Try again, or download it in the browser.';
+
+  @override
+  String get updateInBrowser => 'Open in browser';
+
+  @override
   String get checkForUpdates => 'Check for updates';
 
   @override

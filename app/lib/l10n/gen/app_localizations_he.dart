@@ -1288,6 +1288,36 @@ class AppLocalizationsHe extends AppLocalizations {
   String get updateSkip => 'לדלג על הגרסה הזו';
 
   @override
+  String get updateInstall => 'עדכון';
+
+  @override
+  String get updateDownloading => 'מתבצעת הורדה…';
+
+  @override
+  String get updateInstalling => 'מתבצעת התקנה…';
+
+  @override
+  String get updateInstallNow => 'התקנה';
+
+  @override
+  String get updateInstallHint =>
+      'יש לאשר את העדכון במתקין של אנדרואיד. בפעם הראשונה יש לאפשר ל-LecCheck להתקין אפליקציות.';
+
+  @override
+  String get updateRestart => 'הפעלה מחדש';
+
+  @override
+  String get updateRestartHint =>
+      'העדכון הותקן. יש להפעיל את LecCheck מחדש כדי להשתמש בגרסה החדשה.';
+
+  @override
+  String get updateFailed =>
+      'העדכון נכשל. אפשר לנסות שוב או להוריד דרך הדפדפן.';
+
+  @override
+  String get updateInBrowser => 'פתיחה בדפדפן';
+
+  @override
   String get checkForUpdates => 'בדיקת עדכונים';
 
   @override

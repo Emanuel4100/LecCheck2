@@ -9,9 +9,11 @@ import android.net.Uri
 import android.os.Build
 import android.os.PowerManager
 import android.provider.Settings
+import androidx.core.content.FileProvider
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
+import java.io.File
 
 class MainActivity : FlutterActivity() {
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
@@ -53,6 +55,10 @@ class MainActivity : FlutterActivity() {
                     "armedReminders" -> {
                         val ids = call.argument<List<Int>>("ids") ?: emptyList()
                         result.success(ids.filter(::isArmed))
+                    }
+                    "installApk" -> {
+                        val path = call.argument<String>("path")
+                        result.success(path != null && installApk(File(path)))
                     }
                     "clearReminderCache" -> {
                         getSharedPreferences(REMINDER_CACHE, MODE_PRIVATE).edit().clear().apply()
@@ -121,6 +127,28 @@ class MainActivity : FlutterActivity() {
         ) != null
     }
 
+    /// Opens Android's installer on an update the update card downloaded
+    /// (into cache/updates, the folder the FileProvider shares). Android asks
+    /// once to allow "Install unknown apps" for LecCheck, and refuses an APK
+    /// that isn't signed with LecCheck's key.
+    private fun installApk(apk: File): Boolean {
+        val updates = File(cacheDir, UPDATES).canonicalFile
+        if (apk.canonicalFile.parentFile != updates || !apk.isFile) return false
+        val uri = FileProvider.getUriForFile(this, "$packageName.updates", apk)
+        return try {
+            // A task of its own: the installer stays while it replaces (and
+            // stops) LecCheck, then offers Open.
+            startActivity(
+                Intent(Intent.ACTION_VIEW)
+                    .setDataAndType(uri, APK_TYPE)
+                    .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK),
+            )
+            true
+        } catch (_: ActivityNotFoundException) {
+            false
+        }
+    }
+
     private fun open(intent: Intent) {
         try {
             startActivity(intent)
@@ -140,5 +168,9 @@ class MainActivity : FlutterActivity() {
         const val REMINDER_RECEIVER =
             "com.dexterous.flutterlocalnotifications.ScheduledNotificationReceiver"
         const val REMINDER_CACHE = "scheduled_notifications"
+
+        /// Where updates are downloaded (res/xml/update_paths.xml).
+        const val UPDATES = "updates"
+        const val APK_TYPE = "application/vnd.android.package-archive"
     }
 }

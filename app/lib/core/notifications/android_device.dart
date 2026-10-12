@@ -40,6 +40,14 @@ abstract final class AndroidDevice {
     return armed?.toSet();
   }
 
+  /// Opens Android's installer on a downloaded update [apk] (it must be in
+  /// the cache's `updates` folder). False when it couldn't be opened.
+  static Future<bool> installApk(String apk) async =>
+      await _call(
+        () => _channel.invokeMethod<bool>('installApk', {'path': apk}),
+      ) ??
+      false;
+
   /// Empties the plugin's list of scheduled reminders, when it can't be read.
   static Future<void> clearReminderCache() =>
       _call(() => _channel.invokeMethod<void>('clearReminderCache'));

@@ -176,7 +176,8 @@ jobs:
           files: out/*
       # GitHub's "latest" release links skip pre-releases, so AltStore / SideStore
       # read the source from the altstore branch, which always has the newest one.
-      # update.json there tells the Android and Linux apps about new releases.
+      # update.json there tells the Android and Linux apps about new releases
+      # (with each file's SHA-256, so they can install it themselves).
       - name: Update the AltStore / SideStore source and update.json
         if: startsWith(github.ref, 'refs/tags/')
         run: |
@@ -188,7 +189,7 @@ jobs:
           git worktree add --detach "$RUNNER_TEMP/altstore" FETCH_HEAD
           cp out/altstore-source.json "$RUNNER_TEMP/altstore/"
           python3 scripts/update_manifest.py "$RUNNER_TEMP/altstore/update.json" "$V" "$BUILD" \
-            "https://github.com/${GITHUB_REPOSITORY}" > "$RUNNER_TEMP/update.json"
+            "https://github.com/${GITHUB_REPOSITORY}" out > "$RUNNER_TEMP/update.json"
           mv "$RUNNER_TEMP/update.json" "$RUNNER_TEMP/altstore/update.json"
           cd "$RUNNER_TEMP/altstore"
           git add altstore-source.json update.json

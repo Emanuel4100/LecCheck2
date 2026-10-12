@@ -203,6 +203,27 @@ with a higher build and point a build at it:
 per-ABI APKs report 1000 × ABI + build as their version code; `installedBuild()` undoes
 that.
 
+Each entry also has the files' SHA-256 (`sha256`, from 2.0.0-beta.8 on). With a hash,
+the card's **Update** installs the release from inside the app:
+
+- **Android**: it downloads the APK into `cache/updates`, checks the hash, and opens
+  Android's installer through a FileProvider (`installApk` on the device channel,
+  `REQUEST_INSTALL_PACKAGES`). Android asks once to allow "Install unknown apps", and
+  refuses an APK not signed with the release key. An arm64 phone always gets the arm64
+  APK, whose version codes are higher than the universal one's.
+- **Linux**: only when the app runs from `install.sh`'s folder
+  (`$XDG_DATA_HOME/leccheck`, see `LinuxSelfUpdate.installDir`). It downloads the
+  tarball, checks it, runs the tarball's own `install.sh` (which swaps the folder; the
+  running app keeps its old files), then **Restart** waits for this process to end
+  before starting the new one, since the app is single-instance.
+
+Without a hash (older manifests, other Linux builds), **Download** opens the browser as
+before. To try **Update** for real, point a build with a lower build number at a test
+manifest over https (a secret gist works: `gh gist create update.json`) that lists a
+published release's files and their `sha256sum`. Sign the Android build with the release
+key, or Android refuses the update:
+`flutter build apk --split-per-abi --build-number=14 --dart-define=UPDATE_URL=<raw gist url>`.
+
 ## Smoothness (Linux)
 
 Flutter 3.47's Linux engine has no vsync: it draws at a fixed 60 fps whatever the

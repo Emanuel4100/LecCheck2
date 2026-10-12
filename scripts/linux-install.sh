@@ -11,7 +11,7 @@ DEST="$PREFIX/leccheck"
 BIN="$HOME/.local/bin"
 
 if [[ "${1:-}" == "uninstall" ]]; then
-  rm -rf "$DEST" "$BIN/leccheck" "$PREFIX/applications/$APP_ID.desktop" "$PREFIX/metainfo/$APP_ID.metainfo.xml"
+  rm -rf "$DEST" "$DEST.new" "$DEST.old" "$BIN/leccheck" "$PREFIX/applications/$APP_ID.desktop" "$PREFIX/metainfo/$APP_ID.metainfo.xml"
   for size in 64 128 256 512; do rm -f "$PREFIX/icons/hicolor/${size}x${size}/apps/$APP_ID.png"; done
   echo "LecCheck removed."
   exit 0
@@ -34,9 +34,15 @@ if (( ${#missing[@]} )); then
   exit 1
 fi
 
-mkdir -p "$DEST" "$BIN" "$PREFIX/applications" "$PREFIX/metainfo"
-rm -rf "${DEST:?}"/*
-cp -r "$HERE/bundle/." "$DEST/"
+mkdir -p "$BIN" "$PREFIX/applications" "$PREFIX/metainfo"
+# Copy first, then swap the folders: a failed copy leaves the installed app
+# as it was. A running LecCheck (updating itself) keeps its old files until
+# it quits.
+rm -rf "$DEST.new" "$DEST.old"
+cp -r "$HERE/bundle" "$DEST.new"
+if [[ -d "$DEST" ]]; then mv "$DEST" "$DEST.old"; fi
+mv "$DEST.new" "$DEST"
+rm -rf "$DEST.old"
 ln -sf "$DEST/leccheck" "$BIN/leccheck"
 for size in 64 128 256 512; do
   install -Dm644 "$HERE/icons/$APP_ID-$size.png" "$PREFIX/icons/hicolor/${size}x${size}/apps/$APP_ID.png"

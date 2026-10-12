@@ -158,12 +158,20 @@ useful, like "class starts soon" for a class already under way, are skipped).
 
 On Android and Linux, LecCheck checks for a new version once a day. When there is one,
 **LecCheck X is available** appears at the top of Settings and once on Today:
-**Download** gets the right file for your device (on Linux, download it, extract it and
-run `./install.sh` again; your data stays), **What's new** opens the release notes, and
-**Skip this version** hides it until the next one. Betas get betas and stable releases;
-stable versions get stable releases. Turn it off, or check right away, in
-**Settings → About**. If you installed LecCheck with Obtainium, Obtainium updates it
-instead. On iPhone, AltStore and SideStore handle updates.
+
+- **Update** downloads it for your device, with a progress bar (**Cancel** stops it).
+  On Android, the system then asks you to confirm the update; the first time, allow
+  LecCheck to install apps. On Linux it installs itself, and **Restart** starts the new
+  version. Your data stays.
+- **Download** appears instead for releases before 2.0.0-beta.8, and on Linux when
+  LecCheck wasn't installed with `./install.sh`: it gets the right file in the browser
+  (on Linux, extract it and run `./install.sh` again).
+- **What's new** opens the release notes, and **Skip this version** hides it until the
+  next one.
+
+Betas get betas and stable releases; stable versions get stable releases. Turn it off,
+or check right away, in **Settings → About**. If you installed LecCheck with Obtainium,
+Obtainium updates it instead. On iPhone, AltStore and SideStore handle updates.
 
 ## Reporting a problem
 
