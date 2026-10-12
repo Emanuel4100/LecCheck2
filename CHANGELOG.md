@@ -7,6 +7,9 @@
   against the release's SHA-256, then opens Android's installer (one tap to confirm) or,
   on Linux, installs it and offers **Restart**. Older releases still open the browser.
   Updating on Linux now swaps the app folder only after the copy succeeds.
+- **Check now** (Settings → About) shows that it's checking, and a new version found there
+  now says so right away, with **Update**. It used to appear only in the card at the top
+  of Settings, scrolled out of sight.
 
 ## 2.0.0-beta.7 — 2026-10-11
 

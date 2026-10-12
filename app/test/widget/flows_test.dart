@@ -1,10 +1,15 @@
+import 'dart:convert';
+
 import 'package:drift/drift.dart' show driftRuntimeOptions;
 import 'package:drift/native.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
 import 'package:leccheck/app/app.dart';
 import 'package:leccheck/app/providers.dart';
 import 'package:leccheck/app/router.dart';
+import 'package:leccheck/app/update_controller.dart';
 import 'package:leccheck/core/db/app_database.dart';
 import 'package:leccheck/core/db/schedule_repository.dart';
 import 'package:leccheck/core/icons/lec_icons.dart';
@@ -195,5 +200,69 @@ void main() {
     await _settle(tester);
     expect(find.text('Show a notification now'), findsOneWidget);
     expect(find.text('After-class reminder in 1 minute'), findsOneWidget);
+  });
+
+  group('Check now', () {
+    Future<void> checkNow(WidgetTester tester, {required int offered}) async {
+      PackageInfo.setMockInitialValues(
+        appName: 'LecCheck',
+        packageName: 'com.leccheck.app',
+        version: '2.0.0-beta.7',
+        buildNumber: '2015',
+        buildSignature: '',
+      );
+      addTearDown(
+        () => PackageInfo.setMockInitialValues(
+          appName: 'LecCheck',
+          packageName: 'com.leccheck.app',
+          version: '2.0.0',
+          buildNumber: '12',
+          buildSignature: '',
+        ),
+      );
+      UpdateController.client = () => MockClient(
+        (_) async => http.Response(
+          jsonEncode({
+            'beta': {
+              'version': '2.0.0-beta.$offered',
+              'build': offered + 8,
+              'notesUrl': 'https://example.com/notes',
+            },
+          }),
+          200,
+        ),
+      );
+      addTearDown(() => UpdateController.client = http.Client.new);
+      final (container, _) = await _start(tester);
+      container.read(routerProvider).push('/settings');
+      await _settle(tester);
+      await tester.scrollUntilVisible(
+        find.text('Check now'),
+        300,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.ensureVisible(find.text('Check now'));
+      await tester.pump();
+      await tester.tap(find.text('Check now'));
+      await tester.pump();
+      // Asking GitHub can take a while: the row shows it's working.
+      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+      await _settle(tester);
+      expect(find.byType(CircularProgressIndicator), findsNothing);
+    }
+
+    testWidgets('says when LecCheck is up to date', (tester) async {
+      await checkNow(tester, offered: 7);
+      expect(find.text('LecCheck is up to date'), findsOneWidget);
+    }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+
+    testWidgets('a newer release shows here, not only at the top', (
+      tester,
+    ) async {
+      await checkNow(tester, offered: 8);
+      expect(find.text('LecCheck 2.0.0-beta.8 is available'), findsWidgets);
+      // No hash in this manifest: the browser.
+      expect(find.widgetWithText(SnackBarAction, 'Download'), findsOneWidget);
+    }, variant: TargetPlatformVariant.only(TargetPlatform.android));
   });
 }

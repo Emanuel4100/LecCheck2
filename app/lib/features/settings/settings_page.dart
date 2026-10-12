@@ -184,6 +184,40 @@ class _AboutSectionState extends ConsumerState<_AboutSection> {
   /// mode.
   int _taps = 0;
 
+  /// Check now is asking GitHub (up to 10 seconds offline).
+  bool _checking = false;
+
+  /// Check now: a spinner while it asks, then the answer. A newer release
+  /// gets a snackbar too, since its card is at the top of Settings, usually
+  /// scrolled away from here.
+  Future<void> _checkNow() async {
+    final l = AppLocalizations.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+    final controller = ref.read(updateProvider.notifier);
+    setState(() => _checking = true);
+    final update = await controller.check(force: true);
+    if (mounted) setState(() => _checking = false);
+    final installable = ref.read(updateProvider).file != null;
+    messenger
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(
+            update == null ? l.upToDate : l.updateAvailable(update.version),
+          ),
+          action: update == null
+              ? null
+              : SnackBarAction(
+                  label: installable ? l.updateInstall : l.updateDownload,
+                  onPressed: installable
+                      ? controller.install
+                      : () async =>
+                            openUrl(await controller.downloadUrl(update)),
+                ),
+        ),
+      );
+  }
+
   void _tapVersion() {
     final l = AppLocalizations.of(context);
     void say(String text) => ScaffoldMessenger.of(context)
@@ -254,15 +288,13 @@ class _AboutSectionState extends ConsumerState<_AboutSection> {
               end: 16,
             ),
             title: Text(l.checkNow),
-            onTap: () async {
-              final messenger = ScaffoldMessenger.of(context);
-              final update = await ref
-                  .read(updateProvider.notifier)
-                  .check(force: true);
-              if (update == null) {
-                messenger.showSnackBar(SnackBar(content: Text(l.upToDate)));
-              }
-            },
+            trailing: _checking
+                ? const SizedBox.square(
+                    dimension: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : null,
+            onTap: _checking ? null : _checkNow,
           ),
         ],
       ],
