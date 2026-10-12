@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/auth/auth_service.dart';
@@ -56,6 +57,100 @@ final syncRecorderProvider = Provider<SyncRecorder?>((ref) {
 
 enum SignOutMode { keepData, removeData }
 
+/// Signing in on a device with data made while signed out, into an account
+/// that has data too.
+enum JoinChoice {
+  /// Only the account's data: this device's goes to an automatic backup.
+  useAccount,
+
+  /// This device's data joins the account's.
+  keepBoth,
+}
+
+/// How a sign-in went, for the page that started it.
+enum SignInResult {
+  cancelled,
+
+  /// A new account and an empty device: set up a semester.
+  newAccount,
+
+  /// This device is empty and the account's data is on its way
+  /// ([restoreProvider] says when it's here).
+  restoring,
+
+  /// This device keeps its data (and gets the account's).
+  joined,
+}
+
+/// Waiting for an account's data after signing in on an empty device. Kept
+/// here, not in the Welcome page, so it survives the page being rebuilt
+/// (switching accounts empties the device and shows Welcome again).
+enum RestorePhase {
+  idle,
+  waiting,
+
+  /// The first sync brought no semesters: set one up.
+  empty,
+
+  /// No first sync within 30 seconds (offline, server busy).
+  failed,
+}
+
+class RestoreController extends Notifier<RestorePhase> {
+  @override
+  RestorePhase build() => RestorePhase.idle;
+
+  void wait() => state = RestorePhase.waiting;
+
+  void reset() => state = RestorePhase.idle;
+
+  /// The first sync finished (or timed out, when [synced] is false).
+  void firstSync({required bool synced, required bool hasSemesters}) {
+    if (state != RestorePhase.waiting) return;
+    state = !synced
+        ? RestorePhase.failed
+        : hasSemesters
+        ? RestorePhase.idle
+        : RestorePhase.empty;
+  }
+}
+
+final restoreProvider = NotifierProvider<RestoreController, RestorePhase>(
+  RestoreController.new,
+);
+
+/// Set when a sign-in brought semesters from the account: the app then asks
+/// which one to open (or to start a new one).
+class SemesterChoiceController extends Notifier<bool> {
+  @override
+  bool build() => false;
+
+  void ask() => state = true;
+
+  void clear() => state = false;
+}
+
+final semesterChoiceProvider = NotifierProvider<SemesterChoiceController, bool>(
+  SemesterChoiceController.new,
+);
+
+/// Waits for the sync engine's first sync: true once it's done, false after
+/// [timeout] or without an engine. Replaced in tests.
+final firstSyncProvider = Provider<Future<bool> Function(Duration timeout)>(
+  (ref) => (timeout) async {
+    final engine = ref.read(syncEngineProvider);
+    if (engine == null) return false;
+    try {
+      await engine.states
+          .firstWhere((s) => s.phase == SyncPhase.synced)
+          .timeout(timeout);
+      return true;
+    } on Object {
+      return false;
+    }
+  },
+);
+
 /// The semester running on [today], otherwise the latest one ([semesters] is
 /// sorted newest first).
 SemesterInfo? pickSemester(List<SemesterInfo> semesters, LocalDate today) =>
@@ -80,68 +175,130 @@ class AuthController extends AsyncNotifier<Session?> {
     return renewed;
   }
 
-  /// Signs in and attaches the account to this device.
+  /// Signs in and attaches the account to this device. Asks first, through
+  /// the callbacks, whenever data could be mixed or replaced:
   ///
-  /// - Guest data (never synced) joins the account, without overwriting
-  ///   anything the account already has.
-  /// - The same account again: edits made while signed out sync normally.
   /// - Data from a *different* account is only replaced after
-  ///   [confirmReplace] returns true (v1 silently pushed it into the new
-  ///   account), and a snapshot of it is kept.
-  Future<void> signIn({
+  ///   [confirmReplace] (v1 silently pushed it into the new account), and a
+  ///   snapshot of it is kept.
+  /// - Data made while signed out, when the account has data too:
+  ///   [chooseJoin] picks the account's only (this device's goes to a
+  ///   snapshot) or both. Without that question every new device added its
+  ///   setup semester to the account (issue #2).
+  /// - An empty account whose data was deleted in the last 30 days:
+  ///   [offerRestore] can bring it back.
+  /// - The same account again: edits made while signed out sync normally.
+  ///
+  /// When the server can't say what the account holds (offline, an older
+  /// server), the device's data joins the account, as before: nothing is
+  /// lost.
+  Future<SignInResult> signIn({
     required Future<bool> Function() confirmReplace,
+    required Future<JoinChoice?> Function(AccountSummary account, int local)
+    chooseJoin,
+    required Future<bool> Function(DateTime deletedAt) offerRestore,
     String? devName,
   }) async {
     final session = devName == null
         ? await _auth.signInWithGoogle()
         : await _auth.signInDev(devName);
+    final summary = await _auth.accountSummary(session);
     final attached = ref.read(attachedAccountProvider);
     final repo = ref.read(repositoryProvider);
     final db = ref.read(databaseProvider);
     final accounts = ref.read(attachedAccountProvider.notifier);
+    final snapshots = ref.read(snapshotServiceProvider);
+    final local = await repo.semesters();
+    var bringBack = false;
+
+    Future<SignInResult> cancel() async {
+      await _auth.clear();
+      return SignInResult.cancelled;
+    }
 
     if (attached != null && attached != session.userId) {
-      if (!await confirmReplace()) {
-        await _auth.clear();
-        return;
-      }
-      await ref
-          .read(snapshotServiceProvider)
-          .take(SnapshotReason.beforeAccountSwitch);
+      if (!await confirmReplace()) return cancel();
+      await snapshots.take(SnapshotReason.beforeAccountSwitch);
       accounts.detach();
       await repo.wipeAll();
       await SyncEngine.resetCursor(db);
       accounts.attach(session.userId);
     } else if (attached == null) {
-      accounts.attach(session.userId);
-      await ref.read(syncRecorderProvider)?.enqueueAll(repo);
+      if (summary != null && summary.semesters > 0 && local.isNotEmpty) {
+        switch (await chooseJoin(summary, local.length)) {
+          case null:
+            return cancel();
+          case JoinChoice.useAccount:
+            await snapshots.take(SnapshotReason.beforeSignIn);
+            await repo.wipeAll();
+            await SyncEngine.resetCursor(db);
+            accounts.attach(session.userId);
+          case JoinChoice.keepBoth:
+            accounts.attach(session.userId);
+            await ref.read(syncRecorderProvider)?.enqueueAll(repo);
+        }
+      } else {
+        final deletedAt = summary?.deletedAt;
+        if (summary != null && summary.semesters == 0 && deletedAt != null) {
+          bringBack = await offerRestore(deletedAt);
+        }
+        accounts.attach(session.userId);
+        await ref.read(syncRecorderProvider)?.enqueueAll(repo);
+      }
     }
+
     final before = {for (final s in await repo.semesters()) s.id};
+    final expectData = summary == null || summary.semesters > 0 || bringBack;
+    final result = before.isNotEmpty
+        ? SignInResult.joined
+        : expectData
+        ? SignInResult.restoring
+        : SignInResult.newAccount;
+    if (result == SignInResult.restoring) {
+      ref.read(restoreProvider.notifier).wait();
+    }
     state = AsyncData(session);
-    unawaited(_showRestoredSemester(before));
+    if (bringBack) {
+      try {
+        await _auth.restoreDeleted(session);
+      } on Object catch (e) {
+        debugPrint('Bringing back deleted data failed: $e');
+      }
+    }
+    unawaited(_afterFirstSync(before));
+    return result;
   }
 
-  /// After the first sync of a sign-in, switches to a semester the account
-  /// brought in, so its data doesn't hide behind one made on this device
-  /// while signed out.
-  Future<void> _showRestoredSemester(Set<String> before) async {
-    final engine = ref.read(syncEngineProvider);
-    if (engine == null) return;
-    try {
-      await engine.states
-          .firstWhere((s) => s.phase == SyncPhase.synced)
-          .timeout(const Duration(seconds: 30));
-    } on Object {
-      return;
-    }
+  /// After the first sync of a sign-in: tells a waiting Welcome page whether
+  /// the account had semesters, and asks which semester to open when the
+  /// account brought some. Until then, the one running today is shown.
+  Future<void> _afterFirstSync(Set<String> before) async {
+    final synced = await ref.read(firstSyncProvider)(
+      const Duration(seconds: 30),
+    );
+    // A fresh query: the semester list provider may not have caught up with
+    // the rows the sync just wrote (it used to send accounts with data to
+    // the setup form).
+    final semesters = await ref.read(repositoryProvider).semesters();
     final restored = [
-      for (final s in await ref.read(repositoryProvider).semesters())
+      for (final s in semesters)
         if (!before.contains(s.id)) s,
     ];
     final pick = pickSemester(restored, LocalDate.today());
     if (pick != null) {
       ref.read(activeSemesterChoiceProvider.notifier).select(pick.id);
+      ref.read(semesterChoiceProvider.notifier).ask();
     }
+    ref
+        .read(restoreProvider.notifier)
+        .firstSync(synced: synced, hasSemesters: semesters.isNotEmpty);
+  }
+
+  /// Try again (Welcome), when the account's data didn't arrive in time.
+  Future<void> retryRestore() async {
+    ref.read(restoreProvider.notifier).wait();
+    ref.read(syncEngineProvider)?.syncNow();
+    await _afterFirstSync(const {});
   }
 
   /// Signs out. With [SignOutMode.keepData] the device stays attached to the

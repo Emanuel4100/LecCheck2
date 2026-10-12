@@ -1436,6 +1436,100 @@ class AppLocalizationsHe extends AppLocalizations {
   String get snapshotSwitch => 'לפני החלפת חשבון';
 
   @override
+  String get snapshotSignIn => 'לפני התחברות';
+
+  @override
+  String get joinTitle => 'בחשבון כבר יש נתונים';
+
+  @override
+  String joinAccountSemesters(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'בחשבון יש $count סמסטרים.',
+      two: 'בחשבון יש שני סמסטרים.',
+      one: 'בחשבון יש סמסטר אחד.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String joinLocalSemesters(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'במכשיר הזה יש $count סמסטרים שנוצרו בלי התחברות.',
+      two: 'במכשיר הזה יש שני סמסטרים שנוצרו בלי התחברות.',
+      one: 'במכשיר הזה יש סמסטר אחד שנוצר בלי התחברות.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get joinQuestion =>
+      'להשתמש רק בנתוני החשבון? הנתונים במכשיר הזה יישמרו קודם בגיבוי אוטומטי. אפשר גם לשמור את שניהם.';
+
+  @override
+  String get joinUseAccount => 'נתוני החשבון';
+
+  @override
+  String get joinKeepBoth => 'לשמור את שניהם';
+
+  @override
+  String get restoreDeletedTitle => 'להחזיר את הנתונים שנמחקו?';
+
+  @override
+  String restoreDeletedBody(String date) {
+    return 'נתוני הענן של החשבון הזה נמחקו ב-$date. הם נשמרים 30 יום, כך שעדיין אפשר להחזיר אותם.';
+  }
+
+  @override
+  String get bringBack => 'להחזיר';
+
+  @override
+  String get startFresh => 'להתחיל מחדש';
+
+  @override
+  String get restoreFailed =>
+      'לא ניתן לטעון את הנתונים. כדאי לבדוק את החיבור ולנסות שוב.';
+
+  @override
+  String get setUpAnyway => 'להגדיר סמסטר בכל זאת';
+
+  @override
+  String get chooseSemesterTitle => 'איזה סמסטר?';
+
+  @override
+  String get chooseSemesterSubtitle =>
+      'אלה הסמסטרים בחשבון שלך. אפשר לפתוח אחד מהם או להתחיל סמסטר חדש.';
+
+  @override
+  String get semesterNow => 'עכשיו';
+
+  @override
+  String get startNewSemester => 'להתחיל סמסטר חדש';
+
+  @override
+  String get restoreDeletedRow => 'החזרת נתוני ענן שנמחקו';
+
+  @override
+  String restoreDeletedRowSubtitle(String deleted, String until) {
+    return 'נמחקו ב-$deleted, נשמרים עד $until';
+  }
+
+  @override
+  String restoredCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count פריטים הוחזרו',
+      two: 'שני פריטים הוחזרו',
+      one: 'פריט אחד הוחזר',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get restoreSnapshotTitle => 'לשחזר את הגיבוי הזה?';
 
   @override

@@ -10,6 +10,7 @@ import 'dart:io';
 import 'package:drift/drift.dart' show driftRuntimeOptions;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:leccheck/core/auth/auth_service.dart';
 import 'package:leccheck/core/auth/session.dart';
 import 'package:leccheck/core/db/app_database.dart';
 import 'package:leccheck/core/db/schedule_repository.dart';
@@ -320,5 +321,40 @@ void main() {
       () => converged(tablet),
       "tablet's old copy doesn't bring c2 back",
     );
+  });
+
+  test('the account summary, and bringing deleted data back', () async {
+    final user = 'e2e-summary-${DateTime.now().microsecondsSinceEpoch}';
+    final auth = AuthService();
+    var session = await devLogin(user);
+    expect((await auth.accountSummary(session))?.semesters, 0);
+
+    final phone = await Device.create('phone00000000009');
+    await phone.repo.saveSemester(
+      SemesterInfo(
+        id: 'sem',
+        name: 'Semester A',
+        start: LocalDate.parse('2026-10-18'),
+        end: LocalDate.parse('2027-01-22'),
+      ),
+    );
+    phone.connect(session);
+    await eventually(
+      () async => (await auth.accountSummary(session))?.semesters == 1,
+      'the summary counts the synced semester',
+    );
+    await phone.disconnect();
+
+    await auth.deleteAccount(session);
+    session = await devLogin(user);
+    final deleted = (await auth.accountSummary(session))!;
+    expect(deleted.semesters, 0);
+    expect(deleted.trashRows, greaterThan(0));
+    expect(deleted.deletedAt, isNotNull);
+
+    expect(await auth.restoreDeleted(session), deleted.trashRows);
+    final back = (await auth.accountSummary(session))!;
+    expect(back.semesters, 1);
+    expect(back.deletedAt, isNull);
   });
 }

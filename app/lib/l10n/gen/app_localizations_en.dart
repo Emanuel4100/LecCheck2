@@ -1442,6 +1442,97 @@ class AppLocalizationsEn extends AppLocalizations {
   String get snapshotSwitch => 'Before switching accounts';
 
   @override
+  String get snapshotSignIn => 'Before signing in';
+
+  @override
+  String get joinTitle => 'Your account already has data';
+
+  @override
+  String joinAccountSemesters(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Your account has $count semesters.',
+      one: 'Your account has 1 semester.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String joinLocalSemesters(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'This device has $count semesters made while signed out.',
+      one: 'This device has 1 semester made while signed out.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get joinQuestion =>
+      'Use only your account\'s data? This device\'s data is saved in an automatic backup first. Or keep both.';
+
+  @override
+  String get joinUseAccount => 'Use my account\'s';
+
+  @override
+  String get joinKeepBoth => 'Keep both';
+
+  @override
+  String get restoreDeletedTitle => 'Bring back your deleted data?';
+
+  @override
+  String restoreDeletedBody(String date) {
+    return 'This account\'s cloud data was deleted on $date. It\'s kept for 30 days, so it can still come back.';
+  }
+
+  @override
+  String get bringBack => 'Bring back';
+
+  @override
+  String get startFresh => 'Start fresh';
+
+  @override
+  String get restoreFailed =>
+      'Couldn\'t load your data. Check your connection and try again.';
+
+  @override
+  String get setUpAnyway => 'Set up a semester anyway';
+
+  @override
+  String get chooseSemesterTitle => 'Which semester?';
+
+  @override
+  String get chooseSemesterSubtitle =>
+      'Your account has these semesters. Open one, or start a new one.';
+
+  @override
+  String get semesterNow => 'Now';
+
+  @override
+  String get startNewSemester => 'Start a new semester';
+
+  @override
+  String get restoreDeletedRow => 'Bring back deleted cloud data';
+
+  @override
+  String restoreDeletedRowSubtitle(String deleted, String until) {
+    return 'Deleted on $deleted; kept until $until';
+  }
+
+  @override
+  String restoredCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count items brought back',
+      one: '1 item brought back',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get restoreSnapshotTitle => 'Restore this backup?';
 
   @override

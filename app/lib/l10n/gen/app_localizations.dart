@@ -2486,6 +2486,126 @@ abstract class AppLocalizations {
   /// **'Before switching accounts'**
   String get snapshotSwitch;
 
+  /// No description provided for @snapshotSignIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Before signing in'**
+  String get snapshotSignIn;
+
+  /// No description provided for @joinTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your account already has data'**
+  String get joinTitle;
+
+  /// No description provided for @joinAccountSemesters.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Your account has 1 semester.} other{Your account has {count} semesters.}}'**
+  String joinAccountSemesters(int count);
+
+  /// No description provided for @joinLocalSemesters.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{This device has 1 semester made while signed out.} other{This device has {count} semesters made while signed out.}}'**
+  String joinLocalSemesters(int count);
+
+  /// No description provided for @joinQuestion.
+  ///
+  /// In en, this message translates to:
+  /// **'Use only your account\'s data? This device\'s data is saved in an automatic backup first. Or keep both.'**
+  String get joinQuestion;
+
+  /// No description provided for @joinUseAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Use my account\'s'**
+  String get joinUseAccount;
+
+  /// No description provided for @joinKeepBoth.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep both'**
+  String get joinKeepBoth;
+
+  /// No description provided for @restoreDeletedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Bring back your deleted data?'**
+  String get restoreDeletedTitle;
+
+  /// No description provided for @restoreDeletedBody.
+  ///
+  /// In en, this message translates to:
+  /// **'This account\'s cloud data was deleted on {date}. It\'s kept for 30 days, so it can still come back.'**
+  String restoreDeletedBody(String date);
+
+  /// No description provided for @bringBack.
+  ///
+  /// In en, this message translates to:
+  /// **'Bring back'**
+  String get bringBack;
+
+  /// No description provided for @startFresh.
+  ///
+  /// In en, this message translates to:
+  /// **'Start fresh'**
+  String get startFresh;
+
+  /// No description provided for @restoreFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load your data. Check your connection and try again.'**
+  String get restoreFailed;
+
+  /// No description provided for @setUpAnyway.
+  ///
+  /// In en, this message translates to:
+  /// **'Set up a semester anyway'**
+  String get setUpAnyway;
+
+  /// No description provided for @chooseSemesterTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Which semester?'**
+  String get chooseSemesterTitle;
+
+  /// No description provided for @chooseSemesterSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your account has these semesters. Open one, or start a new one.'**
+  String get chooseSemesterSubtitle;
+
+  /// No description provided for @semesterNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Now'**
+  String get semesterNow;
+
+  /// No description provided for @startNewSemester.
+  ///
+  /// In en, this message translates to:
+  /// **'Start a new semester'**
+  String get startNewSemester;
+
+  /// No description provided for @restoreDeletedRow.
+  ///
+  /// In en, this message translates to:
+  /// **'Bring back deleted cloud data'**
+  String get restoreDeletedRow;
+
+  /// No description provided for @restoreDeletedRowSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Deleted on {deleted}; kept until {until}'**
+  String restoreDeletedRowSubtitle(String deleted, String until);
+
+  /// No description provided for @restoredCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 item brought back} other{{count} items brought back}}'**
+  String restoredCount(int count);
+
   /// No description provided for @restoreSnapshotTitle.
   ///
   /// In en, this message translates to:

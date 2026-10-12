@@ -8,7 +8,6 @@ import '../../app/theme/motion.dart';
 import '../../app/widgets/lec_logo.dart';
 import '../../core/icons/lec_icons.dart';
 import '../../core/sync/sync_config.dart';
-import '../../core/sync/sync_engine.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../settings/account_section.dart';
 
@@ -20,26 +19,26 @@ class WelcomePage extends ConsumerStatefulWidget {
 }
 
 class _WelcomePageState extends ConsumerState<WelcomePage> {
-  /// Signed in; waiting for the first sync to bring the account's data.
-  bool _restoring = false;
-
   Future<void> _signIn({String? devName}) async {
-    if (await signIn(context, ref, devName: devName) && mounted) {
-      setState(() => _restoring = true);
-    }
+    final result = await signIn(context, ref, devName: devName);
+    // A new account has nothing to restore: straight to semester setup.
+    if (result == SignInResult.newAccount && mounted) context.push('/semester');
+  }
+
+  void _setUp() {
+    ref.read(restoreProvider.notifier).reset();
+    context.push('/semester');
   }
 
   @override
   Widget build(BuildContext context) {
-    // A new account has nothing to restore: continue to semester setup. An
-    // account with data gets semesters, and the router moves on to Today.
-    ref.listen(syncStateProvider, (_, next) {
-      if (!_restoring || next.value?.phase != SyncPhase.synced) return;
-      if (ref.read(semestersProvider).value?.isEmpty ?? true) {
-        setState(() => _restoring = false);
-        context.push('/semester');
-      }
+    // An account with data gets semesters, and the router moves on to
+    // Today. One without any (known after the first sync) sets one up.
+    ref.listen(restoreProvider, (_, next) {
+      if (next == RestorePhase.empty) _setUp();
     });
+    final restore = ref.watch(restoreProvider);
+    final signedIn = ref.watch(authProvider).value != null;
     final l = AppLocalizations.of(context);
     final theme = Theme.of(context);
     final motion = AppMotion.of(context);
@@ -95,21 +94,9 @@ class _WelcomePageState extends ConsumerState<WelcomePage> {
                   ),
                 ),
                 const SizedBox(height: 40),
-                FilledButton.icon(
-                  onPressed: () => context.push('/semester'),
-                  icon: const Icon(LecIcons.check),
-                  label: Text(l.continueAsGuest),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  l.guestNote,
-                  textAlign: TextAlign.center,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                ),
-                const SizedBox(height: 24),
-                if (_restoring)
+                // Waiting for the account's data: setting up a semester now
+                // would add an empty one to the account (issue #2).
+                if (restore == RestorePhase.waiting)
                   Column(
                     children: [
                       const LinearProgressIndicator(),
@@ -117,7 +104,37 @@ class _WelcomePageState extends ConsumerState<WelcomePage> {
                       Text(l.restoringData, textAlign: TextAlign.center),
                     ],
                   )
+                else if (restore == RestorePhase.failed) ...[
+                  Text(l.restoreFailed, textAlign: TextAlign.center),
+                  const SizedBox(height: 16),
+                  FilledButton(
+                    onPressed: () =>
+                        ref.read(authProvider.notifier).retryRestore(),
+                    child: Text(l.retry),
+                  ),
+                  const SizedBox(height: 8),
+                  TextButton(onPressed: _setUp, child: Text(l.setUpAnyway)),
+                ] else if (signedIn)
+                  FilledButton.icon(
+                    onPressed: _setUp,
+                    icon: const Icon(LecIcons.add),
+                    label: Text(l.startNewSemester),
+                  )
                 else ...[
+                  FilledButton.icon(
+                    onPressed: () => context.push('/semester'),
+                    icon: const Icon(LecIcons.check),
+                    label: Text(l.continueAsGuest),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    l.guestNote,
+                    textAlign: TextAlign.center,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  const SizedBox(height: 24),
                   OutlinedButton.icon(
                     onPressed: SyncConfig.enabled ? _signIn : null,
                     icon: const Icon(LecIcons.account),

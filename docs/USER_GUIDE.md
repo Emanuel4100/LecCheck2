@@ -7,6 +7,8 @@
    Google** to sync (needs a build with sync configured, see [Setup](SETUP.md)).
 3. **Set up your semester**: name, start and end dates, the day your week starts, and
    which days the week view shows. Hebrew defaults to an Israeli week (Sunday–Thursday).
+   If you signed in to an account that already has data, you skip this: LecCheck brings
+   your semesters and asks which one to open.
 4. Add your courses (Today shows an **Add course** button while you have none).
 
 ## Courses and meetings
@@ -195,8 +197,15 @@ it. Tap the widget to open the app.
 
 **Settings → Account → Sign in with Google.** The sign-in opens in your browser.
 
-- Data you created before signing in is added to your account.
+- **Signing in on a new device** brings your account's data, then asks **Which
+  semester?**: open one of your semesters, or **Start a new semester**. A brand-new
+  account goes straight to setting up its first semester.
+- **Data you created before signing in**: when your account is empty, it's added to the
+  account. When the account has data too, you're asked: **Use my account's** (this
+  device's data goes to an automatic backup first, see Settings → Data) or **Keep both**.
 - If this device holds data from a *different* account, you're asked before it's replaced.
+- If your account's cloud data was deleted in the last 30 days, signing in offers to
+  **Bring back** it.
 - The cloud icon in the top bar shows sync status (synced / syncing / offline); **Sync
   now** forces a sync. Changes made offline sync when you're back online.
 - Changes the server refuses are kept on the device and listed under Account with a

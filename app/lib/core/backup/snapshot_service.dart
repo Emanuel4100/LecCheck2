@@ -10,7 +10,8 @@ enum SnapshotReason {
   beforeImport('import'),
   beforeRestore('restore'),
   beforeSignOut('signout'),
-  beforeAccountSwitch('switch');
+  beforeAccountSwitch('switch'),
+  beforeSignIn('signin');
 
   const SnapshotReason(this.key);
   final String key;

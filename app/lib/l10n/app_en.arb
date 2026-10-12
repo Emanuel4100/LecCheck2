@@ -695,6 +695,64 @@
   "snapshotRestore": "Before restore",
   "snapshotSignOut": "Before sign-out",
   "snapshotSwitch": "Before switching accounts",
+  "snapshotSignIn": "Before signing in",
+  "joinTitle": "Your account already has data",
+  "joinAccountSemesters": "{count, plural, =1{Your account has 1 semester.} other{Your account has {count} semesters.}}",
+  "@joinAccountSemesters": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "joinLocalSemesters": "{count, plural, =1{This device has 1 semester made while signed out.} other{This device has {count} semesters made while signed out.}}",
+  "@joinLocalSemesters": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "joinQuestion": "Use only your account's data? This device's data is saved in an automatic backup first. Or keep both.",
+  "joinUseAccount": "Use my account's",
+  "joinKeepBoth": "Keep both",
+  "restoreDeletedTitle": "Bring back your deleted data?",
+  "restoreDeletedBody": "This account's cloud data was deleted on {date}. It's kept for 30 days, so it can still come back.",
+  "@restoreDeletedBody": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "bringBack": "Bring back",
+  "startFresh": "Start fresh",
+  "restoreFailed": "Couldn't load your data. Check your connection and try again.",
+  "setUpAnyway": "Set up a semester anyway",
+  "chooseSemesterTitle": "Which semester?",
+  "chooseSemesterSubtitle": "Your account has these semesters. Open one, or start a new one.",
+  "semesterNow": "Now",
+  "startNewSemester": "Start a new semester",
+  "restoreDeletedRow": "Bring back deleted cloud data",
+  "restoreDeletedRowSubtitle": "Deleted on {deleted}; kept until {until}",
+  "@restoreDeletedRowSubtitle": {
+    "placeholders": {
+      "deleted": {
+        "type": "String"
+      },
+      "until": {
+        "type": "String"
+      }
+    }
+  },
+  "restoredCount": "{count, plural, =1{1 item brought back} other{{count} items brought back}}",
+  "@restoredCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "restoreSnapshotTitle": "Restore this backup?",
   "restoreSnapshotBody": "Your data goes back to how it was then, on all your synced devices. Your current data is saved as a backup first, so you can undo this.",
   "restore": "Restore",

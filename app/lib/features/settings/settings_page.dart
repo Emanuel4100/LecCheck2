@@ -856,6 +856,7 @@ class _SnapshotListState extends ConsumerState<_SnapshotList> {
     SnapshotReason.beforeRestore => l.snapshotRestore,
     SnapshotReason.beforeSignOut => l.snapshotSignOut,
     SnapshotReason.beforeAccountSwitch => l.snapshotSwitch,
+    SnapshotReason.beforeSignIn => l.snapshotSignIn,
   };
 
   Future<void> _restore(Snapshot snapshot) async {

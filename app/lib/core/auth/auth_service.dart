@@ -3,7 +3,7 @@ import 'dart:io' show Platform;
 import 'dart:math';
 
 import 'package:crypto/crypto.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart' show immutable, kIsWeb;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_web_auth_2/flutter_web_auth_2.dart';
 import 'package:http/http.dart' as http;
@@ -17,6 +17,46 @@ class AuthException implements Exception {
 
   @override
   String toString() => 'AuthException($code)';
+}
+
+/// What an account holds, and what "Delete cloud data" left in its trash
+/// (`GET /v1/account/summary`).
+@immutable
+class AccountSummary {
+  const AccountSummary({
+    required this.semesters,
+    required this.courses,
+    this.trashRows = 0,
+    this.deletedAt,
+  });
+
+  /// Null unless [json] is the server's answer.
+  static AccountSummary? tryParse(Object? json) {
+    if (json is! Map<String, Object?>) return null;
+    final semesters = json['semesters'];
+    final courses = json['courses'];
+    if (semesters is! int || courses is! int) return null;
+    final trash = json['trash'];
+    final rows = trash is Map<String, Object?> ? trash['rows'] : null;
+    final at = trash is Map<String, Object?> ? trash['deletedAt'] : null;
+    return AccountSummary(
+      semesters: semesters,
+      courses: courses,
+      trashRows: rows is int ? rows : 0,
+      deletedAt: at is int && rows is int && rows > 0
+          ? DateTime.fromMillisecondsSinceEpoch(at)
+          : null,
+    );
+  }
+
+  final int semesters;
+  final int courses;
+
+  /// Rows "Delete cloud data" moved to the trash (kept 30 days).
+  final int trashRows;
+
+  /// When the cloud data was deleted; null when the trash is empty.
+  final DateTime? deletedAt;
 }
 
 /// Sign-in and session storage. The Google flow runs in the system browser
@@ -163,6 +203,39 @@ class AuthService {
     if (response.statusCode >= 300) {
       throw AuthException('http_${response.statusCode}');
     }
+  }
+
+  /// What the account holds. Null when that can't be told (offline, a
+  /// server from before 2.0.0-beta.9): sign-in then merges, which loses
+  /// nothing.
+  Future<AccountSummary?> accountSummary(Session session) async {
+    try {
+      final response = await _http
+          .get(
+            SyncConfig.api('/v1/account/summary'),
+            headers: {'Authorization': 'Bearer ${session.token}'},
+          )
+          .timeout(const Duration(seconds: 10));
+      if (response.statusCode != 200) return null;
+      return AccountSummary.tryParse(jsonDecode(response.body));
+    } on Object {
+      return null;
+    }
+  }
+
+  /// Brings back what "Delete cloud data" removed (within 30 days); the rows
+  /// then arrive through sync. Returns how many came back.
+  Future<int> restoreDeleted(Session session) async {
+    final response = await _http.post(
+      SyncConfig.api('/v1/account/restore'),
+      headers: {'Authorization': 'Bearer ${session.token}'},
+    );
+    if (response.statusCode != 200) {
+      throw AuthException('http_${response.statusCode}');
+    }
+    final restored =
+        (jsonDecode(response.body) as Map<String, Object?>)['restored'];
+    return restored is int ? restored : 0;
   }
 
   static String _random(int length) {

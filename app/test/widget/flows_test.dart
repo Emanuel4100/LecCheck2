@@ -9,6 +9,7 @@ import 'package:http/testing.dart';
 import 'package:leccheck/app/app.dart';
 import 'package:leccheck/app/providers.dart';
 import 'package:leccheck/app/router.dart';
+import 'package:leccheck/app/sync_providers.dart';
 import 'package:leccheck/app/update_controller.dart';
 import 'package:leccheck/core/db/app_database.dart';
 import 'package:leccheck/core/db/schedule_repository.dart';
@@ -200,6 +201,24 @@ void main() {
     await _settle(tester);
     expect(find.text('Show a notification now'), findsOneWidget);
     expect(find.text('After-class reminder in 1 minute'), findsOneWidget);
+  });
+
+  testWidgets('after a sign-in brings semesters, asks which one to open', (
+    tester,
+  ) async {
+    final (container, _) = await _start(tester);
+    container.read(semesterChoiceProvider.notifier).ask();
+    await _settle(tester);
+    expect(find.text('Which semester?'), findsOneWidget);
+    expect(find.text('Semester A'), findsOneWidget);
+    expect(find.text('Start a new semester'), findsOneWidget);
+    expect(container.read(semesterChoiceProvider), isFalse);
+
+    await tester.tap(find.text('Semester A'));
+    await _settle(tester);
+    expect(find.text('Which semester?'), findsNothing);
+    expect(container.read(activeSemesterChoiceProvider), 'sem');
+    expect(find.text('Calculus'), findsWidgets);
   });
 
   group('Check now', () {

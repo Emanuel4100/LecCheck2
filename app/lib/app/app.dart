@@ -19,6 +19,12 @@ class LecCheckApp extends ConsumerWidget {
     // Keeps the sync engine alive while signed in.
     ref.watch(syncEngineProvider);
     final router = ref.watch(routerProvider);
+    // A sign-in brought semesters from the account: ask which to open.
+    ref.listen(semesterChoiceProvider, (_, ask) {
+      if (!ask) return;
+      ref.read(semesterChoiceProvider.notifier).clear();
+      router.push('/choose-semester');
+    });
     final use24h = ref.watch(userPrefsProvider.select((p) => p.value?.use24h));
 
     return DynamicColorBuilder(

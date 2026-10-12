@@ -10,31 +10,69 @@ import '../../app/sync_providers.dart';
 import '../../core/icons/lec_icons.dart';
 import '../../core/sync/sync_config.dart';
 import '../../core/sync/sync_engine.dart';
+import '../../domain/local_date.dart';
 import '../../l10n/gen/app_localizations.dart';
 
 /// Signs in (Google, or the dev account against `wrangler dev`). Asks before
-/// replacing data that belongs to another account.
-Future<bool> signIn(
+/// replacing data that belongs to another account, before mixing data made
+/// while signed out into an account that has data, and offers to bring back
+/// an account's deleted data.
+Future<SignInResult> signIn(
   BuildContext context,
   WidgetRef ref, {
   String? devName,
 }) async {
   final l = AppLocalizations.of(context);
+  final fmt = Fmt.of(context);
   final messenger = ScaffoldMessenger.maybeOf(context);
   try {
-    await ref
+    return await ref
         .read(authProvider.notifier)
         .signIn(
           devName: devName,
-          confirmReplace: () => confirmDialog(
-            context,
-            title: l.replaceDataTitle,
-            body: l.replaceDataBody,
-            confirmLabel: l.replace,
-            destructive: true,
-          ),
+          confirmReplace: () async =>
+              context.mounted &&
+              await confirmDialog(
+                context,
+                title: l.replaceDataTitle,
+                body: l.replaceDataBody,
+                confirmLabel: l.replace,
+                destructive: true,
+              ),
+          chooseJoin: (account, local) async {
+            if (!context.mounted) return null;
+            return showChoiceDialog<JoinChoice?>(
+              context,
+              title: l.joinTitle,
+              body:
+                  '${l.joinAccountSemesters(account.semesters)} '
+                  '${l.joinLocalSemesters(local)}\n\n${l.joinQuestion}',
+              choices: [
+                DialogChoice(l.cancel, null),
+                DialogChoice(l.joinKeepBoth, JoinChoice.keepBoth),
+                DialogChoice(
+                  l.joinUseAccount,
+                  JoinChoice.useAccount,
+                  primary: true,
+                ),
+              ],
+            );
+          },
+          offerRestore: (deletedAt) async {
+            if (!context.mounted) return false;
+            final date = fmt.yearMonthDay(LocalDate.fromDateTime(deletedAt));
+            return await showChoiceDialog<bool>(
+                  context,
+                  title: l.restoreDeletedTitle,
+                  body: l.restoreDeletedBody(date),
+                  choices: [
+                    DialogChoice(l.startFresh, false),
+                    DialogChoice(l.bringBack, true, primary: true),
+                  ],
+                ) ??
+                false;
+          },
         );
-    return ref.read(authProvider).value != null;
   } on PlatformException catch (e) {
     // Closing the browser isn't an error worth reporting.
     if (e.code != 'CANCELED') {
@@ -43,7 +81,7 @@ Future<bool> signIn(
   } on Object {
     messenger?.showSnackBar(SnackBar(content: Text(l.signInFailed)));
   }
-  return false;
+  return SignInResult.cancelled;
 }
 
 String syncStatusText(SyncState state, AppLocalizations l, Fmt fmt) {

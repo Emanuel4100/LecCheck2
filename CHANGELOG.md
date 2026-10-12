@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+- **No more empty semesters when signing in** (issue #2). Signing in on a new device
+  sometimes opened the semester setup before the account's data arrived, and creating
+  it added an empty semester to the account, again on every new device. Now LecCheck
+  waits for your data (with **Retry** if it doesn't come), then asks **Which semester?**
+  (or **Start a new semester**). A semester made before signing in no longer joins the
+  account silently: when the account has data too, you choose **Use my account's** (the
+  device's data is backed up first) or **Keep both**. An account whose data was deleted
+  in the last 30 days offers to bring it back.
+
 ## 2.0.0-beta.8 — 2026-10-12
 
 Coming from beta.7 or older: install this version as before (Download, or

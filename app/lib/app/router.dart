@@ -7,6 +7,7 @@ import '../features/courses/course_page.dart';
 import '../features/courses/courses_page.dart';
 import '../features/developer/developer_page.dart';
 import '../features/onboarding/welcome_page.dart';
+import '../features/semester/semester_choice_page.dart';
 import '../features/semester/semester_form_page.dart';
 import '../features/sessions/all_sessions_page.dart';
 import '../features/settings/report_page.dart';
@@ -45,6 +46,11 @@ final routerProvider = Provider<GoRouter>((ref) {
     routes: [
       GoRoute(path: '/', builder: (_, _) => const _Splash()),
       GoRoute(path: '/welcome', builder: (_, _) => const WelcomePage()),
+      GoRoute(
+        path: '/choose-semester',
+        parentNavigatorKey: _rootKey,
+        builder: (_, _) => const SemesterChoicePage(),
+      ),
       GoRoute(
         path: '/semester',
         parentNavigatorKey: _rootKey,
