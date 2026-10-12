@@ -146,6 +146,34 @@ describe("HTTP sync", () => {
     expect(back.body.rows).toEqual([expect.objectContaining({ id: "c1", data: { id: "c1", name: "Keep me" } })]);
   });
 
+  it("summarizes what the account holds and what's in the trash", async () => {
+    let token = await login("maya");
+    const summary = async () => {
+      const res = await SELF.fetch(`${base}/v1/account/summary`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      expect(res.status).toBe(200);
+      return (await res.json()) as any;
+    };
+    expect(await summary()).toEqual({ semesters: 0, courses: 0, rows: 0, trash: null });
+    await sync(token, 0, [
+      { tbl: "semesters", id: "s1", patch: { name: "A" }, hlc: clock(-3000) },
+      { tbl: "semesters", id: "s2", patch: { name: "B", deleted: true }, hlc: clock(-3000) },
+      { tbl: "courses", id: "c1", patch: { name: "Calculus", semesterId: "s1" }, hlc: clock(-3000) },
+    ]);
+    // Deleted rows don't count.
+    expect(await summary()).toEqual({ semesters: 1, courses: 1, rows: 2, trash: null });
+
+    await SELF.fetch(`${base}/v1/account`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } });
+    token = await login("maya");
+    const deleted = await summary();
+    expect(deleted).toMatchObject({ semesters: 0, courses: 0, rows: 0, trash: { rows: 3 } });
+    expect(Math.abs(deleted.trash.deletedAt - Date.now())).toBeLessThan(60_000);
+
+    await SELF.fetch(`${base}/v1/account/restore`, { method: "POST", headers: { Authorization: `Bearer ${token}` } });
+    expect(await summary()).toEqual({ semesters: 1, courses: 1, rows: 2, trash: null });
+  });
+
   it("a device from another dataset catches up from the start", async () => {
     const token = await login("leo");
     const first = await sync(token, 0, [{ tbl: "courses", id: "c1", patch: { name: "A" }, hlc: clock(-1000) }]);
@@ -279,6 +307,7 @@ describe("revoked sessions", () => {
     const call = (method: string, path: string) =>
       SELF.fetch(`${base}${path}`, { method, headers: { Authorization: `Bearer ${old}` } });
     expect((await call("DELETE", "/v1/account")).status).toBe(401);
+    expect((await call("GET", "/v1/account/summary")).status).toBe(401);
     expect((await call("POST", "/v1/auth/signout-everywhere")).status).toBe(401);
     expect((await call("POST", "/v1/auth/renew")).status).toBe(401);
     expect((await sync(await login("yuri"), 0)).body.rows).toHaveLength(1);

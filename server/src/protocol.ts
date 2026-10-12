@@ -32,6 +32,15 @@ export const MAX_ACCOUNT_ROWS = 50_000;
 export const MAX_ACCOUNT_BYTES = 25 * 1024 * 1024;
 export const MAX_ROW_BYTES = 64 * 1024;
 
+/** What an account holds (rows not deleted) and what "Delete cloud data"
+ * left in its trash (`GET /v1/account/summary`). */
+export interface AccountSummary {
+  semesters: number;
+  courses: number;
+  rows: number;
+  trash: { rows: number; deletedAt: number } | null;
+}
+
 /** Field names: the app's columns are camelCase (`semesterId`). Anything
  * else (`__proto__`, megabyte-long keys) is refused. */
 const FIELD = /^[A-Za-z][A-Za-z0-9_]{0,63}$/;

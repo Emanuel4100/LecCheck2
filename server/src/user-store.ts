@@ -12,6 +12,7 @@ import {
   USER_ROWS_WRITTEN_PER_DAY,
   UserQuotaExceeded,
   validateChange,
+  type AccountSummary,
   type Change,
   type Rejected,
   type ServerMessage,
@@ -277,6 +278,28 @@ export class UserStore extends DurableObject<Env> {
     });
     if (restored.length) this.broadcast(restored);
     return restored.length;
+  }
+
+  /** What the account holds, and what's in the trash: a device signing in
+   * asks before mixing its own data in, and can offer to bring deleted data
+   * back. Reads every row once, so the app asks only at sign-in and in
+   * Settings → Account. */
+  async summary(): Promise<AccountSummary> {
+    const counts = new Map<string, number>();
+    const live = this.sql.exec<{ tbl: string; n: number }>(
+      `SELECT tbl, COUNT(*) AS n FROM rows
+       WHERE COALESCE(json_extract(data, '$.deleted'), 0) = 0 GROUP BY tbl`,
+    );
+    for (const r of live) counts.set(r.tbl, r.n);
+    const trash = this.sql
+      .exec<{ n: number; at: number | null }>("SELECT COUNT(*) AS n, MIN(deleted_at) AS at FROM trash")
+      .one();
+    return {
+      semesters: counts.get("semesters") ?? 0,
+      courses: counts.get("courses") ?? 0,
+      rows: [...counts.values()].reduce((a, b) => a + b, 0),
+      trash: trash.n > 0 ? { rows: trash.n, deletedAt: trash.at ?? 0 } : null,
+    };
   }
 
   async alarm(): Promise<void> {

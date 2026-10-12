@@ -127,6 +127,13 @@ app.post("/v1/account/restore", async (c) => {
   return c.json({ restored: await storeFor(c.env, session.sub).restoreDeleted() });
 });
 
+/** What the account holds and what's in its trash (see [UserStore.summary]). */
+app.get("/v1/account/summary", async (c) => {
+  const session = await activeSession(c.req.raw, c.env);
+  if (!session) return c.text("Unauthorized", 401);
+  return c.json(await storeFor(c.env, session.sub).summary());
+});
+
 /** Rolls the account's cloud data back to a point in time (up to 30 days),
  * for recovering from a bad sync or import. Devices re-offer what they have,
  * so nothing they hold is lost. */
