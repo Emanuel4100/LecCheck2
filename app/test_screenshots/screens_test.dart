@@ -16,6 +16,7 @@ import 'package:leccheck/app/router.dart';
 import 'package:leccheck/app/theme/colors.dart';
 import 'package:leccheck/core/db/app_database.dart';
 import 'package:leccheck/core/db/schedule_repository.dart';
+import 'package:leccheck/core/icons/lec_icons.dart';
 import 'package:leccheck/domain/local_date.dart';
 import 'package:leccheck/domain/occurrence_engine.dart';
 import 'package:leccheck/domain/schedule_types.dart';
@@ -290,6 +291,12 @@ Future<void> _go(
   await _settle(tester);
 }
 
+/// In the course editor: the sheet of its first meeting.
+Future<void> _openFirstMeeting(WidgetTester tester) async {
+  await tester.tap(find.byIcon(LecIcons.lecture).first);
+  await _settle(tester);
+}
+
 Future<void> _shot(WidgetTester tester, String name) => expectLater(
   find.byType(LecCheckApp),
   matchesGoldenFile('goldens/$name.png'),
@@ -328,6 +335,13 @@ void main() {
     await _shot(tester, 'en_light_settings');
     await _go(tester, c, '/course-editor?id=calc');
     await _shot(tester, 'en_light_editor');
+    await _openFirstMeeting(tester);
+    await _shot(tester, 'en_light_meeting_sheet');
+    await tester.tap(find.text('Done'));
+    await _settle(tester);
+    await _go(tester, c, '/today');
+    await _go(tester, c, '/course-editor');
+    await _shot(tester, 'en_light_editor_new');
   });
 
   testWidgets('Hebrew · dark', (tester) async {
@@ -342,6 +356,10 @@ void main() {
     await _shot(tester, 'he_dark_week');
     await _go(tester, c, '/stats');
     await _shot(tester, 'he_dark_stats');
+    await _go(tester, c, '/course-editor?id=calc');
+    await _shot(tester, 'he_dark_editor');
+    await _openFirstMeeting(tester);
+    await _shot(tester, 'he_dark_meeting_sheet');
   });
 
   testWidgets('Desktop · English · light', (tester) async {
@@ -363,6 +381,10 @@ void main() {
     await _shot(tester, 'desktop_stats');
     await _go(tester, c, '/settings');
     await _shot(tester, 'desktop_settings');
+    await _go(tester, c, '/course-editor?id=calc');
+    await _shot(tester, 'desktop_editor');
+    await _openFirstMeeting(tester);
+    await _shot(tester, 'desktop_meeting_dialog');
   }, variant: TargetPlatformVariant.only(TargetPlatform.linux));
 
   testWidgets('iPhone · English · light', (tester) async {

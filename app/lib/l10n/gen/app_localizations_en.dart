@@ -560,6 +560,46 @@ class AppLocalizationsEn extends AppLocalizations {
   String get meetingLinks => 'Meeting links';
 
   @override
+  String everyOtherWeekFrom(int week) {
+    return 'Every other week, from week $week';
+  }
+
+  @override
+  String get newMeeting => 'New meeting';
+
+  @override
+  String get editMeeting => 'Edit meeting';
+
+  @override
+  String get repeats => 'Repeats';
+
+  @override
+  String get meetingDaysHint => 'Pick one or more days';
+
+  @override
+  String get notesAndLinks => 'Notes & links';
+
+  @override
+  String linksCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count links',
+      one: '1 link',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get newCourseHere => 'New course here';
+
+  @override
+  String get addToCourse => 'Add to a course…';
+
+  @override
+  String get oneTimeSessionHere => 'One-time session…';
+
+  @override
   String get requirementsSection => 'Attendance requirement';
 
   @override

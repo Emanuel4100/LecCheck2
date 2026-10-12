@@ -185,7 +185,11 @@ void main() {
     );
     container.read(routerProvider).push('/course-editor?id=c1');
     await _settle(tester);
-    await tester.tap(find.byTooltip('Remove meeting'));
+    // The meeting's row opens its sheet, which can remove it.
+    await tester.tap(find.textContaining('Tuesday'));
+    await _settle(tester);
+    expect(find.text('Edit meeting'), findsOneWidget);
+    await tester.tap(find.text('Remove meeting'));
     await _settle(tester);
     expect(find.text('Remove this meeting?'), findsOneWidget);
     expect(find.textContaining('1 of its sessions is marked.'), findsOneWidget);

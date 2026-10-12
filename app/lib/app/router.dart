@@ -5,6 +5,7 @@ import 'package:material_ui/material_ui.dart';
 import '../features/courses/course_editor_page.dart';
 import '../features/courses/course_page.dart';
 import '../features/courses/courses_page.dart';
+import '../features/courses/meeting_sheet.dart';
 import '../features/developer/developer_page.dart';
 import '../features/onboarding/welcome_page.dart';
 import '../features/semester/semester_choice_page.dart';
@@ -125,6 +126,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (_, state) => CourseEditorPage(
           courseId: state.uri.queryParameters['id'],
           startWithOneTime: state.uri.queryParameters['oneTime'] == '1',
+          seed: MeetingSeed.fromQuery(state.uri.queryParameters),
         ),
       ),
     ],

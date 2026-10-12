@@ -16,6 +16,7 @@ import '../../domain/schedule_types.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../session/session_actions.dart';
 import '../session/session_tile.dart';
+import 'meeting_summary.dart';
 import 'requirement_chip.dart';
 
 /// A course on its own page (phones, or opened directly).
@@ -72,6 +73,9 @@ class CourseDetailView extends ConsumerWidget {
       semesterDataProvider.select(
         (d) => EqList(d.value?.meetingsOf(courseId) ?? const <MeetingRule>[]),
       ),
+    );
+    final semester = ref.watch(
+      semesterDataProvider.select((d) => d.value?.semester),
     );
     final progress = summary.progress;
     final reminders = ref.watch(reminderSettingsProvider);
@@ -186,20 +190,8 @@ class CourseDetailView extends ConsumerWidget {
           for (final m in meetings.items)
             ListTile(
               leading: Icon(m.type.icon, color: tone.accent),
-              title: Text(
-                m.kind == MeetingKind.weekly
-                    ? '${m.type.label(l)} · ${fmt.isoWeekdayName(m.weekday!)}'
-                    : '${m.type.label(l)} · ${fmt.longDate(m.date!)}',
-              ),
-              subtitle: Text(
-                [
-                  fmt.timeRange(m.startMin, m.endMin),
-                  if (m.location.isNotEmpty) m.location,
-                  if (m.intervalWeeks == 2) l.everyOtherWeek,
-                  if (m.validUntil case final until?)
-                    l.meetingUntil(fmt.dayMonth(until)),
-                ].join(' · '),
-              ),
+              title: Text(meetingTitle(m, l, fmt)),
+              subtitle: Text(meetingDetails(m, semester, l, fmt)),
             ),
         ],
       ),

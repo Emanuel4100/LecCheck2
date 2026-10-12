@@ -313,6 +313,30 @@
     }
   },
   "meetingLinks": "Meeting links",
+  "everyOtherWeekFrom": "Every other week, from week {week}",
+  "@everyOtherWeekFrom": {
+    "placeholders": {
+      "week": {
+        "type": "int"
+      }
+    }
+  },
+  "newMeeting": "New meeting",
+  "editMeeting": "Edit meeting",
+  "repeats": "Repeats",
+  "meetingDaysHint": "Pick one or more days",
+  "notesAndLinks": "Notes & links",
+  "linksCount": "{count, plural, =1{1 link} other{{count} links}}",
+  "@linksCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "newCourseHere": "New course here",
+  "addToCourse": "Add to a course…",
+  "oneTimeSessionHere": "One-time session…",
   "requirementsSection": "Attendance requirement",
   "requirementsHint": "Set a minimum attendance and LecCheck tells you how many sessions you can still miss.",
   "addRequirement": "Add requirement",

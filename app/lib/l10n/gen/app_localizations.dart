@@ -1022,6 +1022,66 @@ abstract class AppLocalizations {
   /// **'Meeting links'**
   String get meetingLinks;
 
+  /// No description provided for @everyOtherWeekFrom.
+  ///
+  /// In en, this message translates to:
+  /// **'Every other week, from week {week}'**
+  String everyOtherWeekFrom(int week);
+
+  /// No description provided for @newMeeting.
+  ///
+  /// In en, this message translates to:
+  /// **'New meeting'**
+  String get newMeeting;
+
+  /// No description provided for @editMeeting.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit meeting'**
+  String get editMeeting;
+
+  /// No description provided for @repeats.
+  ///
+  /// In en, this message translates to:
+  /// **'Repeats'**
+  String get repeats;
+
+  /// No description provided for @meetingDaysHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick one or more days'**
+  String get meetingDaysHint;
+
+  /// No description provided for @notesAndLinks.
+  ///
+  /// In en, this message translates to:
+  /// **'Notes & links'**
+  String get notesAndLinks;
+
+  /// No description provided for @linksCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 link} other{{count} links}}'**
+  String linksCount(int count);
+
+  /// No description provided for @newCourseHere.
+  ///
+  /// In en, this message translates to:
+  /// **'New course here'**
+  String get newCourseHere;
+
+  /// No description provided for @addToCourse.
+  ///
+  /// In en, this message translates to:
+  /// **'Add to a course…'**
+  String get addToCourse;
+
+  /// No description provided for @oneTimeSessionHere.
+  ///
+  /// In en, this message translates to:
+  /// **'One-time session…'**
+  String get oneTimeSessionHere;
+
   /// No description provided for @requirementsSection.
   ///
   /// In en, this message translates to:

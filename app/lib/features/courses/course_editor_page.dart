@@ -21,97 +21,8 @@ import '../../domain/semester_calendar.dart';
 import '../../domain/semester_data.dart';
 import '../../domain/short_name.dart';
 import '../../l10n/gen/app_localizations.dart';
-
-class _LinkDraft {
-  _LinkDraft([NamedLink? link])
-    : title = TextEditingController(text: link?.title ?? ''),
-      url = TextEditingController(text: link?.url ?? '');
-
-  final TextEditingController title;
-  final TextEditingController url;
-
-  NamedLink? toLink() => url.text.trim().isEmpty
-      ? null
-      : NamedLink(title: title.text.trim(), url: url.text.trim());
-
-  void dispose() {
-    title.dispose();
-    url.dispose();
-  }
-}
-
-class _MeetingDraft {
-  _MeetingDraft({
-    required this.id,
-    required this.type,
-    required this.kind,
-    required this.weekday,
-    required this.date,
-    required this.startMin,
-    required this.endMin,
-    required String location,
-    required this.intervalWeeks,
-    required this.validFrom,
-    required this.validUntil,
-    List<NamedLink> links = const [],
-  }) : location = TextEditingController(text: location),
-       links = [for (final l in links) _LinkDraft(l)];
-
-  factory _MeetingDraft.from(MeetingRule m) => _MeetingDraft(
-    id: m.id,
-    type: m.type,
-    kind: m.kind,
-    weekday: m.weekday ?? DateTime.sunday,
-    date: m.date,
-    startMin: m.startMin,
-    endMin: m.endMin,
-    location: m.location,
-    intervalWeeks: m.intervalWeeks,
-    validFrom: m.validFrom,
-    validUntil: m.validUntil,
-    links: m.links,
-  );
-
-  final String id;
-  SessionType type;
-  MeetingKind kind;
-  int weekday;
-  LocalDate? date;
-  int startMin;
-  int endMin;
-  final TextEditingController location;
-  int intervalWeeks;
-  LocalDate? validFrom;
-  LocalDate? validUntil;
-  final List<_LinkDraft> links;
-  bool expanded = false;
-
-  bool get valid =>
-      endMin > startMin && (kind == MeetingKind.weekly || date != null);
-
-  MeetingRule toRule(String courseId) => MeetingRule(
-    id: id,
-    courseId: courseId,
-    type: type,
-    kind: kind,
-    weekday: kind == MeetingKind.weekly ? weekday : null,
-    date: kind == MeetingKind.once ? date : null,
-    startMin: startMin,
-    endMin: endMin,
-    location: location.text.trim(),
-    intervalWeeks: kind == MeetingKind.weekly ? intervalWeeks : 1,
-    validFrom: validFrom,
-    validUntil: validUntil,
-    links: [for (final l in links) ?l.toLink()],
-  );
-
-  void dispose() {
-    location.dispose();
-    for (final l in links) {
-      l.dispose();
-    }
-  }
-}
+import 'meeting_sheet.dart';
+import 'meeting_summary.dart';
 
 class _RequirementDraft {
   _RequirementDraft({
@@ -135,15 +46,25 @@ class _RequirementDraft {
   );
 }
 
+/// A course's name and details, with its meetings as one-line rows that
+/// open a sheet, and the rarer parts (requirement, notes, links) folded into
+/// rows too. Two columns on wide windows.
 class CourseEditorPage extends ConsumerStatefulWidget {
   const CourseEditorPage({
     super.key,
     this.courseId,
     this.startWithOneTime = false,
+    this.seed,
   });
 
   final String? courseId;
+
+  /// Opens the sheet on a new one-time meeting.
   final bool startWithOneTime;
+
+  /// A new meeting at this day and time (a tap on the Week grid): in the
+  /// sheet for an existing course, in the list for a new one.
+  final MeetingSeed? seed;
 
   @override
   ConsumerState<CourseEditorPage> createState() => _CourseEditorPageState();
@@ -156,13 +77,26 @@ class _CourseEditorPageState extends ConsumerState<CourseEditorPage> {
   final _lecturer = TextEditingController();
   final _website = TextEditingController();
   final _notes = TextEditingController();
-  final _links = <_LinkDraft>[];
-  final _meetings = <_MeetingDraft>[];
+  final _shortNameFocus = FocusNode();
+  final _codeFocus = FocusNode();
+  final _lecturerFocus = FocusNode();
+  final _links = <LinkDraft>[];
+  final _meetings = <MeetingDraft>[];
   final _requirements = <_RequirementDraft>[];
+
+  /// Meetings taken out while their sheet may still be closing; disposed
+  /// with the page.
+  final _retired = <MeetingDraft>[];
   String _colorKey = 'ocean';
   int _sortOrder = 0;
   bool _initialized = false;
   bool _showErrors = false;
+
+  /// Optional fields shown after tapping their "+" chip (or because they
+  /// have a value).
+  bool _showShortName = false;
+  bool _showCode = false;
+  bool _showLecturer = false;
   String? _initialSnapshot;
 
   late SemesterData? _data = ref.read(semesterDataProvider).value;
@@ -195,8 +129,8 @@ class _CourseEditorPageState extends ConsumerState<CourseEditorPage> {
       _notes.text = existing.notes;
       _colorKey = existing.colorKey;
       _sortOrder = existing.sortOrder;
-      _links.addAll(existing.links.map(_LinkDraft.new));
-      _meetings.addAll(data.meetingsOf(existing.id).map(_MeetingDraft.from));
+      _links.addAll(existing.links.map(LinkDraft.new));
+      _meetings.addAll(data.meetingsOf(existing.id).map(MeetingDraft.from));
       _requirements.addAll(
         data
             .requirementsOf(existing.id)
@@ -216,19 +150,24 @@ class _CourseEditorPageState extends ConsumerState<CourseEditorPage> {
         orElse: () => coursePaletteSeeds.keys.first,
       );
       _sortOrder = data?.courses.length ?? 0;
-      _meetings.add(
-        _newMeeting(
-          widget.startWithOneTime ? MeetingKind.once : MeetingKind.weekly,
-        ),
-      );
+      // From the Week grid: the meeting is there, the name comes first.
+      if (widget.seed case final seed?) {
+        _meetings.add(_newMeeting(MeetingKind.weekly, seed: seed));
+      }
     }
     _initialSnapshot = _snapshot();
-    if (existing != null && widget.startWithOneTime) {
-      _meetings.add(_newMeeting(MeetingKind.once));
+    if (existing != null && (widget.startWithOneTime || widget.seed != null)) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        _addMeeting(
+          widget.startWithOneTime ? MeetingKind.once : MeetingKind.weekly,
+          seed: widget.seed,
+        );
+      });
     }
   }
 
-  _MeetingDraft _newMeeting(MeetingKind kind) {
+  MeetingDraft _newMeeting(MeetingKind kind, {MeetingSeed? seed}) {
     final semester = _data?.semester;
     final firstDay = semester == null
         ? DateTime.sunday
@@ -236,15 +175,16 @@ class _CourseEditorPageState extends ConsumerState<CourseEditorPage> {
               .visibleDatesOfWeek(semester.start)
               .firstOrNull
               ?.weekday;
+    final once = kind == MeetingKind.once || seed?.date != null;
     final last = _meetings.lastOrNull;
-    return _MeetingDraft(
+    return MeetingDraft(
       id: ScheduleRepository.newId(),
       type: last == null ? SessionType.lecture : SessionType.practice,
-      kind: kind,
-      weekday: firstDay ?? DateTime.sunday,
-      date: kind == MeetingKind.once ? LocalDate.today() : null,
-      startMin: 10 * 60,
-      endMin: 12 * 60,
+      kind: once ? MeetingKind.once : MeetingKind.weekly,
+      weekday: seed?.weekday ?? seed?.date?.weekday ?? firstDay ?? 7,
+      date: once ? seed?.date ?? LocalDate.today() : null,
+      startMin: seed?.startMin ?? 10 * 60,
+      endMin: seed?.endMin ?? 12 * 60,
       location: '',
       intervalWeeks: 1,
       validFrom: null,
@@ -278,13 +218,101 @@ class _CourseEditorPageState extends ConsumerState<CourseEditorPage> {
     for (final c in [_name, _shortName, _code, _lecturer, _website, _notes]) {
       c.dispose();
     }
+    for (final f in [_shortNameFocus, _codeFocus, _lecturerFocus]) {
+      f.dispose();
+    }
     for (final l in _links) {
       l.dispose();
     }
-    for (final m in _meetings) {
+    for (final m in [..._meetings, ..._retired]) {
       m.dispose();
     }
     super.dispose();
+  }
+
+  /// A new meeting in the sheet; added (one per chosen day) with Add.
+  Future<void> _addMeeting(MeetingKind kind, {MeetingSeed? seed}) async {
+    final draft = _newMeeting(kind, seed: seed);
+    final result = await showMeetingSheet(
+      context,
+      draft: draft,
+      semester: _data?.semester,
+      isNew: true,
+    );
+    if (!mounted) return;
+    if (result == null || result.remove) {
+      _retired.add(draft);
+      return;
+    }
+    setState(() {
+      final [first, ...others] = draft.kind == MeetingKind.weekly
+          ? result.weekdays
+          : [draft.weekday];
+      _meetings.add(draft..weekday = first);
+      for (final day in others) {
+        _meetings.add(draft.copyOn(ScheduleRepository.newId(), day));
+      }
+    });
+  }
+
+  Future<void> _editMeeting(MeetingDraft m) async {
+    final result = await showMeetingSheet(
+      context,
+      draft: m,
+      semester: _data?.semester,
+      isNew: false,
+      onChanged: () => setState(() {}),
+    );
+    if (result != null && result.remove && mounted) await _removeMeeting(m);
+  }
+
+  Future<void> _pickColor() async {
+    final l = AppLocalizations.of(context);
+    final picked = await showAppSheet<String>(
+      context: context,
+      builder: (sheet) => Padding(
+        padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(l.courseColor, style: Theme.of(sheet).textTheme.titleLarge),
+            const SizedBox(height: 16),
+            _ColorPicker(
+              selected: _colorKey,
+              onSelected: (k) => Navigator.pop(sheet, k),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (picked != null && mounted) setState(() => _colorKey = picked);
+  }
+
+  Future<void> _editRequirements() => showAppSheet<void>(
+    context: context,
+    scrollControlled: true,
+    builder: (_) => _RequirementsSheet(
+      requirements: _requirements,
+      onChanged: () => setState(() {}),
+    ),
+  );
+
+  Future<void> _editNotes() => showAppSheet<void>(
+    context: context,
+    scrollControlled: true,
+    builder: (_) => _NotesSheet(
+      notes: _notes,
+      website: _website,
+      links: _links,
+      onChanged: () => setState(() {}),
+    ),
+  );
+
+  /// Shows an optional field and puts the cursor in it.
+  void _reveal(FocusNode focus, void Function() show) {
+    setState(show);
+    WidgetsBinding.instance.addPostFrameCallback((_) => focus.requestFocus());
   }
 
   Future<void> _save() async {
@@ -448,7 +476,7 @@ class _CourseEditorPageState extends ConsumerState<CourseEditorPage> {
   /// Removing a weekly meeting with marked past sessions would take them out
   /// of the stats: offers to end it this week instead (it keeps its past
   /// sessions and stops from this week on).
-  Future<void> _removeMeeting(_MeetingDraft m) async {
+  Future<void> _removeMeeting(MeetingDraft m) async {
     final data = _data;
     final saved = data?.meeting(m.id);
     if (data != null &&
@@ -486,10 +514,8 @@ class _CourseEditorPageState extends ConsumerState<CourseEditorPage> {
         }
       }
     }
-    setState(() {
-      _meetings.remove(m);
-      m.dispose();
-    });
+    setState(() => _meetings.remove(m));
+    _retired.add(m);
   }
 
   Future<void> _delete() async {
@@ -538,7 +564,7 @@ class _CourseEditorPageState extends ConsumerState<CourseEditorPage> {
     _data = ref.watch(semesterDataProvider).value ?? _data;
     final l = AppLocalizations.of(context);
     final theme = Theme.of(context);
-    final nameError = _showErrors && _name.text.trim().isEmpty;
+    final wide = WindowSize.of(context).isWide;
 
     return PopScope(
       canPop: !_dirty,
@@ -569,181 +595,479 @@ class _CourseEditorPageState extends ConsumerState<CourseEditorPage> {
               ),
             ],
           ),
-          body: Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 680),
-              child: ListView(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 48),
-                children: [
-                  TextField(
-                    controller: _name,
-                    autofocus: widget.courseId == null,
-                    textCapitalization: TextCapitalization.sentences,
-                    style: theme.textTheme.titleLarge,
-                    decoration: InputDecoration(
-                      labelText: l.courseName,
-                      errorText: nameError ? l.courseNameRequired : null,
-                    ),
-                    onChanged: (_) => setState(() {}),
-                  ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: _shortName,
-                    textCapitalization: TextCapitalization.sentences,
-                    decoration: InputDecoration(
-                      labelText: '${l.shortName} (${l.optional})',
-                      helperText: l.shortNameHelper,
-                    ),
-                    onChanged: (_) => setState(() {}),
-                  ),
-                  // A long name: offer the short form the week view would
-                  // make up, so it can be checked or changed.
-                  if (_shortName.text.trim().isEmpty)
-                    if (suggestedShortName(_name.text) case final suggestion?)
-                      Align(
-                        alignment: AlignmentDirectional.centerStart,
-                        child: TextButton(
-                          onPressed: () =>
-                              setState(() => _shortName.text = suggestion),
-                          child: Text(l.useShortName(suggestion)),
-                        ),
-                      ),
-                  // Clear of the helper text, for the floating labels below.
-                  const SizedBox(height: 20),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          controller: _code,
-                          decoration: InputDecoration(
-                            labelText: '${l.courseCode} (${l.optional})',
+          body: wide
+              ? Centered(
+                  maxWidth: 1040,
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.fromLTRB(24, 8, 24, 48),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              ..._details(l, theme),
+                              const SizedBox(height: 16),
+                              _notesRow(l),
+                            ],
                           ),
                         ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: TextField(
-                          controller: _lecturer,
-                          textCapitalization: TextCapitalization.words,
-                          decoration: InputDecoration(
-                            labelText: '${l.lecturer} (${l.optional})',
+                        const SizedBox(width: 32),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              ..._schedule(l, theme, top: 0),
+                              const SizedBox(height: 16),
+                              _requirementsRow(l),
+                            ],
                           ),
                         ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-                  Text(l.courseColor, style: theme.textTheme.titleSmall),
-                  const SizedBox(height: 10),
-                  _ColorPicker(
-                    selected: _colorKey,
-                    onSelected: (k) => setState(() => _colorKey = k),
-                  ),
-                  SectionHeader(
-                    title: l.meetingsSection,
-                    padding: const EdgeInsetsDirectional.fromSTEB(4, 28, 0, 8),
-                  ),
-                  if (_meetings.isEmpty)
-                    Padding(
-                      padding: const EdgeInsets.all(8),
-                      child: Text(
-                        l.noMeetingsYet,
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                      ),
+                      ],
                     ),
-                  for (final m in _meetings)
-                    Padding(
-                      key: ValueKey(m.id),
-                      padding: const EdgeInsets.only(bottom: 12),
-                      child: _MeetingCard(
-                        draft: m,
-                        semester: _data?.semester,
-                        showErrors: _showErrors,
-                        onChanged: () => setState(() {}),
-                        onRemove: () => _removeMeeting(m),
-                      ),
-                    ),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
+                  ),
+                )
+              : Centered(
+                  maxWidth: 680,
+                  child: ListView(
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 48),
                     children: [
-                      FilledButton.tonalIcon(
-                        onPressed: () => setState(
-                          () => _meetings.add(_newMeeting(MeetingKind.weekly)),
-                        ),
-                        icon: const Icon(LecIcons.add),
-                        label: Text(l.addMeeting),
-                      ),
-                      OutlinedButton.icon(
-                        onPressed: () => setState(
-                          () => _meetings.add(_newMeeting(MeetingKind.once)),
-                        ),
-                        icon: const Icon(LecIcons.date),
-                        label: Text(l.addOneTimeSession),
-                      ),
+                      ..._details(l, theme),
+                      ..._schedule(l, theme, top: 28),
+                      const SizedBox(height: 20),
+                      _requirementsRow(l),
+                      _notesRow(l),
                     ],
                   ),
-                  SectionHeader(
-                    title: l.requirementsSection,
-                    subtitle: l.requirementsHint,
-                    padding: const EdgeInsetsDirectional.fromSTEB(4, 28, 0, 8),
-                  ),
-                  for (final r in _requirements)
-                    _RequirementRow(
-                      key: ValueKey(r.id),
-                      draft: r,
-                      onChanged: () => setState(() {}),
-                      onRemove: () => setState(() => _requirements.remove(r)),
-                    ),
-                  Align(
-                    alignment: AlignmentDirectional.centerStart,
-                    child: TextButton.icon(
-                      onPressed: () => setState(
-                        () => _requirements.add(
-                          _RequirementDraft(id: ScheduleRepository.newId()),
-                        ),
-                      ),
-                      icon: const Icon(LecIcons.target),
-                      label: Text(l.addRequirement),
-                    ),
-                  ),
-                  SectionHeader(
-                    title: l.courseNotes,
-                    padding: const EdgeInsetsDirectional.fromSTEB(4, 28, 0, 8),
-                  ),
-                  TextField(
-                    controller: _notes,
-                    minLines: 3,
-                    maxLines: 8,
-                    maxLength: notesMaxLength,
-                    buildCounter: notesCounter,
-                    textCapitalization: TextCapitalization.sentences,
-                    decoration: InputDecoration(hintText: l.courseNotesHint),
-                  ),
-                  SectionHeader(
-                    title: l.extraLinks,
-                    padding: const EdgeInsetsDirectional.fromSTEB(4, 28, 0, 8),
-                  ),
-                  TextField(
-                    controller: _website,
-                    keyboardType: TextInputType.url,
-                    decoration: InputDecoration(
-                      labelText: l.courseWebsite,
-                      prefixIcon: const Icon(LecIcons.link),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  _LinksEditor(links: _links, onChanged: () => setState(() {})),
+                ),
+        ),
+      ),
+    );
+  }
+
+  /// Name with its color, then the optional fields: as "+" chips until
+  /// they're used.
+  List<Widget> _details(AppLocalizations l, ThemeData theme) {
+    final nameError = _showErrors && _name.text.trim().isEmpty;
+    final accent = CourseColors.of(context).tone(_colorKey).accent;
+    final showShortName = _showShortName || _shortName.text.isNotEmpty;
+    final showCode = _showCode || _code.text.isNotEmpty;
+    final showLecturer = _showLecturer || _lecturer.text.isNotEmpty;
+    // A long name: offer the short form the week view would make up, so it
+    // can be checked or changed.
+    final suggestion = _shortName.text.trim().isEmpty
+        ? suggestedShortName(_name.text)
+        : null;
+    void useSuggestion() => setState(() {
+      _shortName.text = suggestion!;
+      _showShortName = true;
+    });
+
+    final code = TextField(
+      controller: _code,
+      focusNode: _codeFocus,
+      decoration: InputDecoration(labelText: l.courseCode),
+      onChanged: (_) => setState(() {}),
+    );
+    final lecturer = TextField(
+      controller: _lecturer,
+      focusNode: _lecturerFocus,
+      textCapitalization: TextCapitalization.words,
+      decoration: InputDecoration(labelText: l.lecturer),
+      onChanged: (_) => setState(() {}),
+    );
+
+    return [
+      TextField(
+        controller: _name,
+        autofocus: widget.courseId == null,
+        textCapitalization: TextCapitalization.sentences,
+        style: theme.textTheme.titleLarge,
+        decoration: InputDecoration(
+          labelText: l.courseName,
+          errorText: nameError ? l.courseNameRequired : null,
+          suffixIcon: IconButton(
+            tooltip: l.courseColor,
+            onPressed: _pickColor,
+            icon: AnimatedContainer(
+              duration: AppMotion.of(context).medium,
+              width: 26,
+              height: 26,
+              decoration: BoxDecoration(
+                color: accent,
+                shape: BoxShape.circle,
+                border: Border.all(color: theme.colorScheme.surface, width: 2),
+                boxShadow: [
+                  BoxShadow(color: theme.colorScheme.outline, spreadRadius: 1),
                 ],
               ),
             ),
           ),
         ),
+        onChanged: (_) => setState(() {}),
       ),
+      if (!showShortName || !showCode || !showLecturer) ...[
+        const SizedBox(height: 12),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            if (!showShortName)
+              suggestion == null
+                  ? _AddFieldChip(
+                      label: l.shortName,
+                      onPressed: () =>
+                          _reveal(_shortNameFocus, () => _showShortName = true),
+                    )
+                  : ActionChip(
+                      avatar: const Icon(LecIcons.check, size: 18),
+                      label: Text(l.useShortName(suggestion)),
+                      onPressed: useSuggestion,
+                    ),
+            if (!showCode)
+              _AddFieldChip(
+                label: l.courseCode,
+                onPressed: () => _reveal(_codeFocus, () => _showCode = true),
+              ),
+            if (!showLecturer)
+              _AddFieldChip(
+                label: l.lecturer,
+                onPressed: () =>
+                    _reveal(_lecturerFocus, () => _showLecturer = true),
+              ),
+          ],
+        ),
+      ],
+      if (showShortName) ...[
+        const SizedBox(height: 16),
+        TextField(
+          controller: _shortName,
+          focusNode: _shortNameFocus,
+          textCapitalization: TextCapitalization.sentences,
+          decoration: InputDecoration(
+            labelText: l.shortName,
+            helperText: l.shortNameHelper,
+          ),
+          onChanged: (_) => setState(() {}),
+        ),
+        if (suggestion != null)
+          Align(
+            alignment: AlignmentDirectional.centerStart,
+            child: TextButton(
+              onPressed: useSuggestion,
+              child: Text(l.useShortName(suggestion)),
+            ),
+          ),
+      ],
+      if (showCode || showLecturer) ...[
+        // Clear of the helper text above, for the floating labels.
+        SizedBox(height: showShortName && suggestion == null ? 20 : 16),
+        if (showCode && showLecturer)
+          Row(
+            children: [
+              Expanded(child: code),
+              const SizedBox(width: 12),
+              Expanded(child: lecturer),
+            ],
+          )
+        else
+          showCode ? code : lecturer,
+      ],
+    ];
+  }
+
+  /// The meetings as one-line rows, and the buttons to add more.
+  List<Widget> _schedule(
+    AppLocalizations l,
+    ThemeData theme, {
+    required double top,
+  }) {
+    final fmt = Fmt.of(context);
+    final tone = CourseColors.of(context).tone(_colorKey);
+    final semester = _data?.semester;
+    return [
+      SectionHeader(
+        title: l.meetingsSection,
+        padding: EdgeInsetsDirectional.fromSTEB(4, top, 0, 4),
+      ),
+      if (_meetings.isEmpty)
+        Padding(
+          padding: const EdgeInsets.fromLTRB(4, 4, 4, 12),
+          child: Text(
+            l.noMeetingsYet,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ),
+      for (final m in _meetings)
+        Builder(
+          key: ValueKey(m.id),
+          builder: (context) {
+            final rule = m.toRule('');
+            final error = _showErrors && !m.valid;
+            return ListTile(
+              contentPadding: const EdgeInsetsDirectional.only(
+                start: 4,
+                end: 4,
+              ),
+              leading: Icon(
+                m.type.icon,
+                color: error ? theme.colorScheme.error : tone.accent,
+              ),
+              title: Text(meetingTitle(rule, l, fmt)),
+              subtitle: Text(
+                error
+                    ? l.endAfterStartError
+                    : meetingDetails(rule, semester, l, fmt),
+                style: error ? TextStyle(color: theme.colorScheme.error) : null,
+              ),
+              trailing: const Icon(LecIcons.chevronEnd),
+              onTap: () => _editMeeting(m),
+            );
+          },
+        ),
+      const SizedBox(height: 8),
+      Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        children: [
+          FilledButton.tonalIcon(
+            onPressed: () => _addMeeting(MeetingKind.weekly),
+            icon: const Icon(LecIcons.add),
+            label: Text(l.addMeeting),
+          ),
+          OutlinedButton.icon(
+            onPressed: () => _addMeeting(MeetingKind.once),
+            icon: const Icon(LecIcons.date),
+            label: Text(l.addOneTimeSession),
+          ),
+        ],
+      ),
+    ];
+  }
+
+  Widget _requirementsRow(AppLocalizations l) => _FoldedRow(
+    icon: LecIcons.target,
+    title: l.requirementsSection,
+    summary: _requirements.isEmpty
+        ? l.requirementsHint
+        : _requirements
+              .map(
+                (r) => '${r.minPercent}% · ${r.type?.label(l) ?? l.allTypes}',
+              )
+              .join(', '),
+    onTap: _editRequirements,
+  );
+
+  Widget _notesRow(AppLocalizations l) {
+    final links =
+        (_website.text.trim().isEmpty ? 0 : 1) +
+        _links.where((k) => k.url.text.trim().isNotEmpty).length;
+    final notes = _notes.text.trim().split('\n').first;
+    return _FoldedRow(
+      icon: LecIcons.notes,
+      title: l.notesAndLinks,
+      summary: notes.isEmpty && links == 0
+          ? l.courseNotesHint
+          : [
+              if (notes.isNotEmpty) notes,
+              if (links > 0) l.linksCount(links),
+            ].join(' · '),
+      onTap: _editNotes,
     );
   }
+}
+
+/// "+ Course code": shows an optional field.
+class _AddFieldChip extends StatelessWidget {
+  const _AddFieldChip({required this.label, required this.onPressed});
+
+  final String label;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) => ActionChip(
+    avatar: const Icon(LecIcons.add, size: 18),
+    label: Text(label),
+    onPressed: onPressed,
+  );
+}
+
+/// A part of the course that's set rarely, as one row with a summary.
+class _FoldedRow extends StatelessWidget {
+  const _FoldedRow({
+    required this.icon,
+    required this.title,
+    required this.summary,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String title;
+  final String summary;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => ListTile(
+    contentPadding: const EdgeInsetsDirectional.only(start: 4, end: 4),
+    leading: Icon(icon),
+    title: Text(title),
+    subtitle: Text(summary, maxLines: 2, overflow: TextOverflow.ellipsis),
+    trailing: const Icon(LecIcons.chevronEnd),
+    onTap: onTap,
+  );
+}
+
+class _RequirementsSheet extends StatefulWidget {
+  const _RequirementsSheet({
+    required this.requirements,
+    required this.onChanged,
+  });
+
+  final List<_RequirementDraft> requirements;
+  final VoidCallback onChanged;
+
+  @override
+  State<_RequirementsSheet> createState() => _RequirementsSheetState();
+}
+
+class _RequirementsSheetState extends State<_RequirementsSheet> {
+  void _changed(void Function() change) {
+    setState(change);
+    widget.onChanged();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+    return _SheetBody(
+      title: l.requirementsSection,
+      children: [
+        Text(
+          l.requirementsHint,
+          style: theme.textTheme.bodyMedium?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+        ),
+        const SizedBox(height: 16),
+        for (final r in widget.requirements)
+          _RequirementRow(
+            key: ValueKey(r.id),
+            draft: r,
+            onChanged: () => _changed(() {}),
+            onRemove: () => _changed(() => widget.requirements.remove(r)),
+          ),
+        Align(
+          alignment: AlignmentDirectional.centerStart,
+          child: TextButton.icon(
+            onPressed: () => _changed(
+              () => widget.requirements.add(
+                _RequirementDraft(id: ScheduleRepository.newId()),
+              ),
+            ),
+            icon: const Icon(LecIcons.target),
+            label: Text(l.addRequirement),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _NotesSheet extends StatefulWidget {
+  const _NotesSheet({
+    required this.notes,
+    required this.website,
+    required this.links,
+    required this.onChanged,
+  });
+
+  final TextEditingController notes;
+  final TextEditingController website;
+  final List<LinkDraft> links;
+  final VoidCallback onChanged;
+
+  @override
+  State<_NotesSheet> createState() => _NotesSheetState();
+}
+
+class _NotesSheetState extends State<_NotesSheet> {
+  void _changed() {
+    setState(() {});
+    widget.onChanged();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    return _SheetBody(
+      title: l.notesAndLinks,
+      children: [
+        TextField(
+          controller: widget.notes,
+          minLines: 3,
+          maxLines: 8,
+          maxLength: notesMaxLength,
+          buildCounter: notesCounter,
+          textCapitalization: TextCapitalization.sentences,
+          decoration: InputDecoration(
+            labelText: l.courseNotes,
+            hintText: l.courseNotesHint,
+            alignLabelWithHint: true,
+          ),
+          onChanged: (_) => widget.onChanged(),
+        ),
+        const SizedBox(height: 16),
+        TextField(
+          controller: widget.website,
+          keyboardType: TextInputType.url,
+          decoration: InputDecoration(
+            labelText: l.courseWebsite,
+            prefixIcon: const Icon(LecIcons.link),
+          ),
+          onChanged: (_) => widget.onChanged(),
+        ),
+        const SizedBox(height: 12),
+        LinksEditor(links: widget.links, onChanged: _changed),
+      ],
+    );
+  }
+}
+
+/// A titled, scrolling sheet with Done at the end, clear of the keyboard.
+class _SheetBody extends StatelessWidget {
+  const _SheetBody({required this.title, required this.children});
+
+  final String title;
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
+    child: SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(title, style: Theme.of(context).textTheme.titleLarge),
+          const SizedBox(height: 16),
+          ...children,
+          const SizedBox(height: 8),
+          Align(
+            alignment: AlignmentDirectional.centerEnd,
+            child: FilledButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text(AppLocalizations.of(context).done),
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
 }
 
 class _ColorPicker extends StatelessWidget {
@@ -763,6 +1087,7 @@ class _ColorPicker extends StatelessWidget {
       children: [
         for (final key in colors.keys)
           GestureDetector(
+            key: ValueKey('color-$key'),
             onTap: () => onSelected(key),
             child: AnimatedContainer(
               duration: motion.medium,
@@ -784,388 +1109,6 @@ class _ColorPicker extends StatelessWidget {
                   : null,
             ),
           ),
-      ],
-    );
-  }
-}
-
-class _MeetingCard extends StatelessWidget {
-  const _MeetingCard({
-    required this.draft,
-    required this.semester,
-    required this.showErrors,
-    required this.onChanged,
-    required this.onRemove,
-  });
-
-  final _MeetingDraft draft;
-  final SemesterInfo? semester;
-  final bool showErrors;
-  final VoidCallback onChanged;
-  final VoidCallback onRemove;
-
-  Future<void> _pickTime(BuildContext context, bool start) async {
-    final minutes = await pickTime(
-      context,
-      start ? draft.startMin : draft.endMin,
-    );
-    if (minutes == null) return;
-    if (start) {
-      final length = draft.endMin - draft.startMin;
-      draft.startMin = minutes;
-      draft.endMin = (minutes + (length > 0 ? length : 60)).clamp(
-        minutes + 5,
-        24 * 60 - 1,
-      );
-    } else {
-      draft.endMin = minutes;
-    }
-    onChanged();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final l = AppLocalizations.of(context);
-    final fmt = Fmt.of(context);
-    final theme = Theme.of(context);
-    final days = semester == null
-        ? const [7, 1, 2, 3, 4, 5, 6]
-        : [for (var i = 0; i < 7; i++) (semester!.weekStart - 1 + i) % 7 + 1]
-              .where(
-                (d) => semester!.visibleDays.contains(d) || d == draft.weekday,
-              )
-              .toList();
-    final timeError = showErrors && draft.endMin <= draft.startMin;
-    final dateError =
-        showErrors && draft.kind == MeetingKind.once && draft.date == null;
-    // "Second week" stores the semester's second week as validFrom. Any
-    // other start (or an end) comes from changing the day mid-semester, or
-    // ending the meeting: shown as text, and kept as it is.
-    final secondWeek = semester == null
-        ? null
-        : startOfWeek(semester!.start, semester!.weekStart).addDays(7);
-    final split =
-        draft.validUntil != null ||
-        (draft.validFrom != null && draft.validFrom != secondWeek);
-
-    return Card(
-      color: theme.colorScheme.surfaceContainer,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 12, 8, 16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Wrap(
-                    spacing: 6,
-                    runSpacing: 6,
-                    children: [
-                      for (final t in SessionType.values)
-                        ChoiceChip(
-                          avatar: Icon(t.icon, size: 18),
-                          showCheckmark: false,
-                          label: Text(t.label(l)),
-                          selected: draft.type == t,
-                          onSelected: (_) {
-                            draft.type = t;
-                            onChanged();
-                          },
-                        ),
-                    ],
-                  ),
-                ),
-                IconButton(
-                  tooltip: l.removeMeeting,
-                  icon: const Icon(LecIcons.delete),
-                  onPressed: onRemove,
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Wrap(
-              spacing: 8,
-              children: [
-                ChoiceChip(
-                  label: Text(l.weekly),
-                  selected: draft.kind == MeetingKind.weekly,
-                  onSelected: (_) {
-                    draft.kind = MeetingKind.weekly;
-                    onChanged();
-                  },
-                ),
-                ChoiceChip(
-                  label: Text(l.oneTime),
-                  selected: draft.kind == MeetingKind.once,
-                  onSelected: (_) {
-                    draft.kind = MeetingKind.once;
-                    draft.date ??= LocalDate.today();
-                    onChanged();
-                  },
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            if (draft.kind == MeetingKind.weekly)
-              Wrap(
-                spacing: 6,
-                runSpacing: 6,
-                children: [
-                  for (final d in days)
-                    ChoiceChip(
-                      label: Text(fmt.isoWeekdayShort(d)),
-                      selected: draft.weekday == d,
-                      onSelected: (_) {
-                        draft.weekday = d;
-                        onChanged();
-                      },
-                    ),
-                  if (split)
-                    Padding(
-                      padding: const EdgeInsetsDirectional.only(top: 6),
-                      child: Text(
-                        switch ((draft.validFrom, draft.validUntil)) {
-                          (final from?, final until?) => l.meetingBetween(
-                            fmt.dayMonth(from),
-                            fmt.dayMonth(until),
-                          ),
-                          (_, final until?) => l.meetingUntil(
-                            fmt.dayMonth(until),
-                          ),
-                          (final from?, _) => l.meetingFrom(fmt.dayMonth(from)),
-                          _ => '',
-                        },
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                    ),
-                ],
-              )
-            else
-              ActionChip(
-                avatar: const Icon(LecIcons.date, size: 18),
-                label: Text(
-                  draft.date == null ? l.date : fmt.longDate(draft.date!),
-                  style: dateError
-                      ? TextStyle(color: theme.colorScheme.error)
-                      : null,
-                ),
-                onPressed: () async {
-                  final picked = await pickDate(
-                    context,
-                    draft.date ?? LocalDate.today(),
-                  );
-                  if (picked != null) {
-                    draft.date = picked;
-                    onChanged();
-                  }
-                },
-              ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: _TimeButton(
-                    label: l.startTime,
-                    value: fmt.time(draft.startMin),
-                    onTap: () => _pickTime(context, true),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: _TimeButton(
-                    label: l.endTime,
-                    value: fmt.time(draft.endMin),
-                    error: timeError,
-                    onTap: () => _pickTime(context, false),
-                  ),
-                ),
-                const SizedBox(width: 8),
-              ],
-            ),
-            if (timeError)
-              Padding(
-                padding: const EdgeInsets.only(top: 6),
-                child: Text(
-                  l.endAfterStartError,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.error,
-                  ),
-                ),
-              ),
-            const SizedBox(height: 12),
-            Padding(
-              padding: const EdgeInsetsDirectional.only(end: 8),
-              child: TextField(
-                controller: draft.location,
-                decoration: InputDecoration(
-                  labelText: l.location,
-                  prefixIcon: const Icon(LecIcons.location),
-                ),
-                onChanged: (_) => onChanged(),
-              ),
-            ),
-            if (draft.kind == MeetingKind.weekly) ...[
-              const SizedBox(height: 4),
-              SwitchListTile.adaptive(
-                contentPadding: const EdgeInsetsDirectional.only(end: 8),
-                title: Text(l.everyOtherWeek),
-                value: draft.intervalWeeks == 2,
-                onChanged: (on) {
-                  draft.intervalWeeks = on ? 2 : 1;
-                  if (!on && !split) draft.validFrom = null;
-                  onChanged();
-                },
-              ),
-              if (draft.intervalWeeks == 2 && semester != null && !split)
-                Wrap(
-                  spacing: 8,
-                  children: [
-                    ChoiceChip(
-                      label: Text(l.firstWeek),
-                      selected:
-                          draft.validFrom == null ||
-                          !draft.validFrom!.isAfter(
-                            startOfWeek(
-                              semester!.start,
-                              semester!.weekStart,
-                            ).addDays(6),
-                          ),
-                      onSelected: (_) {
-                        draft.validFrom = null;
-                        onChanged();
-                      },
-                    ),
-                    ChoiceChip(
-                      label: Text(l.secondWeek),
-                      selected:
-                          draft.validFrom != null &&
-                          draft.validFrom!.isAfter(
-                            startOfWeek(
-                              semester!.start,
-                              semester!.weekStart,
-                            ).addDays(6),
-                          ),
-                      onSelected: (_) {
-                        draft.validFrom = startOfWeek(
-                          semester!.start,
-                          semester!.weekStart,
-                        ).addDays(7);
-                        onChanged();
-                      },
-                    ),
-                  ],
-                ),
-            ],
-            Padding(
-              padding: const EdgeInsetsDirectional.only(end: 8, top: 8),
-              child: _LinksEditor(
-                links: draft.links,
-                onChanged: onChanged,
-                addLabel: l.meetingLinks,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _TimeButton extends StatelessWidget {
-  const _TimeButton({
-    required this.label,
-    required this.value,
-    required this.onTap,
-    this.error = false,
-  });
-
-  final String label;
-  final String value;
-  final VoidCallback onTap;
-  final bool error;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return InkWell(
-      borderRadius: BorderRadius.circular(16),
-      onTap: onTap,
-      child: InputDecorator(
-        decoration: InputDecoration(
-          labelText: label,
-          prefixIcon: const Icon(LecIcons.time),
-          errorText: error ? '' : null,
-          errorStyle: const TextStyle(height: 0, fontSize: 0),
-        ),
-        child: Text(value, style: theme.textTheme.titleMedium),
-      ),
-    );
-  }
-}
-
-class _LinksEditor extends StatelessWidget {
-  const _LinksEditor({
-    required this.links,
-    required this.onChanged,
-    this.addLabel,
-  });
-
-  final List<_LinkDraft> links;
-  final VoidCallback onChanged;
-  final String? addLabel;
-
-  @override
-  Widget build(BuildContext context) {
-    final l = AppLocalizations.of(context);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        for (final link in links)
-          Padding(
-            padding: const EdgeInsets.only(bottom: 8),
-            child: Row(
-              children: [
-                Expanded(
-                  flex: 2,
-                  child: TextField(
-                    controller: link.title,
-                    decoration: InputDecoration(labelText: l.linkTitle),
-                    onChanged: (_) => onChanged(),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  flex: 3,
-                  child: TextField(
-                    controller: link.url,
-                    keyboardType: TextInputType.url,
-                    decoration: InputDecoration(labelText: l.linkUrl),
-                    onChanged: (_) => onChanged(),
-                  ),
-                ),
-                IconButton(
-                  tooltip: l.remove,
-                  icon: const Icon(LecIcons.close),
-                  onPressed: () {
-                    links.remove(link);
-                    link.dispose();
-                    onChanged();
-                  },
-                ),
-              ],
-            ),
-          ),
-        TextButton.icon(
-          onPressed: () {
-            links.add(_LinkDraft());
-            onChanged();
-          },
-          icon: const Icon(LecIcons.link),
-          label: Text(addLabel ?? l.addLink),
-        ),
       ],
     );
   }

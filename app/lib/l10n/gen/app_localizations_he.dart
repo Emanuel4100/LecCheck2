@@ -559,6 +559,46 @@ class AppLocalizationsHe extends AppLocalizations {
   String get meetingLinks => 'קישורים למפגש';
 
   @override
+  String everyOtherWeekFrom(int week) {
+    return 'פעם בשבועיים, החל משבוע $week';
+  }
+
+  @override
+  String get newMeeting => 'מפגש חדש';
+
+  @override
+  String get editMeeting => 'עריכת מפגש';
+
+  @override
+  String get repeats => 'חזרה';
+
+  @override
+  String get meetingDaysHint => 'אפשר לבחור יום אחד או כמה';
+
+  @override
+  String get notesAndLinks => 'הערות וקישורים';
+
+  @override
+  String linksCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count קישורים',
+      one: 'קישור אחד',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get newCourseHere => 'קורס חדש כאן';
+
+  @override
+  String get addToCourse => 'הוספה לקורס…';
+
+  @override
+  String get oneTimeSessionHere => 'מפגש חד-פעמי…';
+
+  @override
   String get requirementsSection => 'דרישת נוכחות';
 
   @override
