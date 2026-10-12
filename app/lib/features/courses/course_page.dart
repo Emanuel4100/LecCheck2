@@ -28,17 +28,8 @@ class CoursePage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     if (ref.watch(courseProvider(courseId)) == null) return const Scaffold();
-    final l = AppLocalizations.of(context);
     return PageShortcuts(
-      child: Scaffold(
-        body: CourseDetailView(courseId: courseId),
-        floatingActionButton: FloatingActionButton.extended(
-          onPressed: () =>
-              context.push('/course-editor?id=$courseId&oneTime=1'),
-          icon: const Icon(LecIcons.add),
-          label: Text(l.addOneTimeSession),
-        ),
-      ),
+      child: Scaffold(body: CourseDetailView(courseId: courseId)),
     );
   }
 }
@@ -118,6 +109,12 @@ class CourseDetailView extends ConsumerWidget {
         : SliverAppBar.large(
             title: Text(course.name),
             actions: [
+              IconButton(
+                tooltip: l.addOneTimeSession,
+                icon: const Icon(LecIcons.addDate),
+                onPressed: () =>
+                    context.push('/course-editor?id=$courseId&oneTime=1'),
+              ),
               IconButton(
                 tooltip: l.edit,
                 icon: const Icon(LecIcons.edit),
@@ -250,12 +247,15 @@ class CourseDetailView extends ConsumerWidget {
     final history = <Widget>[
       SliverToBoxAdapter(child: SectionHeader(title: l.sessionsHistory)),
       SliverPadding(
-        padding: EdgeInsets.fromLTRB(16, 0, 16, embedded ? 32 : 96),
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
         sliver: SliverList.separated(
           itemCount: sessions.length,
           separatorBuilder: (_, _) => const SizedBox(height: 8),
-          itemBuilder: (context, i) =>
-              SessionTile(sessionId: sessions[i].id, showDate: true),
+          itemBuilder: (context, i) => SessionTile(
+            sessionId: sessions[i].id,
+            showDate: true,
+            showCourse: false,
+          ),
         ),
       ),
     ];

@@ -9,6 +9,7 @@ import 'package:leccheck/core/db/app_database.dart';
 import 'package:leccheck/core/db/schedule_repository.dart';
 import 'package:leccheck/domain/local_date.dart';
 import 'package:leccheck/domain/schedule_types.dart';
+import 'package:leccheck/features/session/session_tile.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -339,6 +340,27 @@ void main() {
     await _tap(tester, find.text('Lecture · Tuesday'));
     expect(find.byType(Dialog), findsOneWidget);
     expect(find.text('Edit meeting'), findsOneWidget);
+  });
+
+  testWidgets('the course page: sessions by type, one-time from the app bar', (
+    tester,
+  ) async {
+    final (c, _) = await _start(tester);
+    await _open(c, tester, '/courses/c1');
+    final firstTile = find.byType(SessionTile).first;
+    expect(
+      find.descendant(of: firstTile, matching: find.text('Lecture #1')),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(of: firstTile, matching: find.text('Calculus')),
+      findsNothing,
+    );
+    expect(find.byType(FloatingActionButton), findsNothing);
+
+    await _tap(tester, find.byTooltip('Add one-time session'));
+    expect(find.text('New meeting'), findsOneWidget);
+    expect(find.text('One-time'), findsOneWidget);
   });
 
   testWidgets('in Hebrew', (tester) async {

@@ -28,6 +28,7 @@ class SessionTile extends ConsumerWidget {
     super.key,
     required this.sessionId,
     this.showDate = false,
+    this.showCourse = true,
     this.quickActions = false,
     this.highlight = false,
     this.onSwipeMarked,
@@ -35,6 +36,9 @@ class SessionTile extends ConsumerWidget {
 
   final String sessionId;
   final bool showDate;
+
+  /// False on the course's own page: the session type leads instead.
+  final bool showCourse;
 
   /// Shows ✓ / ✗ buttons for pending sessions.
   final bool quickActions;
@@ -63,8 +67,9 @@ class SessionTile extends ConsumerWidget {
         : DismissDirection.startToEnd;
     final canceled = session.isCanceled;
 
+    final title = sessionTitle(session, l, numbers: numbers);
     final details = joinDetails([
-      sessionTitle(session, l, numbers: numbers),
+      if (showCourse) title,
       if (showDate) fmt.relativeDay(session.date, ref.watch(todayProvider), l),
       fmt.timeRange(session.startMin, session.endMin),
       session.location,
@@ -101,7 +106,7 @@ class SessionTile extends ConsumerWidget {
                         const SizedBox(width: 6),
                         Flexible(
                           child: Text(
-                            course?.name ?? '',
+                            showCourse ? course?.name ?? '' : title,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: theme.textTheme.titleMedium?.copyWith(

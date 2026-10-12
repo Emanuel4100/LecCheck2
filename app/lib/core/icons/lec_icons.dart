@@ -47,6 +47,7 @@ abstract final class LecIcons {
   static const location = Icons.place_outlined;
   static const time = Icons.schedule_rounded;
   static const date = Icons.event_outlined;
+  static const addDate = Icons.more_time_rounded;
   static const notes = Icons.sticky_note_2_outlined;
   static const lecturer = Icons.person_outline_rounded;
   static const semester = Icons.date_range_rounded;
