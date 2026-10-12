@@ -223,6 +223,16 @@ Desktop uses a loopback redirect (`http://localhost:43823/auth`) instead of the 
 scheme. The Google client secret exists only in the Worker. Sessions renew after 7 days;
 "sign out everywhere" bumps a per-user epoch that invalidates older tokens.
 
+Before attaching the account, `AuthController.signIn` asks `GET /v1/account/summary`
+what the account holds (live semesters and courses, and what "Delete cloud data" left in
+the trash). With data on both sides it asks to use the account's only (this device's
+goes to a snapshot) or keep both; an empty account with a trash offers
+`POST /v1/account/restore`; no answer (offline, older server) merges, which loses
+nothing. On an empty device, Welcome waits for the first sync through `restoreProvider`
+(it survives the page being rebuilt), then `semesterChoiceProvider` opens "Which
+semester?". The semester list is re-read from the database there, not from the
+`.watch()` provider, which can lag behind the rows the sync just wrote.
+
 ## Notifications and widget
 
 - `NotificationController` re-plans reminders (debounced 2 s) when any schedule data
