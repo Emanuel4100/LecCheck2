@@ -450,6 +450,11 @@ class AppLocalizationsEn extends AppLocalizations {
       'Shown in the week view when the full name doesn\'t fit';
 
   @override
+  String useShortName(String name) {
+    return 'Use “$name”';
+  }
+
+  @override
   String get courseNameRequired => 'Enter a course name';
 
   @override

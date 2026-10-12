@@ -836,6 +836,12 @@ abstract class AppLocalizations {
   /// **'Shown in the week view when the full name doesn\'t fit'**
   String get shortNameHelper;
 
+  /// No description provided for @useShortName.
+  ///
+  /// In en, this message translates to:
+  /// **'Use “{name}”'**
+  String useShortName(String name);
+
   /// No description provided for @courseNameRequired.
   ///
   /// In en, this message translates to:

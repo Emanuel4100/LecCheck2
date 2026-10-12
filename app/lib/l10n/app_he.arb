@@ -237,6 +237,7 @@
   "courseName": "שם הקורס",
   "shortName": "שם מקוצר",
   "shortNameHelper": "מוצג בתצוגה השבועית כשהשם המלא לא נכנס",
+  "useShortName": "להשתמש ב„{name}”",
   "courseNameRequired": "יש להזין שם קורס",
   "courseNotesHint": "רשימת קריאה, כללי מבחן, הרכב ציון…",
   "courseColor": "צבע",

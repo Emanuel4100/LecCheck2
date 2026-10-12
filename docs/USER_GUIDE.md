@@ -20,7 +20,7 @@ Open **Courses → +** (or the button on an empty Today screen).
 
 - **Course info** — name, optional short name, code and lecturer, color, notes, website
   and extra links. The **short name** (e.g. "Calc 1") is shown in the Week view when the
-  full name doesn't fit.
+  full name doesn't fit. For a long name, the editor suggests one (**Use "…"**).
 - **Weekly schedule** — add each recurring meeting: type (Lecture / Practice / Lab /
   Other), day, start and end time, room, and links (e.g. the Zoom link). Turn on
   **Every other week** for alternating meetings and choose whether it starts in the first
@@ -99,8 +99,9 @@ Tap any session to see its date, time, room and lecturer, and to:
   calendar button jumps to any date, the sun button back to today.
 - Today's column is highlighted with a moving "now" line.
 - Each session shows its course name first, over as many lines as fit, with long words
-  shrunk a little to fit (or the course's short name, if it has one and the full name
-  doesn't fit). Then come the room and the start time; the time is left out first in
+  shrunk a little to fit. When the full name doesn't fit, the course's short name is
+  shown; without one, LecCheck shortens the name itself: small words go first ("to",
+  "of"; "של", "על"), then long words are cut ("Infin. Calc. 1", "חשבון אינפי׳ 1"). Then come the room and the start time; the time is left out first in
   short sessions. A ✓ / ✗ shows how you marked it.
 - The hour range fits your schedule; pinch with two fingers to zoom (desktop: Ctrl +
   mouse wheel or a trackpad pinch). The zoom is remembered on each device; on desktop the

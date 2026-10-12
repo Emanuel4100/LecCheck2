@@ -19,6 +19,7 @@ import '../../domain/occurrence_engine.dart';
 import '../../domain/schedule_types.dart';
 import '../../domain/semester_calendar.dart';
 import '../../domain/semester_data.dart';
+import '../../domain/short_name.dart';
 import '../../l10n/gen/app_localizations.dart';
 
 class _LinkDraft {
@@ -593,7 +594,20 @@ class _CourseEditorPageState extends ConsumerState<CourseEditorPage> {
                       labelText: '${l.shortName} (${l.optional})',
                       helperText: l.shortNameHelper,
                     ),
+                    onChanged: (_) => setState(() {}),
                   ),
+                  // A long name: offer the short form the week view would
+                  // make up, so it can be checked or changed.
+                  if (_shortName.text.trim().isEmpty)
+                    if (suggestedShortName(_name.text) case final suggestion?)
+                      Align(
+                        alignment: AlignmentDirectional.centerStart,
+                        child: TextButton(
+                          onPressed: () =>
+                              setState(() => _shortName.text = suggestion),
+                          child: Text(l.useShortName(suggestion)),
+                        ),
+                      ),
                   // Clear of the helper text, for the floating labels below.
                   const SizedBox(height: 20),
                   Row(

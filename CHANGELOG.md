@@ -15,6 +15,11 @@
   and the last one opens **Add course**. Replay it from Settings → About → **Show the app
   tour**. Works on phones and wide windows, in English and Hebrew, and with the keyboard
   (arrows, Enter, Esc).
+- **Long course names in Week**: when a name doesn't fit a tile and the course has no
+  short name, LecCheck shortens it, dropping small words, then cutting long ones
+  ("Infinitesimal Calculus 1" → "Infin. Calc. 1", "חשבון אינפיניטסימלי 1" → "חשבון
+  אינפי׳ 1"), instead of cutting it off. The course editor suggests a short name for
+  long names.
 - **Bring back deleted cloud data**: Settings → Account offers it for 30 days after
   **Delete cloud data** (until now only the server could).
 

@@ -144,6 +144,24 @@ void main() {
     expect(saved!.single.name, 'Physics');
   });
 
+  testWidgets('a long name gets a suggested short name', (tester) async {
+    final (container, db) = await _start(tester, withCourse: false);
+    container.read(routerProvider).push('/course-editor');
+    await _settle(tester);
+    await tester.enterText(
+      find.byType(TextField).first,
+      'Introduction to Computer Science',
+    );
+    await tester.pump();
+    await tester.tap(find.text('Use “Intr. Comp. Sci.”'));
+    await tester.pump();
+    expect(find.text('Use “Intr. Comp. Sci.”'), findsNothing);
+    await tester.tap(find.widgetWithText(FilledButton, 'Save'));
+    await _settle(tester);
+    final saved = await tester.runAsync(() => db.select(db.courses).get());
+    expect(saved!.single.shortName, 'Intr. Comp. Sci.');
+  });
+
   testWidgets('leaving the editor with changes asks first', (tester) async {
     final (container, _) = await _start(tester, withCourse: false);
     container.read(routerProvider).push('/course-editor');

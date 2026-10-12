@@ -74,10 +74,27 @@ void main() {
       ).name,
       'Infinitesimal Calculus',
     );
-    // Without a short name, the full name is shown as well as it can be.
+    // Without a short name, the least shortened form that fits.
     expect(
       layout('Infinitesimal Calculus', width: 60, height: 60).name,
+      'Infin. Calc.',
+    );
+    expect(
+      layout('Infinitesimal Calculus', width: 250, height: 60).name,
       'Infinitesimal Calculus',
+    );
+  });
+
+  test("a course's own short name wins over a made-up one", () {
+    // "Calculus One" doesn't fit 30 px either; it's still what was chosen.
+    expect(
+      layout(
+        'Infinitesimal Calculus',
+        shortName: 'Calculus One',
+        width: 30,
+        height: 60,
+      ).name,
+      'Calculus One',
     );
   });
 

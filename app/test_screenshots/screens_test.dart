@@ -85,7 +85,14 @@ MeetingRule _weekly(
   intervalWeeks: interval,
 );
 
-Future<void> _seed(ScheduleRepository repo, {required bool hebrew}) async {
+/// [long]: long course names and no short names, as many users type them.
+Future<void> _seed(
+  ScheduleRepository repo, {
+  required bool hebrew,
+  bool long = false,
+}) async {
+  String name(String en, String he, String longEn, String longHe) =>
+      hebrew ? (long ? longHe : he) : (long ? longEn : en);
   final semester = SemesterInfo(
     id: 'sem',
     name: hebrew ? 'סמסטר א׳ תשפ״ז' : 'Semester A 2026/27',
@@ -101,8 +108,13 @@ Future<void> _seed(ScheduleRepository repo, {required bool hebrew}) async {
           CourseInfo(
             id: 'calc',
             semesterId: 'sem',
-            name: hebrew ? 'חשבון אינפיניטסימלי 1' : 'Calculus 1',
-            shortName: hebrew ? 'חדו״א 1' : '',
+            name: name(
+              'Calculus 1',
+              'חשבון אינפיניטסימלי 1',
+              'Infinitesimal Calculus 1',
+              'חשבון אינפיניטסימלי 1',
+            ),
+            shortName: hebrew && !long ? 'חדו״א 1' : '',
             code: '104031',
             lecturer: hebrew ? 'ד״ר כהן' : 'Dr. Cohen',
             colorKey: 'ocean',
@@ -124,7 +136,12 @@ Future<void> _seed(ScheduleRepository repo, {required bool hebrew}) async {
           CourseInfo(
             id: 'phys',
             semesterId: 'sem',
-            name: hebrew ? 'פיזיקה 1מ' : 'Physics 1M',
+            name: name(
+              'Physics 1M',
+              'פיזיקה 1מ',
+              'Physics for Engineers 1M',
+              'פיזיקה להנדסה 1מ',
+            ),
             colorKey: 'sun',
           ),
           [
@@ -154,7 +171,12 @@ Future<void> _seed(ScheduleRepository repo, {required bool hebrew}) async {
           CourseInfo(
             id: 'ds',
             semesterId: 'sem',
-            name: hebrew ? 'מבני נתונים' : 'Data Structures',
+            name: name(
+              'Data Structures',
+              'מבני נתונים',
+              'Data Structures and Algorithms',
+              'מבני נתונים ואלגוריתמים',
+            ),
             colorKey: 'grape',
           ),
           [
@@ -167,7 +189,12 @@ Future<void> _seed(ScheduleRepository repo, {required bool hebrew}) async {
           CourseInfo(
             id: 'la',
             semesterId: 'sem',
-            name: hebrew ? 'אלגברה ליניארית' : 'Linear Algebra',
+            name: name(
+              'Linear Algebra',
+              'אלגברה ליניארית',
+              'Linear Algebra for Computer Science',
+              'אלגברה ליניארית למדעי המחשב',
+            ),
             colorKey: 'mint',
           ),
           [
@@ -206,6 +233,7 @@ Future<ProviderContainer> _pumpApp(
   ThemePreset preset = ThemePreset.ocean,
   Size size = const Size(412, 915),
   double pixelRatio = 2.6,
+  bool longNames = false,
 }) async {
   tester.view.physicalSize = size * pixelRatio;
   tester.view.devicePixelRatio = pixelRatio;
@@ -223,7 +251,8 @@ Future<ProviderContainer> _pumpApp(
   final db = AppDatabase(NativeDatabase.memory());
   addTearDown(db.close);
   await tester.runAsync(
-    () => _seed(ScheduleRepository(db), hebrew: locale == 'he'),
+    () =>
+        _seed(ScheduleRepository(db), hebrew: locale == 'he', long: longNames),
   );
 
   final container = ProviderContainer(
@@ -386,6 +415,22 @@ void main() {
     await tour(tester, c, 5);
     await _shot(tester, 'desktop_tour_settings');
   }, variant: TargetPlatformVariant.only(TargetPlatform.linux));
+
+  for (final (locale, mode) in [
+    ('en', ThemeMode.light),
+    ('he', ThemeMode.dark),
+  ]) {
+    testWidgets('Week · long names · $locale', (tester) async {
+      final c = await _pumpApp(
+        tester,
+        locale: locale,
+        mode: mode,
+        longNames: true,
+      );
+      await _go(tester, c, '/week');
+      await _shot(tester, '${locale}_${mode.name}_week_long_names');
+    });
+  }
 
   testWidgets('Onboarding', (tester) async {
     tester.view.physicalSize = const Size(412 * 2.6, 915 * 2.6);

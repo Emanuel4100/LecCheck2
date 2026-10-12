@@ -20,6 +20,7 @@ import '../../domain/local_date.dart';
 import '../../domain/occurrence.dart';
 import '../../domain/schedule_types.dart';
 import '../../domain/semester_calendar.dart';
+import '../../domain/short_name.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../session/session_menu.dart';
 import '../session/session_sheet.dart';
@@ -950,7 +951,8 @@ final _widestWords = <(String, TextStyle, TextScaler), double>{};
 ///
 /// The name comes first: it gets the whole width and as many lines as fit,
 /// and a word too wide for the tile shrinks the text a little. When the name
-/// still doesn't fit, the course's short name is shown, if it has one. Then
+/// still doesn't fit, the course's short name is shown, if it has one, or
+/// else a shortened form of the name ([autoShortNames]). Then
 /// come the room and the start time; the time is dropped first, since the
 /// grid already shows when a session starts. The status icon goes after the
 /// name's first line, into free space at the bottom, or after the last line.
@@ -1072,7 +1074,15 @@ TileLayout _measureTile({
   }
 
   var chosen = fit(name);
-  if (!chosen.fits && shortName.isNotEmpty) chosen = fit(shortName);
+  if (!chosen.fits) {
+    // The course's own short name, else the least shortened form of the
+    // name that fits (or the shortest, cut off).
+    for (final text
+        in shortName.isNotEmpty ? [shortName] : autoShortNames(name)) {
+      chosen = fit(text);
+      if (chosen.fits) break;
+    }
+  }
 
   final namePainter = painter(
     chosen.text,

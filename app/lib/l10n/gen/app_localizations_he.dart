@@ -450,6 +450,11 @@ class AppLocalizationsHe extends AppLocalizations {
   String get shortNameHelper => 'מוצג בתצוגה השבועית כשהשם המלא לא נכנס';
 
   @override
+  String useShortName(String name) {
+    return 'להשתמש ב„$name”';
+  }
+
+  @override
   String get courseNameRequired => 'יש להזין שם קורס';
 
   @override

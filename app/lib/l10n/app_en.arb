@@ -244,6 +244,14 @@
   "courseName": "Course name",
   "shortName": "Short name",
   "shortNameHelper": "Shown in the week view when the full name doesn't fit",
+  "useShortName": "Use “{name}”",
+  "@useShortName": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "courseNameRequired": "Enter a course name",
   "courseNotesHint": "Reading list, exam rules, grading…",
   "courseColor": "Color",
