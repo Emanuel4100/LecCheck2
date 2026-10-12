@@ -1280,6 +1280,24 @@ abstract class AppLocalizations {
   /// **'Attended or watched, out of sessions you attended, watched or missed.'**
   String get attendanceSubtitle;
 
+  /// No description provided for @attendanceShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Attended or watched'**
+  String get attendanceShort;
+
+  /// No description provided for @attendanceHow.
+  ///
+  /// In en, this message translates to:
+  /// **'How it\'s counted'**
+  String get attendanceHow;
+
+  /// No description provided for @attendanceExplained.
+  ///
+  /// In en, this message translates to:
+  /// **'Sessions you attended or watched, out of those you attended, watched or missed. Skipped and canceled sessions, and ones you haven\'t marked yet, don\'t count.'**
+  String get attendanceExplained;
+
   /// No description provided for @semesterProgress.
   ///
   /// In en, this message translates to:

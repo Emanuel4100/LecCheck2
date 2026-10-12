@@ -703,6 +703,16 @@ class AppLocalizationsHe extends AppLocalizations {
       'נוכחות או צפייה, מתוך המפגשים שנכחתם, צפיתם או החסרתם.';
 
   @override
+  String get attendanceShort => 'נוכחות או צפייה';
+
+  @override
+  String get attendanceHow => 'איך זה מחושב';
+
+  @override
+  String get attendanceExplained =>
+      'מפגשים שנכחתם בהם או צפיתם בהקלטה, מתוך אלה שנכחתם, צפיתם או החסרתם. מפגשים שדילגתם עליהם, שבוטלו או שעוד לא סימנתם לא נספרים.';
+
+  @override
   String get semesterProgress => 'התקדמות הסמסטר';
 
   @override

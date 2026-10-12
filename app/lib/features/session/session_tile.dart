@@ -18,6 +18,19 @@ import 'session_menu.dart';
 import 'session_sheet.dart';
 import 'status_buttons.dart';
 
+/// Set once the user has swiped a session to mark it: the swipe hint under
+/// "Needs marking" is no longer shown.
+const swipeHintKey = 'hint.swipeLearned';
+
+/// The same for right-clicking a session (desktop).
+const rightClickHintKey = 'hint.rightClickLearned';
+
+/// Remembers that the user has learned the gesture behind [key].
+void learnedHint(WidgetRef ref, String key) {
+  final prefs = ref.read(sharedPrefsProvider);
+  if (prefs.getBool(key) != true) prefs.setBool(key, true);
+}
+
 /// One session as a card. Touch: swipe right = attended, left = missed
 /// (physical directions, also in RTL), long-press opens the status picker.
 /// Mouse: hovering a started session shows ✓ / ✗, right-click opens a menu.
@@ -68,12 +81,16 @@ class SessionTile extends ConsumerWidget {
     final canceled = session.isCanceled;
 
     final title = sessionTitle(session, l, numbers: numbers);
-    final details = joinDetails([
+    final lead = [
       if (showCourse) title,
       if (showDate) fmt.relativeDay(session.date, ref.watch(todayProvider), l),
-      fmt.timeRange(session.startMin, session.endMin),
-      session.location,
-    ]);
+    ];
+    // Rebuilds when the session starts, not every minute.
+    final started = ref.watch(
+      minuteClockProvider.select(
+        (now) => session.hasStarted(now.value ?? DateTime.now()),
+      ),
+    );
 
     Widget card(bool hovered) => Card(
       color: highlight
@@ -84,8 +101,10 @@ class SessionTile extends ConsumerWidget {
       child: InkWell(
         onTap: () => showSessionSheet(context, session.id),
         onLongPress: () => showStatusPicker(context, ref, session),
-        onSecondaryTapUp: (d) =>
-            showSessionMenu(context, ref, session, d.globalPosition),
+        onSecondaryTapUp: (d) {
+          learnedHint(ref, rightClickHintKey);
+          showSessionMenu(context, ref, session, d.globalPosition);
+        },
         child: Padding(
           padding: const EdgeInsetsDirectional.fromSTEB(12, 12, 8, 12),
           child: Row(
@@ -127,10 +146,10 @@ class SessionTile extends ConsumerWidget {
                       ],
                     ),
                     const SizedBox(height: 2),
-                    Text(
-                      details,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
+                    _SessionDetails(
+                      lead: lead,
+                      time: fmt.timeRange(session.startMin, session.endMin),
+                      room: session.location,
                       style: theme.textTheme.bodyMedium?.copyWith(
                         color: theme.colorScheme.onSurfaceVariant,
                       ),
@@ -139,9 +158,11 @@ class SessionTile extends ConsumerWidget {
                 ),
               ),
               if (session.status == AttendanceStatus.pending &&
-                  (quickActions ||
-                      (hovered && session.hasStarted(DateTime.now()))))
+                  (quickActions || (hovered && started)))
                 ..._quickButtons(context, ref, session, l)
+              // Nothing to mark before it starts.
+              else if (session.status == AttendanceStatus.pending && !started)
+                const SizedBox(width: 8)
               else
                 Padding(
                   padding: const EdgeInsetsDirectional.only(start: 8, end: 4),
@@ -174,6 +195,7 @@ class SessionTile extends ConsumerWidget {
         }
       },
       confirmDismiss: (direction) async {
+        learnedHint(ref, swipeHintKey);
         final status = direction == attendedDirection
             ? AttendanceStatus.attended
             : AttendanceStatus.missed;
@@ -219,6 +241,85 @@ class SessionTile extends ConsumerWidget {
       button(AttendanceStatus.missed),
       button(AttendanceStatus.attended),
     ];
+  }
+}
+
+/// "Lecture #3 · Today · 10:00–12:00" and the room after a pin, on one
+/// line when it fits. Otherwise the room gets a line of its own, or the time
+/// moves down beside it: a line never ends in a separator.
+class _SessionDetails extends StatelessWidget {
+  const _SessionDetails({
+    required this.lead,
+    required this.time,
+    required this.room,
+    required this.style,
+  });
+
+  final List<String> lead;
+  final String time;
+  final String room;
+  final TextStyle? style;
+
+  @override
+  Widget build(BuildContext context) {
+    final effective = DefaultTextStyle.of(context).style.merge(style);
+    final direction = Directionality.of(context);
+    final scaler = MediaQuery.textScalerOf(context);
+    double width(String text) => (TextPainter(
+      text: TextSpan(text: text, style: effective),
+      textDirection: direction,
+      textScaler: scaler,
+      maxLines: 1,
+    )..layout()).width;
+    final first = joinDetails([...lead, time]);
+    Widget line(String text) =>
+        Text(text, maxLines: 1, overflow: TextOverflow.ellipsis, style: style);
+    final iconSize = scaler.scale(14);
+    Widget withRoom(String text) => Text.rich(
+      TextSpan(
+        children: [
+          if (text.isNotEmpty) TextSpan(text: text),
+          if (room.isNotEmpty) ...[
+            if (text.isNotEmpty) const WidgetSpan(child: SizedBox(width: 10)),
+            WidgetSpan(
+              alignment: PlaceholderAlignment.middle,
+              child: Icon(
+                LecIcons.location,
+                size: iconSize,
+                color: style?.color,
+              ),
+            ),
+            const WidgetSpan(child: SizedBox(width: 2)),
+            TextSpan(text: room),
+          ],
+        ],
+      ),
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      style: style,
+    );
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final max = constraints.maxWidth;
+        final firstWidth = width(first);
+        final roomWidth = room.isEmpty ? 0 : width(room) + iconSize + 12;
+        if (firstWidth + roomWidth <= max) return withRoom(first);
+        if (room.isEmpty || firstWidth <= max) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [line(first), if (room.isNotEmpty) withRoom('')],
+          );
+        }
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (lead.isNotEmpty) line(joinDetails(lead)),
+            withRoom(time),
+          ],
+        );
+      },
+    );
   }
 }
 

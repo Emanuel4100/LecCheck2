@@ -178,6 +178,22 @@ void main() {
     expect(find.text('New course'), findsOneWidget);
   });
 
+  testWidgets('Stats explains how attendance is counted', (tester) async {
+    final (container, _) = await _start(tester);
+    container.read(routerProvider).go('/stats');
+    await _settle(tester);
+    expect(find.text('Attended or watched'), findsOneWidget);
+    await tester.tap(find.byTooltip("How it's counted"));
+    await _settle(tester);
+    expect(
+      find.textContaining('Skipped and canceled sessions'),
+      findsOneWidget,
+    );
+    await tester.tap(find.text('Done'));
+    await _settle(tester);
+    expect(find.textContaining('Skipped and canceled sessions'), findsNothing);
+  });
+
   testWidgets('empty semester shows the add-course call to action', (
     tester,
   ) async {

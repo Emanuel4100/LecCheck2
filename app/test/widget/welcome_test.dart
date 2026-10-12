@@ -69,5 +69,12 @@ void main() {
     await pump(tester, RestorePhase.idle);
     expect(find.text('Continue without an account'), findsOneWidget);
     expect(find.text('Restoring your data…'), findsNothing);
+    // The language switch sits in the top corner, above everything else.
+    final language = tester.getRect(find.text('English'));
+    expect(language.top, lessThan(80));
+    expect(
+      language.bottom,
+      lessThan(tester.getRect(find.text('Welcome to LecCheck')).top),
+    );
   });
 }

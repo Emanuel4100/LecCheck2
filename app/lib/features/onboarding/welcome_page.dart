@@ -47,116 +47,127 @@ class _WelcomePageState extends ConsumerState<WelcomePage> {
 
     return Scaffold(
       body: SafeArea(
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 460),
-            child: ListView(
-              shrinkWrap: true,
-              padding: const EdgeInsets.all(24),
-              children: [
-                Align(
-                  alignment: AlignmentDirectional.centerEnd,
-                  child: SegmentedButton<String>(
-                    showSelectedIcon: false,
-                    segments: const [
-                      ButtonSegment(value: 'en', label: Text('English')),
-                      ButtonSegment(value: 'he', label: Text('עברית')),
-                    ],
-                    selected: {current == 'he' ? 'he' : 'en'},
-                    onSelectionChanged: (s) => ref
-                        .read(appearanceProvider.notifier)
-                        .setLocale(s.first),
-                  ),
+        child: Column(
+          children: [
+            // In the top corner, where a language switch is looked for.
+            Align(
+              alignment: AlignmentDirectional.topEnd,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                child: SegmentedButton<String>(
+                  showSelectedIcon: false,
+                  segments: const [
+                    ButtonSegment(value: 'en', label: Text('English')),
+                    ButtonSegment(value: 'he', label: Text('עברית')),
+                  ],
+                  selected: {current == 'he' ? 'he' : 'en'},
+                  onSelectionChanged: (s) =>
+                      ref.read(appearanceProvider.notifier).setLocale(s.first),
                 ),
-                const SizedBox(height: 32),
-                TweenAnimationBuilder<double>(
-                  tween: Tween(begin: 0, end: 1),
-                  duration: motion.slow,
-                  curve: motion.spatial,
-                  builder: (context, t, child) => Transform.scale(
-                    scale: 0.6 + 0.4 * t,
-                    child: Opacity(opacity: t.clamp(0, 1), child: child),
-                  ),
-                  child: const Center(child: LecLogo(size: 112)),
-                ),
-                const SizedBox(height: 32),
-                Text(
-                  l.welcomeTitle,
-                  textAlign: TextAlign.center,
-                  style: theme.textTheme.headlineMedium,
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  l.welcomeSubtitle,
-                  textAlign: TextAlign.center,
-                  style: theme.textTheme.bodyLarge?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                ),
-                const SizedBox(height: 40),
-                // Waiting for the account's data: setting up a semester now
-                // would add an empty one to the account (issue #2).
-                if (restore == RestorePhase.waiting)
-                  Column(
-                    children: [
-                      const LinearProgressIndicator(),
-                      const SizedBox(height: 12),
-                      Text(l.restoringData, textAlign: TextAlign.center),
-                    ],
-                  )
-                else if (restore == RestorePhase.failed) ...[
-                  Text(l.restoreFailed, textAlign: TextAlign.center),
-                  const SizedBox(height: 16),
-                  FilledButton(
-                    onPressed: () =>
-                        ref.read(authProvider.notifier).retryRestore(),
-                    child: Text(l.retry),
-                  ),
-                  const SizedBox(height: 8),
-                  TextButton(onPressed: _setUp, child: Text(l.setUpAnyway)),
-                ] else if (signedIn)
-                  FilledButton.icon(
-                    onPressed: _setUp,
-                    icon: const Icon(LecIcons.add),
-                    label: Text(l.startNewSemester),
-                  )
-                else ...[
-                  FilledButton.icon(
-                    onPressed: () => context.push('/semester'),
-                    icon: const Icon(LecIcons.check),
-                    label: Text(l.continueAsGuest),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    l.guestNote,
-                    textAlign: TextAlign.center,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  OutlinedButton.icon(
-                    onPressed: SyncConfig.enabled ? _signIn : null,
-                    icon: const Icon(LecIcons.account),
-                    label: Text(l.signInWithGoogle),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    SyncConfig.enabled ? l.syncHint : l.syncNotConfigured,
-                    textAlign: TextAlign.center,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                  if (SyncConfig.devAuth)
-                    TextButton(
-                      onPressed: () => _signIn(devName: 'dev'),
-                      child: Text(l.devSignIn),
-                    ),
-                ],
-              ],
+              ),
             ),
-          ),
+            Expanded(
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 460),
+                  child: ListView(
+                    shrinkWrap: true,
+                    padding: const EdgeInsets.all(24),
+                    children: [
+                      TweenAnimationBuilder<double>(
+                        tween: Tween(begin: 0, end: 1),
+                        duration: motion.slow,
+                        curve: motion.spatial,
+                        builder: (context, t, child) => Transform.scale(
+                          scale: 0.6 + 0.4 * t,
+                          child: Opacity(opacity: t.clamp(0, 1), child: child),
+                        ),
+                        child: const Center(child: LecLogo(size: 112)),
+                      ),
+                      const SizedBox(height: 32),
+                      Text(
+                        l.welcomeTitle,
+                        textAlign: TextAlign.center,
+                        style: theme.textTheme.headlineMedium,
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        l.welcomeSubtitle,
+                        textAlign: TextAlign.center,
+                        style: theme.textTheme.bodyLarge?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                      const SizedBox(height: 40),
+                      // Waiting for the account's data: setting up a semester now
+                      // would add an empty one to the account (issue #2).
+                      if (restore == RestorePhase.waiting)
+                        Column(
+                          children: [
+                            const LinearProgressIndicator(),
+                            const SizedBox(height: 12),
+                            Text(l.restoringData, textAlign: TextAlign.center),
+                          ],
+                        )
+                      else if (restore == RestorePhase.failed) ...[
+                        Text(l.restoreFailed, textAlign: TextAlign.center),
+                        const SizedBox(height: 16),
+                        FilledButton(
+                          onPressed: () =>
+                              ref.read(authProvider.notifier).retryRestore(),
+                          child: Text(l.retry),
+                        ),
+                        const SizedBox(height: 8),
+                        TextButton(
+                          onPressed: _setUp,
+                          child: Text(l.setUpAnyway),
+                        ),
+                      ] else if (signedIn)
+                        FilledButton.icon(
+                          onPressed: _setUp,
+                          icon: const Icon(LecIcons.add),
+                          label: Text(l.startNewSemester),
+                        )
+                      else ...[
+                        FilledButton.icon(
+                          onPressed: () => context.push('/semester'),
+                          icon: const Icon(LecIcons.check),
+                          label: Text(l.continueAsGuest),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          l.guestNote,
+                          textAlign: TextAlign.center,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        OutlinedButton.icon(
+                          onPressed: SyncConfig.enabled ? _signIn : null,
+                          icon: const Icon(LecIcons.account),
+                          label: Text(l.signInWithGoogle),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          SyncConfig.enabled ? l.syncHint : l.syncNotConfigured,
+                          textAlign: TextAlign.center,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                        if (SyncConfig.devAuth)
+                          TextButton(
+                            onPressed: () => _signIn(devName: 'dev'),
+                            child: Text(l.devSignIn),
+                          ),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );

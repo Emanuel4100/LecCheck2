@@ -15,6 +15,15 @@
   course name, and on phones **Add one-time session** moved to the app bar instead of
   covering the list. Meetings that start mid-semester or every other week from week 2
   now say so.
+- **Today**: the class in progress is marked from the Now card only, not listed again
+  under Needs marking. Session rows no longer break mid-detail: the type and day (and
+  the time when it fits) come first, then the room after a pin. The swipe hint goes away
+  once you've swiped, and classes that haven't started yet don't show the "to mark"
+  circle.
+- **Stats**: the weekly chart shows each week's percentage and labels its lines (0%,
+  50%, 100%); the attendance card says it briefly, with the full rule behind an ⓘ
+  button.
+- **Welcome**: the language switch moved to the top corner.
 
 ## 2.0.0-beta.9 — 2026-10-12
 

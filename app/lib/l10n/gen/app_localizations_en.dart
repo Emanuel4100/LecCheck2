@@ -705,6 +705,16 @@ class AppLocalizationsEn extends AppLocalizations {
       'Attended or watched, out of sessions you attended, watched or missed.';
 
   @override
+  String get attendanceShort => 'Attended or watched';
+
+  @override
+  String get attendanceHow => 'How it\'s counted';
+
+  @override
+  String get attendanceExplained =>
+      'Sessions you attended or watched, out of those you attended, watched or missed. Skipped and canceled sessions, and ones you haven\'t marked yet, don\'t count.';
+
+  @override
   String get semesterProgress => 'Semester progress';
 
   @override

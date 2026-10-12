@@ -398,10 +398,19 @@ class _NeedsMarkingSectionState extends ConsumerState<_NeedsMarkingSection> {
     });
     final l = AppLocalizations.of(context);
     final theme = Theme.of(context);
+    // The class in progress is marked from the Now card above.
+    final now = ref.watch(nowNextProvider);
+    final pending = ref.watch(needsMarkingProvider).items;
     final ids = [
-      for (final id in ref.watch(needsMarkingProvider).items)
-        if (!_hidden.contains(id)) id,
+      for (final id in pending)
+        if (!_hidden.contains(id) && id != now) id,
     ];
+    // Not "all caught up" right under a class still to mark.
+    if (ids.isEmpty && pending.contains(now)) {
+      return const SliverToBoxAdapter(child: SizedBox.shrink());
+    }
+    final hintKey = AppIdiom.isDesktop ? rightClickHintKey : swipeHintKey;
+    final showHint = ref.read(sharedPrefsProvider).getBool(hintKey) != true;
 
     if (ids.isEmpty) {
       return SliverToBoxAdapter(
@@ -471,17 +480,18 @@ class _NeedsMarkingSectionState extends ConsumerState<_NeedsMarkingSection> {
             ),
           ),
         ),
-        SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsetsDirectional.fromSTEB(20, 8, 20, 0),
-            child: Text(
-              AppIdiom.isDesktop ? l.rightClickHint : l.swipeHint,
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
+        if (showHint)
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsetsDirectional.fromSTEB(20, 8, 20, 0),
+              child: Text(
+                AppIdiom.isDesktop ? l.rightClickHint : l.swipeHint,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
               ),
             ),
           ),
-        ),
       ],
     );
   }

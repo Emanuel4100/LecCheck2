@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 
+import '../../app/adaptive.dart';
 import '../../app/labels.dart';
 import '../../app/providers.dart';
 import '../../app/theme/colors.dart';
@@ -193,15 +194,34 @@ class _Hero extends ConsumerWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      l.attendance,
-                      style: theme.textTheme.titleLarge?.copyWith(
-                        color: theme.colorScheme.onPrimaryContainer,
-                      ),
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            l.attendance,
+                            style: theme.textTheme.titleLarge?.copyWith(
+                              color: theme.colorScheme.onPrimaryContainer,
+                            ),
+                          ),
+                        ),
+                        IconButton(
+                          tooltip: l.attendanceHow,
+                          visualDensity: VisualDensity.compact,
+                          color: theme.colorScheme.onPrimaryContainer,
+                          icon: const Icon(LecIcons.info, size: 20),
+                          onPressed: () => showChoiceDialog<void>(
+                            context,
+                            title: l.attendanceHow,
+                            body: l.attendanceExplained,
+                            choices: [
+                              DialogChoice(l.done, null, primary: true),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 4),
                     Text(
-                      l.attendanceSubtitle,
+                      l.attendanceShort,
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: theme.colorScheme.onPrimaryContainer,
                       ),
@@ -502,12 +522,14 @@ class _WeeklyTrend extends StatelessWidget {
             height: 180,
             child: BarChart(
               BarChartData(
-                maxY: 100,
+                // Room above a full bar for its number.
+                maxY: 115,
                 minY: 0,
                 borderData: FlBorderData(show: false),
                 gridData: FlGridData(
                   drawVerticalLine: false,
                   horizontalInterval: 50,
+                  checkToShowHorizontalLine: (v) => v % 50 == 0,
                   getDrawingHorizontalLine: (_) => FlLine(
                     color: theme.colorScheme.outlineVariant,
                     strokeWidth: 1,
@@ -515,7 +537,25 @@ class _WeeklyTrend extends StatelessWidget {
                   ),
                 ),
                 titlesData: FlTitlesData(
-                  leftTitles: const AxisTitles(),
+                  // 0%, 50% and 100%: what the dashed lines mean.
+                  leftTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      interval: 50,
+                      reservedSize: 40,
+                      getTitlesWidget: (value, meta) => value % 50 == 0
+                          ? SideTitleWidget(
+                              meta: meta,
+                              child: Text(
+                                '${value.toInt()}%',
+                                style: theme.textTheme.labelSmall?.copyWith(
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                ),
+                              ),
+                            )
+                          : const SizedBox.shrink(),
+                    ),
+                  ),
                   rightTitles: const AxisTitles(),
                   topTitles: const AxisTitles(),
                   bottomTitles: AxisTitles(
@@ -532,12 +572,18 @@ class _WeeklyTrend extends StatelessWidget {
                     ),
                   ),
                 ),
+                // Each bar's percentage, always shown above it.
                 barTouchData: BarTouchData(
+                  enabled: false,
                   touchTooltipData: BarTouchTooltipData(
-                    getTooltipColor: (_) => theme.colorScheme.inverseSurface,
+                    getTooltipColor: (_) => Colors.transparent,
+                    tooltipPadding: EdgeInsets.zero,
+                    tooltipMargin: 2,
                     getTooltipItem: (group, _, rod, _) => BarTooltipItem(
-                      '${l.weekNumber(group.x)}\n${rod.toY.round()}%',
-                      TextStyle(color: theme.colorScheme.onInverseSurface),
+                      '${rod.toY.round()}',
+                      theme.textTheme.labelSmall!.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
                     ),
                   ),
                 ),
@@ -545,6 +591,7 @@ class _WeeklyTrend extends StatelessWidget {
                   for (final w in weeks)
                     BarChartGroupData(
                       x: w,
+                      showingTooltipIndicators: const [0],
                       barRods: [
                         BarChartRodData(
                           toY: (stats.byWeek[w]!.progress ?? 0) * 100,
