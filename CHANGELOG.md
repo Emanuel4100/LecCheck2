@@ -1,5 +1,32 @@
 # Changelog
 
+## Unreleased
+
+- **Linux: updates no longer erase your data.** LecCheck kept its database and settings
+  in the folder `install.sh` installs it to, so every update deleted them and you came
+  back signed out with an empty schedule. Data now lives in
+  `~/.local/share/com.leccheck.app`, and the next update moves it there first.
+- **Android: opening LecCheck from the home-screen widget** no longer shows an error
+  ("no routes for location").
+- **Update window**: when a new version is out, a window opens at launch with what's new,
+  and **Update** shows each step there: the download with its size and speed, the check
+  that the file is exactly the released one, then the install and **Restart**. **Later**
+  asks again next time; **Skip this version** waits for the next one. Updates are now
+  signed: LecCheck only installs releases from a list signed by the release build.
+- **Contacts**: a course has its lecturer and teaching assistants, each with a name, role
+  and email, edited in a **Contacts** row of the course editor. The course page lists them
+  with buttons to send an email or copy the address. A course's lecturer becomes its first
+  contact.
+- **Sessions that don't count**: turn off **Counts toward attendance** on a session (in
+  its details, or right-click) when the course doesn't take attendance in it, like a first
+  lecture. It keeps its status but is left out of the percentage, the streak and the
+  requirement, so 80% of 10 lectures becomes 80% of 9.
+- **Canceled sessions** keep their course color with diagonal stripes, instead of turning
+  gray, and have their own color in status icons.
+- **Desktop**: a denser layout with smaller corners, one-line title bars and a regular
+  **Add** button; **Settings** keeps the sidebar, so the tabs are one click away. On Linux
+  the window reopens at the size you left it, maximized if it was.
+
 ## 2.0.0-beta.10 — 2026-10-13
 
 - **A roomier course editor**. Meetings are one line each ("Lecture · Sunday,
