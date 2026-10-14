@@ -16,6 +16,7 @@ import '../features/settings/settings_page.dart';
 import '../features/stats/stats_page.dart';
 import '../features/today/today_page.dart';
 import '../features/week/week_page.dart';
+import 'adaptive.dart';
 import 'providers.dart';
 import 'shell.dart';
 
@@ -110,7 +111,11 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/settings',
         parentNavigatorKey: _rootKey,
-        builder: (_, _) => const SettingsPage(),
+        // Desktop: Settings keeps the sidebar, so it switches in place like
+        // a tab instead of sliding in.
+        pageBuilder: (_, state) => AppIdiom.isDesktop
+            ? NoTransitionPage(key: state.pageKey, child: const SettingsPage())
+            : MaterialPage(key: state.pageKey, child: const SettingsPage()),
       ),
       GoRoute(
         path: '/report',

@@ -40,6 +40,10 @@ abstract final class AppIdiom {
 
   /// Phones and tablets: swipe gestures, long-press, bottom sheets.
   static bool get usesTouch => !isDesktop;
+
+  /// A corner radius: [touch] on phones and tablets, smaller on desktop,
+  /// where big round corners look like a phone app.
+  static double radius(double touch) => isDesktop ? touch * 0.6 : touch;
 }
 
 /// A bottom sheet on touch screens with a compact window, a dialog elsewhere

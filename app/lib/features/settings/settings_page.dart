@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
@@ -9,12 +10,14 @@ import 'package:package_info_plus/package_info_plus.dart';
 import '../../app/adaptive.dart';
 import '../../app/format.dart';
 import '../../app/providers.dart';
+import '../../app/shell.dart';
 import '../../app/update_controller.dart';
 import '../../app/shortcuts.dart';
 import '../../app/theme/app_theme.dart';
 import '../../app/theme/colors.dart';
 import '../../app/theme/motion.dart';
 import '../../app/widgets/common.dart';
+import '../../app/widgets/tab_app_bar.dart';
 import '../../core/backup/backup_service.dart';
 import '../../core/backup/snapshot_service.dart';
 import '../../core/home_widget/today_widget.dart';
@@ -89,17 +92,47 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     ];
   }
 
+  /// Desktop: Settings keeps the window's sidebar, like the tabs, and
+  /// Ctrl+1–4 go back to them.
+  Widget _withRail(BuildContext context, Widget page) {
+    if (!AppIdiom.isDesktop || WindowSize.of(context) == WindowSize.compact) {
+      return PageShortcuts(child: page);
+    }
+    void go(int tab) => context.go(tabPaths[tab]);
+    return PageShortcuts(
+      bindings: {
+        for (final (i, key) in [
+          LogicalKeyboardKey.digit1,
+          LogicalKeyboardKey.digit2,
+          LogicalKeyboardKey.digit3,
+          LogicalKeyboardKey.digit4,
+        ].indexed)
+          primaryKey(key): () => go(i),
+      },
+      child: Row(
+        children: [
+          AppRail(selectedIndex: null, onSelected: go, inSettings: true),
+          Expanded(child: page),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
     final sections = _sections(l);
 
     if (!WindowSize.of(context).isWide) {
-      return PageShortcuts(
-        child: Scaffold(
+      return _withRail(
+        context,
+        Scaffold(
           body: CustomScrollView(
             slivers: [
-              SliverAppBar.large(title: Text(l.settings)),
+              if (AppIdiom.isDesktop)
+                DesktopAppBar(title: l.settings)
+              else
+                SliverAppBar.large(title: Text(l.settings)),
               SliverCentered(
                 maxWidth: 720,
                 sliver: SliverList.list(
@@ -122,9 +155,14 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     // Wide: categories on the left, the chosen one on the right.
     final theme = Theme.of(context);
     final selected = _selected.clamp(0, sections.length - 1);
-    return PageShortcuts(
-      child: Scaffold(
-        appBar: AppBar(title: Text(l.settings)),
+    return _withRail(
+      context,
+      Scaffold(
+        appBar: AppBar(
+          title: Text(l.settings),
+          // The sidebar leads back to the tabs.
+          automaticallyImplyLeading: !AppIdiom.isDesktop,
+        ),
         body: Row(
           children: [
             SizedBox(

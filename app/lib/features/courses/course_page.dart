@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 
+import '../../app/adaptive.dart';
 import '../../app/format.dart';
 import '../../app/labels.dart';
 import '../../app/notification_controller.dart';
@@ -10,6 +11,7 @@ import '../../app/providers.dart';
 import '../../app/shortcuts.dart';
 import '../../app/theme/colors.dart';
 import '../../app/widgets/common.dart';
+import '../../app/widgets/tab_app_bar.dart';
 import '../../app/widgets/progress_ring.dart';
 import '../../core/icons/lec_icons.dart';
 import '../../domain/attendance_stats.dart';
@@ -106,6 +108,24 @@ class CourseDetailView extends ConsumerWidget {
                 ],
               ),
             ),
+          )
+        : AppIdiom.isDesktop
+        ? DesktopAppBar(
+            title: course.name,
+            actions: [
+              IconButton(
+                tooltip: l.addOneTimeSession,
+                icon: const Icon(LecIcons.addDate),
+                onPressed: () =>
+                    context.push('/course-editor?id=$courseId&oneTime=1'),
+              ),
+              IconButton(
+                tooltip: l.edit,
+                icon: const Icon(LecIcons.edit),
+                onPressed: () => context.push('/course-editor?id=$courseId'),
+              ),
+              const SizedBox(width: 4),
+            ],
           )
         : SliverAppBar.large(
             title: Text(course.name),

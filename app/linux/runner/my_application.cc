@@ -33,6 +33,72 @@ static gboolean uses_header_bars() {
   return FALSE;
 }
 
+// The window's size and whether it was maximized, kept between launches in
+// $XDG_CONFIG_HOME/com.leccheck.app/window.ini. Not its position: Wayland
+// compositors place windows themselves.
+struct WindowState {
+  gint width = 1280;
+  gint height = 820;
+  gboolean maximized = FALSE;
+};
+static WindowState window_state;
+
+static gchar* window_state_path() {
+  return g_build_filename(g_get_user_config_dir(), APPLICATION_ID,
+                          "window.ini", nullptr);
+}
+
+static void load_window_state() {
+  g_autofree gchar* path = window_state_path();
+  g_autoptr(GKeyFile) file = g_key_file_new();
+  if (!g_key_file_load_from_file(file, path, G_KEY_FILE_NONE, nullptr)) return;
+  g_autoptr(GError) error = nullptr;
+  const gint width = g_key_file_get_integer(file, "window", "width", &error);
+  if (error != nullptr) return;
+  const gint height = g_key_file_get_integer(file, "window", "height", &error);
+  if (error != nullptr) return;
+  // A broken file shouldn't open a window too small to use.
+  if (width >= 360 && height >= 600) {
+    window_state.width = width;
+    window_state.height = height;
+  }
+  window_state.maximized =
+      g_key_file_get_boolean(file, "window", "maximized", nullptr);
+}
+
+static void save_window_state() {
+  g_autofree gchar* path = window_state_path();
+  g_autofree gchar* dir = g_path_get_dirname(path);
+  g_mkdir_with_parents(dir, 0700);
+  g_autoptr(GKeyFile) file = g_key_file_new();
+  g_key_file_set_integer(file, "window", "width", window_state.width);
+  g_key_file_set_integer(file, "window", "height", window_state.height);
+  g_key_file_set_boolean(file, "window", "maximized", window_state.maximized);
+  g_autoptr(GError) error = nullptr;
+  if (!g_key_file_save_to_file(file, path, &error)) {
+    g_warning("Window size not saved: %s", error->message);
+  }
+}
+
+// Remembers the size while the window isn't maximized, so un-maximizing
+// next time goes back to it.
+static gboolean on_configure(GtkWidget* widget, GdkEvent*, gpointer) {
+  if (!window_state.maximized) {
+    gtk_window_get_size(GTK_WINDOW(widget), &window_state.width,
+                        &window_state.height);
+  }
+  return FALSE;
+}
+
+static gboolean on_window_state(GtkWidget*, GdkEventWindowState* event,
+                                gpointer) {
+  window_state.maximized =
+      (event->new_window_state & GDK_WINDOW_STATE_MAXIMIZED) != 0;
+  return FALSE;
+}
+
+static void on_destroy(GtkWidget*, gpointer) { save_window_state(); }
+
 // Implements GApplication::activate.
 static void my_application_activate(GApplication* application) {
   MyApplication* self = MY_APPLICATION(application);
@@ -58,7 +124,14 @@ static void my_application_activate(GApplication* application) {
     gtk_window_set_title(window, "LecCheck");
   }
 
-  gtk_window_set_default_size(window, 1280, 820);
+  load_window_state();
+  gtk_window_set_default_size(window, window_state.width, window_state.height);
+  if (window_state.maximized) gtk_window_maximize(window);
+  g_signal_connect(window, "configure-event", G_CALLBACK(on_configure),
+                   nullptr);
+  g_signal_connect(window, "window-state-event", G_CALLBACK(on_window_state),
+                   nullptr);
+  g_signal_connect(window, "destroy", G_CALLBACK(on_destroy), nullptr);
   // Narrower than this and even the phone layout gets cramped.
   GdkGeometry limits = {};
   limits.min_width = 360;

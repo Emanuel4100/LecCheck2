@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 
+import '../../app/adaptive.dart';
 import '../../app/format.dart';
 import '../../app/providers.dart';
 import '../../app/theme/colors.dart';
@@ -134,7 +135,7 @@ class _CourseCard extends ConsumerWidget {
     return Card(
       shape: selected
           ? RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(24),
+              borderRadius: BorderRadius.circular(AppIdiom.radius(24)),
               side: BorderSide(color: theme.colorScheme.primary, width: 2),
             )
           : null,

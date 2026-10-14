@@ -10,6 +10,7 @@ import '../features/tour/tour_controller.dart';
 import '../features/tour/tour_overlay.dart';
 import '../features/week/week_page.dart';
 import '../l10n/gen/app_localizations.dart';
+import 'adaptive.dart';
 import 'shortcuts.dart';
 import 'sync_providers.dart';
 import 'theme/motion.dart';
@@ -116,56 +117,10 @@ class AppShell extends ConsumerWidget {
         ),
       );
     } else {
-      final extended = size == WindowSize.large;
       scaffold = Scaffold(
         body: Row(
           children: [
-            NavigationRail(
-              extended: extended,
-              minExtendedWidth: 232,
-              labelType: extended ? NavigationRailLabelType.none : null,
-              selectedIndex: shell.currentIndex,
-              onDestinationSelected: _go,
-              groupAlignment: -1,
-              leading: _RailHeader(extended: extended),
-              destinations: [
-                for (final (i, (icon, selected, label)) in destinations.indexed)
-                  NavigationRailDestination(
-                    icon: _tourTarget(i, Icon(icon)),
-                    selectedIcon: _tourTarget(i, Icon(selected)),
-                    label: Text(label),
-                  ),
-              ],
-              trailing: Expanded(
-                child: Align(
-                  alignment: extended
-                      ? AlignmentDirectional.bottomStart
-                      : Alignment.bottomCenter,
-                  child: Padding(
-                    padding: const EdgeInsetsDirectional.fromSTEB(
-                      12,
-                      0,
-                      12,
-                      20,
-                    ),
-                    child: KeyedSubtree(
-                      key: TourTargets.settings,
-                      child: extended
-                          ? TextButton.icon(
-                              onPressed: () => context.push('/settings'),
-                              icon: const Icon(LecIcons.settings),
-                              label: Text(l.settings),
-                            )
-                          : IconButton(
-                              tooltip: l.settings,
-                              icon: const Icon(LecIcons.settings),
-                              onPressed: () => context.push('/settings'),
-                            ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
+            AppRail(selectedIndex: shell.currentIndex, onSelected: _go),
             Expanded(child: body),
           ],
         ),
@@ -192,11 +147,108 @@ class AppShell extends ConsumerWidget {
       KeyedSubtree(key: TourTargets.destinations[i], child: icon);
 }
 
+/// The tabs' paths, in rail order.
+const tabPaths = ['/today', '/week', '/courses', '/stats'];
+
+/// The navigation rail of medium and wider windows (a sidebar with the logo
+/// on large ones): Add, the tabs, Settings at the bottom. Settings shows it
+/// too ([inSettings]), so the window keeps its layout there.
+class AppRail extends StatelessWidget {
+  const AppRail({
+    super.key,
+    required this.selectedIndex,
+    required this.onSelected,
+    this.inSettings = false,
+  });
+
+  /// The tab shown; null in Settings.
+  final int? selectedIndex;
+  final ValueChanged<int> onSelected;
+  final bool inSettings;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    final extended = WindowSize.of(context) == WindowSize.large;
+    final destinations = [
+      (LecIcons.today, LecIcons.todayFilled, l.navToday),
+      (LecIcons.week, LecIcons.weekFilled, l.navWeek),
+      (LecIcons.courses, LecIcons.coursesFilled, l.navCourses),
+      (LecIcons.stats, LecIcons.statsFilled, l.navStats),
+    ];
+    // The tour's keys belong to the shell's rail (Settings' copy is shown
+    // over it, and keys are unique).
+    Widget target(GlobalKey key, Widget child) =>
+        inSettings ? child : KeyedSubtree(key: key, child: child);
+    void openSettings() {
+      if (!inSettings) context.push('/settings');
+    }
+
+    final settingsIcon = Icon(
+      inSettings ? LecIcons.settingsFilled : LecIcons.settings,
+    );
+    return NavigationRail(
+      extended: extended,
+      minExtendedWidth: 232,
+      labelType: extended ? NavigationRailLabelType.none : null,
+      selectedIndex: selectedIndex,
+      onDestinationSelected: onSelected,
+      groupAlignment: -1,
+      leading: _RailHeader(extended: extended, tourKeys: !inSettings),
+      destinations: [
+        for (final (i, (icon, selected, label)) in destinations.indexed)
+          NavigationRailDestination(
+            icon: target(TourTargets.destinations[i], Icon(icon)),
+            selectedIcon: target(TourTargets.destinations[i], Icon(selected)),
+            label: Text(label),
+          ),
+      ],
+      trailing: Expanded(
+        child: Align(
+          alignment: extended
+              ? AlignmentDirectional.bottomStart
+              : Alignment.bottomCenter,
+          child: Padding(
+            padding: const EdgeInsetsDirectional.fromSTEB(12, 0, 12, 20),
+            child: target(
+              TourTargets.settings,
+              extended
+                  ? (inSettings
+                        ? FilledButton.tonalIcon(
+                            onPressed: openSettings,
+                            icon: settingsIcon,
+                            label: Text(l.settings),
+                          )
+                        : TextButton.icon(
+                            onPressed: openSettings,
+                            icon: settingsIcon,
+                            label: Text(l.settings),
+                          ))
+                  : inSettings
+                  ? IconButton.filledTonal(
+                      tooltip: l.settings,
+                      icon: settingsIcon,
+                      onPressed: openSettings,
+                    )
+                  : IconButton(
+                      tooltip: l.settings,
+                      icon: settingsIcon,
+                      onPressed: openSettings,
+                    ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 /// Logo (extended sidebar only) and the Add button.
 class _RailHeader extends StatelessWidget {
-  const _RailHeader({required this.extended});
+  const _RailHeader({required this.extended, required this.tourKeys});
 
   final bool extended;
+  final bool tourKeys;
 
   @override
   Widget build(BuildContext context) {
@@ -204,7 +256,7 @@ class _RailHeader extends StatelessWidget {
     final add = Padding(
       padding: const EdgeInsets.only(top: 8, bottom: 16),
       child: KeyedSubtree(
-        key: TourTargets.addRail,
+        key: tourKeys ? TourTargets.addRail : null,
         child: _AddMenuButton(extended: extended),
       ),
     );
@@ -264,6 +316,20 @@ class _AddMenuButton extends ConsumerWidget {
       builder: (context, controller, _) {
         void toggle() =>
             controller.isOpen ? controller.close() : controller.open();
+        // Desktop: a toolbar-sized button, not a phone's floating one.
+        if (AppIdiom.isDesktop) {
+          return extended
+              ? FilledButton.tonalIcon(
+                  onPressed: toggle,
+                  icon: const Icon(LecIcons.add),
+                  label: Text(l.add),
+                )
+              : IconButton.filledTonal(
+                  tooltip: l.add,
+                  onPressed: toggle,
+                  icon: const Icon(LecIcons.add),
+                );
+        }
         return extended
             ? FloatingActionButton.extended(
                 heroTag: 'rail-add',

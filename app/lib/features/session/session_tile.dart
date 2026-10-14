@@ -348,7 +348,8 @@ class _SwipeBackground extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: tones.container,
-        borderRadius: BorderRadius.circular(24),
+        // Behind the card while swiping: the same corners.
+        borderRadius: BorderRadius.circular(AppIdiom.radius(24)),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 24),
       alignment: alignment,

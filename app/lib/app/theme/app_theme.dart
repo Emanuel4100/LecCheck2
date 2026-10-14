@@ -42,13 +42,18 @@ abstract final class AppTheme {
       Size(64, AppIdiom.isDesktop ? 40 : 48),
     );
     final dark = brightness == Brightness.dark;
-    final rounded16 = BorderRadius.circular(16);
+    // Desktop: tighter rows and smaller corners, like other desktop apps;
+    // phones keep the roomier touch sizes.
+    final desktop = AppIdiom.isDesktop;
+    const radius = AppIdiom.radius;
+    final rounded16 = BorderRadius.circular(radius(16));
 
     return ThemeData(
       colorScheme: scheme,
       fontFamily: 'Rubik',
       textTheme: text,
       scaffoldBackgroundColor: scheme.surface,
+      visualDensity: desktop ? VisualDensity.compact : null,
       // The default: InkSparkle (a shader) on Android, a plain ripple on
       // desktop and iPhone.
       appBarTheme: AppBarTheme(
@@ -74,7 +79,9 @@ abstract final class AppTheme {
         margin: EdgeInsets.zero,
         color: scheme.surfaceContainerLow,
         clipBehavior: Clip.antiAlias,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(radius(24)),
+        ),
       ),
       navigationBarTheme: NavigationBarThemeData(
         height: 76,
@@ -125,14 +132,16 @@ abstract final class AppTheme {
         highlightElevation: 4,
         backgroundColor: scheme.primaryContainer,
         foregroundColor: scheme.onPrimaryContainer,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(radius(20)),
+        ),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: scheme.surfaceContainerHighest,
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 16,
-          vertical: 14,
+        contentPadding: EdgeInsets.symmetric(
+          horizontal: desktop ? 14 : 16,
+          vertical: desktop ? 10 : 14,
         ),
         border: OutlineInputBorder(
           borderRadius: rounded16,
@@ -162,7 +171,9 @@ abstract final class AppTheme {
       dialogTheme: DialogThemeData(
         backgroundColor: scheme.surfaceContainerHigh,
         surfaceTintColor: Colors.transparent,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(radius(28)),
+        ),
       ),
       snackBarTheme: SnackBarThemeData(
         behavior: SnackBarBehavior.floating,
@@ -170,11 +181,15 @@ abstract final class AppTheme {
         shape: RoundedRectangleBorder(borderRadius: rounded16),
       ),
       chipTheme: ChipThemeData(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(radius(12)),
+        ),
         side: BorderSide(color: scheme.outlineVariant),
       ),
-      listTileTheme: const ListTileThemeData(
-        contentPadding: EdgeInsetsDirectional.symmetric(horizontal: 16),
+      listTileTheme: ListTileThemeData(
+        contentPadding: const EdgeInsetsDirectional.symmetric(horizontal: 16),
+        visualDensity: desktop ? VisualDensity.compact : null,
+        minVerticalPadding: desktop ? 6 : null,
       ),
       dividerTheme: DividerThemeData(
         color: scheme.outlineVariant.withValues(alpha: 0.6),

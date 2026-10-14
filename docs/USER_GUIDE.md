@@ -270,9 +270,11 @@ The layout follows the window size, and the controls follow the device:
 - **Large desktop windows**: a sidebar with the logo, sync status and Add; Week gets a
   details panel.
 - **iPhone**: iOS switches, alerts and date/time wheels.
-- **Desktop**: right-click menus, hover actions, keyboard shortcuts, time fields you can
-  type into, and only one LecCheck window at a time (launching it again brings the window
-  forward).
+- **Desktop**: a denser layout with smaller corners and one-line title bars, right-click
+  menus, hover actions, keyboard shortcuts, time fields you can type into, and only one
+  LecCheck window at a time (launching it again brings the window forward). Settings
+  keeps the sidebar, so the tabs are one click away. On Linux the window opens at the size
+  you left it (and maximized if it was).
 
 ### Keyboard shortcuts
 
