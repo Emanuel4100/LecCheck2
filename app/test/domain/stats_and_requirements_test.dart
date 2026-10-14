@@ -33,6 +33,16 @@ void main() {
       expect(counts.total, 6);
       expect(StatusCounts().progress, isNull);
     });
+
+    test('sessions that don\'t count are left out, whatever their status', () {
+      final counts = StatusCounts.of([
+        occ(date: '2026-10-18', status: _a),
+        occ(date: '2026-10-19', status: _m, excluded: true),
+        occ(date: '2026-10-20', status: _a, excluded: true),
+      ]);
+      expect((counts.present, counts.decided, counts.total), (1, 1, 1));
+      expect(counts.progress, 1);
+    });
   });
 
   test(
@@ -69,6 +79,16 @@ void main() {
       expect(streak.best, 3);
     },
   );
+
+  test('a missed session that doesn\'t count keeps the streak', () {
+    final sessions = [
+      occ(date: '2026-10-18', status: _a),
+      occ(date: '2026-10-19', status: _m, excluded: true),
+      occ(date: '2026-10-20', status: _a),
+    ];
+    final streak = AttendanceStats.streak(sessions, now);
+    expect((streak.current, streak.best), (2, 2));
+  });
 
   test('catch-up lists missed sessions with a recording', () {
     final sessions = [
@@ -156,6 +176,19 @@ void main() {
         expect((lenient.absences, lenient.attended), (0, 3));
       },
     );
+
+    test('a session that doesn\'t count is out of scope (first lecture)', () {
+      // 10 lectures at 80%, the first one doesn't count: 9 in scope, so 8
+      // required and one absence allowed, whatever the first one was marked.
+      final sessions = [
+        occ(date: '2026-11-01', status: _m, excluded: true),
+        ...sessionsWith([_a, _m, _p, _p, _p, _p, _p, _p, _p])
+            .map((o) => occ(date: o.date.addDays(1).toIso(), status: o.status)),
+      ];
+      final p = evaluateRequirement(req(), sessions);
+      expect((p.total, p.required, p.absences), (9, 8, 1));
+      expect(p.slack, 0);
+    });
 
     test('type-scoped requirement ignores other types', () {
       final sessions = [

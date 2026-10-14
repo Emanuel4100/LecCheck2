@@ -364,6 +364,9 @@
   "moveSession": "Change date, time or room",
   "resetChanges": "Undo changes for this week",
   "movedLabel": "Changed this week",
+  "countsTowardAttendance": "Counts toward attendance",
+  "countsTowardAttendanceOff": "Left out of your percentage, streak and requirements",
+  "notCountedLabel": "Doesn't count toward attendance",
   "canceledByHolidayHint": "Canceled because of a no-class day",
   "canceledForHoliday": "No class: {name}",
   "@canceledForHoliday": {

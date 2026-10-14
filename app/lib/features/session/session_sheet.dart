@@ -236,6 +236,21 @@ class _SessionSheetState extends ConsumerState<SessionSheet> {
               selected: session.explicitStatus,
               onSelected: setStatus,
             ),
+            // Canceled sessions never count, so there's nothing to switch.
+            if (!session.isCanceled) ...[
+              const SizedBox(height: 8),
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                secondary: const Icon(LecIcons.target),
+                title: Text(l.countsTowardAttendance),
+                subtitle: session.excluded
+                    ? Text(l.countsTowardAttendanceOff)
+                    : null,
+                value: !session.excluded,
+                onChanged: (counts) =>
+                    repo.setExcluded(session, excluded: !counts),
+              ),
+            ],
             const SizedBox(height: 20),
             TextField(
               controller: _notes,

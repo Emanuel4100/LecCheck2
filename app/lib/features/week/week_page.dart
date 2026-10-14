@@ -976,6 +976,7 @@ class _GridTile extends ConsumerWidget {
             '${fmt.timeRange(session.startMin, session.endMin)}',
         if (session.location.isNotEmpty) session.location,
         statusLabel(session, l),
+        if (session.excluded && !session.isCanceled) l.notCountedLabel,
       ].join('\n'),
       child: tile,
     );

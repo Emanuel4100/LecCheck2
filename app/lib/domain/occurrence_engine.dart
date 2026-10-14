@@ -59,6 +59,7 @@ abstract final class OccurrenceEngine {
             number: null,
             notes: override?.notes ?? '',
             recordingUrl: override?.recordingUrl,
+            excluded: override?.excluded ?? false,
           ),
         );
       }
@@ -181,5 +182,6 @@ abstract final class OccurrenceEngine {
     number: number,
     notes: o.notes,
     recordingUrl: o.recordingUrl,
+    excluded: o.excluded,
   );
 }

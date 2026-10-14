@@ -72,7 +72,8 @@ class RequirementProgress {
 /// Evaluates [requirement] against the sessions of its course.
 ///
 /// Absences are missed + skipped sessions, plus watched recordings unless the
-/// requirement says recordings count.
+/// requirement says recordings count. Canceled and excluded sessions aren't
+/// counted at all.
 RequirementProgress evaluateRequirement(
   AttendanceRequirement requirement,
   Iterable<Occurrence> courseSessions,
@@ -84,6 +85,7 @@ RequirementProgress evaluateRequirement(
   for (final o in courseSessions) {
     if (o.courseId != requirement.courseId) continue;
     if (requirement.type != null && o.type != requirement.type) continue;
+    if (o.excluded) continue;
     switch (o.status) {
       case AttendanceStatus.canceled:
         continue;

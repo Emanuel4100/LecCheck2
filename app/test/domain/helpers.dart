@@ -72,6 +72,7 @@ Occurrence occ({
   int endMin = 12 * 60,
   String? recordingUrl,
   String meetingId = 'm1',
+  bool excluded = false,
 }) => Occurrence(
   id: sessionId(meetingId, d(date)),
   meetingId: meetingId,
@@ -90,4 +91,5 @@ Occurrence occ({
   number: null,
   notes: '',
   recordingUrl: recordingUrl,
+  excluded: excluded,
 );

@@ -24,7 +24,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor]) : super(executor ?? _open());
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   /// Runs on drift's background isolate. `shareAcrossIsolates` lets
   /// notification-action and home-widget callbacks (separate isolates) write
@@ -50,6 +50,12 @@ class AppDatabase extends _$AppDatabase {
       },
       from2To3: (m, schema) async {
         await m.addColumn(schema.courses, schema.courses.shortName);
+      },
+      from3To4: (m, schema) async {
+        await m.addColumn(
+          schema.sessionOverrides,
+          schema.sessionOverrides.excluded,
+        );
       },
     ),
   );

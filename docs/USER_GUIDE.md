@@ -68,6 +68,11 @@ Every session has a status:
 **Attendance %** = (attended + watched) ÷ (attended + watched + missed), over sessions
 that have started.
 
+**Sessions that don't count**: when a course doesn't take attendance in a session (say,
+the first lecture), open it and turn off **Counts toward attendance** (or right-click it).
+It keeps its status, but is left out of the percentage, the streak and the requirement:
+a requirement of 80% of 10 lectures becomes 80% of 9. Lists show it with a small ✓̸ icon.
+
 Ways to mark:
 
 - **Today → Now card**: the buttons under a session in progress.

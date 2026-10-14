@@ -682,6 +682,16 @@ class AppLocalizationsHe extends AppLocalizations {
   String get movedLabel => 'שונה השבוע';
 
   @override
+  String get countsTowardAttendance => 'נספר בנוכחות';
+
+  @override
+  String get countsTowardAttendanceOff =>
+      'לא נכלל באחוז הנוכחות, ברצף ובדרישות';
+
+  @override
+  String get notCountedLabel => 'לא נספר בנוכחות';
+
+  @override
   String get canceledByHolidayHint => 'בוטל בגלל יום ללא שיעורים';
 
   @override

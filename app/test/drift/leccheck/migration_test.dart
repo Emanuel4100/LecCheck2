@@ -10,6 +10,7 @@ import 'generated/schema.dart';
 import 'generated/schema_v1.dart' as v1;
 import 'generated/schema_v2.dart' as v2;
 import 'generated/schema_v3.dart' as v3;
+import 'generated/schema_v4.dart' as v4;
 
 void main() {
   driftRuntimeOptions.dontWarnAboutMultipleDatabases = true;
@@ -33,9 +34,9 @@ void main() {
 
   // What the upgraded database must hold: everything as before, courses
   // without a short name, unsynced changes still waiting.
-  Future<void> expectKept(v3.DatabaseAtV3 db) async {
+  Future<void> expectKept(v4.DatabaseAtV4 db) async {
     expect(await db.select(db.semesters).get(), [
-      const v3.SemestersData(
+      const v4.SemestersData(
         id: 'sem',
         deleted: 0,
         updatedAt: 1,
@@ -47,7 +48,7 @@ void main() {
       ),
     ]);
     expect(await db.select(db.courses).get(), [
-      const v3.CoursesData(
+      const v4.CoursesData(
         id: 'c1',
         deleted: 0,
         updatedAt: 1,
@@ -64,7 +65,7 @@ void main() {
       ),
     ]);
     expect(await db.select(db.outbox).get(), [
-      const v3.OutboxData(
+      const v4.OutboxData(
         seq: 1,
         tbl: 'courses',
         rowId: 'c1',
@@ -74,16 +75,16 @@ void main() {
       ),
     ]);
     expect(await db.select(db.syncMeta).get(), [
-      const v3.SyncMetaData(key: 'lastVersion', value: '42'),
+      const v4.SyncMetaData(key: 'lastVersion', value: '42'),
     ]);
   }
 
   test('data from v2.0.0-beta.2 (v1) survives the upgrade', () async {
     await verifier.testWithDataIntegrity(
       oldVersion: 1,
-      newVersion: 3,
+      newVersion: 4,
       createOld: v1.DatabaseAtV1.new,
-      createNew: v3.DatabaseAtV3.new,
+      createNew: v4.DatabaseAtV4.new,
       openTestedDatabase: AppDatabase.new,
       createItems: (batch, db) {
         batch
@@ -139,9 +140,9 @@ void main() {
   test('data from v2.0.0-beta.3 (v2) survives the upgrade', () async {
     await verifier.testWithDataIntegrity(
       oldVersion: 2,
-      newVersion: 3,
+      newVersion: 4,
       createOld: v2.DatabaseAtV2.new,
-      createNew: v3.DatabaseAtV3.new,
+      createNew: v4.DatabaseAtV4.new,
       openTestedDatabase: AppDatabase.new,
       createItems: (batch, db) {
         batch
@@ -192,6 +193,93 @@ void main() {
           );
       },
       validateItems: expectKept,
+    );
+  });
+
+  test('data from v2.0.0-beta.10 (v3) survives the upgrade', () async {
+    await verifier.testWithDataIntegrity(
+      oldVersion: 3,
+      newVersion: 4,
+      createOld: v3.DatabaseAtV3.new,
+      createNew: v4.DatabaseAtV4.new,
+      openTestedDatabase: AppDatabase.new,
+      createItems: (batch, db) {
+        batch
+          ..insert(
+            db.semesters,
+            const v3.SemestersData(
+              id: 'sem',
+              deleted: 0,
+              updatedAt: 1,
+              name: 'Semester A',
+              startDate: '2026-10-18',
+              endDate: '2027-01-22',
+              weekStart: 7,
+              visibleDays: 0x7F,
+            ),
+          )
+          ..insert(
+            db.courses,
+            const v3.CoursesData(
+              id: 'c1',
+              deleted: 0,
+              updatedAt: 1,
+              semesterId: 'sem',
+              name: 'Calculus 1',
+              code: '104031',
+              lecturer: 'Dr. Cohen',
+              colorKey: 'ocean',
+              website: '',
+              notes: 'Bring a calculator',
+              links: '[]',
+              sortOrder: 0,
+              shortName: '',
+            ),
+          )
+          ..insert(
+            db.sessionOverrides,
+            const v3.SessionOverridesData(
+              id: 'm1_20261018',
+              deleted: 0,
+              updatedAt: 1,
+              meetingId: 'm1',
+              originalDate: '2026-10-18',
+              status: 'attended',
+              notes: '',
+            ),
+          )
+          ..insert(
+            db.outbox,
+            const v3.OutboxData(
+              seq: 1,
+              tbl: 'courses',
+              rowId: 'c1',
+              patch: '{"notes":"Bring a calculator"}',
+              hlc: '001760000000000:0000:device1',
+              ifAbsent: 0,
+            ),
+          )
+          ..insert(
+            db.syncMeta,
+            const v3.SyncMetaData(key: 'lastVersion', value: '42'),
+          );
+      },
+      validateItems: (db) async {
+        await expectKept(db);
+        // Marked sessions still count.
+        expect(await db.select(db.sessionOverrides).get(), [
+          const v4.SessionOverridesData(
+            id: 'm1_20261018',
+            deleted: 0,
+            updatedAt: 1,
+            meetingId: 'm1',
+            originalDate: '2026-10-18',
+            status: 'attended',
+            notes: '',
+            excluded: 0,
+          ),
+        ]);
+      },
     );
   });
 }

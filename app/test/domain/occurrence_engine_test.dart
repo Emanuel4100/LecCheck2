@@ -146,6 +146,26 @@ void main() {
       expect(after.byId[id]!.start.hour, 11);
     });
 
+    test('a session that doesn\'t count keeps its status and number', () {
+      final index = OccurrenceEngine.expand(
+        semester: semester(),
+        meetings: [weekly()],
+        overrides: [
+          SessionOverride(
+            meetingId: 'm1',
+            originalDate: d('2026-10-18'),
+            status: AttendanceStatus.attended,
+            excluded: true,
+          ),
+        ],
+      );
+      final first = index.all.first;
+      expect(first.excluded, isTrue);
+      expect(first.status, AttendanceStatus.attended);
+      expect(first.number, 1);
+      expect(index.all[1].excluded, isFalse);
+    });
+
     test('moving one session keeps its id and flags it', () {
       final index = OccurrenceEngine.expand(
         semester: semester(),

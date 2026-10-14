@@ -2234,6 +2234,21 @@ class $SessionOverridesTable extends SessionOverrides
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _excludedMeta = const VerificationMeta(
+    'excluded',
+  );
+  @override
+  late final GeneratedColumn<bool> excluded = GeneratedColumn<bool>(
+    'excluded',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("excluded" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -2248,6 +2263,7 @@ class $SessionOverridesTable extends SessionOverrides
     movedStartMin,
     movedEndMin,
     movedLocation,
+    excluded,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -2351,6 +2367,12 @@ class $SessionOverridesTable extends SessionOverrides
         ),
       );
     }
+    if (data.containsKey('excluded')) {
+      context.handle(
+        _excludedMeta,
+        excluded.isAcceptableOrUnknown(data['excluded']!, _excludedMeta),
+      );
+    }
     return context;
   }
 
@@ -2408,6 +2430,10 @@ class $SessionOverridesTable extends SessionOverrides
         DriftSqlType.string,
         data['${effectivePrefix}moved_location'],
       ),
+      excluded: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}excluded'],
+      )!,
     );
   }
 
@@ -2435,6 +2461,10 @@ class SessionOverrideRow extends DataClass
   final int? movedStartMin;
   final int? movedEndMin;
   final String? movedLocation;
+
+  /// Left out of attendance: percentages, streaks and requirements (schema
+  /// v4), whatever its status.
+  final bool excluded;
   const SessionOverrideRow({
     required this.id,
     required this.deleted,
@@ -2448,6 +2478,7 @@ class SessionOverrideRow extends DataClass
     this.movedStartMin,
     this.movedEndMin,
     this.movedLocation,
+    required this.excluded,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -2476,6 +2507,7 @@ class SessionOverrideRow extends DataClass
     if (!nullToAbsent || movedLocation != null) {
       map['moved_location'] = Variable<String>(movedLocation);
     }
+    map['excluded'] = Variable<bool>(excluded);
     return map;
   }
 
@@ -2505,6 +2537,7 @@ class SessionOverrideRow extends DataClass
       movedLocation: movedLocation == null && nullToAbsent
           ? const Value.absent()
           : Value(movedLocation),
+      excluded: Value(excluded),
     );
   }
 
@@ -2526,6 +2559,7 @@ class SessionOverrideRow extends DataClass
       movedStartMin: serializer.fromJson<int?>(json['movedStartMin']),
       movedEndMin: serializer.fromJson<int?>(json['movedEndMin']),
       movedLocation: serializer.fromJson<String?>(json['movedLocation']),
+      excluded: serializer.fromJson<bool>(json['excluded']),
     );
   }
   @override
@@ -2544,6 +2578,7 @@ class SessionOverrideRow extends DataClass
       'movedStartMin': serializer.toJson<int?>(movedStartMin),
       'movedEndMin': serializer.toJson<int?>(movedEndMin),
       'movedLocation': serializer.toJson<String?>(movedLocation),
+      'excluded': serializer.toJson<bool>(excluded),
     };
   }
 
@@ -2560,6 +2595,7 @@ class SessionOverrideRow extends DataClass
     Value<int?> movedStartMin = const Value.absent(),
     Value<int?> movedEndMin = const Value.absent(),
     Value<String?> movedLocation = const Value.absent(),
+    bool? excluded,
   }) => SessionOverrideRow(
     id: id ?? this.id,
     deleted: deleted ?? this.deleted,
@@ -2577,6 +2613,7 @@ class SessionOverrideRow extends DataClass
     movedLocation: movedLocation.present
         ? movedLocation.value
         : this.movedLocation,
+    excluded: excluded ?? this.excluded,
   );
   SessionOverrideRow copyWithCompanion(SessionOverridesCompanion data) {
     return SessionOverrideRow(
@@ -2602,6 +2639,7 @@ class SessionOverrideRow extends DataClass
       movedLocation: data.movedLocation.present
           ? data.movedLocation.value
           : this.movedLocation,
+      excluded: data.excluded.present ? data.excluded.value : this.excluded,
     );
   }
 
@@ -2619,7 +2657,8 @@ class SessionOverrideRow extends DataClass
           ..write('movedDate: $movedDate, ')
           ..write('movedStartMin: $movedStartMin, ')
           ..write('movedEndMin: $movedEndMin, ')
-          ..write('movedLocation: $movedLocation')
+          ..write('movedLocation: $movedLocation, ')
+          ..write('excluded: $excluded')
           ..write(')'))
         .toString();
   }
@@ -2638,6 +2677,7 @@ class SessionOverrideRow extends DataClass
     movedStartMin,
     movedEndMin,
     movedLocation,
+    excluded,
   );
   @override
   bool operator ==(Object other) =>
@@ -2654,7 +2694,8 @@ class SessionOverrideRow extends DataClass
           other.movedDate == this.movedDate &&
           other.movedStartMin == this.movedStartMin &&
           other.movedEndMin == this.movedEndMin &&
-          other.movedLocation == this.movedLocation);
+          other.movedLocation == this.movedLocation &&
+          other.excluded == this.excluded);
 }
 
 class SessionOverridesCompanion extends UpdateCompanion<SessionOverrideRow> {
@@ -2670,6 +2711,7 @@ class SessionOverridesCompanion extends UpdateCompanion<SessionOverrideRow> {
   final Value<int?> movedStartMin;
   final Value<int?> movedEndMin;
   final Value<String?> movedLocation;
+  final Value<bool> excluded;
   final Value<int> rowid;
   const SessionOverridesCompanion({
     this.id = const Value.absent(),
@@ -2684,6 +2726,7 @@ class SessionOverridesCompanion extends UpdateCompanion<SessionOverrideRow> {
     this.movedStartMin = const Value.absent(),
     this.movedEndMin = const Value.absent(),
     this.movedLocation = const Value.absent(),
+    this.excluded = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   SessionOverridesCompanion.insert({
@@ -2699,6 +2742,7 @@ class SessionOverridesCompanion extends UpdateCompanion<SessionOverrideRow> {
     this.movedStartMin = const Value.absent(),
     this.movedEndMin = const Value.absent(),
     this.movedLocation = const Value.absent(),
+    this.excluded = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        meetingId = Value(meetingId),
@@ -2716,6 +2760,7 @@ class SessionOverridesCompanion extends UpdateCompanion<SessionOverrideRow> {
     Expression<int>? movedStartMin,
     Expression<int>? movedEndMin,
     Expression<String>? movedLocation,
+    Expression<bool>? excluded,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -2731,6 +2776,7 @@ class SessionOverridesCompanion extends UpdateCompanion<SessionOverrideRow> {
       if (movedStartMin != null) 'moved_start_min': movedStartMin,
       if (movedEndMin != null) 'moved_end_min': movedEndMin,
       if (movedLocation != null) 'moved_location': movedLocation,
+      if (excluded != null) 'excluded': excluded,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -2748,6 +2794,7 @@ class SessionOverridesCompanion extends UpdateCompanion<SessionOverrideRow> {
     Value<int?>? movedStartMin,
     Value<int?>? movedEndMin,
     Value<String?>? movedLocation,
+    Value<bool>? excluded,
     Value<int>? rowid,
   }) {
     return SessionOverridesCompanion(
@@ -2763,6 +2810,7 @@ class SessionOverridesCompanion extends UpdateCompanion<SessionOverrideRow> {
       movedStartMin: movedStartMin ?? this.movedStartMin,
       movedEndMin: movedEndMin ?? this.movedEndMin,
       movedLocation: movedLocation ?? this.movedLocation,
+      excluded: excluded ?? this.excluded,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -2806,6 +2854,9 @@ class SessionOverridesCompanion extends UpdateCompanion<SessionOverrideRow> {
     if (movedLocation.present) {
       map['moved_location'] = Variable<String>(movedLocation.value);
     }
+    if (excluded.present) {
+      map['excluded'] = Variable<bool>(excluded.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -2827,6 +2878,7 @@ class SessionOverridesCompanion extends UpdateCompanion<SessionOverrideRow> {
           ..write('movedStartMin: $movedStartMin, ')
           ..write('movedEndMin: $movedEndMin, ')
           ..write('movedLocation: $movedLocation, ')
+          ..write('excluded: $excluded, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -5899,6 +5951,7 @@ typedef $$SessionOverridesTableCreateCompanionBuilder =
       Value<int?> movedStartMin,
       Value<int?> movedEndMin,
       Value<String?> movedLocation,
+      Value<bool> excluded,
       Value<int> rowid,
     });
 typedef $$SessionOverridesTableUpdateCompanionBuilder =
@@ -5915,6 +5968,7 @@ typedef $$SessionOverridesTableUpdateCompanionBuilder =
       Value<int?> movedStartMin,
       Value<int?> movedEndMin,
       Value<String?> movedLocation,
+      Value<bool> excluded,
       Value<int> rowid,
     });
 
@@ -5984,6 +6038,11 @@ class $$SessionOverridesTableFilterComposer
 
   ColumnFilters<String> get movedLocation => $composableBuilder(
     column: $table.movedLocation,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get excluded => $composableBuilder(
+    column: $table.excluded,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -6056,6 +6115,11 @@ class $$SessionOverridesTableOrderingComposer
     column: $table.movedLocation,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<bool> get excluded => $composableBuilder(
+    column: $table.excluded,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$SessionOverridesTableAnnotationComposer
@@ -6112,6 +6176,9 @@ class $$SessionOverridesTableAnnotationComposer
     column: $table.movedLocation,
     builder: (column) => column,
   );
+
+  GeneratedColumn<bool> get excluded =>
+      $composableBuilder(column: $table.excluded, builder: (column) => column);
 }
 
 class $$SessionOverridesTableTableManager
@@ -6163,6 +6230,7 @@ class $$SessionOverridesTableTableManager
                 Value<int?> movedStartMin = const Value.absent(),
                 Value<int?> movedEndMin = const Value.absent(),
                 Value<String?> movedLocation = const Value.absent(),
+                Value<bool> excluded = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => SessionOverridesCompanion(
                 id: id,
@@ -6177,6 +6245,7 @@ class $$SessionOverridesTableTableManager
                 movedStartMin: movedStartMin,
                 movedEndMin: movedEndMin,
                 movedLocation: movedLocation,
+                excluded: excluded,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -6193,6 +6262,7 @@ class $$SessionOverridesTableTableManager
                 Value<int?> movedStartMin = const Value.absent(),
                 Value<int?> movedEndMin = const Value.absent(),
                 Value<String?> movedLocation = const Value.absent(),
+                Value<bool> excluded = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => SessionOverridesCompanion.insert(
                 id: id,
@@ -6207,6 +6277,7 @@ class $$SessionOverridesTableTableManager
                 movedStartMin: movedStartMin,
                 movedEndMin: movedEndMin,
                 movedLocation: movedLocation,
+                excluded: excluded,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

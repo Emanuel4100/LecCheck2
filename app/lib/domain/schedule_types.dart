@@ -244,6 +244,7 @@ class SessionOverride {
     this.movedStartMin,
     this.movedEndMin,
     this.movedLocation,
+    this.excluded = false,
   });
 
   final String meetingId;
@@ -255,6 +256,9 @@ class SessionOverride {
   final int? movedStartMin;
   final int? movedEndMin;
   final String? movedLocation;
+
+  /// Left out of attendance (percentages, streaks, requirements).
+  final bool excluded;
 
   String get id => sessionId(meetingId, originalDate);
 }

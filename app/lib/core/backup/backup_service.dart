@@ -226,6 +226,7 @@ class _LegacyTables {
             status: status?.key,
             notes: notes,
             recordingUrl: recording?.isEmpty ?? true ? null : recording,
+            excluded: false,
           ),
         );
       }

@@ -79,6 +79,10 @@ class SessionOverrides extends Table with SyncedRow {
   IntColumn get movedStartMin => integer().nullable()();
   IntColumn get movedEndMin => integer().nullable()();
   TextColumn get movedLocation => text().nullable()();
+
+  /// Left out of attendance: percentages, streaks and requirements (schema
+  /// v4), whatever its status.
+  BoolColumn get excluded => boolean().withDefault(const Constant(false))();
 }
 
 @DataClassName('NoClassRangeRow')

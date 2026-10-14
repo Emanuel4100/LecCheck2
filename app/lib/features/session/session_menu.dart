@@ -13,7 +13,7 @@ import 'session_actions.dart';
 import 'session_sheet.dart';
 import 'status_buttons.dart';
 
-enum _Extra { clear, details, link, course }
+enum _Extra { clear, counts, details, link, course }
 
 /// The first link a session offers: meeting links, then course links, then
 /// the course website.
@@ -77,6 +77,13 @@ Future<void> showSessionMenu(
         ),
       if (current != null) item(_Extra.clear, LecIcons.pending, l.clearStatus),
       const PopupMenuDivider(),
+      if (!session.isCanceled)
+        item(
+          _Extra.counts,
+          LecIcons.target,
+          l.countsTowardAttendance,
+          checked: !session.excluded,
+        ),
       item(_Extra.details, LecIcons.info, l.details),
       if (link != null) item(_Extra.link, LecIcons.openLink, l.openLink),
       item(_Extra.course, LecIcons.courses, l.goToCourse),
@@ -88,6 +95,10 @@ Future<void> showSessionMenu(
       await markSession(context, ref, session, status);
     case _Extra.clear:
       await ref.read(repositoryProvider).setStatus(session, null);
+    case _Extra.counts:
+      await ref
+          .read(repositoryProvider)
+          .setExcluded(session, excluded: !session.excluded);
     case _Extra.details:
       await showSessionSheet(context, session.id);
     case _Extra.link:

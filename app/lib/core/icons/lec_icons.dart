@@ -66,6 +66,7 @@ abstract final class LecIcons {
   static const info = Icons.info_outline_rounded;
   static const code = Icons.code_rounded;
   static const moved = LecIconFont.moved;
+  static const notCounted = Icons.remove_done_rounded;
   static const undo = Icons.undo_rounded;
   static const more = Icons.more_horiz_rounded;
   static const doneAll = Icons.done_all_rounded;

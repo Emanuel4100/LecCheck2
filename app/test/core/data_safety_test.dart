@@ -659,6 +659,58 @@ void main() {
     });
   });
 
+  group('sessions that don\'t count (database v4)', () {
+    // A marked session as v2.0.0-beta.10 and older store and send it.
+    Map<String, Object?> older(String date) => _row(
+      SessionOverrideRow(
+        id: sessionId('m1', LocalDate.parse(date)),
+        deleted: false,
+        updatedAt: 0,
+        meetingId: 'm1',
+        originalDate: date,
+        status: 'attended',
+        notes: '',
+        excluded: false,
+      ),
+    )..remove('excluded');
+
+    Future<SessionOverrideRow> overrideRow(String date) =>
+        (db.select(db.sessionOverrides)..where(
+              (o) => o.id.equals(sessionId('m1', LocalDate.parse(date))),
+            ))
+            .getSingle();
+
+    test('sessions saved by older app versions still load and count', () async {
+      await SyncEngine.applyServerRows(db, repo, [
+        {
+          'tbl': 'session_overrides',
+          'id': sessionId('m1', LocalDate.parse('2026-10-18')),
+          'data': older('2026-10-18'),
+        },
+      ], cursor: null);
+      await repo.importRows({
+        'session_overrides': [older('2026-10-25')],
+      });
+      expect((await overrideRow('2026-10-18')).excluded, isFalse);
+      expect((await overrideRow('2026-10-25')).status, 'attended');
+    });
+
+    test('leaving a session out syncs only that field', () async {
+      final first = (await _sessions(repo)).first;
+      await repo.setStatus(first, AttendanceStatus.attended);
+      final before = (await outbox()).length;
+      await repo.setExcluded(first, excluded: true);
+      final entries = await outbox();
+      expect(entries, hasLength(before + 1));
+      expect(jsonDecode(entries.last.patch), {'excluded': true});
+      final session = (await _sessions(repo)).first;
+      expect(
+        (session.excluded, session.status),
+        (true, AttendanceStatus.attended),
+      );
+    });
+  });
+
   group('short names (database v3)', () {
     // A course as v2.0.0-beta.3 and older store and send it.
     Map<String, Object?> older(String id, String name) =>

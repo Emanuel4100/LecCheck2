@@ -143,6 +143,17 @@ class SessionTile extends ConsumerWidget {
                               color: theme.colorScheme.tertiary,
                             ),
                           ],
+                          if (session.excluded && !canceled) ...[
+                            const SizedBox(width: 6),
+                            Tooltip(
+                              message: l.notCountedLabel,
+                              child: Icon(
+                                LecIcons.notCounted,
+                                size: 16,
+                                color: theme.colorScheme.tertiary,
+                              ),
+                            ),
+                          ],
                         ],
                       ),
                       const SizedBox(height: 2),

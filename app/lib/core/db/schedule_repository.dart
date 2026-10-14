@@ -230,6 +230,7 @@ class ScheduleRepository {
   late final _overrides = _Adapter<SessionOverrideRow>(
     db.sessionOverrides,
     SessionOverrideRow.fromJson,
+    added: const {'excluded': false},
     check: (r) => r.toDomain(),
   );
   late final _noClass = _Adapter<NoClassRangeRow>(
@@ -576,6 +577,10 @@ class ScheduleRepository {
       await _patchOverride(s, {'status': status.key});
     }
   });
+
+  /// Leaves one session out of attendance ([excluded]), or counts it again.
+  Future<void> setExcluded(Occurrence session, {required bool excluded}) =>
+      db.transaction(() => _patchOverride(session, {'excluded': excluded}));
 
   Future<void> setSessionNotes(Occurrence session, String notes) =>
       db.transaction(() => _patchOverride(session, {'notes': notes}));
@@ -1058,6 +1063,7 @@ class ScheduleRepository {
       meetingId: meetingId,
       originalDate: originalDate.toIso(),
       notes: '',
+      excluded: false,
     ).toJson()..remove('updatedAt');
     final full = {...fresh, ...patch};
     await _write(_overrides, full, full);

@@ -6,9 +6,11 @@ import 'semester_calendar.dart';
 class StatusCounts {
   StatusCounts([Map<AttendanceStatus, int>? counts]) : _counts = counts ?? {};
 
+  /// Sessions left out of attendance ([Occurrence.excluded]) aren't counted.
   factory StatusCounts.of(Iterable<Occurrence> sessions) {
     final counts = <AttendanceStatus, int>{};
     for (final o in sessions) {
+      if (o.excluded) continue;
       counts.update(o.status, (n) => n + 1, ifAbsent: () => 1);
     }
     return StatusCounts(counts);
@@ -57,11 +59,13 @@ abstract final class AttendanceStats {
       .toList();
 
   /// Consecutive attended/watched sessions ending at the most recent decided
-  /// one; missed and skipped break the run, pending and canceled are ignored.
+  /// one; missed and skipped break the run, pending, canceled and excluded
+  /// sessions are ignored.
   static Streak streak(Iterable<Occurrence> chronological, DateTime now) {
     var run = 0;
     var best = 0;
     for (final o in started(chronological, now)) {
+      if (o.excluded) continue;
       if (o.status.isPresent) {
         run++;
         if (run > best) best = run;

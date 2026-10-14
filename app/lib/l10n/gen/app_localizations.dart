@@ -1244,6 +1244,24 @@ abstract class AppLocalizations {
   /// **'Changed this week'**
   String get movedLabel;
 
+  /// No description provided for @countsTowardAttendance.
+  ///
+  /// In en, this message translates to:
+  /// **'Counts toward attendance'**
+  String get countsTowardAttendance;
+
+  /// No description provided for @countsTowardAttendanceOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Left out of your percentage, streak and requirements'**
+  String get countsTowardAttendanceOff;
+
+  /// No description provided for @notCountedLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Doesn\'t count toward attendance'**
+  String get notCountedLabel;
+
   /// No description provided for @canceledByHolidayHint.
   ///
   /// In en, this message translates to:

@@ -22,6 +22,7 @@ class Occurrence {
     required this.number,
     required this.notes,
     required this.recordingUrl,
+    this.excluded = false,
   });
 
   final String id;
@@ -54,6 +55,10 @@ class Occurrence {
   final String notes;
   final String? recordingUrl;
 
+  /// Doesn't count toward attendance, whatever its status: a class the
+  /// course doesn't take attendance in (e.g. the first lecture).
+  final bool excluded;
+
   DateTime get start => date.at(startMin);
   DateTime get end => date.at(endMin);
 
@@ -83,7 +88,8 @@ class Occurrence {
       other.isMoved == isMoved &&
       other.number == number &&
       other.notes == notes &&
-      other.recordingUrl == recordingUrl;
+      other.recordingUrl == recordingUrl &&
+      other.excluded == excluded;
 
   @override
   int get hashCode => Object.hash(
@@ -98,6 +104,7 @@ class Occurrence {
     number,
     notes,
     recordingUrl,
+    excluded,
   );
 
   @override

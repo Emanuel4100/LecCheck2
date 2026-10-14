@@ -138,6 +138,7 @@ extension SessionOverrideRowMapping on SessionOverrideRow {
     movedStartMin: movedStartMin,
     movedEndMin: movedEndMin,
     movedLocation: movedLocation,
+    excluded: excluded,
   );
 }
 

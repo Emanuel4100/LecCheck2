@@ -684,6 +684,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get movedLabel => 'Changed this week';
 
   @override
+  String get countsTowardAttendance => 'Counts toward attendance';
+
+  @override
+  String get countsTowardAttendanceOff =>
+      'Left out of your percentage, streak and requirements';
+
+  @override
+  String get notCountedLabel => 'Doesn\'t count toward attendance';
+
+  @override
   String get canceledByHolidayHint => 'Canceled because of a no-class day';
 
   @override
