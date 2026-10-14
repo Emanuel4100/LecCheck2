@@ -57,6 +57,14 @@
   columns on wide windows. Tapping an empty spot in Week adds a course, a meeting or a
   one-time session there. Today, Stats, the course page and the welcome screen got a
   tidy-up from a UI review.
+- **An update you can watch, course contacts, a desktop layout** (2.0.0-beta.11): the
+  update window shows what's new and then each step (download with size and speed, the
+  file check, install), and releases are signed so only LecCheck's own are installed.
+  Courses keep their lecturer and teaching assistants with email; a session can be left
+  out of attendance; canceled sessions keep their color with stripes. Desktop is denser,
+  with one-line title bars and Settings inside the sidebar, and the Linux window reopens
+  at its old size. Linux updates no longer erased the database, and the Android widget
+  opens the app again.
 
 ## Not yet verified on real hardware
 

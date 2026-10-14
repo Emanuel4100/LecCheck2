@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 2.0.0-beta.11 — 2026-10-15
 
 - **Linux: updates no longer erase your data.** LecCheck kept its database and settings
   in the folder `install.sh` installs it to, so every update deleted them and you came
