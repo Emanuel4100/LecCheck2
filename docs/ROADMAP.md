@@ -65,6 +65,10 @@
   with one-line title bars and Settings inside the sidebar, and the Linux window reopens
   at its old size. Linux updates no longer erased the database, and the Android widget
   opens the app again.
+- **Three bugs a code review found** (2.0.0-beta.12): moving a meeting to another day
+  dropped "Counts toward attendance" when the new day already had a record, so a session
+  left out of attendance counted again; a failed update drew its steps as if they had
+  finished; contact cards didn't mirror in Hebrew.
 
 ## Not yet verified on real hardware
 

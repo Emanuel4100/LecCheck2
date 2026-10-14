@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 2.0.0-beta.12 — 2026-10-15
 
 - **Moving a meeting to another day** kept the session's mark and notes but dropped
   **Counts toward attendance** when the new day already had a record, so a session left
