@@ -1474,6 +1474,38 @@ class AppLocalizationsEn extends AppLocalizations {
   String get updateInBrowser => 'Open in browser';
 
   @override
+  String updateYouHave(String version) {
+    return 'You have $version';
+  }
+
+  @override
+  String get updateStepDownload => 'Download';
+
+  @override
+  String get updateStepVerify => 'Check the file';
+
+  @override
+  String get updateStepInstall => 'Install';
+
+  @override
+  String get updateVerified => 'SHA-256 matches the signed release';
+
+  @override
+  String get updateNotVerified =>
+      'The file doesn\'t match the release, so nothing was installed.';
+
+  @override
+  String updateBytes(String done, String total) {
+    return '$done of $total';
+  }
+
+  @override
+  String get updateInstalled => 'Installed';
+
+  @override
+  String get updateOpensInstaller => 'Android\'s installer opens to finish';
+
+  @override
   String get checkForUpdates => 'Check for updates';
 
   @override

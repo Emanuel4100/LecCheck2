@@ -185,10 +185,17 @@ jobs:
       # GitHub's "latest" release links skip pre-releases, so AltStore / SideStore
       # read the source from the altstore branch, which always has the newest one.
       # update.json there tells the Android and Linux apps about new releases
-      # (with each file's SHA-256, so they can install it themselves).
+      # (with each file's SHA-256, so they can install it themselves). It's
+      # signed (update.json.sig, Ed25519): the apps ignore it otherwise.
       - name: Update the AltStore / SideStore source and update.json
         if: startsWith(github.ref, 'refs/tags/')
+        env:
+          UPDATE_SIGNING_KEY: ${{ secrets.UPDATE_SIGNING_KEY }}
         run: |
+          if [ -z "$UPDATE_SIGNING_KEY" ]; then
+            echo "::error::The UPDATE_SIGNING_KEY secret is missing: apps would ignore an unsigned update.json"
+            exit 1
+          fi
           V="${GITHUB_REF_NAME#v}"
           BUILD="$(grep -E '^version:' app/pubspec.yaml | sed 's/.*+//')"
           git config user.name "github-actions[bot]"
@@ -199,7 +206,11 @@ jobs:
           python3 scripts/update_manifest.py "$RUNNER_TEMP/altstore/update.json" "$V" "$BUILD" \
             "https://github.com/${GITHUB_REPOSITORY}" out > "$RUNNER_TEMP/update.json"
           mv "$RUNNER_TEMP/update.json" "$RUNNER_TEMP/altstore/update.json"
+          ( umask 077 && printf '%s\n' "$UPDATE_SIGNING_KEY" > "$RUNNER_TEMP/signing-key.pem" )
+          openssl pkeyutl -sign -rawin -inkey "$RUNNER_TEMP/signing-key.pem" \
+            -in "$RUNNER_TEMP/altstore/update.json" | base64 -w0 > "$RUNNER_TEMP/altstore/update.json.sig"
+          rm "$RUNNER_TEMP/signing-key.pem"
           cd "$RUNNER_TEMP/altstore"
-          git add altstore-source.json update.json
+          git add altstore-source.json update.json update.json.sig
           git commit -m "LecCheck ${GITHUB_REF_NAME}" || exit 0
           git push origin HEAD:refs/heads/altstore

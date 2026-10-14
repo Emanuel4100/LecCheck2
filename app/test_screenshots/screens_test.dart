@@ -9,17 +9,21 @@ import 'package:drift/drift.dart' show driftRuntimeOptions;
 import 'package:drift/native.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:leccheck/app/app.dart';
 import 'package:leccheck/app/providers.dart';
 import 'package:leccheck/app/router.dart';
 import 'package:leccheck/app/theme/colors.dart';
+import 'package:leccheck/app/update_controller.dart';
 import 'package:leccheck/core/db/app_database.dart';
 import 'package:leccheck/core/db/schedule_repository.dart';
 import 'package:leccheck/core/icons/lec_icons.dart';
+import 'package:leccheck/core/update/update_service.dart';
 import 'package:leccheck/domain/local_date.dart';
 import 'package:leccheck/domain/occurrence_engine.dart';
 import 'package:leccheck/domain/schedule_types.dart';
+import 'package:leccheck/features/settings/update_dialog.dart';
 import 'package:leccheck/features/tour/tour_controller.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -251,6 +255,7 @@ Future<ProviderContainer> _pumpApp(
   Size size = const Size(412, 915),
   double pixelRatio = 2.6,
   bool longNames = false,
+  List<Override> overrides = const [],
 }) async {
   tester.view.physicalSize = size * pixelRatio;
   tester.view.devicePixelRatio = pixelRatio;
@@ -277,6 +282,7 @@ Future<ProviderContainer> _pumpApp(
       sharedPrefsProvider.overrideWithValue(prefs),
       databaseProvider.overrideWithValue(db),
       minuteClockProvider.overrideWith((ref) => Stream.value(_now)),
+      ...overrides,
     ],
   );
   addTearDown(container.dispose);
@@ -415,6 +421,69 @@ void main() {
     await _shot(tester, 'desktop_meeting_dialog');
   }, variant: TargetPlatformVariant.only(TargetPlatform.linux));
 
+  // A Linux update: what's new, then the download.
+  const update = AppUpdate(
+    version: '2.0.0-beta.11',
+    build: 31,
+    notesUrl: 'https://example.com/notes',
+    linux: 'https://example.com/linux.tar.gz',
+    notes:
+        '- **Contacts**: the lecturer and teaching assistants of each course,\n'
+        '  with buttons to send them an email.\n'
+        "- **Sessions that don't count**: leave a session out of attendance,\n"
+        "  like a first lecture that isn't counted.\n"
+        '- **Canceled sessions** are striped in their course color.\n'
+        "- **Update window**: what's new, then each step of the update.",
+  );
+  const updateFile = UpdateFile('https://example.com/linux.tar.gz', 'hash');
+
+  Future<void> updateShot(
+    WidgetTester tester,
+    UpdateState state,
+    String name,
+  ) async {
+    final c = await _pumpApp(
+      tester,
+      locale: 'en',
+      mode: ThemeMode.light,
+      size: const Size(1440, 900),
+      pixelRatio: 1,
+      overrides: [updateProvider.overrideWith(() => _FixedUpdate(state))],
+    );
+    showUpdateDialog(
+      c.read(routerProvider).routerDelegate.navigatorKey.currentContext!,
+    );
+    await _settle(tester);
+    await _shot(tester, name);
+  }
+
+  testWidgets(
+    'Update window · available',
+    (tester) => updateShot(
+      tester,
+      const UpdateState(update: update, file: updateFile),
+      'desktop_update_available',
+    ),
+    variant: TargetPlatformVariant.only(TargetPlatform.linux),
+  );
+
+  testWidgets(
+    'Update window · downloading',
+    (tester) => updateShot(
+      tester,
+      const UpdateState(
+        update: update,
+        file: updateFile,
+        phase: UpdatePhase.downloading,
+        received: 18400000,
+        total: 31200000,
+        bytesPerSecond: 4300000,
+      ),
+      'desktop_update_progress',
+    ),
+    variant: TargetPlatformVariant.only(TargetPlatform.linux),
+  );
+
   testWidgets('iPhone · English · light', (tester) async {
     final c = await _pumpApp(tester, locale: 'en', mode: ThemeMode.light);
     await _go(tester, c, '/settings');
@@ -514,4 +583,14 @@ void main() {
     await _go(tester, container, '/semester');
     await _shot(tester, 'en_light_semester_form');
   });
+}
+
+/// A fixed update state instead of checking GitHub.
+class _FixedUpdate extends UpdateController {
+  _FixedUpdate(this.fixed);
+
+  final UpdateState fixed;
+
+  @override
+  UpdateState build() => fixed;
 }

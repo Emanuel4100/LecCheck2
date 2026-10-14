@@ -1466,6 +1466,37 @@ class AppLocalizationsHe extends AppLocalizations {
   String get updateInBrowser => 'פתיחה בדפדפן';
 
   @override
+  String updateYouHave(String version) {
+    return 'הגרסה שלך: $version';
+  }
+
+  @override
+  String get updateStepDownload => 'הורדה';
+
+  @override
+  String get updateStepVerify => 'בדיקת הקובץ';
+
+  @override
+  String get updateStepInstall => 'התקנה';
+
+  @override
+  String get updateVerified => 'ה-SHA-256 תואם לגרסה החתומה';
+
+  @override
+  String get updateNotVerified => 'הקובץ לא תואם לגרסה, ולכן שום דבר לא הותקן.';
+
+  @override
+  String updateBytes(String done, String total) {
+    return '$done מתוך $total';
+  }
+
+  @override
+  String get updateInstalled => 'הותקן';
+
+  @override
+  String get updateOpensInstaller => 'המתקין של Android ייפתח כדי לסיים';
+
+  @override
   String get checkForUpdates => 'בדיקת עדכונים';
 
   @override

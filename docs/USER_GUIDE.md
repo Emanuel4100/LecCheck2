@@ -187,12 +187,17 @@ useful, like "class starts soon" for a class already under way, are skipped).
 ## Updates
 
 On Android and Linux, LecCheck checks for a new version once a day. When there is one,
-**LecCheck X is available** appears at the top of Settings and once on Today:
+the **update window** opens when you start LecCheck, with what's new in it, and
+**LecCheck X is available** appears at the top of Settings (and on Today, until **Later**).
+**Later** asks again the next time you start LecCheck.
 
-- **Update** downloads it for your device, with a progress bar (**Cancel** stops it).
-  On Android, the system then asks you to confirm the update; the first time, allow
-  LecCheck to install apps. On Linux it installs itself, and **Restart** starts the new
-  version. Your data stays.
+- **Update** shows each step in the window: the download (size and speed; **Cancel**
+  stops it), the check that the file is exactly the one released (its SHA-256 must match
+  the signed list of releases), then the install. On Android, the system then asks you to
+  confirm the update; the first time, allow LecCheck to install apps. On Linux it
+  installs itself, and **Restart** starts the new version. Your data stays.
+- LecCheck only offers releases from a list signed by the release build, so a changed
+  list or file is never installed.
 - **Download** appears instead for releases before 2.0.0-beta.8, and on Linux when
   LecCheck wasn't installed with `./install.sh`: it gets the right file in the browser
   (on Linux, extract it and run `./install.sh` again).

@@ -7,6 +7,7 @@ import '../../app/update_controller.dart';
 import '../../core/icons/lec_icons.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../session/session_actions.dart';
+import 'update_dialog.dart';
 
 /// "LecCheck X is available", at the top of Settings and, until "Later", of
 /// Today. Update downloads and installs it (Android, and Linux installed by
@@ -94,7 +95,10 @@ class UpdateCard extends ConsumerWidget {
                       whatsNew,
                       if (state.file != null)
                         FilledButton(
-                          onPressed: controller.install,
+                          onPressed: () {
+                            controller.install();
+                            showUpdateDialog(context);
+                          },
                           child: Text(l.updateInstall),
                         )
                       else
@@ -109,8 +113,17 @@ class UpdateCard extends ConsumerWidget {
                         onPressed: controller.cancel,
                         child: Text(l.cancel),
                       ),
+                      TextButton(
+                        onPressed: () => showUpdateDialog(context),
+                        child: Text(l.details),
+                      ),
                     ],
-                    UpdatePhase.installing => const [],
+                    UpdatePhase.installing => [
+                      TextButton(
+                        onPressed: () => showUpdateDialog(context),
+                        child: Text(l.details),
+                      ),
+                    ],
                     UpdatePhase.downloaded => [
                       whatsNew,
                       FilledButton(

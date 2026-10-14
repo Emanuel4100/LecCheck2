@@ -2528,6 +2528,60 @@ abstract class AppLocalizations {
   /// **'Open in browser'**
   String get updateInBrowser;
 
+  /// No description provided for @updateYouHave.
+  ///
+  /// In en, this message translates to:
+  /// **'You have {version}'**
+  String updateYouHave(String version);
+
+  /// No description provided for @updateStepDownload.
+  ///
+  /// In en, this message translates to:
+  /// **'Download'**
+  String get updateStepDownload;
+
+  /// No description provided for @updateStepVerify.
+  ///
+  /// In en, this message translates to:
+  /// **'Check the file'**
+  String get updateStepVerify;
+
+  /// No description provided for @updateStepInstall.
+  ///
+  /// In en, this message translates to:
+  /// **'Install'**
+  String get updateStepInstall;
+
+  /// No description provided for @updateVerified.
+  ///
+  /// In en, this message translates to:
+  /// **'SHA-256 matches the signed release'**
+  String get updateVerified;
+
+  /// No description provided for @updateNotVerified.
+  ///
+  /// In en, this message translates to:
+  /// **'The file doesn\'t match the release, so nothing was installed.'**
+  String get updateNotVerified;
+
+  /// No description provided for @updateBytes.
+  ///
+  /// In en, this message translates to:
+  /// **'{done} of {total}'**
+  String updateBytes(String done, String total);
+
+  /// No description provided for @updateInstalled.
+  ///
+  /// In en, this message translates to:
+  /// **'Installed'**
+  String get updateInstalled;
+
+  /// No description provided for @updateOpensInstaller.
+  ///
+  /// In en, this message translates to:
+  /// **'Android\'s installer opens to finish'**
+  String get updateOpensInstaller;
+
   /// No description provided for @checkForUpdates.
   ///
   /// In en, this message translates to:

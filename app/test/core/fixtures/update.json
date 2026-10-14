@@ -1,0 +1,12 @@
+{
+  "beta": {
+    "version": "2.0.0-beta.10",
+    "build": 30,
+    "date": "2026-10-15",
+    "notesUrl": "https://github.com/Emanuel4100/LecCheck2/releases/tag/v2.0.0-beta.10",
+    "notes": "- **A roomier course editor**. Meetings are one line each (\"Lecture \u00b7 Sunday,\n  10:00\u201312:00 \u00b7 201\") and open in a sheet (a dialog on wide screens) where the type and\n  how it repeats are menus, and the length shows under the end time. A new meeting can be\n  on several days at once. Short name, code and lecturer wait behind **+** chips, the\n  color is a dot in the name field, and the attendance requirement, notes and links fold\n  into rows. Wide windows get two columns.\n- **Add from Week**: tap an empty spot to add a new course, a meeting of a course, or a\n  one-time session there, with the day and time filled in. The grid always shows at\n  least 8:00\u201318:00 so there's room to tap.\n- **Course page**: sessions are listed by type (\"Lecture #3\") instead of repeating the\n  course name, and on phones **Add one-time session** moved to the app bar instead of\n  covering the list. Meetings that start mid-semester or every other week from week 2\n  now say so.\n- **Today**: the class in progress is marked from the Now card only, not listed again\n  under Needs marking. Session rows no longer break mid-detail: the type and day (and\n  the time when it fits) come first, then the room after a pin. The swipe hint goes away\n  once you've swiped, and classes that haven't started yet don't show the \"to mark\"\n  circle.\n- **Stats**: the weekly chart shows each week's percentage and labels its lines (0%,\n  50%, 100%); the attendance card says it briefly, with the full rule behind an \u24d8\n  button.\n- **Welcome**: the language switch moved to the top corner.",
+    "androidArm64": "https://github.com/Emanuel4100/LecCheck2/releases/download/v2.0.0-beta.10/LecCheck-2.0.0-beta.10-android-arm64.apk",
+    "androidUniversal": "https://github.com/Emanuel4100/LecCheck2/releases/download/v2.0.0-beta.10/LecCheck-2.0.0-beta.10-android.apk",
+    "linux": "https://github.com/Emanuel4100/LecCheck2/releases/download/v2.0.0-beta.10/LecCheck-2.0.0-beta.10-linux-x64.tar.gz"
+  }
+}

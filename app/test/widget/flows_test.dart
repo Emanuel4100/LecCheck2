@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:cryptography/cryptography.dart';
 import 'package:drift/drift.dart' show driftRuntimeOptions;
 import 'package:drift/native.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -13,6 +14,7 @@ import 'package:leccheck/app/sync_providers.dart';
 import 'package:leccheck/app/update_controller.dart';
 import 'package:leccheck/core/db/app_database.dart';
 import 'package:leccheck/core/db/schedule_repository.dart';
+import 'package:leccheck/core/update/update_service.dart';
 import 'package:leccheck/core/icons/lec_icons.dart';
 import 'package:leccheck/domain/local_date.dart';
 import 'package:leccheck/domain/schedule_types.dart';
@@ -273,19 +275,32 @@ void main() {
           buildSignature: '',
         ),
       );
+      final manifest = jsonEncode({
+        'beta': {
+          'version': '2.0.0-beta.$offered',
+          'build': offered + 8,
+          'notesUrl': 'https://example.com/notes',
+        },
+      });
+      // Signed with a throwaway key standing in for the release workflow's.
+      final realKey = updatePublicKey;
+      final signature = await tester.runAsync(() async {
+        final keys = await Ed25519().newKeyPair();
+        updatePublicKey = base64.encode((await keys.extractPublicKey()).bytes);
+        return base64.encode(
+          (await Ed25519().sign(utf8.encode(manifest), keyPair: keys)).bytes,
+        );
+      });
       UpdateController.client = () => MockClient(
-        (_) async => http.Response(
-          jsonEncode({
-            'beta': {
-              'version': '2.0.0-beta.$offered',
-              'build': offered + 8,
-              'notesUrl': 'https://example.com/notes',
-            },
-          }),
+        (request) async => http.Response(
+          request.url.path.endsWith('.sig') ? signature! : manifest,
           200,
         ),
       );
-      addTearDown(() => UpdateController.client = http.Client.new);
+      addTearDown(() {
+        UpdateController.client = http.Client.new;
+        updatePublicKey = realKey;
+      });
       final (container, _) = await _start(tester);
       container.read(routerProvider).push('/settings');
       await _settle(tester);

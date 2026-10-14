@@ -9,12 +9,14 @@ import 'app/app.dart';
 import 'app/background_reminders.dart';
 import 'app/notification_controller.dart';
 import 'app/providers.dart';
+import 'app/router.dart';
 import 'app/update_controller.dart';
 import 'app/widget_controller.dart';
 import 'core/dev/dev_log.dart';
 import 'core/dev/frame_stats.dart';
 import 'core/report/report_sender.dart';
 import 'features/settings/report_page.dart';
+import 'features/settings/update_dialog.dart';
 
 /// Startup does only local work: read preferences, then show UI. The
 /// database opens on its own isolate; notifications are set up after the
@@ -67,7 +69,18 @@ void _dailySnapshots(ProviderContainer container) {
 /// to report an error the previous session ended with.
 void _updateChecks(ProviderContainer container) {
   void check() {
-    container.read(updateProvider.notifier).check();
+    final updates = container.read(updateProvider.notifier);
+    updates.check().then((_) {
+      // Once per launch while an update waits: the update window.
+      final context = container
+          .read(routerProvider)
+          .routerDelegate
+          .navigatorKey
+          .currentContext;
+      if (context != null && context.mounted && updates.takePrompt()) {
+        showUpdateDialog(context);
+      }
+    });
     if (ReportSender.available) {
       container.read(reportSenderProvider).flush().catchError((Object e) {
         debugPrint('Queued reports not sent: $e');

@@ -84,6 +84,7 @@ Repository **Settings → Secrets and variables → Actions**:
 | Secret | `CLOUDFLARE_API_TOKEN` | Cloudflare → My Profile → API Tokens → "Edit Cloudflare Workers" template, limited to your account |
 | Secret | `CLOUDFLARE_ACCOUNT_ID` | Cloudflare dashboard → Workers → Account ID |
 | Secret | `HEALTH_TOKEN` | a random value, also set on the Worker (below) |
+| Secret | `UPDATE_SIGNING_KEY` | the update signing key (below): the apps ignore an unsigned `update.json` |
 
 The deploy workflow checks the live server with `HEALTH_TOKEN`. Create it once, set it
 on both sides without printing it, then delete the file:
@@ -118,6 +119,20 @@ keytool -genkey -v -keystore release.jks -alias leccheck -keyalg RSA -keysize 40
 
 **Back up `release.jks` and its passwords.** Updates for installed apps must
 be signed with the same key.
+
+The update signing key signs `update.json`, the list of releases the Android and Linux
+apps update from. Create it once, put its public half in
+`app/lib/core/update/update_service.dart` (`updatePublicKey`), and the key itself in the
+secret:
+
+```bash
+(umask 077 && openssl genpkey -algorithm ed25519 -out update-signing-key.pem)
+openssl pkey -in update-signing-key.pem -pubout -outform DER | tail -c 32 | base64
+gh secret set UPDATE_SIGNING_KEY < update-signing-key.pem
+```
+
+**Back it up too.** Without it, installed apps can't be told about new releases; a new
+key needs a release that apps install by hand.
 
 ## 5. Releasing
 

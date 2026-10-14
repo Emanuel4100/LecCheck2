@@ -17,6 +17,11 @@ class UpdateFailed implements Exception {
   String toString() => 'Update failed: $message';
 }
 
+/// A download that arrived whole but isn't the file the manifest names.
+class UpdateNotVerified extends UpdateFailed {
+  const UpdateNotVerified(super.message);
+}
+
 /// Where updates are downloaded: `cache/updates`, the folder Android's
 /// FileProvider shares with the installer (res/xml/update_paths.xml).
 Future<Directory> updatesDirectory() async =>
@@ -34,7 +39,8 @@ Future<void> clearUpdates(Directory dir) async {
 
 /// Downloads [url] to [dest], checking it against [sha256] (hex) as it
 /// arrives. It's written to `dest.part` first, so [dest] only ever holds a
-/// whole, verified file. [onProgress] gets 0–1 when the size is known.
+/// whole, verified file. [onProgress] gets the bytes received so far and
+/// the total, when the server says it.
 ///
 /// Throws [UpdateFailed], also when [client] is closed meanwhile (Cancel)
 /// or nothing arrives for 30 seconds.
@@ -43,7 +49,7 @@ Future<void> downloadUpdate(
   Uri url,
   String sha256,
   File dest, {
-  void Function(double fraction)? onProgress,
+  void Function(int received, int? total)? onProgress,
 }) async {
   if (url.scheme != 'https') throw UpdateFailed('Not https: $url');
   const stalled = Duration(seconds: 30);
@@ -57,7 +63,10 @@ Future<void> downloadUpdate(
     if (response.statusCode != 200) {
       throw UpdateFailed('HTTP ${response.statusCode} for $url');
     }
-    final total = response.contentLength;
+    final total = switch (response.contentLength) {
+      final int n when n > 0 => n,
+      _ => null,
+    };
     final digest = _DigestSink();
     final hasher = crypto.sha256.startChunkedConversion(digest);
     sink = part.openWrite();
@@ -66,16 +75,15 @@ Future<void> downloadUpdate(
       hasher.add(chunk);
       sink.add(chunk);
       received += chunk.length;
-      if (total != null && total > 0) onProgress?.call(received / total);
+      onProgress?.call(received, total);
     }
     await sink.close();
     sink = null;
     hasher.close();
     if (digest.value.toString() != sha256.toLowerCase()) {
-      throw UpdateFailed('SHA-256 mismatch for $url');
+      throw UpdateNotVerified('SHA-256 mismatch for $url');
     }
     await part.rename(dest.path);
-    onProgress?.call(1);
   } on Object catch (e) {
     await sink?.close().catchError((Object _) {});
     if (await part.exists()) await part.delete();

@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:cryptography/cryptography.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
@@ -15,6 +16,7 @@ class AppUpdate {
     this.androidUniversal,
     this.linux,
     this.sha256 = const {},
+    this.notes = '',
   });
 
   static const _files = ['androidArm64', 'androidUniversal', 'linux'];
@@ -47,6 +49,7 @@ class AppUpdate {
       androidUniversal: _https(json['androidUniversal']),
       linux: _https(json['linux']),
       sha256: sha256,
+      notes: json['notes'] is String ? json['notes']! as String : '',
     );
   }
 
@@ -66,6 +69,10 @@ class AppUpdate {
 
   /// The release page ("What's new").
   final String notesUrl;
+
+  /// What's new, from the changelog (Markdown: `- ` items, `**bold**`).
+  /// Empty for releases before 2.0.0-beta.11.
+  final String notes;
   final String? androidArm64;
   final String? androidUniversal;
   final String? linux;
@@ -111,6 +118,7 @@ class AppUpdate {
       other.androidArm64 == androidArm64 &&
       other.androidUniversal == androidUniversal &&
       other.linux == linux &&
+      other.notes == notes &&
       mapEquals(other.sha256, sha256);
 
   @override
@@ -121,6 +129,7 @@ class AppUpdate {
     androidArm64,
     androidUniversal,
     linux,
+    notes,
     Object.hashAllUnordered(
       sha256.entries.map((e) => Object.hash(e.key, e.value)),
     ),
@@ -169,15 +178,67 @@ const updateManifestUrl = String.fromEnvironment(
   defaultValue: 'https://raw.githubusercontent.com/Emanuel4100/LecCheck2/altstore/update.json',
 );
 
-/// Downloads the manifest; null on any failure (offline, GitHub down, a
-/// broken file): an update check never shows an error.
-Future<Object?> fetchUpdateManifest(http.Client client) async {
-  try {
+/// The manifest as published, with its signature: `update.json` and
+/// `update.json.sig` (Ed25519 over the file's exact bytes, base64), made by
+/// the release workflow with the key whose public half is
+/// [updatePublicKey].
+@immutable
+class SignedManifest {
+  const SignedManifest(this.text, this.signature);
+
+  final String text;
+  final String signature;
+
+  /// The manifest, or null when the signature doesn't match: it wasn't made
+  /// by LecCheck's release workflow (or got damaged), so nothing in it is
+  /// offered.
+  Future<Object?> verified() async {
+    try {
+      final ok = await Ed25519().verify(
+        utf8.encode(text),
+        signature: Signature(
+          base64.decode(signature.trim()),
+          publicKey: SimplePublicKey(
+            base64.decode(updatePublicKey),
+            type: KeyPairType.ed25519,
+          ),
+        ),
+      );
+      if (!ok) {
+        debugPrint('Update manifest: signature mismatch');
+        return null;
+      }
+      return jsonDecode(text);
+    } on Object catch (e) {
+      debugPrint('Update manifest not readable: $e');
+      return null;
+    }
+  }
+}
+
+/// The release workflow's update signing key (public half, raw, base64);
+/// replaced in tests.
+@visibleForTesting
+String updatePublicKey = 'QWUdxjAue0DGsma4sZYPduMePmsHDQwXjq+LwisWn1U=';
+
+/// Downloads the manifest and its signature; null on any failure (offline,
+/// GitHub down): an update check never shows an error.
+Future<SignedManifest?> fetchUpdateManifest(http.Client client) async {
+  Future<String?> get(String url) async {
     final response = await client
-        .get(Uri.parse(updateManifestUrl))
+        .get(Uri.parse(url))
         .timeout(const Duration(seconds: 10));
-    if (response.statusCode != 200) return null;
-    return jsonDecode(response.body);
+    // The exact bytes (as UTF-8, which round-trips them): what was signed.
+    return response.statusCode == 200 ? utf8.decode(response.bodyBytes) : null;
+  }
+
+  try {
+    final (text, signature) = await (
+      get(updateManifestUrl),
+      get('$updateManifestUrl.sig'),
+    ).wait;
+    if (text == null || signature == null) return null;
+    return SignedManifest(text, signature);
   } on Object catch (e) {
     debugPrint('Update check failed: $e');
     return null;

@@ -713,6 +713,32 @@
   "updateRestartHint": "Installed. Restart LecCheck to use the new version.",
   "updateFailed": "Couldn't update. Try again, or download it in the browser.",
   "updateInBrowser": "Open in browser",
+  "updateYouHave": "You have {version}",
+  "@updateYouHave": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "updateStepDownload": "Download",
+  "updateStepVerify": "Check the file",
+  "updateStepInstall": "Install",
+  "updateVerified": "SHA-256 matches the signed release",
+  "updateNotVerified": "The file doesn't match the release, so nothing was installed.",
+  "updateBytes": "{done} of {total}",
+  "@updateBytes": {
+    "placeholders": {
+      "done": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "updateInstalled": "Installed",
+  "updateOpensInstaller": "Android's installer opens to finish",
   "checkForUpdates": "Check for updates",
   "checkForUpdatesSubtitle": "Once a day, from GitHub",
   "checkNow": "Check now",

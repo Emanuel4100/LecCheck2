@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:crypto/crypto.dart' show sha256;
+import 'package:cryptography/cryptography.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -47,8 +48,64 @@ final _manifest = {
   'beta': _entry('2.0.1-beta.1', 21),
 };
 
+/// A throwaway key standing in for the release workflow's.
+late SimpleKeyPair _keys;
+
+Future<String> _sign(String text) async => base64.encode(
+  (await Ed25519().sign(utf8.encode(text), keyPair: _keys)).bytes,
+);
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+
+  final realKey = updatePublicKey;
+  setUpAll(() async {
+    _keys = await Ed25519().newKeyPair();
+    updatePublicKey = base64.encode((await _keys.extractPublicKey()).bytes);
+  });
+  tearDownAll(() => updatePublicKey = realKey);
+
+  group('signed manifest', () {
+    test('accepts what the release workflow (OpenSSL) signs', () async {
+      // fixtures/update.json: made by scripts/update_manifest.py, signed with
+      // `openssl pkeyutl -sign -rawin` and a test key (public half below).
+      final text = File('test/core/fixtures/update.json').readAsStringSync();
+      final signature = File('test/core/fixtures/update.json.sig')
+          .readAsStringSync();
+      updatePublicKey = 'iWVsuoMHU5Piz3qMQM83Jk9r1/zv2PO+/0fgV5Ugoa8=';
+      addTearDown(
+        () async => updatePublicKey = base64.encode(
+          (await _keys.extractPublicKey()).bytes,
+        ),
+      );
+      final manifest = await SignedManifest(text, signature).verified();
+      final update = pickUpdate(
+        manifest,
+        installedVersion: '2.0.0-beta.9',
+        build: 29,
+      );
+      expect(update?.version, '2.0.0-beta.10');
+      // The changelog section, for the update window.
+      expect(update?.notes, startsWith('- **A roomier course editor**.'));
+
+      // One changed character, and nothing is offered.
+      final tampered = text.replaceFirst('"build": 30', '"build": 31');
+      expect(await SignedManifest(tampered, signature).verified(), isNull);
+      expect(await SignedManifest(text, 'not base64!').verified(), isNull);
+    });
+
+    test('signed by another key: refused', () async {
+      final other = await Ed25519().newKeyPair();
+      const text = '{"beta": {}}';
+      final signature = base64.encode(
+        (await Ed25519().sign(utf8.encode(text), keyPair: other)).bytes,
+      );
+      expect(await SignedManifest(text, signature).verified(), isNull);
+      expect(await SignedManifest(text, await _sign(text)).verified(), {
+        'beta': <String, Object?>{},
+      });
+    });
+  });
 
   group('pickUpdate', () {
     test('betas follow the beta channel, stable versions stable', () {
@@ -183,7 +240,7 @@ void main() {
         );
 
     test('saves the verified file and reports progress', () async {
-      final progress = <double>[];
+      final progress = <(int, int?)>[];
       await downloadUpdate(
         streaming(
           Stream.fromIterable([_apk.sublist(0, 30000), _apk.sublist(30000)]),
@@ -191,11 +248,10 @@ void main() {
         Uri.parse('https://example.com/a.apk'),
         hash.toUpperCase(),
         dest,
-        onProgress: progress.add,
+        onProgress: (received, total) => progress.add((received, total)),
       );
       expect(await dest.readAsBytes(), _apk);
-      expect(progress.first, closeTo(30000 / 70000, 1e-9));
-      expect(progress.last, 1);
+      expect(progress, [(30000, 70000), (70000, 70000)]);
       expect(File('${dest.path}.part').existsSync(), isFalse);
     });
 
@@ -290,6 +346,16 @@ void main() {
     late int requests;
     late Object? served;
 
+    /// update.json (counted in [requests]) or its signature.
+    Future<http.Response> manifestResponse(Uri url) async {
+      final text = served is String ? served! as String : jsonEncode(served);
+      if (url.path.endsWith('.sig')) {
+        return http.Response(await _sign(text), 200);
+      }
+      requests++;
+      return http.Response(text, 200);
+    }
+
     setUp(() async {
       SharedPreferencesAsyncPlatform.instance =
           InMemorySharedPreferencesAsync.empty();
@@ -302,10 +368,7 @@ void main() {
         final path = request.url.path;
         if (path.endsWith('.apk')) return http.Response.bytes(_apk, 200);
         if (path.endsWith('.tar.gz')) return http.Response.bytes(_tarball, 200);
-        requests++;
-        return served is String
-            ? http.Response(served! as String, 200)
-            : http.Response(jsonEncode(served), 200);
+        return manifestResponse(request.url);
       });
       PackageInfo.setMockInitialValues(
         appName: 'LecCheck',
@@ -357,6 +420,49 @@ void main() {
       // The next day: asks again.
       await controller.check(now: morning.add(const Duration(days: 1)));
       expect(requests, 2);
+    });
+
+    test('only a manifest with a matching signature counts', () async {
+      UpdateController.client = () => MockClient((request) async {
+        if (request.url.path.endsWith('.sig')) {
+          return http.Response(await _sign('something else'), 200);
+        }
+        requests++;
+        return http.Response(jsonEncode(_manifest), 200);
+      });
+      final c = container();
+      expect(await c.read(updateProvider.notifier).check(now: morning), isNull);
+      expect(c.read(updateProvider).update, isNull);
+    });
+
+    test('a manifest kept by an older version is checked again', () async {
+      // 2.0.0-beta.10 kept the manifest without a signature.
+      await prefs.setString('update.manifest', jsonEncode(_manifest));
+      await prefs.setInt('update.checkedAt', morning.millisecondsSinceEpoch);
+      final c = container();
+      await c.read(updateProvider.notifier).check(now: morning);
+      expect(requests, 1, reason: 'fetched, though checked today');
+      expect(c.read(updateProvider).update?.version, '2.0.1-beta.1');
+    });
+
+    test('the update window opens by itself once per launch', () async {
+      final c = container();
+      final controller = c.read(updateProvider.notifier);
+      expect(controller.takePrompt(), isFalse, reason: 'nothing found yet');
+      await controller.check(now: morning);
+      expect(controller.takePrompt(), isTrue);
+      await controller.check(now: morning);
+      expect(controller.takePrompt(), isFalse);
+
+      // "Later" doesn't stop it on the next launch; "Skip" does.
+      await controller.later();
+      final next = container().read(updateProvider.notifier);
+      await next.check(now: morning);
+      expect(next.takePrompt(), isTrue);
+      await next.skip();
+      final after = container().read(updateProvider.notifier);
+      await after.check(now: morning);
+      expect(after.takePrompt(), isFalse);
     });
 
     test('"Skip this version" hides it until a newer one', () async {
@@ -490,26 +596,27 @@ void main() {
         await controller.check(now: morning);
         await controller.install();
         expect(c.read(updateProvider).phase, UpdatePhase.failed);
+        expect(c.read(updateProvider).failedStep, UpdateStep.verify);
         expect(opened, isFalse);
         expect(File('${dir.path}/u/update.apk').existsSync(), isFalse);
       });
 
       test('Cancel stops the download', () async {
         final body = StreamController<List<int>>();
-        UpdateController.client = () =>
-            MockClient.streaming((request, _) async {
-              if (!request.url.path.endsWith('.apk')) {
-                return http.StreamedResponse(
-                  Stream.value(utf8.encode(jsonEncode(served))),
-                  200,
-                );
-              }
-              return http.StreamedResponse(
-                body.stream,
-                200,
-                contentLength: _apk.length,
-              );
-            });
+        UpdateController.client = () => MockClient.streaming((
+          request,
+          _,
+        ) async {
+          if (!request.url.path.endsWith('.apk')) {
+            final response = await manifestResponse(request.url);
+            return http.StreamedResponse(Stream.value(response.bodyBytes), 200);
+          }
+          return http.StreamedResponse(
+            body.stream,
+            200,
+            contentLength: _apk.length,
+          );
+        });
         final c = container();
         final controller = c.read(updateProvider.notifier);
         await controller.check(now: morning);
