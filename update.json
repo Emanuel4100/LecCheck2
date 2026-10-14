@@ -1,17 +1,17 @@
 {
   "beta": {
-    "version": "2.0.0-beta.11",
-    "build": 19,
+    "version": "2.0.0-beta.12",
+    "build": 20,
     "date": "2026-10-14",
-    "notesUrl": "https://github.com/Emanuel4100/LecCheck2/releases/tag/v2.0.0-beta.11",
-    "notes": "- **Linux: updates no longer erase your data.** LecCheck kept its database and settings\n  in the folder `install.sh` installs it to, so every update deleted them and you came\n  back signed out with an empty schedule. Data now lives in\n  `~/.local/share/com.leccheck.app`, and the next update moves it there first.\n- **Android: opening LecCheck from the home-screen widget** no longer shows an error\n  (\"no routes for location\").\n- **Update window**: when a new version is out, a window opens at launch with what's new,\n  and **Update** shows each step there: the download with its size and speed, the check\n  that the file is exactly the released one, then the install and **Restart**. **Later**\n  asks again next time; **Skip this version** waits for the next one. Updates are now\n  signed: LecCheck only installs releases from a list signed by the release build.\n- **Contacts**: a course has its lecturer and teaching assistants, each with a name, role\n  and email, edited in a **Contacts** row of the course editor. The course page lists them\n  with buttons to send an email or copy the address. A course's lecturer becomes its first\n  contact.\n- **Sessions that don't count**: turn off **Counts toward attendance** on a session (in\n  its details, or right-click) when the course doesn't take attendance in it, like a first\n  lecture. It keeps its status but is left out of the percentage, the streak and the\n  requirement, so 80% of 10 lectures becomes 80% of 9.\n- **Canceled sessions** keep their course color with diagonal stripes, instead of turning\n  gray, and have their own color in status icons.\n- **Desktop**: a denser layout with smaller corners, one-line title bars and a regular\n  **Add** button; **Settings** keeps the sidebar, so the tabs are one click away. On Linux\n  the window reopens at the size you left it, maximized if it was.",
-    "androidArm64": "https://github.com/Emanuel4100/LecCheck2/releases/download/v2.0.0-beta.11/LecCheck-2.0.0-beta.11-android-arm64.apk",
-    "androidUniversal": "https://github.com/Emanuel4100/LecCheck2/releases/download/v2.0.0-beta.11/LecCheck-2.0.0-beta.11-android.apk",
-    "linux": "https://github.com/Emanuel4100/LecCheck2/releases/download/v2.0.0-beta.11/LecCheck-2.0.0-beta.11-linux-x64.tar.gz",
+    "notesUrl": "https://github.com/Emanuel4100/LecCheck2/releases/tag/v2.0.0-beta.12",
+    "notes": "- **Moving a meeting to another day** kept the session's mark and notes but dropped\n  **Counts toward attendance** when the new day already had a record, so a session left\n  out quietly counted again.\n- A failed update no longer draws its steps as if everything had finished.\n- Contact cards in the course editor line up in Hebrew.",
+    "androidArm64": "https://github.com/Emanuel4100/LecCheck2/releases/download/v2.0.0-beta.12/LecCheck-2.0.0-beta.12-android-arm64.apk",
+    "androidUniversal": "https://github.com/Emanuel4100/LecCheck2/releases/download/v2.0.0-beta.12/LecCheck-2.0.0-beta.12-android.apk",
+    "linux": "https://github.com/Emanuel4100/LecCheck2/releases/download/v2.0.0-beta.12/LecCheck-2.0.0-beta.12-linux-x64.tar.gz",
     "sha256": {
-      "androidArm64": "3af5120db6c62b36f87b52da11c276de518b952b87c28e13d768dad7ebb93979",
-      "androidUniversal": "d1caf765ad11ab295a93dfc0ab2921f94e7254792a772007a084edf885b92fd8",
-      "linux": "f6a23748e6b346c88faa40fae834a849b59c2deb8263c7c3c2a8adb0c91428f7"
+      "androidArm64": "53a25888ac21778b7315f06ead7ac2109a724ed342a5520dc586a4a4849319e7",
+      "androidUniversal": "ba1b88cf8b88edcf439f794d9824e3a6e57ee5cc5d0e392936da6ffec9ef97ed",
+      "linux": "4ed553d9fe97cd28b6e6150768954b3469959e49b4107c4d2557e432d958c34d"
     }
   }
 }
