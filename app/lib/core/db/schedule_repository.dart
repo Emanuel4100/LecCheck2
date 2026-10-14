@@ -224,7 +224,7 @@ class ScheduleRepository {
   late final _courses = _Adapter<CourseRow>(
     db.courses,
     CourseRow.fromJson,
-    added: const {'shortName': ''},
+    added: const {'shortName': '', 'contacts': '[]'},
   );
   late final _meetings = _Adapter<MeetingRow>(db.meetings, MeetingRow.fromJson);
   late final _overrides = _Adapter<SessionOverrideRow>(

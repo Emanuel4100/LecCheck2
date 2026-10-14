@@ -711,11 +711,12 @@ void main() {
     });
   });
 
-  group('short names (database v3)', () {
+  group('short names and contacts (database v3, v5)', () {
     // A course as v2.0.0-beta.3 and older store and send it.
     Map<String, Object?> older(String id, String name) =>
         _row(CourseInfo(id: id, semesterId: 'sem', name: name).toRow())
-          ..remove('shortName');
+          ..remove('shortName')
+          ..remove('contacts');
 
     test('courses saved by older app versions still load', () async {
       // Synced from a device that doesn't know short names yet,
@@ -727,6 +728,7 @@ void main() {
         'courses': [older('c3', 'Chemistry')],
       });
       expect((await courseRow('c2')).shortName, '');
+      expect((await courseRow('c2')).contacts, '[]');
       expect((await courseRow('c3')).name, 'Chemistry');
       // and in an automatic backup taken before the update.
       final snapshot = await repo.exportRows(includeDeleted: true);
@@ -738,7 +740,10 @@ void main() {
       await repo.restoreAll({
         ...snapshot,
         'courses': [
-          for (final c in snapshot['courses']!) {...c}..remove('shortName'),
+          for (final c in snapshot['courses']!)
+            {...c}
+              ..remove('shortName')
+              ..remove('contacts'),
         ],
       });
       expect((await courseRow('c1')).name, 'Calculus');

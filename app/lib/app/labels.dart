@@ -21,6 +21,14 @@ extension SessionTypeLabels on SessionType {
   };
 }
 
+extension ContactRoleLabels on ContactRole {
+  String label(AppLocalizations l) => switch (this) {
+    ContactRole.lecturer => l.lecturer,
+    ContactRole.assistant => l.roleAssistant,
+    ContactRole.other => l.typeOther,
+  };
+}
+
 extension StatusLabels on AttendanceStatus {
   String label(AppLocalizations l) => switch (this) {
     AttendanceStatus.pending => l.statusPending,

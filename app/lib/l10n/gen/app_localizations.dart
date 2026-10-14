@@ -800,6 +800,66 @@ abstract class AppLocalizations {
   /// **'Lecturer'**
   String get lecturer;
 
+  /// No description provided for @contactsSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Contacts'**
+  String get contactsSection;
+
+  /// No description provided for @contactsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Lecturers and teaching assistants, with their email.'**
+  String get contactsHint;
+
+  /// No description provided for @contactName.
+  ///
+  /// In en, this message translates to:
+  /// **'Name'**
+  String get contactName;
+
+  /// No description provided for @contactEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'Email'**
+  String get contactEmail;
+
+  /// No description provided for @contactEmailInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Check this address'**
+  String get contactEmailInvalid;
+
+  /// No description provided for @addContact.
+  ///
+  /// In en, this message translates to:
+  /// **'Add contact'**
+  String get addContact;
+
+  /// No description provided for @roleAssistant.
+  ///
+  /// In en, this message translates to:
+  /// **'Teaching assistant'**
+  String get roleAssistant;
+
+  /// No description provided for @sendEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'Send email'**
+  String get sendEmail;
+
+  /// No description provided for @copyEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy email'**
+  String get copyEmail;
+
+  /// No description provided for @emailCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Email copied'**
+  String get emailCopied;
+
   /// No description provided for @courseCode.
   ///
   /// In en, this message translates to:

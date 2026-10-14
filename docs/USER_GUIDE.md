@@ -20,7 +20,7 @@ Open **Courses → +** (or the button on an empty Today screen), or tap an empty
 **Week** (see below).
 
 - **Course info** — the name, with its color as a dot at the end of the name field (tap
-  it for the palette). **Short name**, **Course code** and **Lecturer** wait behind
+  it for the palette). **Short name** and **Course code** wait behind
   **+** chips until you need them. The short name (e.g. "Calc 1") is shown in the Week
   view when the full name doesn't fit; for a long name, the chip suggests one
   (**Use "…"**).
@@ -35,9 +35,13 @@ Open **Courses → +** (or the button on an empty Today screen), or tap an empty
   the editor, the Courses menu, a course page (the clock button), or Week.
 - **Attendance requirement** — set a minimum (50–100%) for all sessions or one type
   (e.g. 80% of practices). Choose whether watching a recording counts as attending.
+- **Contacts** — the lecturer and teaching assistants, each with a name, a role and an
+  email. The course page lists them with buttons to send an email or copy the address.
+  A course's existing lecturer becomes its first contact.
 - **Notes & links** — notes, the course website and extra links.
 
-The requirement and the notes and links are rows with a summary that open when tapped.
+The requirement, contacts, and notes and links are rows with a summary that open when
+tapped.
 On wide windows, the editor shows two columns: the course on the left, its schedule on
 the right.
 

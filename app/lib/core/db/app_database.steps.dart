@@ -1349,10 +1349,271 @@ i1.GeneratedColumn<int> _column_51(String aliasedName) =>
       $customConstraints: 'NOT NULL DEFAULT 0 CHECK (excluded IN (0, 1))',
       defaultValue: const i1.CustomExpression('0'),
     );
+
+final class Schema5 extends i0.VersionedSchema {
+  Schema5({required super.database}) : super(version: 5);
+  @override
+  late final List<i1.DatabaseSchemaEntity> entities = [
+    semesters,
+    courses,
+    meetings,
+    sessionOverrides,
+    noClassRanges,
+    requirements,
+    userSettings,
+    outbox,
+    syncMeta,
+    coursesSemester,
+    meetingsCourse,
+    overridesMeeting,
+    noclassSemester,
+    requirementsCourse,
+  ];
+  late final Shape0 semesters = Shape0(
+    source: i0.VersionedTable(
+      entityName: 'semesters',
+      withoutRowId: false,
+      isStrict: false,
+      tableConstraints: ['PRIMARY KEY(id)'],
+      columns: [
+        _column_0,
+        _column_1,
+        _column_2,
+        _column_3,
+        _column_4,
+        _column_5,
+        _column_6,
+        _column_7,
+      ],
+      attachedDatabase: database,
+    ),
+    alias: null,
+  );
+  late final Shape11 courses = Shape11(
+    source: i0.VersionedTable(
+      entityName: 'courses',
+      withoutRowId: false,
+      isStrict: false,
+      tableConstraints: ['PRIMARY KEY(id)'],
+      columns: [
+        _column_0,
+        _column_1,
+        _column_2,
+        _column_8,
+        _column_3,
+        _column_9,
+        _column_10,
+        _column_11,
+        _column_12,
+        _column_13,
+        _column_14,
+        _column_15,
+        _column_50,
+        _column_52,
+      ],
+      attachedDatabase: database,
+    ),
+    alias: null,
+  );
+  late final Shape2 meetings = Shape2(
+    source: i0.VersionedTable(
+      entityName: 'meetings',
+      withoutRowId: false,
+      isStrict: false,
+      tableConstraints: ['PRIMARY KEY(id)'],
+      columns: [
+        _column_0,
+        _column_1,
+        _column_2,
+        _column_16,
+        _column_17,
+        _column_18,
+        _column_19,
+        _column_20,
+        _column_21,
+        _column_22,
+        _column_23,
+        _column_24,
+        _column_25,
+        _column_26,
+        _column_14,
+      ],
+      attachedDatabase: database,
+    ),
+    alias: null,
+  );
+  late final Shape10 sessionOverrides = Shape10(
+    source: i0.VersionedTable(
+      entityName: 'session_overrides',
+      withoutRowId: false,
+      isStrict: false,
+      tableConstraints: ['PRIMARY KEY(id)'],
+      columns: [
+        _column_0,
+        _column_1,
+        _column_2,
+        _column_27,
+        _column_28,
+        _column_29,
+        _column_13,
+        _column_30,
+        _column_31,
+        _column_32,
+        _column_33,
+        _column_34,
+        _column_51,
+      ],
+      attachedDatabase: database,
+    ),
+    alias: null,
+  );
+  late final Shape4 noClassRanges = Shape4(
+    source: i0.VersionedTable(
+      entityName: 'no_class_ranges',
+      withoutRowId: false,
+      isStrict: false,
+      tableConstraints: ['PRIMARY KEY(id)'],
+      columns: [
+        _column_0,
+        _column_1,
+        _column_2,
+        _column_8,
+        _column_4,
+        _column_5,
+        _column_35,
+      ],
+      attachedDatabase: database,
+    ),
+    alias: null,
+  );
+  late final Shape5 requirements = Shape5(
+    source: i0.VersionedTable(
+      entityName: 'requirements',
+      withoutRowId: false,
+      isStrict: false,
+      tableConstraints: ['PRIMARY KEY(id)'],
+      columns: [
+        _column_0,
+        _column_1,
+        _column_2,
+        _column_16,
+        _column_36,
+        _column_37,
+        _column_38,
+      ],
+      attachedDatabase: database,
+    ),
+    alias: null,
+  );
+  late final Shape6 userSettings = Shape6(
+    source: i0.VersionedTable(
+      entityName: 'user_settings',
+      withoutRowId: false,
+      isStrict: false,
+      tableConstraints: ['PRIMARY KEY(id)'],
+      columns: [_column_0, _column_1, _column_2, _column_39, _column_40],
+      attachedDatabase: database,
+    ),
+    alias: null,
+  );
+  late final Shape7 outbox = Shape7(
+    source: i0.VersionedTable(
+      entityName: 'outbox',
+      withoutRowId: false,
+      isStrict: false,
+      tableConstraints: [],
+      columns: [
+        _column_41,
+        _column_42,
+        _column_43,
+        _column_44,
+        _column_45,
+        _column_46,
+        _column_47,
+      ],
+      attachedDatabase: database,
+    ),
+    alias: null,
+  );
+  late final Shape8 syncMeta = Shape8(
+    source: i0.VersionedTable(
+      entityName: 'sync_meta',
+      withoutRowId: false,
+      isStrict: false,
+      tableConstraints: ['PRIMARY KEY("key")'],
+      columns: [_column_48, _column_49],
+      attachedDatabase: database,
+    ),
+    alias: null,
+  );
+  final i1.Index coursesSemester = i1.Index(
+    'courses_semester',
+    'CREATE INDEX courses_semester ON courses (semester_id)',
+  );
+  final i1.Index meetingsCourse = i1.Index(
+    'meetings_course',
+    'CREATE INDEX meetings_course ON meetings (course_id)',
+  );
+  final i1.Index overridesMeeting = i1.Index(
+    'overrides_meeting',
+    'CREATE INDEX overrides_meeting ON session_overrides (meeting_id)',
+  );
+  final i1.Index noclassSemester = i1.Index(
+    'noclass_semester',
+    'CREATE INDEX noclass_semester ON no_class_ranges (semester_id)',
+  );
+  final i1.Index requirementsCourse = i1.Index(
+    'requirements_course',
+    'CREATE INDEX requirements_course ON requirements (course_id)',
+  );
+}
+
+class Shape11 extends i0.VersionedTable {
+  Shape11({required super.source, required super.alias}) : super.aliased();
+  i1.GeneratedColumn<String> get id =>
+      columnsByName['id']! as i1.GeneratedColumn<String>;
+  i1.GeneratedColumn<int> get deleted =>
+      columnsByName['deleted']! as i1.GeneratedColumn<int>;
+  i1.GeneratedColumn<int> get updatedAt =>
+      columnsByName['updated_at']! as i1.GeneratedColumn<int>;
+  i1.GeneratedColumn<String> get semesterId =>
+      columnsByName['semester_id']! as i1.GeneratedColumn<String>;
+  i1.GeneratedColumn<String> get name =>
+      columnsByName['name']! as i1.GeneratedColumn<String>;
+  i1.GeneratedColumn<String> get code =>
+      columnsByName['code']! as i1.GeneratedColumn<String>;
+  i1.GeneratedColumn<String> get lecturer =>
+      columnsByName['lecturer']! as i1.GeneratedColumn<String>;
+  i1.GeneratedColumn<String> get colorKey =>
+      columnsByName['color_key']! as i1.GeneratedColumn<String>;
+  i1.GeneratedColumn<String> get website =>
+      columnsByName['website']! as i1.GeneratedColumn<String>;
+  i1.GeneratedColumn<String> get notes =>
+      columnsByName['notes']! as i1.GeneratedColumn<String>;
+  i1.GeneratedColumn<String> get links =>
+      columnsByName['links']! as i1.GeneratedColumn<String>;
+  i1.GeneratedColumn<int> get sortOrder =>
+      columnsByName['sort_order']! as i1.GeneratedColumn<int>;
+  i1.GeneratedColumn<String> get shortName =>
+      columnsByName['short_name']! as i1.GeneratedColumn<String>;
+  i1.GeneratedColumn<String> get contacts =>
+      columnsByName['contacts']! as i1.GeneratedColumn<String>;
+}
+
+i1.GeneratedColumn<String> _column_52(String aliasedName) =>
+    i1.GeneratedColumn<String>(
+      'contacts',
+      aliasedName,
+      false,
+      type: i1.DriftSqlType.string,
+      $customConstraints: 'NOT NULL DEFAULT \'[]\'',
+      defaultValue: const i1.CustomExpression('\'[]\''),
+    );
 i0.MigrationStepWithVersion migrationSteps({
   required Future<void> Function(i1.Migrator m, Schema2 schema) from1To2,
   required Future<void> Function(i1.Migrator m, Schema3 schema) from2To3,
   required Future<void> Function(i1.Migrator m, Schema4 schema) from3To4,
+  required Future<void> Function(i1.Migrator m, Schema5 schema) from4To5,
 }) {
   return (currentVersion, database) async {
     switch (currentVersion) {
@@ -1371,6 +1632,11 @@ i0.MigrationStepWithVersion migrationSteps({
         final migrator = i1.Migrator(database, schema);
         await from3To4(migrator, schema);
         return 4;
+      case 4:
+        final schema = Schema5(database: database);
+        final migrator = i1.Migrator(database, schema);
+        await from4To5(migrator, schema);
+        return 5;
       default:
         throw ArgumentError.value('Unknown migration from $currentVersion');
     }
@@ -1381,10 +1647,12 @@ i1.OnUpgrade stepByStep({
   required Future<void> Function(i1.Migrator m, Schema2 schema) from1To2,
   required Future<void> Function(i1.Migrator m, Schema3 schema) from2To3,
   required Future<void> Function(i1.Migrator m, Schema4 schema) from3To4,
+  required Future<void> Function(i1.Migrator m, Schema5 schema) from4To5,
 }) => i0.VersionedSchema.stepByStepHelper(
   step: migrationSteps(
     from1To2: from1To2,
     from2To3: from2To3,
     from3To4: from3To4,
+    from4To5: from4To5,
   ),
 );

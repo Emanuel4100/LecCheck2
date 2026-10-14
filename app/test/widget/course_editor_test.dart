@@ -1,6 +1,6 @@
 import 'dart:math' as math;
 
-import 'package:drift/drift.dart' show driftRuntimeOptions;
+import 'package:drift/drift.dart' show Value, driftRuntimeOptions;
 import 'package:drift/native.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -8,6 +8,7 @@ import 'package:leccheck/app/app.dart';
 import 'package:leccheck/app/providers.dart';
 import 'package:leccheck/app/router.dart';
 import 'package:leccheck/core/db/app_database.dart';
+import 'package:leccheck/core/db/mappers.dart';
 import 'package:leccheck/core/db/schedule_repository.dart';
 import 'package:leccheck/domain/local_date.dart';
 import 'package:leccheck/domain/schedule_types.dart';
@@ -260,7 +261,8 @@ void main() {
     final (c, db) = await _start(tester);
     await _open(c, tester, '/course-editor');
     expect(find.widgetWithText(TextField, 'Course code'), findsNothing);
-    expect(find.widgetWithText(ActionChip, 'Lecturer'), findsOneWidget);
+    // The lecturer is a contact now, in its own row.
+    expect(find.widgetWithText(ActionChip, 'Lecturer'), findsNothing);
 
     await _tap(tester, find.widgetWithText(ActionChip, 'Course code'));
     expect(find.widgetWithText(ActionChip, 'Course code'), findsNothing);
@@ -276,6 +278,60 @@ void main() {
     await _open(c, tester, '/course-editor?id=${courses.last.id}');
     expect(find.widgetWithText(TextField, 'Course code'), findsOneWidget);
     expect(find.widgetWithText(ActionChip, 'Course code'), findsNothing);
+  });
+
+  testWidgets('contacts: the lecturer comes first, then TAs with emails', (
+    tester,
+  ) async {
+    final (c, db) = await _start(tester);
+    // A course from before contacts, with just a lecturer's name.
+    await tester.runAsync(
+      () => db
+          .update(db.courses)
+          .write(const CoursesCompanion(lecturer: Value('Dr. Cohen'))),
+    );
+    await _open(c, tester, '/course-editor?id=c1');
+    expect(find.text('Dr. Cohen'), findsOneWidget);
+
+    await _tap(tester, find.text('Contacts'));
+    await tester.enterText(
+      find.widgetWithText(TextField, 'Email'),
+      'cohen@uni.ac.il',
+    );
+    await _tap(tester, find.text('Add contact'));
+    await tester.enterText(find.widgetWithText(TextField, 'Name').last, 'Noa');
+    await tester.enterText(
+      find.widgetWithText(TextField, 'Email').last,
+      'noa@uni',
+    );
+    // Checked when leaving the field.
+    await _tap(tester, find.widgetWithText(TextField, 'Name').last);
+    expect(find.text('Check this address'), findsOneWidget);
+    await tester.enterText(
+      find.widgetWithText(TextField, 'Email').last,
+      'noa@uni.ac.il',
+    );
+    await _tap(tester, find.widgetWithText(FilledButton, 'Done'));
+    expect(find.text('Dr. Cohen, Noa'), findsOneWidget);
+
+    await _save(tester);
+    final course = await tester.runAsync(
+      () => db.select(db.courses).getSingle(),
+    );
+    expect(course!.lecturer, 'Dr. Cohen', reason: 'for lists, older versions');
+    expect(decodeContacts(course.contacts), const [
+      CourseContact(name: 'Dr. Cohen', email: 'cohen@uni.ac.il'),
+      CourseContact(
+        name: 'Noa',
+        role: ContactRole.assistant,
+        email: 'noa@uni.ac.il',
+      ),
+    ]);
+
+    // The course page offers to email them.
+    await _open(c, tester, '/courses/c1');
+    expect(find.text('Teaching assistant · noa@uni.ac.il'), findsOneWidget);
+    expect(find.byTooltip('Send email'), findsNWidgets(2));
   });
 
   testWidgets('the color dot opens the palette', (tester) async {

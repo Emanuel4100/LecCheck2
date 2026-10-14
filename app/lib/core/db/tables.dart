@@ -47,6 +47,10 @@ class Courses extends Table with SyncedRow {
   /// Optional, for the week grid when [name] doesn't fit (schema v3). Last,
   /// so new and upgraded databases have the same column order.
   TextColumn get shortName => text().withDefault(const Constant(''))();
+
+  /// JSON list of `{name, role, email}` (schema v5). [lecturer] holds the
+  /// lecturers' names from it, for lists and older app versions.
+  TextColumn get contacts => text().withDefault(const Constant('[]'))();
 }
 
 @DataClassName('MeetingRow')

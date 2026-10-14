@@ -10,7 +10,7 @@ import 'generated/schema.dart';
 import 'generated/schema_v1.dart' as v1;
 import 'generated/schema_v2.dart' as v2;
 import 'generated/schema_v3.dart' as v3;
-import 'generated/schema_v4.dart' as v4;
+import 'generated/schema_v5.dart' as v5;
 
 void main() {
   driftRuntimeOptions.dontWarnAboutMultipleDatabases = true;
@@ -33,10 +33,10 @@ void main() {
   });
 
   // What the upgraded database must hold: everything as before, courses
-  // without a short name, unsynced changes still waiting.
-  Future<void> expectKept(v4.DatabaseAtV4 db) async {
+  // without a short name or contacts, unsynced changes still waiting.
+  Future<void> expectKept(v5.DatabaseAtV5 db) async {
     expect(await db.select(db.semesters).get(), [
-      const v4.SemestersData(
+      const v5.SemestersData(
         id: 'sem',
         deleted: 0,
         updatedAt: 1,
@@ -48,7 +48,7 @@ void main() {
       ),
     ]);
     expect(await db.select(db.courses).get(), [
-      const v4.CoursesData(
+      const v5.CoursesData(
         id: 'c1',
         deleted: 0,
         updatedAt: 1,
@@ -62,10 +62,11 @@ void main() {
         links: '[]',
         sortOrder: 0,
         shortName: '',
+        contacts: '[]',
       ),
     ]);
     expect(await db.select(db.outbox).get(), [
-      const v4.OutboxData(
+      const v5.OutboxData(
         seq: 1,
         tbl: 'courses',
         rowId: 'c1',
@@ -75,16 +76,16 @@ void main() {
       ),
     ]);
     expect(await db.select(db.syncMeta).get(), [
-      const v4.SyncMetaData(key: 'lastVersion', value: '42'),
+      const v5.SyncMetaData(key: 'lastVersion', value: '42'),
     ]);
   }
 
   test('data from v2.0.0-beta.2 (v1) survives the upgrade', () async {
     await verifier.testWithDataIntegrity(
       oldVersion: 1,
-      newVersion: 4,
+      newVersion: 5,
       createOld: v1.DatabaseAtV1.new,
-      createNew: v4.DatabaseAtV4.new,
+      createNew: v5.DatabaseAtV5.new,
       openTestedDatabase: AppDatabase.new,
       createItems: (batch, db) {
         batch
@@ -140,9 +141,9 @@ void main() {
   test('data from v2.0.0-beta.3 (v2) survives the upgrade', () async {
     await verifier.testWithDataIntegrity(
       oldVersion: 2,
-      newVersion: 4,
+      newVersion: 5,
       createOld: v2.DatabaseAtV2.new,
-      createNew: v4.DatabaseAtV4.new,
+      createNew: v5.DatabaseAtV5.new,
       openTestedDatabase: AppDatabase.new,
       createItems: (batch, db) {
         batch
@@ -199,9 +200,9 @@ void main() {
   test('data from v2.0.0-beta.10 (v3) survives the upgrade', () async {
     await verifier.testWithDataIntegrity(
       oldVersion: 3,
-      newVersion: 4,
+      newVersion: 5,
       createOld: v3.DatabaseAtV3.new,
-      createNew: v4.DatabaseAtV4.new,
+      createNew: v5.DatabaseAtV5.new,
       openTestedDatabase: AppDatabase.new,
       createItems: (batch, db) {
         batch
@@ -268,7 +269,7 @@ void main() {
         await expectKept(db);
         // Marked sessions still count.
         expect(await db.select(db.sessionOverrides).get(), [
-          const v4.SessionOverridesData(
+          const v5.SessionOverridesData(
             id: 'm1_20261018',
             deleted: 0,
             updatedAt: 1,

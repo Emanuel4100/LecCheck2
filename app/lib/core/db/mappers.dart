@@ -29,6 +29,22 @@ List<NamedLink> decodeLinks(String json) {
 String encodeLinks(List<NamedLink> links) =>
     jsonEncode([for (final l in links) l.toJson()]);
 
+List<CourseContact> decodeContacts(String json) {
+  try {
+    final list = jsonDecode(json);
+    if (list is! List) return const [];
+    return [
+      for (final item in list)
+        if (item is Map) CourseContact.fromJson(item.cast<String, Object?>()),
+    ];
+  } on FormatException {
+    return const [];
+  }
+}
+
+String encodeContacts(List<CourseContact> contacts) =>
+    jsonEncode([for (final c in contacts) c.toJson()]);
+
 int _now() => DateTime.now().millisecondsSinceEpoch;
 
 extension SemesterRowMapping on SemesterRow {
@@ -68,6 +84,7 @@ extension CourseRowMapping on CourseRow {
     links: decodeLinks(links),
     sortOrder: sortOrder,
     shortName: shortName,
+    contacts: decodeContacts(contacts),
   );
 }
 
@@ -86,6 +103,7 @@ extension CourseInfoMapping on CourseInfo {
     links: encodeLinks(links),
     sortOrder: sortOrder,
     shortName: shortName,
+    contacts: encodeContacts(contacts),
   );
 }
 

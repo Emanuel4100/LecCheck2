@@ -432,6 +432,36 @@ class AppLocalizationsHe extends AppLocalizations {
   String get lecturer => 'מרצה';
 
   @override
+  String get contactsSection => 'אנשי קשר';
+
+  @override
+  String get contactsHint => 'מרצים ומתרגלים, עם כתובת המייל שלהם.';
+
+  @override
+  String get contactName => 'שם';
+
+  @override
+  String get contactEmail => 'אימייל';
+
+  @override
+  String get contactEmailInvalid => 'כדאי לבדוק את הכתובת';
+
+  @override
+  String get addContact => 'הוספת איש קשר';
+
+  @override
+  String get roleAssistant => 'מתרגל/ת';
+
+  @override
+  String get sendEmail => 'שליחת מייל';
+
+  @override
+  String get copyEmail => 'העתקת המייל';
+
+  @override
+  String get emailCopied => 'המייל הועתק';
+
+  @override
   String get courseCode => 'קוד קורס';
 
   @override

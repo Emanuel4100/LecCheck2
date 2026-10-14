@@ -21,6 +21,7 @@ import '../../domain/semester_calendar.dart';
 import '../../domain/semester_data.dart';
 import '../../domain/short_name.dart';
 import '../../l10n/gen/app_localizations.dart';
+import 'contacts_editor.dart';
 import 'meeting_sheet.dart';
 import 'meeting_summary.dart';
 
@@ -74,13 +75,12 @@ class _CourseEditorPageState extends ConsumerState<CourseEditorPage> {
   final _name = TextEditingController();
   final _shortName = TextEditingController();
   final _code = TextEditingController();
-  final _lecturer = TextEditingController();
   final _website = TextEditingController();
   final _notes = TextEditingController();
   final _shortNameFocus = FocusNode();
   final _codeFocus = FocusNode();
-  final _lecturerFocus = FocusNode();
   final _links = <LinkDraft>[];
+  final _contacts = <ContactDraft>[];
   final _meetings = <MeetingDraft>[];
   final _requirements = <_RequirementDraft>[];
 
@@ -96,7 +96,6 @@ class _CourseEditorPageState extends ConsumerState<CourseEditorPage> {
   /// have a value).
   bool _showShortName = false;
   bool _showCode = false;
-  bool _showLecturer = false;
   String? _initialSnapshot;
 
   late SemesterData? _data = ref.read(semesterDataProvider).value;
@@ -124,12 +123,17 @@ class _CourseEditorPageState extends ConsumerState<CourseEditorPage> {
       _name.text = existing.name;
       _shortName.text = existing.shortName;
       _code.text = existing.code;
-      _lecturer.text = existing.lecturer;
       _website.text = existing.website;
       _notes.text = existing.notes;
       _colorKey = existing.colorKey;
       _sortOrder = existing.sortOrder;
       _links.addAll(existing.links.map(LinkDraft.new));
+      // Courses from before contacts: the lecturer becomes the first one.
+      _contacts.addAll(
+        existing.contacts.isNotEmpty || existing.lecturer.isEmpty
+            ? existing.contacts.map(ContactDraft.new)
+            : [ContactDraft(CourseContact(name: existing.lecturer))],
+      );
       _meetings.addAll(data.meetingsOf(existing.id).map(MeetingDraft.from));
       _requirements.addAll(
         data
@@ -197,11 +201,11 @@ class _CourseEditorPageState extends ConsumerState<CourseEditorPage> {
     _name.text,
     _shortName.text,
     _code.text,
-    _lecturer.text,
     _website.text,
     _notes.text,
     _colorKey,
     for (final l in _links) '${l.title.text}|${l.url.text}',
+    for (final c in _contacts) '${c.name.text}|${c.role}|${c.email.text}',
     for (final m in _meetings)
       '${m.id}|${m.type}|${m.kind}|${m.weekday}|${m.date}|${m.startMin}|'
           '${m.endMin}|${m.location.text}|${m.intervalWeeks}|${m.validFrom}|'
@@ -215,14 +219,17 @@ class _CourseEditorPageState extends ConsumerState<CourseEditorPage> {
 
   @override
   void dispose() {
-    for (final c in [_name, _shortName, _code, _lecturer, _website, _notes]) {
+    for (final c in [_name, _shortName, _code, _website, _notes]) {
       c.dispose();
     }
-    for (final f in [_shortNameFocus, _codeFocus, _lecturerFocus]) {
+    for (final f in [_shortNameFocus, _codeFocus]) {
       f.dispose();
     }
     for (final l in _links) {
       l.dispose();
+    }
+    for (final c in _contacts) {
+      c.dispose();
     }
     for (final m in [..._meetings, ..._retired]) {
       m.dispose();
@@ -298,6 +305,13 @@ class _CourseEditorPageState extends ConsumerState<CourseEditorPage> {
     ),
   );
 
+  Future<void> _editContacts() => showAppSheet<void>(
+    context: context,
+    scrollControlled: true,
+    builder: (_) =>
+        _ContactsSheet(contacts: _contacts, onChanged: () => setState(() {})),
+  );
+
   Future<void> _editNotes() => showAppSheet<void>(
     context: context,
     scrollControlled: true,
@@ -324,6 +338,7 @@ class _CourseEditorPageState extends ConsumerState<CourseEditorPage> {
     }
     final id = widget.courseId ?? ScheduleRepository.newId();
     final meetings = [for (final m in _meetings) m.toRule(id)];
+    final contacts = [for (final c in _contacts) ?c.toContact()];
 
     final split = await _confirmWeekdayChanges(meetings);
     if (split == null) return;
@@ -337,11 +352,12 @@ class _CourseEditorPageState extends ConsumerState<CourseEditorPage> {
             name: _name.text.trim(),
             shortName: _shortName.text.trim(),
             code: _code.text.trim(),
-            lecturer: _lecturer.text.trim(),
+            lecturer: lecturerNames(contacts),
             colorKey: _colorKey,
             website: _website.text.trim(),
             notes: _notes.text.trim(),
             links: [for (final l in _links) ?l.toLink()],
+            contacts: contacts,
             sortOrder: _sortOrder,
           ),
           meetings: split.meetings,
@@ -609,6 +625,7 @@ class _CourseEditorPageState extends ConsumerState<CourseEditorPage> {
                             children: [
                               ..._details(l, theme),
                               const SizedBox(height: 16),
+                              _contactsRow(l),
                               _notesRow(l),
                             ],
                           ),
@@ -637,6 +654,7 @@ class _CourseEditorPageState extends ConsumerState<CourseEditorPage> {
                       ..._schedule(l, theme, top: 28),
                       const SizedBox(height: 20),
                       _requirementsRow(l),
+                      _contactsRow(l),
                       _notesRow(l),
                     ],
                   ),
@@ -653,7 +671,6 @@ class _CourseEditorPageState extends ConsumerState<CourseEditorPage> {
     final accent = CourseColors.of(context).tone(_colorKey).accent;
     final showShortName = _showShortName || _shortName.text.isNotEmpty;
     final showCode = _showCode || _code.text.isNotEmpty;
-    final showLecturer = _showLecturer || _lecturer.text.isNotEmpty;
     // A long name: offer the short form the week view would make up, so it
     // can be checked or changed.
     final suggestion = _shortName.text.trim().isEmpty
@@ -668,13 +685,6 @@ class _CourseEditorPageState extends ConsumerState<CourseEditorPage> {
       controller: _code,
       focusNode: _codeFocus,
       decoration: InputDecoration(labelText: l.courseCode),
-      onChanged: (_) => setState(() {}),
-    );
-    final lecturer = TextField(
-      controller: _lecturer,
-      focusNode: _lecturerFocus,
-      textCapitalization: TextCapitalization.words,
-      decoration: InputDecoration(labelText: l.lecturer),
       onChanged: (_) => setState(() {}),
     );
 
@@ -707,7 +717,7 @@ class _CourseEditorPageState extends ConsumerState<CourseEditorPage> {
         ),
         onChanged: (_) => setState(() {}),
       ),
-      if (!showShortName || !showCode || !showLecturer) ...[
+      if (!showShortName || !showCode) ...[
         const SizedBox(height: 12),
         Wrap(
           spacing: 8,
@@ -729,12 +739,6 @@ class _CourseEditorPageState extends ConsumerState<CourseEditorPage> {
               _AddFieldChip(
                 label: l.courseCode,
                 onPressed: () => _reveal(_codeFocus, () => _showCode = true),
-              ),
-            if (!showLecturer)
-              _AddFieldChip(
-                label: l.lecturer,
-                onPressed: () =>
-                    _reveal(_lecturerFocus, () => _showLecturer = true),
               ),
           ],
         ),
@@ -760,19 +764,10 @@ class _CourseEditorPageState extends ConsumerState<CourseEditorPage> {
             ),
           ),
       ],
-      if (showCode || showLecturer) ...[
+      if (showCode) ...[
         // Clear of the helper text above, for the floating labels.
         SizedBox(height: showShortName && suggestion == null ? 20 : 16),
-        if (showCode && showLecturer)
-          Row(
-            children: [
-              Expanded(child: code),
-              const SizedBox(width: 12),
-              Expanded(child: lecturer),
-            ],
-          )
-        else
-          showCode ? code : lecturer,
+        code,
       ],
     ];
   }
@@ -860,6 +855,22 @@ class _CourseEditorPageState extends ConsumerState<CourseEditorPage> {
               .join(', '),
     onTap: _editRequirements,
   );
+
+  Widget _contactsRow(AppLocalizations l) {
+    final names = [
+      for (final c in _contacts)
+        if (c.name.text.trim().isNotEmpty)
+          c.name.text.trim()
+        else if (c.email.text.trim().isNotEmpty)
+          c.email.text.trim(),
+    ];
+    return _FoldedRow(
+      icon: LecIcons.contacts,
+      title: l.contactsSection,
+      summary: names.isEmpty ? l.contactsHint : names.join(', '),
+      onTap: _editContacts,
+    );
+  }
 
   Widget _notesRow(AppLocalizations l) {
     final links =
@@ -972,6 +983,42 @@ class _RequirementsSheetState extends State<_RequirementsSheet> {
             label: Text(l.addRequirement),
           ),
         ),
+      ],
+    );
+  }
+}
+
+class _ContactsSheet extends StatefulWidget {
+  const _ContactsSheet({required this.contacts, required this.onChanged});
+
+  final List<ContactDraft> contacts;
+  final VoidCallback onChanged;
+
+  @override
+  State<_ContactsSheet> createState() => _ContactsSheetState();
+}
+
+class _ContactsSheetState extends State<_ContactsSheet> {
+  void _changed() {
+    setState(() {});
+    widget.onChanged();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+    return _SheetBody(
+      title: l.contactsSection,
+      children: [
+        Text(
+          l.contactsHint,
+          style: theme.textTheme.bodyMedium?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+        ),
+        const SizedBox(height: 16),
+        ContactsEditor(contacts: widget.contacts, onChanged: _changed),
       ],
     );
   }

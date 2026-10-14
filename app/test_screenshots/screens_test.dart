@@ -118,6 +118,17 @@ Future<void> _seed(
             shortName: hebrew && !long ? 'חדו״א 1' : '',
             code: '104031',
             lecturer: hebrew ? 'ד״ר כהן' : 'Dr. Cohen',
+            contacts: [
+              CourseContact(
+                name: hebrew ? 'ד״ר כהן' : 'Dr. Cohen',
+                email: 'cohen@technion.ac.il',
+              ),
+              CourseContact(
+                name: hebrew ? 'נועה לוי' : 'Noa Levi',
+                role: ContactRole.assistant,
+                email: 'noa.levi@campus.technion.ac.il',
+              ),
+            ],
             colorKey: 'ocean',
           ),
           [

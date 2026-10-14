@@ -4,6 +4,7 @@ import 'local_date.dart';
 
 const _setEq = SetEquality<int>();
 const _linksEq = ListEquality<NamedLink>();
+const _contactsEq = ListEquality<CourseContact>();
 
 /// Kind of class meeting. Persisted by [key] — never by a translated label
 /// (v1 stored "Lecture"/"הרצאה" and silently corrupted types on language
@@ -110,6 +111,7 @@ class CourseInfo {
     this.links = const [],
     this.sortOrder = 0,
     this.shortName = '',
+    this.contacts = const [],
   });
 
   final String id;
@@ -126,6 +128,9 @@ class CourseInfo {
   final List<NamedLink> links;
   final int sortOrder;
 
+  /// Lecturer, teaching assistants… [lecturer] is their lecturers' names.
+  final List<CourseContact> contacts;
+
   @override
   bool operator ==(Object other) =>
       other is CourseInfo &&
@@ -139,12 +144,66 @@ class CourseInfo {
       other.website == website &&
       other.notes == notes &&
       other.sortOrder == sortOrder &&
-      _linksEq.equals(other.links, links);
+      _linksEq.equals(other.links, links) &&
+      _contactsEq.equals(other.contacts, contacts);
 
   @override
   int get hashCode =>
       Object.hash(id, name, shortName, code, lecturer, colorKey, sortOrder);
 }
+
+enum ContactRole {
+  lecturer('lecturer'),
+  assistant('assistant'),
+  other('other');
+
+  const ContactRole(this.key);
+  final String key;
+
+  static ContactRole fromKey(Object? key) =>
+      values.firstWhere((r) => r.key == key, orElse: () => other);
+}
+
+/// Someone to reach about a course.
+class CourseContact {
+  const CourseContact({
+    required this.name,
+    this.role = ContactRole.lecturer,
+    this.email = '',
+  });
+
+  final String name;
+  final ContactRole role;
+  final String email;
+
+  Map<String, Object?> toJson() => {
+    'name': name,
+    'role': role.key,
+    'email': email,
+  };
+
+  static CourseContact fromJson(Map<String, Object?> json) => CourseContact(
+    name: json['name'] as String? ?? '',
+    role: ContactRole.fromKey(json['role']),
+    email: json['email'] as String? ?? '',
+  );
+
+  @override
+  bool operator ==(Object other) =>
+      other is CourseContact &&
+      other.name == name &&
+      other.role == role &&
+      other.email == email;
+
+  @override
+  int get hashCode => Object.hash(name, role, email);
+}
+
+/// The lecturers' names, for [CourseInfo.lecturer].
+String lecturerNames(Iterable<CourseContact> contacts) => contacts
+    .where((c) => c.role == ContactRole.lecturer && c.name.isNotEmpty)
+    .map((c) => c.name)
+    .join(', ');
 
 class NamedLink {
   const NamedLink({required this.title, required this.url});

@@ -431,6 +431,37 @@ class AppLocalizationsEn extends AppLocalizations {
   String get lecturer => 'Lecturer';
 
   @override
+  String get contactsSection => 'Contacts';
+
+  @override
+  String get contactsHint =>
+      'Lecturers and teaching assistants, with their email.';
+
+  @override
+  String get contactName => 'Name';
+
+  @override
+  String get contactEmail => 'Email';
+
+  @override
+  String get contactEmailInvalid => 'Check this address';
+
+  @override
+  String get addContact => 'Add contact';
+
+  @override
+  String get roleAssistant => 'Teaching assistant';
+
+  @override
+  String get sendEmail => 'Send email';
+
+  @override
+  String get copyEmail => 'Copy email';
+
+  @override
+  String get emailCopied => 'Email copied';
+
+  @override
   String get courseCode => 'Course code';
 
   @override

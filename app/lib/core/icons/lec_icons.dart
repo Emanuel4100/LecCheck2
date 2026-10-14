@@ -50,6 +50,9 @@ abstract final class LecIcons {
   static const addDate = Icons.more_time_rounded;
   static const notes = Icons.sticky_note_2_outlined;
   static const lecturer = Icons.person_outline_rounded;
+  static const contacts = Icons.contacts_outlined;
+  static const email = Icons.mail_outline_rounded;
+  static const copy = Icons.content_copy_rounded;
   static const semester = Icons.date_range_rounded;
   static const holiday = LecIconFont.holiday;
   static const target = LecIconFont.target;

@@ -1,3 +1,4 @@
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
@@ -204,7 +205,21 @@ class CourseDetailView extends ConsumerWidget {
                 .setMuted(courseId, !on),
           ),
         ),
-      if (course.lecturer.isNotEmpty ||
+      if (course.contacts.isNotEmpty) ...[
+        SliverToBoxAdapter(child: SectionHeader(title: l.contactsSection)),
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsetsDirectional.fromSTEB(20, 0, 8, 0),
+            child: Column(
+              children: [
+                for (final contact in course.contacts)
+                  _ContactLine(contact: contact),
+              ],
+            ),
+          ),
+        ),
+      ],
+      if ((course.contacts.isEmpty && course.lecturer.isNotEmpty) ||
           course.code.isNotEmpty ||
           links.isNotEmpty ||
           course.notes.isNotEmpty) ...[
@@ -215,7 +230,8 @@ class CourseDetailView extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                if (course.lecturer.isNotEmpty)
+                // Synced from a version before contacts: just the name.
+                if (course.contacts.isEmpty && course.lecturer.isNotEmpty)
                   _Line(icon: LecIcons.lecturer, text: course.lecturer),
                 if (course.code.isNotEmpty)
                   _Line(icon: LecIcons.numbers, text: course.code),
@@ -280,6 +296,69 @@ class CourseDetailView extends ConsumerWidget {
               : SliverMainAxisGroup(slivers: [...overview, ...history]),
         ),
       ],
+    );
+  }
+}
+
+/// Name and role, with buttons to email or copy the address.
+class _ContactLine extends StatelessWidget {
+  const _ContactLine({required this.contact});
+
+  final CourseContact contact;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+    final email = contact.email;
+    final name = contact.name.isEmpty ? email : contact.name;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: Row(
+        children: [
+          Icon(
+            LecIcons.lecturer,
+            size: 18,
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(name, style: theme.textTheme.bodyMedium),
+                SelectableText(
+                  [
+                    contact.role.label(l),
+                    if (email.isNotEmpty && email != name) email,
+                  ].join(' · '),
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (email.isNotEmpty) ...[
+            IconButton(
+              tooltip: l.copyEmail,
+              color: theme.colorScheme.onSurfaceVariant,
+              icon: const Icon(LecIcons.copy, size: 18),
+              onPressed: () async {
+                final messenger = ScaffoldMessenger.of(context);
+                await Clipboard.setData(ClipboardData(text: email));
+                messenger.showSnackBar(SnackBar(content: Text(l.emailCopied)));
+              },
+            ),
+            IconButton(
+              tooltip: l.sendEmail,
+              color: theme.colorScheme.primary,
+              icon: const Icon(LecIcons.email, size: 20),
+              onPressed: () => openUrl('mailto:$email', context: context),
+            ),
+          ],
+        ],
+      ),
     );
   }
 }
