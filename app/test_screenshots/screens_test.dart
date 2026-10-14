@@ -225,6 +225,11 @@ Future<void> _seed(
     };
     if (status != null) await repo.setStatus(o, status);
   }
+  // One canceled class later today, to show how canceled looks.
+  final canceled = index.all.firstWhere(
+    (o) => o.start.isAfter(_now) && o.start.day == _now.day,
+  );
+  await repo.setStatus(canceled, AttendanceStatus.canceled);
 }
 
 Future<ProviderContainer> _pumpApp(

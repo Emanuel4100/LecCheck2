@@ -136,6 +136,35 @@ class ColorBar extends StatelessWidget {
   );
 }
 
+/// Diagonal stripes over a canceled session, in its course color: the slot
+/// is free, but you still see whose it was.
+class CanceledStripes extends CustomPainter {
+  const CanceledStripes(this.color);
+
+  final Color color;
+
+  static const _gap = 10.0;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = 2.5;
+    canvas.clipRect(Offset.zero & size);
+    // Lines from bottom-left to top-right, spaced along the bottom edge.
+    for (var x = -size.height; x < size.width; x += _gap) {
+      canvas.drawLine(
+        Offset(x, size.height),
+        Offset(x + size.height, 0),
+        paint,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(CanceledStripes old) => old.color != color;
+}
+
 /// Width-based layout classes (Material window size classes). They decide the
 /// layout; how the user interacts (touch, mouse, keyboard) is [AppIdiom].
 enum WindowSize {

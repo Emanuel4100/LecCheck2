@@ -847,24 +847,26 @@ class _GridTile extends ConsumerWidget {
         panel &&
         ref.watch(_selectedSessionProvider.select((id) => id == sessionId));
 
-    final tile = Opacity(
-      opacity: canceled ? 0.45 : 1,
-      child: Material(
-        color: tone.container,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
-          side: selected
-              ? BorderSide(color: theme.colorScheme.primary, width: 2)
-              : BorderSide.none,
-        ),
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: () => panel
-              ? ref.read(_selectedSessionProvider.notifier).select(session.id)
-              : showSessionSheet(context, session.id),
-          onLongPress: () => showStatusPicker(context, ref, session),
-          onSecondaryTapUp: (d) =>
-              showSessionMenu(context, ref, session, d.globalPosition),
+    final tile = Material(
+      color: tone.container,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(10),
+        side: selected
+            ? BorderSide(color: theme.colorScheme.primary, width: 2)
+            : BorderSide.none,
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () => panel
+            ? ref.read(_selectedSessionProvider.notifier).select(session.id)
+            : showSessionSheet(context, session.id),
+        onLongPress: () => showStatusPicker(context, ref, session),
+        onSecondaryTapUp: (d) =>
+            showSessionMenu(context, ref, session, d.globalPosition),
+        child: CustomPaint(
+          painter: canceled
+              ? CanceledStripes(tone.accent.withValues(alpha: 0.16))
+              : null,
           child: Container(
             decoration: BoxDecoration(
               border: BorderDirectional(
@@ -890,7 +892,8 @@ class _GridTile extends ConsumerWidget {
                   color: tone.onContainer.withValues(alpha: 0.8),
                 );
                 final time = fmt.time(session.startMin);
-                final badge = decided && !canceled;
+                // Canceled shows its badge too: with the stripes it says why.
+                final badge = decided;
                 final layout = layoutTile(
                   name: course?.name ?? '',
                   shortName: course?.shortName ?? '',

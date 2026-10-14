@@ -93,11 +93,7 @@ class SessionTile extends ConsumerWidget {
     );
 
     Widget card(bool hovered) => Card(
-      color: highlight
-          ? tone.container
-          : canceled
-          ? theme.colorScheme.surfaceContainerLowest
-          : null,
+      color: highlight ? tone.container : null,
       child: InkWell(
         onTap: () => showSessionSheet(context, session.id),
         onLongPress: () => showStatusPicker(context, ref, session),
@@ -105,73 +101,78 @@ class SessionTile extends ConsumerWidget {
           learnedHint(ref, rightClickHintKey);
           showSessionMenu(context, ref, session, d.globalPosition);
         },
-        child: Padding(
-          padding: const EdgeInsetsDirectional.fromSTEB(12, 12, 8, 12),
-          child: Row(
-            children: [
-              ColorBar(color: tone.accent, height: 44),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(
-                          session.type.icon,
-                          size: 16,
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                        const SizedBox(width: 6),
-                        Flexible(
-                          child: Text(
-                            showCourse ? course?.name ?? '' : title,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: theme.textTheme.titleMedium?.copyWith(
-                              decoration: canceled
-                                  ? TextDecoration.lineThrough
-                                  : null,
+        child: CustomPaint(
+          painter: canceled
+              ? CanceledStripes(tone.accent.withValues(alpha: 0.12))
+              : null,
+          child: Padding(
+            padding: const EdgeInsetsDirectional.fromSTEB(12, 12, 8, 12),
+            child: Row(
+              children: [
+                ColorBar(color: tone.accent, height: 44),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(
+                            session.type.icon,
+                            size: 16,
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                          const SizedBox(width: 6),
+                          Flexible(
+                            child: Text(
+                              showCourse ? course?.name ?? '' : title,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: theme.textTheme.titleMedium?.copyWith(
+                                decoration: canceled
+                                    ? TextDecoration.lineThrough
+                                    : null,
+                              ),
                             ),
                           ),
-                        ),
-                        if (session.isMoved) ...[
-                          const SizedBox(width: 6),
-                          Icon(
-                            LecIcons.moved,
-                            size: 16,
-                            color: theme.colorScheme.tertiary,
-                          ),
+                          if (session.isMoved) ...[
+                            const SizedBox(width: 6),
+                            Icon(
+                              LecIcons.moved,
+                              size: 16,
+                              color: theme.colorScheme.tertiary,
+                            ),
+                          ],
                         ],
-                      ],
-                    ),
-                    const SizedBox(height: 2),
-                    _SessionDetails(
-                      lead: lead,
-                      time: fmt.timeRange(session.startMin, session.endMin),
-                      room: session.location,
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
                       ),
-                    ),
-                  ],
-                ),
-              ),
-              if (session.status == AttendanceStatus.pending &&
-                  (quickActions || (hovered && started)))
-                ..._quickButtons(context, ref, session, l)
-              // Nothing to mark before it starts.
-              else if (session.status == AttendanceStatus.pending && !started)
-                const SizedBox(width: 8)
-              else
-                Padding(
-                  padding: const EdgeInsetsDirectional.only(start: 8, end: 4),
-                  child: Tooltip(
-                    message: statusLabel(session, l),
-                    child: StatusIndicator(status: session.status),
+                      const SizedBox(height: 2),
+                      _SessionDetails(
+                        lead: lead,
+                        time: fmt.timeRange(session.startMin, session.endMin),
+                        room: session.location,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-            ],
+                if (session.status == AttendanceStatus.pending &&
+                    (quickActions || (hovered && started)))
+                  ..._quickButtons(context, ref, session, l)
+                // Nothing to mark before it starts.
+                else if (session.status == AttendanceStatus.pending && !started)
+                  const SizedBox(width: 8)
+                else
+                  Padding(
+                    padding: const EdgeInsetsDirectional.only(start: 8, end: 4),
+                    child: Tooltip(
+                      message: statusLabel(session, l),
+                      child: StatusIndicator(status: session.status),
+                    ),
+                  ),
+              ],
+            ),
           ),
         ),
       ),

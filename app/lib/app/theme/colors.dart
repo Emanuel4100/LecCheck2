@@ -65,11 +65,7 @@ class StatusColors extends ThemeExtension<StatusColors> {
       AttendanceStatus.watched: t(0xFF1E88B8),
       AttendanceStatus.missed: t(0xFFD3363A),
       AttendanceStatus.skipped: t(0xFFC98A12),
-      AttendanceStatus.canceled: ToneSet(
-        scheme.outline,
-        scheme.surfaceContainerHighest,
-        scheme.onSurfaceVariant,
-      ),
+      AttendanceStatus.canceled: t(0xFF7E6BB0),
       AttendanceStatus.pending: ToneSet(
         scheme.primary,
         scheme.secondaryContainer,
