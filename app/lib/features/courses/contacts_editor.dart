@@ -117,7 +117,8 @@ class _ContactCardState extends State<_ContactCard> {
       color: theme.colorScheme.surfaceContainer,
       margin: const EdgeInsets.only(bottom: 12),
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 12, 8, 12),
+        // The end side is narrower for the remove button, so it mirrors.
+        padding: const EdgeInsetsDirectional.fromSTEB(16, 12, 8, 12),
         child: Column(
           children: [
             Row(

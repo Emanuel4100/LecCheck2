@@ -890,6 +890,12 @@ void main() {
 
     test('a session already marked on the new day keeps its mark', () async {
       await mark('2026-10-18', AttendanceStatus.missed);
+      // "Doesn't count toward attendance" moves with it: a bool has no empty
+      // value for the merge to fill in.
+      await repo.setExcluded(
+        (await _sessions(repo)).firstWhere((o) => o.id == 'm1_20261018'),
+        excluded: true,
+      );
       await repo.setStatusFor(
         meetingId: 'm1',
         originalDate: LocalDate.parse('2026-10-19'),
@@ -915,6 +921,7 @@ void main() {
       );
       final kept = await overrideRow('m1_20261019');
       expect((kept?.status, kept?.notes), ('attended', 'From the old day'));
+      expect(kept?.excluded, isTrue);
     });
 
     test('marking a session whose record was deleted brings it back', () async {

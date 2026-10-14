@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+- **Moving a meeting to another day** kept the session's mark and notes but dropped
+  **Counts toward attendance** when the new day already had a record, so a session left
+  out quietly counted again.
+- A failed update no longer draws its steps as if everything had finished.
+- Contact cards in the course editor line up in Hebrew.
+
 ## 2.0.0-beta.11 — 2026-10-15
 
 - **Linux: updates no longer erase your data.** LecCheck kept its database and settings

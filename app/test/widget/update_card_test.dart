@@ -210,6 +210,11 @@ void main() {
       expect(find.textContaining('Restart LecCheck'), findsOneWidget);
       expect(button('Restart'), findsOneWidget);
 
+      // A failure with no step recorded says nothing was installed.
+      await show(tester, at(UpdatePhase.failed));
+      expect(find.text('SHA-256 matches the signed release'), findsNothing);
+      expect(find.textContaining('Restart LecCheck'), findsNothing);
+
       await show(tester, at(UpdatePhase.failed, failed: UpdateStep.verify));
       expect(
         find.text(

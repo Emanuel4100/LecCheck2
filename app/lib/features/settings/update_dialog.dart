@@ -184,7 +184,13 @@ class _Steps extends StatelessWidget {
         UpdatePhase.installing || UpdatePhase.downloaded => UpdateStep.install,
         _ => null,
       };
-      if (current == null) return _StepState.done; // restart
+      // Restart: everything is done. A failure with no step recorded knows
+      // of nothing that finished.
+      if (current == null) {
+        return phase == UpdatePhase.failed
+            ? _StepState.waiting
+            : _StepState.done;
+      }
       return step.index < current.index
           ? _StepState.done
           : step == current

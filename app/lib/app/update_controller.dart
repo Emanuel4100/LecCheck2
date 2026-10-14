@@ -99,7 +99,9 @@ class UpdateState {
     received: received ?? this.received,
     total: total ?? this.total,
     bytesPerSecond: bytesPerSecond ?? this.bytesPerSecond,
-    failedStep: failedStep,
+    // Kept like the fields above, so a state change while [UpdatePhase.failed]
+    // doesn't lose which step failed; a new phase ignores it.
+    failedStep: failedStep ?? this.failedStep,
   );
 
   @override

@@ -1130,10 +1130,16 @@ class ScheduleRepository {
                 key != 'meetingId' &&
                 key != 'originalDate' &&
                 key != 'deleted' &&
+                key != 'excluded' &&
                 value != null &&
                 value != '' &&
                 (current[key] == null || current[key] == ''))
               key: value,
+          // A bool has no empty value for the loop above to fill in: "doesn't
+          // count toward attendance" moves with the session unless the target
+          // is left out already.
+          if (old['excluded'] == true && current['excluded'] != true)
+            'excluded': true,
         });
       }
       await _patch(_overrides, row.id, {'deleted': true});
