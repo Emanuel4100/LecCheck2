@@ -31,6 +31,9 @@ final routerProvider = Provider<GoRouter>((ref) {
     navigatorKey: _rootKey,
     initialLocation: '/',
     refreshListenable: refresh,
+    // A location no route matches (e.g. from an intent) starts the app
+    // normally instead of showing go_router's error page.
+    onException: (_, _, router) => router.go('/'),
     redirect: (context, state) {
       final semesters = ref.read(semestersProvider);
       if (!semesters.hasValue) return null;

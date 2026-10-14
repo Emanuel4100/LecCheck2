@@ -35,6 +35,23 @@ if (( ${#missing[@]} )); then
 fi
 
 mkdir -p "$BIN" "$PREFIX/applications" "$PREFIX/metainfo"
+# The app keeps its data in $PREFIX/$APP_ID, but only once that folder
+# exists: until then path_provider falls back to a folder named after the
+# executable, which is $DEST, and the swap below deleted the data with every
+# update. Move anything that isn't the bundle (leccheck, lib, data) out first.
+DATA="$PREFIX/$APP_ID"
+if [[ ! -d "$DATA" ]]; then
+  mkdir -p "$DATA"
+  if [[ -d "$DEST" ]]; then
+    for entry in "$DEST"/* "$DEST"/.[!.]*; do
+      [[ -e "$entry" ]] || continue
+      case "$(basename "$entry")" in
+        leccheck | lib | data) ;;
+        *) mv "$entry" "$DATA/" ;;
+      esac
+    done
+  fi
+fi
 # Copy first, then swap the folders: a failed copy leaves the installed app
 # as it was. A running LecCheck (updating itself) keeps its old files until
 # it quits.
