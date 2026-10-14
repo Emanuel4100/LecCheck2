@@ -142,6 +142,9 @@ jobs:
       - name: AltStore / SideStore source and release notes
         run: |
           V="${GITHUB_REF_NAME#v}"
+          # The release's title, like every other place the version is shown
+          # (changelog, file names, the app's update notice): no "v".
+          echo "V=$V" >> "$GITHUB_ENV"
           # AltStore compares this with the IPA's numeric CFBundleShortVersionString.
           APP_VERSION="$(grep -E '^version:' app/pubspec.yaml | sed -E 's/version: *([^+]*)\+.*/\1/')"
           BUILD="$(grep -E '^version:' app/pubspec.yaml | sed 's/.*+//')"
@@ -177,7 +180,7 @@ jobs:
           EOF
       - uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
         with:
-          name: LecCheck ${{ github.ref_name }}
+          name: LecCheck ${{ env.V }}
           prerelease: ${{ contains(github.ref_name, '-') }}
           generate_release_notes: true
           body_path: notes.md
