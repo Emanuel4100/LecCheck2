@@ -8,6 +8,7 @@ import '../../app/adaptive.dart';
 import '../../app/format.dart';
 import '../../app/sync_providers.dart';
 import '../../app/theme/motion.dart';
+import '../../core/auth/auth_service.dart';
 import '../../core/icons/lec_icons.dart';
 import '../../core/sync/sync_config.dart';
 import '../../core/sync/sync_engine.dart';
@@ -122,7 +123,38 @@ class AccountSection extends ConsumerWidget {
         subtitle: Text('${l.guestModeSubtitle} ${l.syncNotConfigured}'),
       );
     }
-    final session = ref.watch(authProvider).value;
+    final auth = ref.watch(authProvider);
+    if (auth.error is SessionUnreadable) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          ListTile(
+            leading: Icon(LecIcons.warning, color: theme.colorScheme.error),
+            title: Text(l.signInUnreadableTitle),
+            subtitle: Text(l.signInUnreadableBody),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+            child: Wrap(
+              alignment: WrapAlignment.end,
+              spacing: 8,
+              runSpacing: 4,
+              children: [
+                TextButton(
+                  onPressed: () => signIn(context, ref),
+                  child: Text(l.signInAgain),
+                ),
+                FilledButton(
+                  onPressed: () => ref.invalidate(authProvider),
+                  child: Text(l.retry),
+                ),
+              ],
+            ),
+          ),
+        ],
+      );
+    }
+    final session = auth.value;
     if (session == null) {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,

@@ -1850,6 +1850,24 @@ abstract class AppLocalizations {
   /// **'You\'re signed out'**
   String get syncSignedOutTitle;
 
+  /// No description provided for @signInUnreadableTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t read your sign-in'**
+  String get signInUnreadableTitle;
+
+  /// No description provided for @signInUnreadableBody.
+  ///
+  /// In en, this message translates to:
+  /// **'The system\'s secure storage didn\'t answer. Your sign-in is still saved, and nothing was removed.'**
+  String get signInUnreadableBody;
+
+  /// No description provided for @signInAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in again'**
+  String get signInAgain;
+
   /// No description provided for @syncSignedOutBody.
   ///
   /// In en, this message translates to:

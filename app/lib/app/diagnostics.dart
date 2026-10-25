@@ -26,6 +26,7 @@ Future<String> collectDiagnostics(
   final layout = WindowSize.of(context).name;
   final localeCode = ref.read(appearanceProvider).localeCode;
   final state = ref.read(syncStateProvider).value;
+  final auth = ref.read(authProvider);
   final now = DateTime.now();
   final notifications = await NotificationService.instance.status();
   final log = (await DevLog.read()).trimRight().split('\n');
@@ -63,6 +64,13 @@ Future<String> collectDiagnostics(
         '${notifications.error == null ? '' : ', error ${notifications.error}'}',
     'Sync: ${SyncConfig.enabled ? state?.phase.name ?? 'signed out' : 'off'}'
         '${state == null ? '' : ', ${state.pending} waiting, ${state.failed} refused'}',
+    'Sign-in: ${switch (auth) {
+          AsyncError(:final error) => 'unreadable ($error)',
+          AsyncData(value: null) => 'none saved',
+          AsyncData() => 'loaded',
+          _ => 'loading',
+        }}, attached to an account: '
+        '${ref.read(attachedAccountProvider) != null}',
     '',
     'Log (newest last):',
     ...log.skip(log.length > logLines ? log.length - logLines : 0),

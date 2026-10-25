@@ -22,6 +22,10 @@ dependencies:
   flutter_localizations:
     sdk: flutter
   flutter_riverpod: ^3.4.3
+  # Linux: flutter_secure_storage_linux 3.0.3 (pubspec.lock) saves its keyring
+  # entry under the schema name "%" (a dangling c_str() in its Secret.hpp). A
+  # version that fixes that won't find the saved sign-in: upgrade it only
+  # with a migration, or every Linux user is signed out once.
   flutter_secure_storage: ^11.2.0
   flutter_timezone: ^5.1.1
   flutter_web_auth_2: ^5.1.0

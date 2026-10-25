@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/auth/auth_service.dart';
 import '../core/auth/session.dart';
 import '../core/backup/snapshot_service.dart';
+import '../core/dev/dev_log.dart';
 import '../core/sync/sync_config.dart';
 import '../core/sync/sync_engine.dart';
 import '../core/sync/sync_recorder.dart';
@@ -160,19 +161,60 @@ SemesterInfo? pickSemester(List<SemesterInfo> semesters, LocalDate today) =>
 class AuthController extends AsyncNotifier<Session?> {
   AuthService get _auth => ref.read(authServiceProvider);
 
+  /// How long to wait before reading the saved sign-in again, each time the
+  /// storage doesn't answer.
+  @visibleForTesting
+  static var retryWaits = const [
+    Duration(milliseconds: 500),
+    Duration(milliseconds: 1500),
+    Duration(seconds: 3),
+  ];
+
   @override
   Future<Session?> build() async {
     if (!ref.watch(syncConfiguredProvider)) return null;
-    final session = await _auth.load();
+    final session = await _loadSaved();
     if (session == null) return null;
     final renewed = await _auth
         .renewIfNeeded(session)
         .timeout(const Duration(seconds: 10), onTimeout: () => session);
     if (renewed == null) {
-      await _auth.clear();
+      await _auth.clear('the server refused to renew it');
       return null;
     }
     return renewed;
+  }
+
+  /// The saved session. Linux sometimes came up signed out with the sign-in
+  /// still saved: reading the keyring failed, and that looked like Guest
+  /// mode. Now a read that fails is tried again, and one that still fails
+  /// leaves [SessionUnreadable] (Account offers Retry); nothing is removed.
+  /// A missing sign-in on a device that holds an account's data is read
+  /// once more too.
+  Future<Session?> _loadSaved() async {
+    var lookedTwice = false;
+    for (var attempt = 0; ; attempt++) {
+      try {
+        final session = await _auth.load();
+        if (session == null &&
+            !lookedTwice &&
+            ref.read(attachedAccountProvider) != null) {
+          lookedTwice = true;
+          await Future<void>.delayed(retryWaits.first);
+          continue;
+        }
+        DevLog.add(
+          session == null
+              ? 'Sign-in: none saved${lookedTwice ? ' (read twice)' : ''}'
+              : 'Sign-in: loaded',
+        );
+        return session;
+      } on SessionUnreadable catch (e) {
+        DevLog.add('Sign-in unreadable (try ${attempt + 1}): ${e.error}');
+        if (attempt >= retryWaits.length) rethrow;
+        await Future<void>.delayed(retryWaits[attempt]);
+      }
+    }
   }
 
   /// Signs in and attaches the account to this device. Asks first, through
@@ -212,7 +254,7 @@ class AuthController extends AsyncNotifier<Session?> {
     var bringBack = false;
 
     Future<SignInResult> cancel() async {
-      await _auth.clear();
+      await _auth.clear('sign-in cancelled');
       return SignInResult.cancelled;
     }
 
@@ -319,7 +361,7 @@ class AuthController extends AsyncNotifier<Session?> {
           .read(snapshotServiceProvider)
           .take(SnapshotReason.beforeSignOut);
     }
-    await _auth.clear();
+    await _auth.clear('signed out (${mode.name})');
     state = const AsyncData(null);
     if (mode == SignOutMode.removeData) {
       await _detach();
@@ -364,15 +406,19 @@ class AuthController extends AsyncNotifier<Session?> {
     return renewed;
   }
 
-  /// The server revoked this session (e.g. "sign out everywhere" elsewhere).
-  void sessionRevoked() {
-    unawaited(_auth.clear());
+  /// The server revoked this session (e.g. "sign out everywhere" elsewhere);
+  /// [reason] says how the engine found out.
+  void sessionRevoked(String reason) {
+    unawaited(_auth.clear('revoked: $reason'));
     state = const AsyncData(null);
   }
 }
 
 final authProvider = AsyncNotifierProvider<AuthController, Session?>(
   AuthController.new,
+  // [AuthController.build] tries again itself. Riverpod's own retries kept
+  // it loading for ~40 s, which Account showed as Guest mode.
+  retry: (_, _) => null,
 );
 
 /// What the signed-in account holds, for Settings → Account (asked each time
@@ -398,7 +444,8 @@ final syncEngineProvider = Provider<SyncEngine?>((ref) {
     repo: ref.watch(repositoryProvider),
     recorder: recorder,
     session: session,
-    onSessionRevoked: () => ref.read(authProvider.notifier).sessionRevoked(),
+    onSessionRevoked: (reason) =>
+        ref.read(authProvider.notifier).sessionRevoked(reason),
     renew: (s) => ref.read(authProvider.notifier).renew(s),
   )..start();
   ref.onDispose(engine.dispose);

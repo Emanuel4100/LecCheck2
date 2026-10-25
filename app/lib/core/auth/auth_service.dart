@@ -3,11 +3,13 @@ import 'dart:io' show Platform;
 import 'dart:math';
 
 import 'package:crypto/crypto.dart';
-import 'package:flutter/foundation.dart' show immutable, kIsWeb;
+import 'package:flutter/foundation.dart'
+    show immutable, kIsWeb, visibleForTesting;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_web_auth_2/flutter_web_auth_2.dart';
 import 'package:http/http.dart' as http;
 
+import '../dev/dev_log.dart';
 import '../sync/sync_config.dart';
 import 'session.dart';
 
@@ -17,6 +19,16 @@ class AuthException implements Exception {
 
   @override
   String toString() => 'AuthException($code)';
+}
+
+/// The saved sign-in couldn't be read: the system's secure storage (on Linux,
+/// the keyring) didn't answer. It's still saved; nothing was signed out.
+class SessionUnreadable implements Exception {
+  const SessionUnreadable(this.error);
+  final Object error;
+
+  @override
+  String toString() => 'SessionUnreadable($error)';
 }
 
 /// What an account holds, and what "Delete cloud data" left in its trash
@@ -70,7 +82,18 @@ class AuthService {
   final FlutterSecureStorage _storage;
   final http.Client _http;
 
-  static const _key = 'leccheck.session';
+  /// Where the session is kept. A local test server (`wrangler dev`, plain
+  /// http) gets its own: on Linux a debug build shares the installed app's
+  /// keyring entry, and its sign-in could replace or remove the real one.
+  static final _key = storageKey(SyncConfig.apiBase);
+
+  @visibleForTesting
+  static String storageKey(String apiBase) {
+    final api = Uri.tryParse(apiBase);
+    return api == null || api.scheme == 'https' || api.host.isEmpty
+        ? 'leccheck.session'
+        : 'leccheck.session@${api.host}:${api.port}';
+  }
 
   /// Loopback port for desktop sign-in (Linux/Windows have no custom URL
   /// schemes the browser can hand back to).
@@ -79,8 +102,15 @@ class AuthService {
   static bool get _usesLoopback =>
       !kIsWeb && (Platform.isLinux || Platform.isWindows);
 
+  /// The saved session, or null when there's none. Throws
+  /// [SessionUnreadable] when the storage didn't answer.
   Future<Session?> load() async {
-    final raw = await _storage.read(key: _key);
+    final String? raw;
+    try {
+      raw = await _storage.read(key: _key);
+    } on Object catch (e) {
+      throw SessionUnreadable(e);
+    }
     if (raw == null) return null;
     try {
       return Session.fromJson(jsonDecode(raw) as Map<String, Object?>);
@@ -92,7 +122,12 @@ class AuthService {
   Future<void> save(Session session) =>
       _storage.write(key: _key, value: jsonEncode(session.toJson()));
 
-  Future<void> clear() => _storage.delete(key: _key);
+  /// Removes the saved session; [reason] goes to the log, so a sign-out
+  /// nobody asked for can be traced.
+  Future<void> clear(String reason) {
+    DevLog.add('Sign-in removed: $reason');
+    return _storage.delete(key: _key);
+  }
 
   Future<Session> signInWithGoogle() async {
     final verifier = _random(64);

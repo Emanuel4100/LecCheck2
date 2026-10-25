@@ -27,14 +27,29 @@ class _SignedIn extends AuthController {
   }
 }
 
+/// Signed in, but the keyring doesn't answer (until [answers]).
+class _Unreadable extends AuthController {
+  bool answers = false;
+
+  @override
+  Future<Session?> build() async {
+    if (!answers) throw SessionUnreadable(Exception('Libsecret error'));
+    return const Session(token: 't', userId: 'u1', email: 'me@example.com');
+  }
+}
+
 void main() {
-  Future<_SignedIn> pump(WidgetTester tester, AccountSummary summary) async {
+  Future<T> pump<T extends AuthController>(
+    WidgetTester tester,
+    AccountSummary summary, [
+    T Function()? create,
+  ]) async {
     SharedPreferencesAsyncPlatform.instance =
         InMemorySharedPreferencesAsync.empty();
     final prefs = await SharedPreferencesWithCache.create(
       cacheOptions: const SharedPreferencesWithCacheOptions(),
     );
-    final auth = _SignedIn();
+    final auth = create?.call() ?? _SignedIn() as T;
     await tester.pumpWidget(
       ProviderScope(
         key: UniqueKey(),
@@ -66,7 +81,7 @@ void main() {
   testWidgets('deleted cloud data can be brought back from Account', (
     tester,
   ) async {
-    final auth = await pump(
+    final auth = await pump<_SignedIn>(
       tester,
       AccountSummary(
         semesters: 0,
@@ -89,5 +104,23 @@ void main() {
   testWidgets('nothing to bring back: no row', (tester) async {
     await pump(tester, const AccountSummary(semesters: 2, courses: 5));
     expect(find.text('Bring back deleted cloud data'), findsNothing);
+  });
+
+  testWidgets('a sign-in the keyring can\'t read: Retry, not Guest mode', (
+    tester,
+  ) async {
+    final auth = await pump(
+      tester,
+      const AccountSummary(semesters: 2, courses: 5),
+      _Unreadable.new,
+    );
+    expect(find.text("Couldn't read your sign-in"), findsOneWidget);
+    expect(find.text('Not signed in'), findsNothing);
+
+    auth.answers = true;
+    await tester.tap(find.text('Retry'));
+    await tester.pumpAndSettle();
+    expect(find.text('me@example.com'), findsWidgets);
+    expect(find.text("Couldn't read your sign-in"), findsNothing);
   });
 }

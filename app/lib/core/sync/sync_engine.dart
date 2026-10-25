@@ -88,7 +88,9 @@ class SyncEngine {
   final AppDatabase db;
   final ScheduleRepository repo;
   final SyncRecorder recorder;
-  final VoidCallback? onSessionRevoked;
+
+  /// The server refused this session; called with how that showed.
+  final void Function(String reason)? onSessionRevoked;
   final bool watchLifecycle;
 
   /// Renews an old session token before connecting (see
@@ -247,7 +249,7 @@ class SyncEngine {
         final renewed = await renew(_session)
             .timeout(const Duration(seconds: 10), onTimeout: () => _session);
         if (renewed == null) {
-          onSessionRevoked?.call();
+          onSessionRevoked?.call('renewal refused');
           return;
         }
         _session = renewed;
@@ -344,7 +346,7 @@ class SyncEngine {
     _caughtUp = false;
     if (_disposed) return;
     if (code == 4001) {
-      onSessionRevoked?.call();
+      onSessionRevoked?.call('connection closed with 4001');
       return;
     }
     _emit(SyncPhase.offline);
@@ -372,7 +374,9 @@ class SyncEngine {
             headers: {'Authorization': 'Bearer ${_session.token}'},
           )
           .timeout(const Duration(seconds: 10));
-      if (response.statusCode == 401) onSessionRevoked?.call();
+      if (response.statusCode == 401) {
+        onSessionRevoked?.call('session check answered 401');
+      }
     } on Object {
       // Still offline.
     }

@@ -112,7 +112,13 @@ Future<void> onNotificationActionInBackground(
     if (!await markFromNotification(response, repo)) return;
     DevLog.add('Saved');
     if (recorder != null) {
-      final session = await AuthService().load();
+      final session = await AuthService().load().onError<SessionUnreadable>((
+        e,
+        _,
+      ) {
+        DevLog.add('Not synced: $e');
+        return null;
+      });
       if (session != null) {
         await SyncEngine.syncOverHttp(
           db: db,

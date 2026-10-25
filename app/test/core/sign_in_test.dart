@@ -41,7 +41,7 @@ class _FakeAuth extends AuthService {
   Future<void> save(Session session) async {}
 
   @override
-  Future<void> clear() async => cleared++;
+  Future<void> clear(String reason) async => cleared++;
 }
 
 SemesterInfo _semester(String id, String start, String end) => SemesterInfo(

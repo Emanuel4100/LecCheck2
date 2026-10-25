@@ -1070,6 +1070,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get syncSignedOutTitle => 'You\'re signed out';
 
   @override
+  String get signInUnreadableTitle => 'Couldn\'t read your sign-in';
+
+  @override
+  String get signInUnreadableBody =>
+      'The system\'s secure storage didn\'t answer. Your sign-in is still saved, and nothing was removed.';
+
+  @override
+  String get signInAgain => 'Sign in again';
+
+  @override
   String syncSignedOutBody(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,

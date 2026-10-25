@@ -514,6 +514,9 @@
   "devModeAlreadyOn": "Developer mode is already on",
   "signInFailed": "Couldn't sign in. Check your connection and try again.",
   "syncSignedOutTitle": "You're signed out",
+  "signInUnreadableTitle": "Couldn't read your sign-in",
+  "signInUnreadableBody": "The system's secure storage didn't answer. Your sign-in is still saved, and nothing was removed.",
+  "signInAgain": "Sign in again",
   "syncSignedOutBody": "{count, plural, =1{1 change on this device will sync when you sign in.} other{{count} changes on this device will sync when you sign in.}}",
   "@syncSignedOutBody": {
     "placeholders": {

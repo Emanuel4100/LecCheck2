@@ -1067,6 +1067,16 @@ class AppLocalizationsHe extends AppLocalizations {
   String get syncSignedOutTitle => 'אין חיבור לחשבון';
 
   @override
+  String get signInUnreadableTitle => 'לא ניתן לקרוא את פרטי ההתחברות';
+
+  @override
+  String get signInUnreadableBody =>
+      'האחסון המאובטח של המערכת לא הגיב. ההתחברות שלך עדיין שמורה, ושום דבר לא נמחק.';
+
+  @override
+  String get signInAgain => 'התחברות מחדש';
+
+  @override
   String syncSignedOutBody(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,

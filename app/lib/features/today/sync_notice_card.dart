@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../app/sync_providers.dart';
+import '../../core/auth/auth_service.dart';
 import '../../core/icons/lec_icons.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../settings/account_section.dart';
@@ -17,8 +18,9 @@ class _Dismissed extends Notifier<bool> {
 }
 
 /// On Today, when changes can't sync and only Settings → Account would say
-/// so: signed out while this device still holds the account's data (its
-/// edits queue up), refused changes, or a server that needs a newer app.
+/// so: a saved sign-in that couldn't be read, signed out while this device
+/// still holds the account's data (its edits queue up), refused changes, or
+/// a server that needs a newer app.
 class SyncNoticeCard extends ConsumerWidget {
   const SyncNoticeCard({super.key});
 
@@ -41,6 +43,16 @@ class SyncNoticeCard extends ConsumerWidget {
       String subtitle,
       Widget? action,
     ) = switch (()) {
+      // Signed in, but the saved sign-in couldn't be read this time.
+      _ when auth.error is SessionUnreadable => (
+        LecIcons.warning,
+        l.signInUnreadableTitle,
+        l.signInUnreadableBody,
+        FilledButton(
+          onPressed: () => ref.invalidate(authProvider),
+          child: Text(l.retry),
+        ),
+      ),
       _ when !signedIn && attached && counts.pending > 0 => (
         LecIcons.syncOff,
         l.syncSignedOutTitle,
