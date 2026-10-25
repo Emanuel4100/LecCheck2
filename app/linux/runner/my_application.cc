@@ -80,24 +80,47 @@ static void save_window_state() {
   }
 }
 
+static guint save_source = 0;
+
+static gboolean on_save_due(gpointer) {
+  save_source = 0;
+  save_window_state();
+  return G_SOURCE_REMOVE;
+}
+
+// Saves half a second after the last change. Saving on "destroy" never ran:
+// Flutter's engine quits the application when the window is closed without
+// destroying it, and resizing sends many events.
+static void save_soon() {
+  if (save_source != 0) g_source_remove(save_source);
+  save_source = g_timeout_add(500, on_save_due, nullptr);
+}
+
 // Remembers the size while the window isn't maximized, so un-maximizing
 // next time goes back to it.
 static gboolean on_configure(GtkWidget* widget, GdkEvent*, gpointer) {
   if (!window_state.maximized) {
-    gtk_window_get_size(GTK_WINDOW(widget), &window_state.width,
-                        &window_state.height);
+    gint width, height;
+    gtk_window_get_size(GTK_WINDOW(widget), &width, &height);
+    if (width != window_state.width || height != window_state.height) {
+      window_state.width = width;
+      window_state.height = height;
+      save_soon();
+    }
   }
   return FALSE;
 }
 
 static gboolean on_window_state(GtkWidget*, GdkEventWindowState* event,
                                 gpointer) {
-  window_state.maximized =
+  const gboolean maximized =
       (event->new_window_state & GDK_WINDOW_STATE_MAXIMIZED) != 0;
+  if (maximized != window_state.maximized) {
+    window_state.maximized = maximized;
+    save_soon();
+  }
   return FALSE;
 }
-
-static void on_destroy(GtkWidget*, gpointer) { save_window_state(); }
 
 // Implements GApplication::activate.
 static void my_application_activate(GApplication* application) {
@@ -131,7 +154,6 @@ static void my_application_activate(GApplication* application) {
                    nullptr);
   g_signal_connect(window, "window-state-event", G_CALLBACK(on_window_state),
                    nullptr);
-  g_signal_connect(window, "destroy", G_CALLBACK(on_destroy), nullptr);
   // Narrower than this and even the phone layout gets cramped.
   GdkGeometry limits = {};
   limits.min_width = 360;
@@ -201,9 +223,11 @@ static void my_application_startup(GApplication* application) {
 
 // Implements GApplication::shutdown.
 static void my_application_shutdown(GApplication* application) {
-  // MyApplication* self = MY_APPLICATION(object);
-
-  // Perform any actions required at application shutdown.
+  // A change from the last half second isn't saved yet.
+  if (save_source != 0) {
+    g_source_remove(save_source);
+    on_save_due(nullptr);
+  }
 
   G_APPLICATION_CLASS(my_application_parent_class)->shutdown(application);
 }
