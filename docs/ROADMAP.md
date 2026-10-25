@@ -69,6 +69,11 @@
   dropped "Counts toward attendance" when the new day already had a record, so a session
   left out of attendance counted again; a failed update drew its steps as if they had
   finished; contact cards didn't mirror in Hebrew.
+- **Reminders that follow cancels, a steadier Linux sign-in** (2.0.0-beta.13): canceling
+  or skipping a session drops its reminder even when the app is left right after, and
+  out-of-date reminders leave the screen; Linux no longer looks signed out when the
+  keyring is slow to answer (Retry instead); Sync now animates and says what happened,
+  and the cloud icon syncs; the Linux window size is saved.
 
 ## Not yet verified on real hardware
 
@@ -87,8 +92,15 @@ These are built and compile, but have only been exercised in tests so far:
 
 ## Next (M4)
 
-- **Desktop**: system tray (keep reminders running when the window is closed), keyboard
-  shortcuts, Windows build + installer, AUR package, Flatpak.
+- **2.0.0-beta.14, Week like a calendar**: drag on empty space in Week to create a
+  meeting (long-press, then drag on phones), with a small card to fill in; on desktop a
+  **+ Create** button instead of Add, and a month calendar in the sidebar.
+- **2.0.0-beta.15, Linux as a Flatpak**: from LecCheck's own Flatpak repository (on GitHub
+  Pages), replacing the tarball and `install.sh`; the update window works through
+  Flatpak. The update window also gets the size before downloading, an animated file
+  check and formatted release notes.
+- **Desktop**: system tray (keep reminders running when the window is closed), Windows
+  build + installer.
 - **iPhone widget** (WidgetKit) — needs App Group support from AltStore/SideStore.
 - **Data safety, part 3**: SQLite WAL + `quick_check` on startup (offer the latest
   automatic backup if it fails; the check exists in Settings → Developer), re-fetch rows

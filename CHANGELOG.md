@@ -1,5 +1,24 @@
 # Changelog
 
+## 2.0.0-beta.13 — 2026-10-25
+
+- **Canceling a session drops its reminder.** A canceled class could still announce
+  itself: the reminders were updated two seconds after the change, and leaving the app
+  (home, Recents, swiping it away) in those seconds kept the old one. They're now updated
+  at once when you leave, and reminders already on screen go away too: "starts soon" for
+  a session you canceled, "how was class?" for one you marked in the app.
+- **Skipped ahead, no reminder**: a session marked Skipped before it starts gets no
+  "starts soon".
+- **Linux: no more surprise sign-outs.** LecCheck sometimes came up signed out while the
+  sign-in was still saved: the system keyring didn't answer, and that looked like Guest
+  mode. Now it asks again, and if the keyring still doesn't answer, Account and Today
+  say so with **Retry** instead of signing you out. Settings → Developer's log notes why
+  a sign-in was ever removed.
+- **Sync now shows what it did**: the icon turns while it syncs, then the cloud with its
+  check pops in ("Up to date"), or it says it couldn't sync. Clicking the cloud icon in
+  the title bar syncs now; right-click or long-press opens Settings.
+- **Linux remembers the window size** for real: it was never saved.
+
 ## 2.0.0-beta.12 — 2026-10-15
 
 - **Moving a meeting to another day** kept the session's mark and notes but dropped

@@ -167,7 +167,8 @@ recording link).
   **Open link** button when the course or meeting has a link.
 - **After class: how was it?** — 0–30 minutes after a session ends, with **Attended /
   Missed / Watched** buttons. Tapping one records the status without opening the app
-  (and syncs if you're signed in). Only sessions still pending get this reminder.
+  (and syncs if you're signed in). Only sessions still pending get this reminder, and
+  marking a session in the app takes its reminder off the screen.
 - **Send a test notification** to check it works. If nothing can be shown, it says why.
 - **Per course**: a course page has **Reminders for this course**, to turn them off for
   one course (e.g. one you only watch as recordings) on this device.
@@ -178,8 +179,10 @@ system settings when Android won't ask again). On Android, **Settings → Notifi
 also points out what can delay or stop reminders: exact alarms, battery optimization,
 restricted background use, and, on some phones, autostart.
 
-Reminders are planned up to three weeks ahead (two on iPhone) and kept up to date as you
-edit, when you open the app, and once a day in the background. They follow every
+Canceled sessions get no reminders, and a session marked **Skipped** ahead gets no
+"class starts soon". Reminders are planned up to three weeks ahead (two on iPhone) and
+kept up to date as you edit (also when you leave the app right after), when you open the
+app, and once a day in the background. They follow every
 semester running then, whichever semester you're looking at. On Linux they fire while
 LecCheck is running (also right after the computer wakes up; ones that are no longer
 useful, like "class starts soon" for a class already under way, are skipped).
@@ -239,8 +242,12 @@ it. Tap the widget to open the app.
 - If this device holds data from a *different* account, you're asked before it's replaced.
 - If your account's cloud data was deleted in the last 30 days, signing in offers to
   **Bring back** it.
-- The cloud icon in the top bar shows sync status (synced / syncing / offline); **Sync
-  now** forces a sync. Changes made offline sync when you're back online.
+- The cloud icon in the top bar shows sync status (synced / syncing / offline). Click
+  it, or **Sync now** under Account, to sync now: the icon turns, then says **Up to
+  date** or that it couldn't sync. Right-click or long-press the icon for Settings.
+  Changes made offline sync when you're back online.
+- If LecCheck can't read your saved sign-in (on Linux, when the system keyring doesn't
+  answer), Account and Today say so with **Retry**: you're still signed in.
 - Changes the server refuses are kept on the device and listed under Account with a
   **Retry** button. If the sync server is busy (for example, it reached its free daily
   limit), Account shows **Sync paused until** a time; your changes wait on the device.
