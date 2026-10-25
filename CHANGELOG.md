@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 2.0.0-beta.14 — 2026-10-26
 
 - **Add on Week like in a calendar**: tap an empty spot for an hour there, drag out the
   time with the mouse, or on a phone long-press and drag (15-minute steps). **Quick add**

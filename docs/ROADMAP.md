@@ -74,6 +74,10 @@
   out-of-date reminders leave the screen; Linux stays signed in on keyrings without a
   password (GNOME Keyring emptied secrets with backslashes when it re-read its file); Sync now animates and says what happened,
   and the cloud icon syncs; the Linux window size is saved.
+- **Week like a calendar** (2.0.0-beta.14): tap or drag out a time on Week (long-press
+  and drag on phones) and quick add the meeting beside it, to a course or a new one;
+  drag sessions to move or resize them on desktop, this week only or every week, with
+  Undo; a raised **+ Create** button and a month calendar in the desktop sidebar.
 
 ## Not yet verified on real hardware
 
@@ -92,9 +96,6 @@ These are built and compile, but have only been exercised in tests so far:
 
 ## Next (M4)
 
-- **2.0.0-beta.14, Week like a calendar**: drag on empty space in Week to create a
-  meeting (long-press, then drag on phones), with a small card to fill in; on desktop a
-  **+ Create** button instead of Add, and a month calendar in the sidebar.
 - **2.0.0-beta.15, Linux as a Flatpak**: from LecCheck's own Flatpak repository (on GitHub
   Pages), replacing the tarball and `install.sh`; the update window works through
   Flatpak. The update window also gets the size before downloading, an animated file
