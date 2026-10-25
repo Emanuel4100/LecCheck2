@@ -111,16 +111,36 @@ class AuthService {
     } on Object catch (e) {
       throw SessionUnreadable(e);
     }
-    if (raw == null) return null;
+    if (raw == null || raw.isEmpty) return null;
+    // Saved as plain JSON before 2.0.0-beta.13: read it, and save it again
+    // the new way before a keyring reload can empty it (see [save]).
+    final legacy = raw.startsWith('{');
+    final Session session;
     try {
-      return Session.fromJson(jsonDecode(raw) as Map<String, Object?>);
+      final json = legacy ? raw : utf8.decode(base64Url.decode(raw));
+      session = Session.fromJson(jsonDecode(json) as Map<String, Object?>);
     } on Object {
       return null;
     }
+    if (legacy) {
+      try {
+        await save(session);
+      } on Object catch (e) {
+        DevLog.add('Sign-in not re-saved: $e');
+      }
+    }
+    return session;
   }
 
-  Future<void> save(Session session) =>
-      _storage.write(key: _key, value: jsonEncode(session.toJson()));
+  /// Saves [session] base64url-encoded: no backslashes. On Linux the plugin
+  /// keeps every value inside one JSON document in one keyring entry, so a
+  /// JSON session became escaped JSON full of `\"`, and GNOME Keyring's
+  /// keyrings without a password (a plain text file) lose any secret with a
+  /// backslash when they read the file again: the sign-in came back empty.
+  Future<void> save(Session session) => _storage.write(
+    key: _key,
+    value: base64Url.encode(utf8.encode(jsonEncode(session.toJson()))),
+  );
 
   /// Removes the saved session; [reason] goes to the log, so a sign-out
   /// nobody asked for can be traced.

@@ -71,8 +71,8 @@
   finished; contact cards didn't mirror in Hebrew.
 - **Reminders that follow cancels, a steadier Linux sign-in** (2.0.0-beta.13): canceling
   or skipping a session drops its reminder even when the app is left right after, and
-  out-of-date reminders leave the screen; Linux no longer looks signed out when the
-  keyring is slow to answer (Retry instead); Sync now animates and says what happened,
+  out-of-date reminders leave the screen; Linux stays signed in on keyrings without a
+  password (GNOME Keyring emptied secrets with backslashes when it re-read its file); Sync now animates and says what happened,
   and the cloud icon syncs; the Linux window size is saved.
 
 ## Not yet verified on real hardware

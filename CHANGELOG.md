@@ -9,11 +9,13 @@
   a session you canceled, "how was class?" for one you marked in the app.
 - **Skipped ahead, no reminder**: a session marked Skipped before it starts gets no
   "starts soon".
-- **Linux: no more surprise sign-outs.** LecCheck sometimes came up signed out while the
-  sign-in was still saved: the system keyring didn't answer, and that looked like Guest
-  mode. Now it asks again, and if the keyring still doesn't answer, Account and Today
-  say so with **Retry** instead of signing you out. Settings → Developer's log notes why
-  a sign-in was ever removed.
+- **Linux: no more surprise sign-outs.** On a keyring without a password (common with
+  automatic login), GNOME Keyring emptied LecCheck's saved sign-in whenever it re-read
+  its file, because the value contained backslashes. It's now saved in a form without
+  any, and an older one is converted the first time it's read. If you were signed out,
+  sign in once more. And if the keyring doesn't answer at all, Account and Today now say
+  so with **Retry** instead of looking signed out; Settings → Developer's log notes why a
+  sign-in was ever removed.
 - **Sync now shows what it did**: the icon turns while it syncs, then the cloud with its
   check pops in ("Up to date"), or it says it couldn't sync. Clicking the cloud icon in
   the title bar syncs now; right-click or long-press opens Settings.

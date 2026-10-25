@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -35,6 +37,23 @@ class _FlakyStorage extends FlutterSecureStorage {
       throw PlatformException(code: 'Libsecret error');
     }
     return value;
+  }
+
+  final writes = <String>[];
+
+  @override
+  Future<void> write({
+    required String key,
+    required String? value,
+    AppleOptions? iOptions,
+    AndroidOptions? aOptions,
+    LinuxOptions? lOptions,
+    WebOptions? webOptions,
+    AppleOptions? mOptions,
+    WindowsOptions? wOptions,
+  }) async {
+    writes.add(value!);
+    this.value = value;
   }
 
   @override
@@ -120,6 +139,33 @@ void main() {
     expect(await container(guest).read(authProvider.future), isNull);
     expect(guest.reads, 1);
   });
+
+  test(
+    'saved without backslashes; old plain JSON is read and re-saved',
+    () async {
+      // GNOME Keyring without a password emptied secrets with a backslash
+      // when it re-read its file, and a JSON session nested in the plugin's
+      // JSON is full of them.
+      final storage = _FlakyStorage(value: saved);
+      final auth = _Auth(storage);
+      final session = await auth.load();
+      expect(session?.userId, 'g:1');
+      expect(storage.writes, hasLength(1));
+      expect(storage.value, isNot(contains('{')));
+      expect(
+        jsonEncode({'leccheck.session': storage.value}),
+        isNot(contains(r'\')),
+      );
+
+      // The new form reads back, and isn't saved again.
+      expect((await auth.load())?.userId, 'g:1');
+      expect(storage.writes, hasLength(1));
+
+      // Nothing usable: no session (an emptied entry reads as "").
+      storage.value = '';
+      expect(await auth.load(), isNull);
+    },
+  );
 
   test('a local test server keeps its own sign-in', () {
     expect(
