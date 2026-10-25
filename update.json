@@ -1,17 +1,17 @@
 {
   "beta": {
-    "version": "2.0.0-beta.12",
-    "build": 20,
-    "date": "2026-10-14",
-    "notesUrl": "https://github.com/Emanuel4100/LecCheck2/releases/tag/v2.0.0-beta.12",
-    "notes": "- **Moving a meeting to another day** kept the session's mark and notes but dropped\n  **Counts toward attendance** when the new day already had a record, so a session left\n  out quietly counted again.\n- A failed update no longer draws its steps as if everything had finished.\n- Contact cards in the course editor line up in Hebrew.",
-    "androidArm64": "https://github.com/Emanuel4100/LecCheck2/releases/download/v2.0.0-beta.12/LecCheck-2.0.0-beta.12-android-arm64.apk",
-    "androidUniversal": "https://github.com/Emanuel4100/LecCheck2/releases/download/v2.0.0-beta.12/LecCheck-2.0.0-beta.12-android.apk",
-    "linux": "https://github.com/Emanuel4100/LecCheck2/releases/download/v2.0.0-beta.12/LecCheck-2.0.0-beta.12-linux-x64.tar.gz",
+    "version": "2.0.0-beta.13",
+    "build": 21,
+    "date": "2026-10-25",
+    "notesUrl": "https://github.com/Emanuel4100/LecCheck2/releases/tag/v2.0.0-beta.13",
+    "notes": "- **Linux: no more surprise sign-outs.** On a keyring without a password (common with\n  automatic login), GNOME Keyring emptied LecCheck's saved sign-in whenever it re-read\n  its file, because the value contained backslashes, so you came back signed out. The\n  sign-in is now saved in a form without any, and an older one is converted the first\n  time it's read. If you were signed out, sign in once more.\n- **A sign-in that can't be read isn't a sign-out**: when the system keyring doesn't\n  answer, LecCheck asks it again, and if it still can't, Account and Today say so with\n  **Retry** and **Sign in again** instead of showing you as signed out. Nothing is removed.\n- **Canceling a session drops its reminder.** A canceled class could still announce\n  itself: reminders were updated two seconds after a change, and leaving the app (home,\n  Recents, swiping it away) in those seconds kept the old one. They're now updated at\n  once when you leave.\n- **Reminders on screen go away when they're out of date**: \"class starts soon\" for a\n  session you canceled or skipped since, and \"how was class?\" for one you marked in the\n  app (also last night's).\n- **Skipped ahead, no reminder**: a session marked Skipped before it starts gets no\n  \"class starts soon\".\n- **Sync now shows what it did**: the icon turns while it syncs, then the cloud with its\n  check pops in (\"Up to date\"), or it says it couldn't sync (your changes are kept). It\n  also checks that the connection still works: before, pressing it while synced did\n  nothing at all. With reduced motion the icons just change, and screen readers hear\n  the result.\n- **Click the cloud icon to sync**: in the title bar (or the sidebar on wide windows),\n  clicking it syncs now, like Ctrl+R / F5; right-click or long-press opens Settings.\n- **Linux remembers the window size** and whether it was maximized: it was never saved.\n\n### Smaller things\n\n- Settings \u2192 Developer's log notes each start's sign-in and why a sign-in was ever\n  removed, and **Copy diagnostics** includes the sign-in state.\n- Settings \u2192 Developer \u2192 **Sync now** says whether the server answered.\n- Builds pointed at a local test server keep their own sign-in, so testing can't sign\n  out the installed app.",
+    "androidArm64": "https://github.com/Emanuel4100/LecCheck2/releases/download/v2.0.0-beta.13/LecCheck-2.0.0-beta.13-android-arm64.apk",
+    "androidUniversal": "https://github.com/Emanuel4100/LecCheck2/releases/download/v2.0.0-beta.13/LecCheck-2.0.0-beta.13-android.apk",
+    "linux": "https://github.com/Emanuel4100/LecCheck2/releases/download/v2.0.0-beta.13/LecCheck-2.0.0-beta.13-linux-x64.tar.gz",
     "sha256": {
-      "androidArm64": "53a25888ac21778b7315f06ead7ac2109a724ed342a5520dc586a4a4849319e7",
-      "androidUniversal": "ba1b88cf8b88edcf439f794d9824e3a6e57ee5cc5d0e392936da6ffec9ef97ed",
-      "linux": "4ed553d9fe97cd28b6e6150768954b3469959e49b4107c4d2557e432d958c34d"
+      "androidArm64": "02c23eb0cb17d4372977967b8740d0c1efe065bc5e618c71e3610faaa20001e5",
+      "androidUniversal": "1934eaf8905f3c76921344f5587fad6ecf355effd5b9414748465f7c48ffba47",
+      "linux": "cfc597537f36e98b88cd42dec6ecfaf840096ba512654ae3108ad5833f592cd9"
     }
   }
 }

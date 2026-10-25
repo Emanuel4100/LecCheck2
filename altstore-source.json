@@ -18,11 +18,11 @@
       "versions": [
         {
           "version": "2.0.0",
-          "buildVersion": "20",
-          "date": "2026-10-14",
-          "localizedDescription": "LecCheck 2.0.0-beta.12",
-          "downloadURL": "https://github.com/Emanuel4100/LecCheck2/releases/download/v2.0.0-beta.12/LecCheck-2.0.0-beta.12-ios.ipa",
-          "size": 11250546,
+          "buildVersion": "21",
+          "date": "2026-10-25",
+          "localizedDescription": "LecCheck 2.0.0-beta.13",
+          "downloadURL": "https://github.com/Emanuel4100/LecCheck2/releases/download/v2.0.0-beta.13/LecCheck-2.0.0-beta.13-ios.ipa",
+          "size": 11257278,
           "minOSVersion": "15.0"
         }
       ],
