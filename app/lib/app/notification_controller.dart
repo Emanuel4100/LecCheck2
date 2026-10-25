@@ -200,7 +200,13 @@ class NotificationController {
       });
     _hourly = Timer.periodic(const Duration(hours: 1), (_) => schedule());
     // Coming back after a while: the day moved on, or the alarms are gone.
-    _lifecycle = AppLifecycleListener(onResume: schedule);
+    // Leaving (home, Recents) may be the last chance before the system stops
+    // the app, so a re-plan that's waiting runs then.
+    _lifecycle = AppLifecycleListener(
+      onResume: schedule,
+      onInactive: flush,
+      onHide: flush,
+    );
     schedule();
     final launch = await service.launchResponse();
     if (launch != null) await _onResponse(launch);
@@ -215,7 +221,16 @@ class NotificationController {
 
   void schedule() {
     _debounce?.cancel();
-    _debounce = Timer(const Duration(seconds: 2), _apply);
+    _debounce = Timer(const Duration(milliseconds: 500), _apply);
+  }
+
+  /// Runs a waiting re-plan now. A session canceled just before the app was
+  /// swiped away used to keep its reminder: the re-plan waited 2 s and never
+  /// ran.
+  Future<void> flush() async {
+    if (!(_debounce?.isActive ?? false)) return;
+    _debounce!.cancel();
+    await _apply();
   }
 
   /// Plans and reschedules every reminder right away (Settings →
@@ -239,9 +254,11 @@ class NotificationController {
     final window = reminderWindow();
     final ScheduleWindow schedule;
     try {
+      // From yesterday: a "how was class?" from last night may still be on
+      // screen.
       schedule = await container
           .read(repositoryProvider)
-          .loadWindow(today, today.addDays(window.horizonDays));
+          .loadWindow(today.addDays(-1), today.addDays(window.horizonDays));
     } on Object catch (e) {
       // Keep what's scheduled; the next change or hour tries again.
       debugPrint('Reminders not planned: $e');
@@ -263,6 +280,9 @@ class NotificationController {
     );
     // No semester running soon: an empty plan cancels what's left.
     await service.apply(plan, force: force);
+    await service.dismissOutdated(
+      (kind, id) => reminderOutdated(kind, schedule.index.byId[id]),
+    );
     return plan.length;
   }
 

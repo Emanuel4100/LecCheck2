@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:drift/native.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -9,6 +11,7 @@ import 'package:leccheck/core/db/app_database.dart';
 import 'package:leccheck/core/db/schedule_repository.dart';
 import 'package:leccheck/core/notifications/notification_service.dart';
 import 'package:leccheck/domain/local_date.dart';
+import 'package:leccheck/domain/reminder_plan.dart';
 import 'package:leccheck/domain/schedule_types.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shared_preferences_platform_interface/in_memory_shared_preferences_async.dart';
@@ -162,6 +165,43 @@ void main() {
     await controller.rescheduleNow();
     expect(os.cancelled, scheduled);
     expect(os.listed, isEmpty);
+  });
+
+  test('a waiting re-plan runs at once when the app is left', () async {
+    await addSemester();
+    final controller = NotificationController(container(), service: service);
+    controller.schedule();
+    await controller.flush();
+    expect(os.scheduled, isNotEmpty);
+    // Nothing waits any more: flushing again does nothing.
+    os.scheduled.clear();
+    await controller.flush();
+    expect(os.scheduled, isEmpty);
+  });
+
+  test('a session canceled in the app takes its reminders away, even the '
+      'one on screen', () async {
+    await addSemester();
+    final controller = NotificationController(container(), service: service);
+    await controller.rescheduleNow();
+    // Tomorrow's class: its "starts soon" is scheduled, and pretend one is
+    // already showing.
+    final tomorrow = LocalDate.fromDateTime(DateTime.now()).addDays(1);
+    final meeting = 'm${tomorrow.weekday}';
+    final id = sessionId(meeting, tomorrow);
+    final reminder = reminderId(id, ReminderKind.before);
+    expect(os.listed.keys, contains(reminder));
+    os.onScreen[999] = jsonEncode({'kind': 'before', 'session': id});
+
+    await repo.setStatusFor(
+      meetingId: meeting,
+      originalDate: tomorrow,
+      status: AttendanceStatus.canceled,
+    );
+    await controller.rescheduleNow();
+    expect(os.listed.keys, isNot(contains(reminder)));
+    expect(os.cancelled, containsAll([reminder, 999]));
+    expect(os.onScreen, isEmpty);
   });
 
   test('schedules further ahead on Android than on iOS', () {

@@ -94,9 +94,10 @@ int reminderId(String sessionId, ReminderKind kind) {
 
 /// The next reminders to schedule, soonest first.
 ///
-/// Canceled sessions and muted courses get none; "how was class" reminders
-/// only for sessions still pending. [limit] stays under iOS's cap of 64
-/// pending notifications.
+/// Canceled sessions and muted courses get none, sessions marked skipped
+/// ahead get no "starts soon", and "how was class" reminders are only for
+/// sessions still pending. [limit] stays under iOS's cap of 64 pending
+/// notifications.
 List<PlannedReminder> planReminders({
   required OccurrenceIndex index,
   required Map<String, CourseInfo> courses,
@@ -114,7 +115,7 @@ List<PlannedReminder> planReminders({
     if (session.isCanceled || settings.isMuted(session.courseId)) continue;
     final course = courses[session.courseId];
     if (course == null) continue;
-    if (settings.before) {
+    if (settings.before && session.status != AttendanceStatus.skipped) {
       final at = session.start.subtract(
         Duration(minutes: settings.beforeMinutes),
       );
@@ -155,4 +156,16 @@ List<PlannedReminder> planReminders({
   }
   plan.sort((a, b) => a.at.compareTo(b.at));
   return plan.length > limit ? plan.sublist(0, limit) : plan;
+}
+
+/// Whether a reminder already on screen is out of date: "starts soon" for a
+/// session canceled or skipped since, "how was class?" for one marked in the
+/// app. A [session] that isn't known (outside the loaded days) keeps it.
+bool reminderOutdated(ReminderKind kind, Occurrence? session) {
+  if (session == null) return false;
+  return switch (kind) {
+    ReminderKind.before =>
+      session.isCanceled || session.status == AttendanceStatus.skipped,
+    ReminderKind.after => session.status != AttendanceStatus.pending,
+  };
 }

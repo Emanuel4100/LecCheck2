@@ -42,9 +42,10 @@ Future<int> topUpReminders(
   final now = DateTime.now();
   final today = LocalDate.fromDateTime(now);
   final window = reminderWindow();
-  // Every semester running soon, like the app (not only the one it shows).
+  // Every semester running soon, like the app (not only the one it shows),
+  // from yesterday for a "how was class?" from last night.
   final schedule = await repo.loadWindow(
-    today,
+    today.addDays(-1),
     today.addDays(window.horizonDays),
   );
   final code =
@@ -79,6 +80,9 @@ Future<int> topUpReminders(
     horizonDays: window.horizonDays,
   );
   await service.apply(plan);
+  await service.dismissOutdated(
+    (kind, id) => reminderOutdated(kind, schedule.index.byId[id]),
+  );
   return plan.length;
 }
 

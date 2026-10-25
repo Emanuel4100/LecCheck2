@@ -8,6 +8,9 @@ class FakeReminderOs implements ReminderOs {
   final listed = <int, String?>{};
   Set<int>? alarms = {};
   final scheduled = <int>[];
+
+  /// Notifications on screen, by id, with their payloads.
+  final onScreen = <int, String?>{};
   final cancelled = <int>[];
   bool unreadable = false;
   bool cleared = false;
@@ -26,6 +29,9 @@ class FakeReminderOs implements ReminderOs {
       alarms?.intersection(ids.toSet());
 
   @override
+  Future<Map<int, String?>> shown() async => Map.of(onScreen);
+
+  @override
   Future<bool> canScheduleExact() async => true;
 
   @override
@@ -39,6 +45,7 @@ class FakeReminderOs implements ReminderOs {
   Future<void> cancel(int id) async {
     cancelled.add(id);
     listed.remove(id);
+    onScreen.remove(id);
     alarms?.remove(id);
   }
 

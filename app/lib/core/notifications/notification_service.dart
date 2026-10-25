@@ -148,6 +148,10 @@ abstract interface class ReminderOs {
   /// can't tell (then [pending] is the truth).
   Future<Set<int>?> armed(List<int> ids);
 
+  /// Reminders on screen now, by id, with their payloads. Leaves out the
+  /// Developer tests.
+  Future<Map<int, String?>> shown();
+
   /// Android: whether alarms may fire on the minute.
   Future<bool> canScheduleExact();
 
@@ -199,6 +203,10 @@ class NotificationService {
 
   /// Signatures of the reminders [_tick] showed.
   final _shown = <String>{};
+
+  /// Linux: the reminders [_tick] put on screen, by id, with their payloads
+  /// and when (the plugin can't list them).
+  final _onScreen = <int, (String, DateTime)>{};
 
   /// Every 30 s, by the wall clock; [_next] also wakes it up for the next
   /// reminder, so they come on time while the computer is awake.
@@ -505,6 +513,43 @@ class NotificationService {
     }
   }
 
+  /// Takes reminders off the screen whose moment has passed; [outdated] says
+  /// which, from their kind and session id. Without this a "starts soon" for
+  /// a session canceled since, or a "how was class?" for one marked in the
+  /// app, stayed until swiped away.
+  Future<void> dismissOutdated(
+    bool Function(ReminderKind kind, String sessionId) outdated,
+  ) async {
+    if (!_ready) return;
+    final Map<int, String?> shown;
+    if (_osSchedules) {
+      try {
+        shown = await _os.shown();
+      } on Object catch (e) {
+        debugPrint('Could not list shown reminders: $e');
+        return;
+      }
+    } else {
+      // Older ones were dismissed by now, or are for days not loaded.
+      final dayAgo = DateTime.now().subtract(const Duration(days: 1));
+      _onScreen.removeWhere((_, s) => s.$2.isBefore(dayAgo));
+      shown = {for (final e in _onScreen.entries) e.key: e.value.$1};
+    }
+    var dismissed = 0;
+    for (final MapEntry(key: id, value: payload) in shown.entries) {
+      final reminder = _reminderOf(payload);
+      if (reminder == null || !outdated(reminder.$1, reminder.$2)) continue;
+      _onScreen.remove(id);
+      try {
+        await _os.cancel(id);
+        dismissed++;
+      } on Object catch (e) {
+        debugPrint('Could not dismiss reminder $id: $e');
+      }
+    }
+    if (dismissed > 0) debugPrint('Reminders: $dismissed dismissed (outdated)');
+  }
+
   /// Cancels every scheduled reminder (reminders turned off, or no semester).
   /// Notifications already on screen and the Developer tests stay.
   Future<void> cancelReminders() async {
@@ -624,6 +669,7 @@ class NotificationService {
     final now = DateTime.now();
     for (final r in dueReminders(_due, _shown, now)) {
       _shown.add(r.signature);
+      _onScreen[r.id] = (_payload(r), now);
       _show(r);
     }
     // Tests are shown when due, whatever their session's time.
@@ -742,6 +788,25 @@ class NotificationService {
     if (test) 'test': true,
   });
 
+  @visibleForTesting
+  static String payloadFor(PlannedReminder r, {bool test = false}) =>
+      _payload(r, test: test);
+
+  /// The kind and session id of a reminder's [payload]; null for tests and
+  /// anything else.
+  static (ReminderKind, String)? _reminderOf(String? payload) {
+    if (payload == null) return null;
+    try {
+      final map = jsonDecode(payload) as Map<String, Object?>;
+      if (map['test'] == true) return null;
+      final kind = ReminderKind.values.asNameMap()[map['kind']];
+      final session = map['session'];
+      return kind == null || session is! String ? null : (kind, session);
+    } on Object {
+      return null;
+    }
+  }
+
   static String? _signatureOf(String? payload) {
     if (payload == null) return null;
     try {
@@ -770,6 +835,13 @@ class _PluginOs implements ReminderOs {
 
   @override
   Future<Set<int>?> armed(List<int> ids) => AndroidDevice.armedReminders(ids);
+
+  @override
+  Future<Map<int, String?>> shown() async => {
+    for (final n in await _plugin.getActiveNotifications())
+      if (n.id case final id? when !NotificationService._ownIds.contains(id))
+        id: n.payload,
+  };
 
   @override
   Future<bool> canScheduleExact() async {

@@ -110,6 +110,51 @@ void main() {
     expect(reminders.first.at, DateTime(2026, 10, 25, 9, 50));
   });
 
+  test('a session skipped ahead gets no "starts soon"', () {
+    final reminders = plan(
+      const ReminderSettings(before: true, after: true),
+      overrides: [
+        SessionOverride(
+          meetingId: 'm1',
+          originalDate: d('2026-10-18'),
+          status: AttendanceStatus.skipped,
+        ),
+      ],
+    );
+    expect(
+      reminders.where((r) => r.session.id == sessionId('m1', d('2026-10-18'))),
+      isEmpty,
+    );
+    expect(reminders.first.at, DateTime(2026, 10, 19, 13, 50));
+  });
+
+  test('reminders on screen are outdated once canceled, skipped or '
+      'marked', () {
+    Occurrence session(AttendanceStatus status) => OccurrenceEngine.expand(
+      semester: semester(),
+      meetings: [lecture],
+      overrides: [
+        SessionOverride(
+          meetingId: 'm1',
+          originalDate: d('2026-10-18'),
+          status: status,
+        ),
+      ],
+    ).byId[sessionId('m1', d('2026-10-18'))]!;
+
+    const before = ReminderKind.before;
+    const after = ReminderKind.after;
+    expect(reminderOutdated(before, session(AttendanceStatus.pending)), false);
+    expect(reminderOutdated(before, session(AttendanceStatus.canceled)), true);
+    expect(reminderOutdated(before, session(AttendanceStatus.skipped)), true);
+    expect(reminderOutdated(before, session(AttendanceStatus.attended)), false);
+    expect(reminderOutdated(after, session(AttendanceStatus.pending)), false);
+    expect(reminderOutdated(after, session(AttendanceStatus.attended)), true);
+    expect(reminderOutdated(after, session(AttendanceStatus.canceled)), true);
+    // A session outside the loaded days: left alone.
+    expect(reminderOutdated(after, null), false);
+  });
+
   test('ids are stable and distinct per kind; limit caps the plan', () {
     expect(
       reminderId('m1_20261018', ReminderKind.before),

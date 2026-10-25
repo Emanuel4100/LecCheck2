@@ -153,6 +153,24 @@ void main() {
     expect(os.cleared, isTrue);
   });
 
+  test('dismisses outdated reminders on screen, and only those', () async {
+    final reminders = plan();
+    final before = reminders.first;
+    final after = reminders.firstWhere((r) => r.kind == ReminderKind.after);
+    final other = reminders.lastWhere((r) => r.kind == ReminderKind.before);
+    os.onScreen
+      ..[before.id] = NotificationService.payloadFor(before)
+      ..[after.id] = NotificationService.payloadFor(after)
+      ..[other.id] = NotificationService.payloadFor(other)
+      ..[77] = NotificationService.payloadFor(before, test: true)
+      ..[78] = 'not ours';
+    await service.dismissOutdated(
+      (kind, id) => id == before.session.id && kind == ReminderKind.before,
+    );
+    expect(os.cancelled, [before.id]);
+    expect(os.onScreen.keys, unorderedEquals([after.id, other.id, 77, 78]));
+  });
+
   group('ReminderHealth', () {
     test('blocked when the app or a reminder channel is off', () {
       expect(const ReminderHealth().blocked, isFalse);
