@@ -157,6 +157,38 @@ After the restore, sign in again (the sign-in token isn't backed up).
 To release: bump `version:` in `app/pubspec.yaml`, then `git tag vX.Y.Z && git push --tags`.
 Required secrets and variables are listed in [SETUP.md](SETUP.md).
 
+### Release routine
+
+1. Work lands in focused commits ("App: …", "Linux: …", "Server: …"), with the
+   changes listed under `## Unreleased` in `CHANGELOG.md` as they happen. That section
+   becomes the GitHub release notes and the update window's What's new: it can render
+   `- ` items, `**bold**` and `### ` headings (not nested lists).
+2. A last commit, "Prepare the vX pre-release": `version: 2.0.0+N` in
+   `app/pubspec.yaml` (the build number **must** go up: Android, AltStore and the update
+   check compare it), the CHANGELOG heading `## 2.0.0-beta.N — YYYY-MM-DD`, and a "Done"
+   entry in `docs/ROADMAP.md`.
+3. Before tagging: `flutter analyze`, `TZ=Asia/Jerusalem flutter test`,
+   `flutter test test_screenshots` (only intended goldens change; don't commit
+   `en_light_semester_form.png`, it depends on today's date), and the E2E sync tests when
+   sync changed. Deploy the server first only if `server/` changed (pushing main does it).
+4. Push main, then an annotated tag: `git tag -a v2.0.0-beta.N -m "LecCheck 2.0.0-beta.N"`.
+5. After the Release workflow: the arm64 APK's versionCode is 2000 + N and it carries the
+   release certificate (`aapt2 dump badging`, `apksigner verify --print-certs`);
+   `update.json` on the `altstore` branch has the new version and build with sha256s
+   matching the release's asset digests; `altstore-source.json` has the new build.
+
+**Trying a release on your own Linux PC first**: build it like the release job, but with
+the *previous* build number, and install it with the tarball's `install.sh`. The real
+release then still shows up in the update window (testing the in-app update too):
+
+```bash
+cd app
+flutter build linux --release --dart-define=API_BASE_URL=<your Worker URL> \
+  --build-name=2.0.0-beta.N --build-number=<previous build>
+# then package bundle/ + icons/ + linux/packaging/* + scripts/linux-install.sh as
+# release.yml's Linux job does, and run that install.sh
+```
+
 ## Server deploys
 
 Deploy through GitHub, not with `npx wrangler deploy` from a laptop:
