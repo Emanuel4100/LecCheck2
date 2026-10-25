@@ -1,7 +1,17 @@
 import 'dart:math' as math;
 
+import 'dart:async';
+
 import 'package:flutter/gestures.dart'
-    show GestureBinding, PointerScrollEvent, PointerSignalEvent;
+    show
+        DragGestureRecognizer,
+        DragStartBehavior,
+        GestureBinding,
+        PanGestureRecognizer,
+        PointerDeviceKind,
+        PointerScrollEvent,
+        PointerSignalEvent,
+        VerticalDragGestureRecognizer;
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -21,13 +31,15 @@ import '../../domain/occurrence.dart';
 import '../../domain/schedule_types.dart';
 import '../../domain/semester_calendar.dart';
 import '../../domain/short_name.dart';
+import '../../domain/time_slots.dart';
 import '../../l10n/gen/app_localizations.dart';
-import '../courses/course_actions.dart';
 import '../session/session_menu.dart';
 import '../session/session_sheet.dart';
 import '../settings/account_section.dart';
 import '../session/session_tile.dart';
 import '../session/status_buttons.dart';
+import 'quick_add.dart';
+import 'week_moves.dart';
 
 /// First and last hour shown in the grid: at least 8:00–18:00, so there's
 /// room to tap and add a class, and more when the semester's sessions need
@@ -436,7 +448,107 @@ class _SessionPanel extends ConsumerWidget {
 const _timeColumnWidth = 48.0;
 const _headerHeight = 56.0;
 
-class _WeekGrid extends ConsumerWidget {
+/// A slot drawn over the grid while it's being dragged out, moved or
+/// resized, and while the quick add or the move question about it is open.
+class _Ghost {
+  const _Ghost(this.date, this.start, this.end, {this.colorKey});
+
+  final LocalDate date;
+  final int start;
+  final int end;
+
+  /// The course of a session being moved; null for a new slot.
+  final String? colorKey;
+}
+
+/// Drags on one week's grid: a new slot dragged out, or a session moved or
+/// resized. Columns draw [ghost]; the grid turns pointer positions into a
+/// day and a time, and scrolls when the pointer nears an edge.
+class _GridDrag {
+  _GridDrag(this._grid);
+
+  final _WeekGridState _grid;
+  final ghost = ValueNotifier<_Ghost?>(null);
+
+  /// The session being moved or resized (shown faded meanwhile).
+  final dragging = ValueNotifier<String?>(null);
+
+  void Function(Offset global)? _onMove;
+  Offset? _last;
+  Timer? _scrolling;
+  double _speed = 0;
+
+  Offset? get last => _last;
+
+  void begin(Offset global, void Function(Offset global) onMove) {
+    _onMove = onMove;
+    update(global);
+  }
+
+  void update(Offset global) {
+    _last = global;
+    _onMove?.call(global);
+    _autoScroll(global);
+  }
+
+  void finish() {
+    _onMove = null;
+    _scrolling?.cancel();
+    _scrolling = null;
+    dragging.value = null;
+  }
+
+  void _autoScroll(Offset global) {
+    final box = _grid._viewportKey.currentContext?.findRenderObject();
+    if (box is! RenderBox || !box.hasSize) return;
+    final top = box.localToGlobal(Offset.zero).dy;
+    final bottom = top + box.size.height;
+    const zone = 40.0;
+    _speed = global.dy < top + zone
+        ? -8
+        : global.dy > bottom - zone
+        ? 8
+        : 0;
+    if (_speed == 0) {
+      _scrolling?.cancel();
+      _scrolling = null;
+      return;
+    }
+    _scrolling ??= Timer.periodic(const Duration(milliseconds: 16), (_) {
+      final scroll = _grid._scroll;
+      if (!scroll.hasClients || _onMove == null) return;
+      final position = scroll.position;
+      final next = (position.pixels + _speed).clamp(
+        position.minScrollExtent,
+        position.maxScrollExtent,
+      );
+      if (next == position.pixels) return;
+      position.jumpTo(next);
+      if (_last case final last?) _onMove?.call(last);
+    });
+  }
+
+  void dispose() {
+    finish();
+    ghost.dispose();
+    dragging.dispose();
+  }
+}
+
+/// Gives a week's columns and tiles its [_GridDrag].
+class _GridScope extends InheritedWidget {
+  const _GridScope({required this.grid, required super.child});
+
+  final _WeekGridState grid;
+
+  static _WeekGridState of(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<_GridScope>()!.grid;
+
+  @override
+  bool updateShouldNotify(_GridScope old) => old.grid != grid;
+}
+
+class _WeekGrid extends ConsumerStatefulWidget {
   const _WeekGrid({
     required this.weekStart,
     required this.hourHeight,
@@ -446,6 +558,118 @@ class _WeekGrid extends ConsumerWidget {
   final LocalDate weekStart;
   final double hourHeight;
   final ValueChanged<double> onZoom;
+
+  @override
+  ConsumerState<_WeekGrid> createState() => _WeekGridState();
+}
+
+class _WeekGridState extends ConsumerState<_WeekGrid> {
+  final _scroll = ScrollController();
+  final _viewportKey = GlobalKey();
+  final _columnsKey = GlobalKey();
+  late final drag = _GridDrag(this);
+  List<LocalDate> _dates = const [];
+
+  GridTimes get times {
+    final (startHour, endHour) = ref.read(hourRangeProvider);
+    return GridTimes(
+      startHour: startHour,
+      endHour: endHour,
+      hourHeight: widget.hourHeight,
+    );
+  }
+
+  @override
+  void dispose() {
+    drag.dispose();
+    _scroll.dispose();
+    super.dispose();
+  }
+
+  /// The day and the height in the grid (from its first hour) under
+  /// [global]; outside the columns, the nearest day.
+  ({LocalDate date, double y})? cellAt(Offset global) {
+    final box = _columnsKey.currentContext?.findRenderObject();
+    if (box is! RenderBox || !box.hasSize || _dates.isEmpty) return null;
+    final local = box.globalToLocal(global);
+    final width = box.size.width / _dates.length;
+    var column = (local.dx / width).floor().clamp(0, _dates.length - 1);
+    // The columns are a Row: in Hebrew the first day is on the right.
+    if (Directionality.of(context) == TextDirection.rtl) {
+      column = _dates.length - 1 - column;
+    }
+    return (date: _dates[column], y: local.dy);
+  }
+
+  /// Moving a session (desktop): grabbed at [global], it follows the
+  /// pointer to any day of the week, keeping its length; dropped, it asks
+  /// how to apply the move.
+  void startMove(Occurrence session, Offset global) {
+    final start = cellAt(global);
+    if (start == null) return;
+    final grid = times;
+    final length = session.endMin - session.startMin;
+    // Where in the session it was grabbed, in pixels from its top.
+    final grab =
+        start.y - (session.startMin - grid.first) / 60 * widget.hourHeight;
+    final colorKey = ref.read(courseProvider(session.courseId))?.colorKey;
+    dragging.value = session.id;
+    drag.begin(global, (g) {
+      final cell = cellAt(g);
+      if (cell == null) return;
+      final slot = grid.moved(cell.y - grab, length);
+      drag.ghost.value = _Ghost(
+        cell.date,
+        slot.start,
+        slot.end,
+        colorKey: colorKey,
+      );
+    });
+  }
+
+  /// Resizing a session (desktop): its bottom edge follows the pointer.
+  void startResize(Occurrence session, Offset global) {
+    final grid = times;
+    final colorKey = ref.read(courseProvider(session.courseId))?.colorKey;
+    dragging.value = session.id;
+    drag.begin(global, (g) {
+      final cell = cellAt(g);
+      if (cell == null) return;
+      drag.ghost.value = _Ghost(
+        session.date,
+        session.startMin,
+        grid.resized(session.startMin, cell.y),
+        colorKey: colorKey,
+      );
+    });
+  }
+
+  ValueNotifier<String?> get dragging => drag.dragging;
+
+  /// The end of a move or resize: asks how to apply it, then clears the
+  /// ghost.
+  Future<void> drop(Occurrence session) async {
+    final ghost = drag.ghost.value;
+    final at = drag.last;
+    drag.finish();
+    if (ghost != null && at != null && mounted) {
+      await moveSessionTo(
+        context,
+        ref,
+        session,
+        date: ghost.date,
+        startMin: ghost.start,
+        endMin: ghost.end,
+        position: at,
+      );
+    }
+    drag.ghost.value = null;
+  }
+
+  void cancel() {
+    drag.finish();
+    drag.ghost.value = null;
+  }
 
   /// Ctrl/⌘ + wheel zooms instead of scrolling. This listener sits inside the
   /// scroll view, so it claims the signal before the scroll view does.
@@ -457,16 +681,18 @@ class _WeekGrid extends ConsumerWidget {
     }
     GestureBinding.instance.pointerSignalResolver.register(event, (e) {
       final dy = (e as PointerScrollEvent).scrollDelta.dy;
-      onZoom(math.exp(-dy / 240));
+      widget.onZoom(math.exp(-dy / 240));
     });
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
+    final hourHeight = widget.hourHeight;
+    final weekStart = widget.weekStart;
     final calendar = ref.watch(calendarProvider)!;
     final (startHour, endHour) = ref.watch(hourRangeProvider);
     final today = ref.watch(todayProvider);
-    final dates = calendar.visibleDatesOfWeek(weekStart);
+    final dates = _dates = calendar.visibleDatesOfWeek(weekStart);
     final theme = Theme.of(context);
     final fmt = Fmt.of(context);
     final height = (endHour - startHour) * hourHeight;
@@ -489,6 +715,8 @@ class _WeekGrid extends ConsumerWidget {
         Divider(height: 1, color: theme.colorScheme.outlineVariant),
         Expanded(
           child: SingleChildScrollView(
+            key: _viewportKey,
+            controller: _scroll,
             padding: const EdgeInsets.only(bottom: 24),
             child: Listener(
               onPointerSignal: _onSignal,
@@ -540,18 +768,22 @@ class _WeekGrid extends ConsumerWidget {
                                   Directionality.of(context) ==
                                   TextDirection.rtl,
                             ),
-                            child: Row(
-                              children: [
-                                for (final date in dates)
-                                  Expanded(
-                                    child: _DayColumn(
-                                      date: date,
-                                      startHour: startHour,
-                                      hourHeight: hourHeight,
-                                      height: height,
+                            child: _GridScope(
+                              grid: this,
+                              child: Row(
+                                key: _columnsKey,
+                                children: [
+                                  for (final date in dates)
+                                    Expanded(
+                                      child: _DayColumn(
+                                        date: date,
+                                        startHour: startHour,
+                                        hourHeight: hourHeight,
+                                        height: height,
+                                      ),
                                     ),
-                                  ),
-                              ],
+                                ],
+                              ),
                             ),
                           ),
                         ),
@@ -695,31 +927,68 @@ class _DayColumn extends ConsumerStatefulWidget {
 }
 
 class _DayColumnState extends ConsumerState<_DayColumn> {
-  /// The empty slot tapped, marked while its menu is open.
-  ({int start, int end})? _slot;
+  /// Where a drag on empty space started, in pixels from the grid's top.
+  double? _anchor;
 
-  /// A tap on empty space: adds a course or meeting at that time, from the
-  /// half hour before it, for the usual two hours.
-  Future<void> _onTapEmpty(TapUpDetails details) async {
-    final (_, endHour) = ref.read(hourRangeProvider);
-    final tapped =
-        widget.startHour * 60 +
-        (details.localPosition.dy / widget.hourHeight * 60).floor();
-    final start = (tapped ~/ 30 * 30).clamp(
-      widget.startHour * 60,
-      endHour * 60 - 30,
+  /// A long press moved: the slot follows the finger (until then it's the
+  /// hour pressed).
+  bool _stretched = false;
+
+  RenderBox get _box => context.findRenderObject()! as RenderBox;
+
+  double _y(Offset global) => _box.globalToLocal(global).dy;
+
+  /// The slot between where a drag started and [global], on this day.
+  void _follow(Offset global) {
+    final grid = _GridScope.of(context).drag;
+    final times = _GridScope.of(context).times;
+    final y = _y(global);
+    final anchor = _anchor!;
+    if (!_stretched && (y - anchor).abs() > 8) _stretched = true;
+    final slot = _stretched ? times.between(anchor, y) : times.tapped(anchor);
+    grid.ghost.value = _Ghost(widget.date, slot.start, slot.end);
+  }
+
+  void _startSlot(Offset global, {required bool stretched}) {
+    _anchor = _y(global);
+    _stretched = stretched;
+    _GridScope.of(context).drag.begin(global, _follow);
+  }
+
+  void _endSlot() {
+    final grid = _GridScope.of(context).drag;
+    grid.finish();
+    _anchor = null;
+    final ghost = grid.ghost.value;
+    if (ghost != null) unawaited(_quickAdd(ghost.start, ghost.end));
+  }
+
+  /// A tap on empty space: the hour from the half hour tapped.
+  void _onTapEmpty(TapUpDetails details) {
+    final slot = _GridScope.of(context).times.tapped(details.localPosition.dy);
+    _GridScope.of(context).drag.ghost.value = _Ghost(
+      widget.date,
+      slot.start,
+      slot.end,
     );
-    final slot = (start: start, end: math.min(start + 120, 24 * 60 - 1));
-    setState(() => _slot = slot);
-    await addAtSlot(
+    unawaited(_quickAdd(slot.start, slot.end));
+  }
+
+  /// Opens quick add beside the slot, which stays marked meanwhile.
+  Future<void> _quickAdd(int start, int end) async {
+    final ghost = _GridScope.of(context).drag.ghost;
+    double y(int minutes) =>
+        (minutes - widget.startHour * 60) / 60 * widget.hourHeight;
+    final topLeft = _box.localToGlobal(Offset(0, y(start)));
+    await showQuickAdd(
       context,
       ref,
       date: widget.date,
-      startMin: slot.start,
-      endMin: slot.end,
-      position: details.globalPosition,
+      startMin: start,
+      endMin: end,
+      anchor: topLeft & Size(_box.size.width, y(end) - y(start)),
     );
-    if (mounted) setState(() => _slot = null);
+    if (ghost.value?.date == widget.date) ghost.value = null;
   }
 
   @override
@@ -731,7 +1000,8 @@ class _DayColumnState extends ConsumerState<_DayColumn> {
     final sessions = [for (final id in ids) ?index.byId[id]];
     final today = ref.watch(todayProvider);
     final placed = _layoutDay(sessions);
-    final scheme = Theme.of(context).colorScheme;
+    final grid = _GridScope.of(context);
+    final desktop = AppIdiom.isDesktop;
     double y(int minutes) =>
         (minutes - widget.startHour * 60) / 60 * widget.hourHeight;
 
@@ -746,27 +1016,47 @@ class _DayColumnState extends ConsumerState<_DayColumn> {
             child: Stack(
               clipBehavior: Clip.none,
               children: [
-                // Behind the tiles: only taps on empty space reach it.
+                // Behind the tiles: only presses on empty space reach it.
+                // A tap adds an hour there; a long press (phones) or a
+                // mouse drag (desktop) drags out the time.
                 Positioned.fill(
-                  child: GestureDetector(
+                  child: RawGestureDetector(
                     behavior: HitTestBehavior.opaque,
-                    onTapUp: _onTapEmpty,
-                  ),
-                ),
-                if (_slot case final slot?)
-                  PositionedDirectional(
-                    top: y(slot.start),
-                    height: y(slot.end) - y(slot.start) - 2,
-                    start: 2,
-                    end: 2,
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(
-                        color: scheme.primary.withValues(alpha: 0.12),
-                        border: Border.all(color: scheme.primary, width: 2),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
+                    gestures: {
+                      VerticalDragGestureRecognizer:
+                          GestureRecognizerFactoryWithHandlers<
+                            VerticalDragGestureRecognizer
+                          >(
+                            () => VerticalDragGestureRecognizer(
+                              supportedDevices: {PointerDeviceKind.mouse},
+                            )..dragStartBehavior = DragStartBehavior.down,
+                            (r) {
+                              r
+                                ..onStart = ((d) => _startSlot(
+                                  d.globalPosition,
+                                  stretched: true,
+                                ))
+                                ..onUpdate = ((d) =>
+                                    grid.drag.update(d.globalPosition))
+                                ..onEnd = ((_) => _endSlot())
+                                ..onCancel = grid.cancel;
+                            },
+                          ),
+                    },
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTapUp: _onTapEmpty,
+                      onLongPressStart: (d) {
+                        HapticFeedback.selectionClick();
+                        _startSlot(d.globalPosition, stretched: false);
+                      },
+                      onLongPressMoveUpdate: (d) =>
+                          grid.drag.update(d.globalPosition),
+                      onLongPressEnd: (_) => _endSlot(),
+                      onLongPressCancel: grid.cancel,
                     ),
                   ),
+                ),
                 for (final p in placed)
                   PositionedDirectional(
                     key: ValueKey(p.session.id),
@@ -779,17 +1069,147 @@ class _DayColumnState extends ConsumerState<_DayColumn> {
                     ),
                     start: 2 + p.lane * (width - 4) / p.lanes,
                     width: (width - 4) / p.lanes - 2,
-                    child: _GridTile(sessionId: p.session.id),
+                    child: desktop
+                        ? _Movable(
+                            session: p.session,
+                            child: _GridTile(sessionId: p.session.id),
+                          )
+                        : _GridTile(sessionId: p.session.id),
                   ),
                 if (date == today)
                   _NowLine(
                     startHour: widget.startHour,
                     hourHeight: widget.hourHeight,
                   ),
+                ValueListenableBuilder(
+                  valueListenable: grid.drag.ghost,
+                  builder: (context, ghost, _) => ghost?.date != date
+                      ? const SizedBox.shrink()
+                      : PositionedDirectional(
+                          top: y(ghost!.start),
+                          height: math.max(
+                            20,
+                            y(ghost.end) - y(ghost.start) - 2,
+                          ),
+                          start: 2,
+                          end: 2,
+                          child: IgnorePointer(child: _GhostBox(ghost)),
+                        ),
+                ),
               ],
             ),
           );
         },
+      ),
+    );
+  }
+}
+
+/// The slot being added or the place a session is moving to, with its time.
+class _GhostBox extends StatelessWidget {
+  const _GhostBox(this.ghost);
+
+  final _Ghost ghost;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final colorKey = ghost.colorKey;
+    final accent = colorKey == null
+        ? scheme.primary
+        : CourseColors.of(context).tone(colorKey).accent;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: accent.withValues(alpha: 0.16),
+        border: Border.all(color: accent, width: 2),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Padding(
+        padding: const EdgeInsetsDirectional.fromSTEB(6, 3, 4, 0),
+        child: Text(
+          Fmt.of(context).timeRange(ghost.start, ghost.end),
+          maxLines: 1,
+          overflow: TextOverflow.clip,
+          style: theme.textTheme.labelSmall?.copyWith(
+            color: scheme.onSurface,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// A session tile that can be moved with the mouse (desktop): drag it to
+/// another time or day, or its bottom edge to change when it ends. It fades
+/// while it's being dragged.
+class _Movable extends StatelessWidget {
+  const _Movable({required this.session, required this.child});
+
+  final Occurrence session;
+  final Widget child;
+
+  static Map<Type, GestureRecognizerFactory>
+  _mouse<T extends DragGestureRecognizer>(
+    T Function() create,
+    void Function(Offset global) onStart,
+    void Function(Offset global) onUpdate,
+    VoidCallback onEnd,
+    VoidCallback onCancel,
+  ) => {
+    T: GestureRecognizerFactoryWithHandlers<T>(create, (r) {
+      // From where the button went down, not where the drag was noticed.
+      r
+        ..dragStartBehavior = DragStartBehavior.down
+        ..onStart = ((d) => onStart(d.globalPosition))
+        ..onUpdate = ((d) => onUpdate(d.globalPosition))
+        ..onEnd = ((_) => onEnd())
+        ..onCancel = onCancel;
+    }),
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    final grid = _GridScope.of(context);
+    const mouse = {PointerDeviceKind.mouse};
+    return ValueListenableBuilder(
+      valueListenable: grid.dragging,
+      builder: (context, dragging, child) =>
+          Opacity(opacity: dragging == session.id ? 0.35 : 1, child: child),
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          RawGestureDetector(
+            gestures: _mouse(
+              () => PanGestureRecognizer(supportedDevices: mouse),
+              (g) => grid.startMove(session, g),
+              grid.drag.update,
+              () => grid.drop(session),
+              grid.cancel,
+            ),
+            child: child,
+          ),
+          PositionedDirectional(
+            start: 0,
+            end: 0,
+            bottom: 0,
+            height: 6,
+            child: MouseRegion(
+              cursor: SystemMouseCursors.resizeRow,
+              child: RawGestureDetector(
+                behavior: HitTestBehavior.opaque,
+                gestures: _mouse(
+                  () => VerticalDragGestureRecognizer(supportedDevices: mouse),
+                  (g) => grid.startResize(session, g),
+                  grid.drag.update,
+                  () => grid.drop(session),
+                  grid.cancel,
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

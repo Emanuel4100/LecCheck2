@@ -5,6 +5,7 @@ import 'package:leccheck/core/db/app_database.dart';
 import 'package:leccheck/core/db/schedule_repository.dart';
 import 'package:leccheck/domain/holidays/jewish_holidays.dart';
 import 'package:leccheck/domain/local_date.dart';
+import 'package:leccheck/domain/occurrence.dart';
 import 'package:leccheck/domain/occurrence_engine.dart';
 import 'package:leccheck/domain/schedule_types.dart';
 import 'package:leccheck/domain/semester_data.dart';
@@ -174,6 +175,61 @@ void main() {
     expect(session.status, AttendanceStatus.attended);
     expect(session.notes, 'Limits');
     expect(session.start.hour, 11);
+  });
+
+  test('Week adds a meeting, and moves one for every week with its marks; '
+      'undo moves it back', () async {
+    await repo.addMeeting(
+      const MeetingRule(
+        id: 'm2',
+        courseId: 'c1',
+        type: SessionType.practice,
+        kind: MeetingKind.weekly,
+        weekday: DateTime.tuesday,
+        startMin: 840,
+        endMin: 900,
+      ),
+    );
+    expect((await data()).meetings.map((m) => m.id), ['m1', 'm2']);
+
+    final first = OccurrenceEngine.expand(
+      semester: semester,
+      meetings: [lecture],
+    ).all.first;
+    await repo.setStatus(first, AttendanceStatus.attended);
+
+    // Sunday 10:00 → Monday 14:00, every week.
+    final monday = lecture.movedTo(
+      weekday: DateTime.monday,
+      startMin: 840,
+      endMin: 960,
+    );
+    recorder.changes.clear();
+    await repo.moveMeeting(lecture, monday, weekStart: semester.weekStart);
+    expect(recorder.changes.first.$3, {
+      'weekday': DateTime.monday,
+      'startMin': 840,
+      'endMin': 960,
+    });
+    Future<List<Occurrence>> sessions() async {
+      final d = await data();
+      return OccurrenceEngine.expand(
+        semester: d.semester,
+        meetings: d.meetings.where((m) => m.id == 'm1'),
+        overrides: d.overrides,
+      ).all;
+    }
+
+    var all = await sessions();
+    expect(all.first.date, first.date.addDays(1));
+    expect(all.first.startMin, 840);
+    expect(all.first.status, AttendanceStatus.attended);
+
+    await repo.moveMeeting(monday, lecture, weekStart: semester.weekStart);
+    all = await sessions();
+    expect(all.first.id, first.id);
+    expect(all.first.startMin, 600);
+    expect(all.first.status, AttendanceStatus.attended);
   });
 
   test('deleting a course tombstones its tree and undo restores it', () async {

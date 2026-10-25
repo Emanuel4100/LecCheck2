@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:drift/drift.dart' show Value, driftRuntimeOptions;
 import 'package:drift/native.dart';
+import 'package:flutter/gestures.dart' show PointerDeviceKind;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:leccheck/app/app.dart';
@@ -103,6 +104,20 @@ Future<void> _tap(WidgetTester tester, Finder finder) async {
   await tester.pump();
   await tester.tap(finder);
   await _settle(tester);
+}
+
+/// A mouse drag from [from] by [by], in small steps.
+Future<void> _mouseDrag(WidgetTester tester, Offset from, Offset by) async {
+  final gesture = await tester.startGesture(
+    from,
+    kind: PointerDeviceKind.mouse,
+  );
+  for (var i = 1; i <= 10; i++) {
+    await gesture.moveTo(from + by * (i / 10));
+    await tester.pump(const Duration(milliseconds: 16));
+  }
+  await gesture.up();
+  await tester.pump();
 }
 
 Future<void> _save(WidgetTester tester) =>
@@ -421,51 +436,190 @@ void main() {
     expect(find.text('One-time'), findsOneWidget);
   });
 
-  testWidgets('tapping empty space in Week adds a course or a meeting there', (
-    tester,
-  ) async {
-    final (c, _) = await _start(tester);
+  testWidgets('a tap on empty space in Week opens quick add: a new course '
+      'right there, or more options in the editor', (tester) async {
+    final (c, db) = await _start(tester);
     c.read(routerProvider).go('/week');
     await _settle(tester);
-    // Thursday, October 22: no classes.
+    Rect day(int i) => tester.getRect(
+      find
+          .byWidgetPredicate((w) => w.runtimeType.toString() == '_DayColumn')
+          .at(i),
+    );
+    // Thursday, October 22: no classes. The grid starts at 8:00, 60 px an
+    // hour.
+    final thursday = day(4);
+    final y = (thursday.top + 6 * 60 + 10).clamp(
+      math.max(thursday.top, 200.0) + 1,
+      math.min(thursday.bottom, 760.0) - 1,
+    );
+    final expected =
+        (8 * 60 + ((y - thursday.top) / 60 * 60).floor()) ~/ 30 * 30;
+    await tester.tapAt(Offset(thursday.center.dx, y));
+    await _settle(tester);
+    expect(find.textContaining('Thu, Oct 22 · '), findsOneWidget);
+
+    await _tap(tester, find.text('Choose a course'));
+    await _tap(tester, find.text('New course').last);
+    await tester.enterText(
+      find.widgetWithText(TextField, 'Course name'),
+      'Physics',
+    );
+    await _save(tester);
+    expect(find.text('Physics created'), findsOneWidget);
+    final physics = (await _meetings(
+      tester,
+      db,
+    )).firstWhere((m) => m.courseId != 'c1');
+    expect(
+      (physics.kind, physics.weekday, physics.startMin, physics.endMin),
+      ('weekly', 4, expected, expected + 60),
+    );
+
+    // Wednesday: a one-time session of Calculus with a room, finished in
+    // the editor.
+    final wednesday = day(3);
+    await tester.tapAt(Offset(wednesday.center.dx, y));
+    await _settle(tester);
+    await _tap(tester, find.text('Choose a course'));
+    await _tap(tester, find.text('Calculus').last);
+    await _tap(tester, find.text('One-time'));
+    await tester.enterText(
+      find.widgetWithText(TextField, 'Room / location'),
+      'Lab 3',
+    );
+    await _tap(tester, find.text('More options'));
+    final uri = c.read(routerProvider).state.uri;
+    expect(uri.path, '/course-editor');
+    expect(uri.queryParameters, {
+      'id': 'c1',
+      'date': '2026-10-21',
+      'start': '$expected',
+      'end': '${expected + 60}',
+      'type': 'practice',
+      'room': 'Lab 3',
+    });
+    expect(find.text('New meeting'), findsOneWidget);
+    expect(find.text('One-time'), findsOneWidget);
+    expect(find.text('Wednesday, October 21'), findsOneWidget);
+    expect(find.text('Lab 3'), findsOneWidget);
+  });
+
+  testWidgets('on a phone, long-press then drag sets the time', (tester) async {
+    final (c, db) = await _start(tester);
+    c.read(routerProvider).go('/week');
+    await _settle(tester);
     final thursday = tester.getRect(
       find
           .byWidgetPredicate((w) => w.runtimeType.toString() == '_DayColumn')
           .at(4),
     );
-    // A spot on screen; the grid starts at 8:00, 60 px an hour.
-    final y = (thursday.top + 6 * 60 + 10).clamp(
-      math.max(thursday.top, 200.0) + 1,
-      math.min(thursday.bottom, 760.0) - 1,
-    );
-    final spot = Offset(thursday.center.dx, y);
-    final expected =
-        (8 * 60 + ((y - thursday.top) / 60 * 60).floor()) ~/ 30 * 30;
-    await tester.tapAt(spot);
+    // A whole hour on screen (60 px an hour from 8:00), then two hours down.
+    final hours = math.max(1, ((220 - thursday.top) / 60).ceil());
+    final from = Offset(thursday.center.dx, thursday.top + hours * 60 + 1);
+    final gesture = await tester.startGesture(from);
+    await tester.pump(const Duration(milliseconds: 600));
+    for (var i = 1; i <= 10; i++) {
+      await gesture.moveTo(from + Offset(0, 12.0 * i));
+      await tester.pump(const Duration(milliseconds: 16));
+    }
+    await gesture.up();
     await _settle(tester);
-    expect(find.textContaining('Thu, Oct 22 · '), findsOneWidget);
-    expect(find.text('Add to a course…'), findsOneWidget);
-    await _tap(tester, find.text('New course here'));
-    final uri = c.read(routerProvider).state.uri;
-    expect(uri.path, '/course-editor');
-    final start = int.parse(uri.queryParameters['start']!);
+    await _tap(tester, find.text('Choose a course'));
+    await _tap(tester, find.text('Calculus').last);
+    await _save(tester);
+    final added = (await _meetings(tester, db)).firstWhere((m) => m.id != 'm1');
+    final start = 8 * 60 + hours * 60;
     expect(
-      (uri.queryParameters['day'], start, uri.queryParameters['end']),
-      ('4', expected, '${expected + 120}'),
+      (added.weekday, added.startMin, added.endMin),
+      (4, start, start + 120),
     );
-    expect(find.text('Lecture · Thursday'), findsOneWidget);
-    expect(find.text('New meeting'), findsNothing);
+  });
 
-    // Back in Week: a one-time session of Calculus on that date.
-    await tester.state<NavigatorState>(find.byType(Navigator).last).maybePop();
-    await _settle(tester);
-    await tester.tapAt(spot);
-    await _settle(tester);
-    await _tap(tester, find.text('One-time session…'));
-    await _tap(tester, find.text('Calculus'));
-    expect(find.text('New meeting'), findsOneWidget);
-    expect(find.text('One-time'), findsOneWidget);
-    expect(find.text('Thursday, October 22'), findsOneWidget);
+  group('desktop Week', () {
+    // Linux, 1440×900: the hours fit the window.
+    Future<(ProviderContainer, AppDatabase)> desktop(WidgetTester t) async {
+      final started = await _start(t, size: const Size(1440, 900), ratio: 1);
+      started.$1.read(routerProvider).go('/week');
+      await _settle(t);
+      return started;
+    }
+
+    Rect day(WidgetTester t, int i) => t.getRect(
+      find
+          .byWidgetPredicate((w) => w.runtimeType.toString() == '_DayColumn')
+          .at(i),
+    );
+
+    testWidgets('a mouse drag on empty space adds a meeting at that time', (
+      tester,
+    ) async {
+      final (_, db) = await desktop(tester);
+      final thursday = day(tester, 4);
+      final hour = thursday.height / 10; // 8:00–18:00
+      // 10:00 to 12:00.
+      await _mouseDrag(
+        tester,
+        Offset(thursday.center.dx, thursday.top + 2 * hour + 1),
+        Offset(0, 2 * hour),
+      );
+      await _settle(tester);
+      expect(find.textContaining('Thu, Oct 22 · '), findsOneWidget);
+      await _tap(tester, find.text('Choose a course'));
+      await _tap(tester, find.text('Calculus').last);
+      await _save(tester);
+      expect(find.text('Added to Calculus'), findsOneWidget);
+      var meetings = await _meetings(tester, db);
+      final added = meetings.firstWhere((m) => m.id != 'm1');
+      expect(
+        (added.weekday, added.startMin, added.endMin, added.type),
+        (4, 600, 720, 'practice'),
+      );
+
+      await _tap(tester, find.text('Undo'));
+      meetings = await _meetings(tester, db);
+      expect(meetings.map((m) => m.id), ['m1']);
+    }, variant: TargetPlatformVariant.only(TargetPlatform.linux));
+
+    testWidgets('dragging a session moves it this week or every week, with '
+        'Undo', (tester) async {
+      final (_, db) = await desktop(tester);
+      final tuesday = day(tester, 2);
+      final wednesday = day(tester, 3);
+      final hour = tuesday.height / 10;
+      // Grabbed 10 px into the Tuesday 10:00 lecture, dropped so it starts
+      // Wednesday at 14:00.
+      final grab = Offset(tuesday.center.dx, tuesday.top + 2 * hour + 10);
+      final drop = Offset(wednesday.center.dx, wednesday.top + 6 * hour + 10);
+      Future<void> dragIt() async {
+        await _mouseDrag(tester, grab, drop - grab);
+        await _settle(tester);
+      }
+
+      await dragIt();
+      await _tap(tester, find.text('Every week'));
+      expect(find.text('Moved for every week'), findsOneWidget);
+      var m1 = (await _meetings(tester, db)).single;
+      expect((m1.weekday, m1.startMin, m1.endMin), (3, 840, 960));
+      await _tap(tester, find.text('Undo'));
+      m1 = (await _meetings(tester, db)).single;
+      expect((m1.weekday, m1.startMin, m1.endMin), (2, 600, 720));
+
+      await dragIt();
+      await _tap(tester, find.text('This week only'));
+      expect(find.text('Moved for this week'), findsOneWidget);
+      final overrides = await tester.runAsync(
+        () => db.select(db.sessionOverrides).get(),
+      );
+      final moved = overrides!.single;
+      expect(
+        (moved.originalDate, moved.movedDate, moved.movedStartMin),
+        ('2026-10-20', '2026-10-21', 840),
+      );
+      // The meeting itself didn't change.
+      m1 = (await _meetings(tester, db)).single;
+      expect((m1.weekday, m1.startMin), (2, 600));
+    }, variant: TargetPlatformVariant.only(TargetPlatform.linux));
   });
 
   testWidgets('in Hebrew', (tester) async {

@@ -622,13 +622,38 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get newCourseHere => 'New course here';
+  String get chooseCourse => 'Choose a course';
 
   @override
-  String get addToCourse => 'Add to a course…';
+  String get moreOptions => 'More options';
 
   @override
-  String get oneTimeSessionHere => 'One-time session…';
+  String addedToCourse(String course) {
+    return 'Added to $course';
+  }
+
+  @override
+  String courseCreated(String course) {
+    return '$course created';
+  }
+
+  @override
+  String get everyWeek => 'Every week';
+
+  @override
+  String get movedThisWeek => 'Moved for this week';
+
+  @override
+  String get movedEveryWeek => 'Moved for every week';
+
+  @override
+  String get create => 'Create';
+
+  @override
+  String get previousMonth => 'Previous month';
+
+  @override
+  String get nextMonth => 'Next month';
 
   @override
   String get requirementsSection => 'Attendance requirement';

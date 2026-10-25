@@ -620,13 +620,38 @@ class AppLocalizationsHe extends AppLocalizations {
   }
 
   @override
-  String get newCourseHere => 'קורס חדש כאן';
+  String get chooseCourse => 'בחירת קורס';
 
   @override
-  String get addToCourse => 'הוספה לקורס…';
+  String get moreOptions => 'אפשרויות נוספות';
 
   @override
-  String get oneTimeSessionHere => 'מפגש חד-פעמי…';
+  String addedToCourse(String course) {
+    return 'נוסף לקורס $course';
+  }
+
+  @override
+  String courseCreated(String course) {
+    return 'הקורס $course נוצר';
+  }
+
+  @override
+  String get everyWeek => 'כל שבוע';
+
+  @override
+  String get movedThisWeek => 'הועבר לשבוע הזה';
+
+  @override
+  String get movedEveryWeek => 'הועבר בכל השבועות';
+
+  @override
+  String get create => 'יצירה';
+
+  @override
+  String get previousMonth => 'החודש הקודם';
+
+  @override
+  String get nextMonth => 'החודש הבא';
 
   @override
   String get requirementsSection => 'דרישת נוכחות';

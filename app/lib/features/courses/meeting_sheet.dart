@@ -115,20 +115,25 @@ class MeetingDraft {
   }
 }
 
-/// The day and time a new meeting starts with: a tap on the Week grid.
-/// One-time when [date] is set, weekly on [weekday] otherwise.
+/// The day and time a new meeting starts with (from the Week grid), and
+/// what Week's quick add already chose. One-time when [date] is set, weekly
+/// on [weekday] otherwise.
 class MeetingSeed {
   const MeetingSeed({
     this.weekday,
     this.date,
     required this.startMin,
     required this.endMin,
+    this.type,
+    this.location = '',
   });
 
   final int? weekday;
   final LocalDate? date;
   final int startMin;
   final int endMin;
+  final SessionType? type;
+  final String location;
 
   /// From the course editor's `day`, `date`, `start` and `end` query
   /// parameters; null when they don't describe a meeting.
@@ -143,13 +148,23 @@ class MeetingSeed {
     if (end <= start || (date == null && (day == null || day < 1 || day > 7))) {
       return null;
     }
-    return MeetingSeed(weekday: day, date: date, startMin: start, endMin: end);
+    final type = query['type'];
+    return MeetingSeed(
+      weekday: day,
+      date: date,
+      startMin: start,
+      endMin: end,
+      type: type == null ? null : SessionType.fromKey(type),
+      location: query['room'] ?? '',
+    );
   }
 
   String get query => [
     if (date case final date?) 'date=${date.toIso()}' else 'day=$weekday',
     'start=$startMin',
     'end=$endMin',
+    if (type case final type?) 'type=${type.key}',
+    if (location.isNotEmpty) 'room=${Uri.encodeQueryComponent(location)}',
   ].join('&');
 }
 
@@ -348,7 +363,7 @@ class _MeetingSheetState extends State<_MeetingSheet> {
               spacing: 8,
               runSpacing: 8,
               children: [
-                _MenuButton<SessionType>(
+                MenuChipButton<SessionType>(
                   icon: d.type.icon,
                   label: d.type.label(l),
                   values: SessionType.values,
@@ -359,7 +374,7 @@ class _MeetingSheetState extends State<_MeetingSheet> {
                     _changed();
                   },
                 ),
-                _MenuButton<_Repeat>(
+                MenuChipButton<_Repeat>(
                   tooltip: l.repeats,
                   icon: weekly ? LecIcons.refresh : LecIcons.date,
                   label: _repeatLabel(_repeat, l),
@@ -499,8 +514,10 @@ class _MeetingSheetState extends State<_MeetingSheet> {
 
 /// A button showing the current choice ("Lecture ▾") that opens a menu of
 /// the others.
-class _MenuButton<T> extends StatelessWidget {
-  const _MenuButton({
+/// An outlined button showing [label] that opens a menu of [values].
+class MenuChipButton<T> extends StatelessWidget {
+  const MenuChipButton({
+    super.key,
     required this.icon,
     required this.label,
     required this.values,

@@ -344,9 +344,30 @@
       }
     }
   },
-  "newCourseHere": "New course here",
-  "addToCourse": "Add to a course…",
-  "oneTimeSessionHere": "One-time session…",
+  "chooseCourse": "Choose a course",
+  "moreOptions": "More options",
+  "addedToCourse": "Added to {course}",
+  "@addedToCourse": {
+    "placeholders": {
+      "course": {
+        "type": "String"
+      }
+    }
+  },
+  "courseCreated": "{course} created",
+  "@courseCreated": {
+    "placeholders": {
+      "course": {
+        "type": "String"
+      }
+    }
+  },
+  "everyWeek": "Every week",
+  "movedThisWeek": "Moved for this week",
+  "movedEveryWeek": "Moved for every week",
+  "create": "Create",
+  "previousMonth": "Previous month",
+  "nextMonth": "Next month",
   "requirementsSection": "Attendance requirement",
   "requirementsHint": "Set a minimum attendance and LecCheck tells you how many sessions you can still miss.",
   "addRequirement": "Add requirement",

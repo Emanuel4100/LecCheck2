@@ -135,6 +135,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           courseId: state.uri.queryParameters['id'],
           startWithOneTime: state.uri.queryParameters['oneTime'] == '1',
           seed: MeetingSeed.fromQuery(state.uri.queryParameters),
+          name: state.uri.queryParameters['name'] ?? '',
         ),
       ),
     ],

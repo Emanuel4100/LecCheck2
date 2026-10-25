@@ -56,9 +56,13 @@ class CourseEditorPage extends ConsumerStatefulWidget {
     this.courseId,
     this.startWithOneTime = false,
     this.seed,
+    this.name = '',
   });
 
   final String? courseId;
+
+  /// A new course's name, typed in Week's quick add.
+  final String name;
 
   /// Opens the sheet on a new one-time meeting.
   final bool startWithOneTime;
@@ -154,6 +158,7 @@ class _CourseEditorPageState extends ConsumerState<CourseEditorPage> {
         orElse: () => coursePaletteSeeds.keys.first,
       );
       _sortOrder = data?.courses.length ?? 0;
+      _name.text = widget.name;
       // From the Week grid: the meeting is there, the name comes first.
       if (widget.seed case final seed?) {
         _meetings.add(_newMeeting(MeetingKind.weekly, seed: seed));
@@ -183,13 +188,15 @@ class _CourseEditorPageState extends ConsumerState<CourseEditorPage> {
     final last = _meetings.lastOrNull;
     return MeetingDraft(
       id: ScheduleRepository.newId(),
-      type: last == null ? SessionType.lecture : SessionType.practice,
+      type:
+          seed?.type ??
+          (last == null ? SessionType.lecture : SessionType.practice),
       kind: once ? MeetingKind.once : MeetingKind.weekly,
       weekday: seed?.weekday ?? seed?.date?.weekday ?? firstDay ?? 7,
       date: once ? seed?.date ?? LocalDate.today() : null,
       startMin: seed?.startMin ?? 10 * 60,
       endMin: seed?.endMin ?? 12 * 60,
-      location: '',
+      location: seed?.location ?? '',
       intervalWeeks: 1,
       validFrom: null,
       validUntil: null,

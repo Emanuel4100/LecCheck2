@@ -547,6 +547,35 @@ class ScheduleRepository {
         return receipt;
       });
 
+  /// Adds one meeting to a course (Week's quick add).
+  Future<void> addMeeting(MeetingRule meeting) =>
+      db.transaction(() => _upsert(_meetings, meeting.toRow()));
+
+  /// Changes a meeting for every week ([old] to [next], dragged on Week):
+  /// only the fields that differ are written. When a weekly meeting changes
+  /// its day, its session records move along to the new day of their week,
+  /// like the course editor's "All weeks". The same call with the two
+  /// swapped undoes it.
+  Future<void> moveMeeting(
+    MeetingRule old,
+    MeetingRule next, {
+    required int weekStart,
+  }) => db.transaction(() async {
+    await _saveEdited(_meetings, next.toRow(), old.toRow());
+    if (next.kind == MeetingKind.weekly &&
+        old.weekday != next.weekday &&
+        next.weekday != null) {
+      await _moveHistory(
+        HistoryMove(
+          fromMeetingId: next.id,
+          toMeetingId: next.id,
+          toWeekday: next.weekday!,
+          weekStart: weekStart,
+        ),
+      );
+    }
+  });
+
   /// Restores everything a delete tombstoned.
   Future<void> undoDeletion(DeletionReceipt receipt) =>
       db.transaction(() async {

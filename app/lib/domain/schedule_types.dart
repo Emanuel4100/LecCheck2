@@ -267,6 +267,28 @@ class MeetingRule {
   final LocalDate? validUntil;
   final List<NamedLink> links;
 
+  /// The same meeting on another [weekday] and at another time (dragged on
+  /// Week, every week).
+  MeetingRule movedTo({
+    int? weekday,
+    required int startMin,
+    required int endMin,
+  }) => MeetingRule(
+    id: id,
+    courseId: courseId,
+    type: type,
+    kind: kind,
+    weekday: weekday ?? this.weekday,
+    date: date,
+    startMin: startMin,
+    endMin: endMin,
+    location: location,
+    intervalWeeks: intervalWeeks,
+    validFrom: validFrom,
+    validUntil: validUntil,
+    links: links,
+  );
+
   @override
   bool operator ==(Object other) =>
       other is MeetingRule &&

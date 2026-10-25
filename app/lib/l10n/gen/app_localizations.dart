@@ -1124,23 +1124,65 @@ abstract class AppLocalizations {
   /// **'{count, plural, =1{1 link} other{{count} links}}'**
   String linksCount(int count);
 
-  /// No description provided for @newCourseHere.
+  /// No description provided for @chooseCourse.
   ///
   /// In en, this message translates to:
-  /// **'New course here'**
-  String get newCourseHere;
+  /// **'Choose a course'**
+  String get chooseCourse;
 
-  /// No description provided for @addToCourse.
+  /// No description provided for @moreOptions.
   ///
   /// In en, this message translates to:
-  /// **'Add to a course…'**
-  String get addToCourse;
+  /// **'More options'**
+  String get moreOptions;
 
-  /// No description provided for @oneTimeSessionHere.
+  /// No description provided for @addedToCourse.
   ///
   /// In en, this message translates to:
-  /// **'One-time session…'**
-  String get oneTimeSessionHere;
+  /// **'Added to {course}'**
+  String addedToCourse(String course);
+
+  /// No description provided for @courseCreated.
+  ///
+  /// In en, this message translates to:
+  /// **'{course} created'**
+  String courseCreated(String course);
+
+  /// No description provided for @everyWeek.
+  ///
+  /// In en, this message translates to:
+  /// **'Every week'**
+  String get everyWeek;
+
+  /// No description provided for @movedThisWeek.
+  ///
+  /// In en, this message translates to:
+  /// **'Moved for this week'**
+  String get movedThisWeek;
+
+  /// No description provided for @movedEveryWeek.
+  ///
+  /// In en, this message translates to:
+  /// **'Moved for every week'**
+  String get movedEveryWeek;
+
+  /// No description provided for @create.
+  ///
+  /// In en, this message translates to:
+  /// **'Create'**
+  String get create;
+
+  /// No description provided for @previousMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'Previous month'**
+  String get previousMonth;
+
+  /// No description provided for @nextMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'Next month'**
+  String get nextMonth;
 
   /// No description provided for @requirementsSection.
   ///
