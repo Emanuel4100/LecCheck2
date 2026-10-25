@@ -1,17 +1,17 @@
 {
   "beta": {
-    "version": "2.0.0-beta.13",
-    "build": 21,
+    "version": "2.0.0-beta.14",
+    "build": 22,
     "date": "2026-10-25",
-    "notesUrl": "https://github.com/Emanuel4100/LecCheck2/releases/tag/v2.0.0-beta.13",
-    "notes": "- **Linux: no more surprise sign-outs.** On a keyring without a password (common with\n  automatic login), GNOME Keyring emptied LecCheck's saved sign-in whenever it re-read\n  its file, because the value contained backslashes, so you came back signed out. The\n  sign-in is now saved in a form without any, and an older one is converted the first\n  time it's read. If you were signed out, sign in once more.\n- **A sign-in that can't be read isn't a sign-out**: when the system keyring doesn't\n  answer, LecCheck asks it again, and if it still can't, Account and Today say so with\n  **Retry** and **Sign in again** instead of showing you as signed out. Nothing is removed.\n- **Canceling a session drops its reminder.** A canceled class could still announce\n  itself: reminders were updated two seconds after a change, and leaving the app (home,\n  Recents, swiping it away) in those seconds kept the old one. They're now updated at\n  once when you leave.\n- **Reminders on screen go away when they're out of date**: \"class starts soon\" for a\n  session you canceled or skipped since, and \"how was class?\" for one you marked in the\n  app (also last night's).\n- **Skipped ahead, no reminder**: a session marked Skipped before it starts gets no\n  \"class starts soon\".\n- **Sync now shows what it did**: the icon turns while it syncs, then the cloud with its\n  check pops in (\"Up to date\"), or it says it couldn't sync (your changes are kept). It\n  also checks that the connection still works: before, pressing it while synced did\n  nothing at all. With reduced motion the icons just change, and screen readers hear\n  the result.\n- **Click the cloud icon to sync**: in the title bar (or the sidebar on wide windows),\n  clicking it syncs now, like Ctrl+R / F5; right-click or long-press opens Settings.\n- **Linux remembers the window size** and whether it was maximized: it was never saved.\n\n### Smaller things\n\n- Settings \u2192 Developer's log notes each start's sign-in and why a sign-in was ever\n  removed, and **Copy diagnostics** includes the sign-in state.\n- Settings \u2192 Developer \u2192 **Sync now** says whether the server answered.\n- Builds pointed at a local test server keep their own sign-in, so testing can't sign\n  out the installed app.",
-    "androidArm64": "https://github.com/Emanuel4100/LecCheck2/releases/download/v2.0.0-beta.13/LecCheck-2.0.0-beta.13-android-arm64.apk",
-    "androidUniversal": "https://github.com/Emanuel4100/LecCheck2/releases/download/v2.0.0-beta.13/LecCheck-2.0.0-beta.13-android.apk",
-    "linux": "https://github.com/Emanuel4100/LecCheck2/releases/download/v2.0.0-beta.13/LecCheck-2.0.0-beta.13-linux-x64.tar.gz",
+    "notesUrl": "https://github.com/Emanuel4100/LecCheck2/releases/tag/v2.0.0-beta.14",
+    "notes": "- **Add on Week like in a calendar**: tap an empty spot for an hour there, drag out the\n  time with the mouse, or on a phone long-press and drag (15-minute steps). **Quick add**\n  opens beside it: pick a course or name a new one right there, weekly or one-time, the\n  type and the room, then **Save** (with Undo). **More options** opens the course editor\n  with everything filled in.\n- **Move sessions by dragging** (desktop): drag a session to another time or day, or its\n  bottom edge to change when it ends. A weekly meeting asks **This week only** or\n  **Every week**, then **Undo** is offered for a few seconds. Every week moves the\n  sessions' marks along to the new day.\n- **Desktop sidebar like Google Calendar**: a raised **+ Create** button replaces Add,\n  and a month calendar shows under the tabs: click a day to open its week; the week\n  you're looking at is highlighted, class days have a dot, and no-class days are dimmed\n  with their name on hover.\n- The Week grid scrolls by itself when a drag nears its top or bottom.",
+    "androidArm64": "https://github.com/Emanuel4100/LecCheck2/releases/download/v2.0.0-beta.14/LecCheck-2.0.0-beta.14-android-arm64.apk",
+    "androidUniversal": "https://github.com/Emanuel4100/LecCheck2/releases/download/v2.0.0-beta.14/LecCheck-2.0.0-beta.14-android.apk",
+    "linux": "https://github.com/Emanuel4100/LecCheck2/releases/download/v2.0.0-beta.14/LecCheck-2.0.0-beta.14-linux-x64.tar.gz",
     "sha256": {
-      "androidArm64": "02c23eb0cb17d4372977967b8740d0c1efe065bc5e618c71e3610faaa20001e5",
-      "androidUniversal": "1934eaf8905f3c76921344f5587fad6ecf355effd5b9414748465f7c48ffba47",
-      "linux": "cfc597537f36e98b88cd42dec6ecfaf840096ba512654ae3108ad5833f592cd9"
+      "androidArm64": "6175f027221105697864d8dc8616ba481f66c845ab89748fa1432d056039ff84",
+      "androidUniversal": "2eb8699a6d5fb48565250dd9dbaa6827b9a12abf4ffac5308d4250b3a547acca",
+      "linux": "f42c1fcbc5d8548a3d689965c7ca1282658bdcbeba7c20973a56353acb02d537"
     }
   }
 }
