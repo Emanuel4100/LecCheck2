@@ -549,6 +549,8 @@
   },
   "syncNotConfigured": "Sync isn't set up in this build.",
   "syncNow": "Sync now",
+  "syncUpToDate": "Up to date",
+  "syncNowFailed": "Couldn't sync right now. Your changes are kept.",
   "signOut": "Sign out",
   "signOutTitle": "Sign out?",
   "signOutBody": "Your data stays in your Google account; sign in again to get it back. Keep a copy on this device too?",

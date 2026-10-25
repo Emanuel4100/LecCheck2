@@ -60,6 +60,7 @@ abstract final class LecIcons {
   static const search = Icons.search_rounded;
   static const sync = Icons.cloud_done_outlined;
   static const syncOff = Icons.cloud_off_outlined;
+  static const syncing = Icons.sync_rounded;
   static const account = Icons.account_circle_outlined;
   static const palette = Icons.palette_outlined;
   static const language = Icons.translate_rounded;

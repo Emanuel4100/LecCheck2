@@ -1129,6 +1129,12 @@ class AppLocalizationsHe extends AppLocalizations {
   String get syncNow => 'סנכרון עכשיו';
 
   @override
+  String get syncUpToDate => 'הכול מעודכן';
+
+  @override
+  String get syncNowFailed => 'לא ניתן לסנכרן כרגע. השינויים שלך נשמרים.';
+
+  @override
   String get signOut => 'התנתקות';
 
   @override

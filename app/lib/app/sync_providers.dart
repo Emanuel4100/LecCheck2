@@ -339,7 +339,7 @@ class AuthController extends AsyncNotifier<Session?> {
   /// Try again (Welcome), when the account's data didn't arrive in time.
   Future<void> retryRestore() async {
     ref.read(restoreProvider.notifier).wait();
-    ref.read(syncEngineProvider)?.syncNow();
+    unawaited(ref.read(syncEngineProvider)?.syncNow());
     await _afterFirstSync(const {});
   }
 
@@ -472,6 +472,44 @@ final outboxCountsProvider = StreamProvider<({int pending, int refused})>((
         ),
       );
 });
+
+/// "Sync now" (Account, the cloud icon, Ctrl+R): what its animation shows.
+enum ManualSync { idle, running, done, failed }
+
+/// Runs "Sync now" and keeps its result up long enough to be seen: the
+/// spin lasts at least [minSpin], the result [showResult].
+class ManualSyncController extends Notifier<ManualSync> {
+  @visibleForTesting
+  static var minSpin = const Duration(milliseconds: 700);
+  @visibleForTesting
+  static var showResult = const Duration(seconds: 2);
+
+  Timer? _reset;
+
+  @override
+  ManualSync build() {
+    ref.onDispose(() => _reset?.cancel());
+    return ManualSync.idle;
+  }
+
+  Future<void> run() async {
+    final engine = ref.read(syncEngineProvider);
+    if (engine == null || state == ManualSync.running) return;
+    _reset?.cancel();
+    state = ManualSync.running;
+    final (ok, _) = await (
+      engine.syncNow(),
+      Future<void>.delayed(minSpin),
+    ).wait;
+    if (!ref.mounted) return;
+    state = ok ? ManualSync.done : ManualSync.failed;
+    _reset = Timer(showResult, () => state = ManualSync.idle);
+  }
+}
+
+final manualSyncProvider = NotifierProvider<ManualSyncController, ManualSync>(
+  ManualSyncController.new,
+);
 
 final syncStateProvider = StreamProvider<SyncState?>((ref) {
   final engine = ref.watch(syncEngineProvider);

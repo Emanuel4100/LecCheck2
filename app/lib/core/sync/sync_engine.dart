@@ -119,6 +119,9 @@ class SyncEngine {
   WebSocket? _socket;
   StreamSubscription<dynamic>? _socketSub;
   DateTime _lastHeard = DateTime.now();
+
+  /// Called with the next message from the server ([syncNow] waits for one).
+  final _onHeard = <VoidCallback>[];
   Timer? _pingTimer;
   Timer? _reconnectTimer;
   Timer? _pushTimer;
@@ -208,19 +211,55 @@ class SyncEngine {
   /// Queues the changes the server refused again ("Retry").
   Future<void> retryRejected() async {
     await recorder.retryRejected();
-    syncNow();
+    unawaited(syncNow());
   }
 
-  /// Push and pull right away ("Sync now"), even while held.
-  void syncNow() {
+  /// Push and pull right away ("Sync now"), even while held. True once the
+  /// server has answered since and nothing waits to be sent; false when
+  /// this device is offline or held again, or after [timeout]. While
+  /// already synced nothing changed before, so "Sync now" showed nothing:
+  /// now a ping checks that the connection still works (after a sleep it
+  /// can be dead without any error).
+  Future<bool> syncNow({Duration timeout = const Duration(seconds: 10)}) async {
     _holdTimer?.cancel();
     _heldUntil = null;
-    if (_socket == null) {
-      _reconnectTimer?.cancel();
-      _attempt = 0;
-      _connect();
-    } else {
-      _schedulePush(immediate: true);
+    final result = Completer<bool>();
+    var heard = false;
+    void check() {
+      if (result.isCompleted) return;
+      if (_state.phase == SyncPhase.offline || _held || _disposed) {
+        result.complete(false);
+      } else if (heard &&
+          _state.phase == SyncPhase.synced &&
+          _state.pending == 0) {
+        result.complete(true);
+      }
+    }
+
+    void onHeard() {
+      heard = true;
+      check();
+    }
+
+    _onHeard.add(onHeard);
+    final states = _states.stream.listen((_) => check());
+    try {
+      final socket = _socket;
+      if (socket == null) {
+        _reconnectTimer?.cancel();
+        _attempt = 0;
+        unawaited(_connect());
+      } else {
+        socket.add('{"t":"ping"}');
+        _schedulePush(immediate: true);
+      }
+      check();
+      final ok = await result.future.timeout(timeout, onTimeout: () => false);
+      if (ok) _markSyncedIfIdle();
+      return ok;
+    } finally {
+      _onHeard.remove(onHeard);
+      await states.cancel();
     }
   }
 
@@ -271,6 +310,9 @@ class SyncEngine {
       _socketSub = socket.listen(
         (data) {
           _lastHeard = DateTime.now();
+          for (final heard in [..._onHeard]) {
+            heard();
+          }
           _enqueue(() => _onMessage(data));
         },
         onDone: () => _onClosed(socket, socket.closeCode),

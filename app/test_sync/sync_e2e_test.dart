@@ -94,6 +94,33 @@ void main() {
     }
   });
 
+  test('"Sync now" says when the server answered', () async {
+    final session = await devLogin(
+      'e2e-${DateTime.now().microsecondsSinceEpoch}',
+    );
+    final phone = await Device.create('phone00000000009');
+    addTearDown(() async {
+      await phone.disconnect();
+      await phone.db.close();
+    });
+    phone.connect(session);
+    final engine = phone.engine!;
+    await engine.states.firstWhere((s) => s.phase == SyncPhase.synced);
+    // Connected and idle: the ping's pong confirms it.
+    expect(await engine.syncNow(), isTrue);
+    // With a change waiting: true once the server took it.
+    await phone.repo.saveSemester(
+      SemesterInfo(
+        id: 'sem',
+        name: 'Semester A',
+        start: LocalDate.parse('2026-10-18'),
+        end: LocalDate.parse('2027-01-22'),
+      ),
+    );
+    expect(await engine.syncNow(), isTrue);
+    expect(engine.state.pending, 0);
+  });
+
   test('two devices sync live and merge concurrent field edits', () async {
     final user = 'e2e-${DateTime.now().microsecondsSinceEpoch}';
     final session = await devLogin(user);

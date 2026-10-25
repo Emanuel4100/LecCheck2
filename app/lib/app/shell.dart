@@ -40,7 +40,7 @@ class AppShell extends ConsumerWidget {
       if (shell.currentIndex == 1 && !isTyping) action();
     }
 
-    void sync() => ref.read(syncEngineProvider)?.syncNow();
+    void sync() => ref.read(manualSyncProvider.notifier).run();
     void help() => showShortcutsHelp(context);
     void zoomIn() => onWeek(() => week.zoom(1.15));
     void zoomOut() => onWeek(() => week.zoom(1 / 1.15));

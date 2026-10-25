@@ -182,6 +182,7 @@ class AccountSection extends ConsumerWidget {
     }
 
     final state = ref.watch(syncStateProvider).value;
+    final manual = ref.watch(manualSyncProvider);
     final fmt = Fmt.of(context);
     final initial = (session.name ?? session.email ?? '?').characters.first;
     return Column(
@@ -198,8 +199,11 @@ class AccountSection extends ConsumerWidget {
         ),
         if (state != null)
           ListTile(
-            leading: SyncIndicator.icon(state, theme),
-            title: Text(syncStatusText(state, l, fmt)),
+            leading: SyncGlyph(state),
+            title: Semantics(
+              liveRegion: true,
+              child: Text(manualSyncText(manual, state, l, fmt)),
+            ),
             subtitle: state.heldUntil == null
                 ? null
                 : Text(l.syncPausedSubtitle),
@@ -210,7 +214,9 @@ class AccountSection extends ConsumerWidget {
                     child: Text(l.checkForUpdates),
                   )
                 : TextButton(
-                    onPressed: () => ref.read(syncEngineProvider)?.syncNow(),
+                    onPressed: manual == ManualSync.running
+                        ? null
+                        : () => ref.read(manualSyncProvider.notifier).run(),
                     child: Text(l.syncNow),
                   ),
           ),
@@ -343,37 +349,115 @@ class AccountSection extends ConsumerWidget {
 }
 
 /// Small cloud icon in the app bar showing sync health (hidden for guests).
+/// Clicking it syncs now; right-click or long-press opens Settings.
 class SyncIndicator extends ConsumerWidget {
   const SyncIndicator({super.key});
-
-  static Widget icon(SyncState state, ThemeData theme) => switch (state.phase) {
-    SyncPhase.synced => Icon(LecIcons.sync, color: theme.colorScheme.primary),
-    SyncPhase.offline => Icon(
-      LecIcons.syncOff,
-      color: theme.colorScheme.onSurfaceVariant,
-    ),
-    _ => const SizedBox.square(
-      dimension: 20,
-      child: CircularProgressIndicator(strokeWidth: 2.5),
-    ),
-  };
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(syncStateProvider).value;
     if (state == null) return const SizedBox.shrink();
     final l = AppLocalizations.of(context);
-    return IconButton(
-      tooltip: syncStatusText(state, l, Fmt.of(context)),
-      onPressed: () => context.push('/settings'),
-      icon: AnimatedSwitcher(
-        duration: AppMotion.of(context)
-            .duration(const Duration(milliseconds: 250)),
-        child: KeyedSubtree(
-          key: ValueKey(state.phase),
-          child: icon(state, Theme.of(context)),
+    final manual = ref.watch(manualSyncProvider);
+    void openSettings() => context.push('/settings');
+    return GestureDetector(
+      onSecondaryTap: openSettings,
+      onLongPress: openSettings,
+      child: Tooltip(
+        message: manualSyncText(manual, state, l, Fmt.of(context)),
+        // Long-press opens Settings on touch screens.
+        triggerMode: AppIdiom.usesTouch ? TooltipTriggerMode.manual : null,
+        child: IconButton(
+          onPressed: manual == ManualSync.running
+              ? null
+              : () => ref.read(manualSyncProvider.notifier).run(),
+          icon: SyncGlyph(state),
         ),
       ),
     );
   }
+}
+
+/// The status line, with "Sync now"'s progress and result while they show.
+String manualSyncText(
+  ManualSync manual,
+  SyncState state,
+  AppLocalizations l,
+  Fmt fmt,
+) => switch (manual) {
+  ManualSync.running => l.syncSyncing,
+  ManualSync.done => l.syncUpToDate,
+  ManualSync.failed => l.syncNowFailed,
+  ManualSync.idle => syncStatusText(state, l, fmt),
+};
+
+/// The sync icon. It turns while syncing; after "Sync now" the cloud with
+/// its check pops in, or the offline one. With reduced motion nothing turns
+/// or bounces: the icons just change.
+class SyncGlyph extends ConsumerWidget {
+  const SyncGlyph(this.state, {super.key});
+
+  final SyncState state;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final colors = Theme.of(context).colorScheme;
+    final motion = AppMotion.of(context);
+    const turning = Icon(LecIcons.syncing);
+    final busy = motion.reduced ? turning : const _Turning(child: turning);
+    final cloud = Icon(LecIcons.sync, color: colors.primary);
+    final (String key, Widget icon) = switch (ref.watch(manualSyncProvider)) {
+      ManualSync.running => ('busy', busy),
+      ManualSync.done => ('cloud', cloud),
+      ManualSync.failed => (
+        'failed',
+        Icon(LecIcons.syncOff, color: colors.error),
+      ),
+      ManualSync.idle => switch (state.phase) {
+        SyncPhase.synced => ('cloud', cloud),
+        SyncPhase.offline => (
+          'offline',
+          Icon(LecIcons.syncOff, color: colors.onSurfaceVariant),
+        ),
+        SyncPhase.connecting || SyncPhase.syncing => ('busy', busy),
+      },
+    };
+    return AnimatedSwitcher(
+      duration: motion.duration(const Duration(milliseconds: 350)),
+      switchInCurve: motion.spatialFast,
+      transitionBuilder: (child, animation) => ScaleTransition(
+        scale: animation,
+        child: FadeTransition(opacity: animation, child: child),
+      ),
+      child: KeyedSubtree(key: ValueKey(key), child: icon),
+    );
+  }
+}
+
+/// Keeps turning its child while shown.
+class _Turning extends StatefulWidget {
+  const _Turning({required this.child});
+
+  final Widget child;
+
+  @override
+  State<_Turning> createState() => _TurningState();
+}
+
+class _TurningState extends State<_Turning>
+    with SingleTickerProviderStateMixin {
+  late final _turns = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 900),
+  )..repeat();
+
+  @override
+  void dispose() {
+    _turns.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) =>
+      RotationTransition(turns: _turns, child: widget.child);
 }

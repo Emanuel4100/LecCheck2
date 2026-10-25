@@ -333,10 +333,12 @@ class _DeveloperPageState extends ConsumerState<DeveloperPage> {
               'Sync now',
               engine == null
                   ? null
-                  : () => _run('Sync', () async {
-                      engine.syncNow();
-                      return 'Syncing';
-                    }),
+                  : () => _run(
+                      'Sync',
+                      () async => await engine.syncNow()
+                          ? 'Server answered, nothing waiting'
+                          : 'No answer (offline, held or busy)',
+                    ),
             ),
             _action(
               LecIcons.syncOff,

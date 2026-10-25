@@ -1131,6 +1131,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get syncNow => 'Sync now';
 
   @override
+  String get syncUpToDate => 'Up to date';
+
+  @override
+  String get syncNowFailed =>
+      'Couldn\'t sync right now. Your changes are kept.';
+
+  @override
   String get signOut => 'Sign out';
 
   @override

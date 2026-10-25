@@ -1934,6 +1934,18 @@ abstract class AppLocalizations {
   /// **'Sync now'**
   String get syncNow;
 
+  /// No description provided for @syncUpToDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Up to date'**
+  String get syncUpToDate;
+
+  /// No description provided for @syncNowFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t sync right now. Your changes are kept.'**
+  String get syncNowFailed;
+
   /// No description provided for @signOut.
   ///
   /// In en, this message translates to:
