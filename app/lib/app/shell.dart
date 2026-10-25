@@ -8,6 +8,7 @@ import '../features/courses/course_actions.dart';
 import '../features/settings/account_section.dart';
 import '../features/tour/tour_controller.dart';
 import '../features/tour/tour_overlay.dart';
+import '../features/week/mini_calendar.dart';
 import '../features/week/week_page.dart';
 import '../l10n/gen/app_localizations.dart';
 import 'adaptive.dart';
@@ -153,7 +154,7 @@ const tabPaths = ['/today', '/week', '/courses', '/stats'];
 /// The navigation rail of medium and wider windows (a sidebar with the logo
 /// on large ones): Add, the tabs, Settings at the bottom. Settings shows it
 /// too ([inSettings]), so the window keeps its layout there.
-class AppRail extends StatelessWidget {
+class AppRail extends ConsumerWidget {
   const AppRail({
     super.key,
     required this.selectedIndex,
@@ -167,7 +168,7 @@ class AppRail extends StatelessWidget {
   final bool inSettings;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l = AppLocalizations.of(context);
     final extended = WindowSize.of(context) == WindowSize.large;
     final destinations = [
@@ -187,6 +188,35 @@ class AppRail extends StatelessWidget {
     final settingsIcon = Icon(
       inSettings ? LecIcons.settingsFilled : LecIcons.settings,
     );
+    final settings = Padding(
+      padding: const EdgeInsetsDirectional.fromSTEB(12, 0, 12, 20),
+      child: target(
+        TourTargets.settings,
+        extended
+            ? (inSettings
+                  ? FilledButton.tonalIcon(
+                      onPressed: openSettings,
+                      icon: settingsIcon,
+                      label: Text(l.settings),
+                    )
+                  : TextButton.icon(
+                      onPressed: openSettings,
+                      icon: settingsIcon,
+                      label: Text(l.settings),
+                    ))
+            : inSettings
+            ? IconButton.filledTonal(
+                tooltip: l.settings,
+                icon: settingsIcon,
+                onPressed: openSettings,
+              )
+            : IconButton(
+                tooltip: l.settings,
+                icon: settingsIcon,
+                onPressed: openSettings,
+              ),
+      ),
+    );
     return NavigationRail(
       extended: extended,
       minExtendedWidth: 232,
@@ -204,38 +234,29 @@ class AppRail extends StatelessWidget {
           ),
       ],
       trailing: Expanded(
-        child: Align(
-          alignment: extended
-              ? AlignmentDirectional.bottomStart
-              : Alignment.bottomCenter,
-          child: Padding(
-            padding: const EdgeInsetsDirectional.fromSTEB(12, 0, 12, 20),
-            child: target(
-              TourTargets.settings,
-              extended
-                  ? (inSettings
-                        ? FilledButton.tonalIcon(
-                            onPressed: openSettings,
-                            icon: settingsIcon,
-                            label: Text(l.settings),
-                          )
-                        : TextButton.icon(
-                            onPressed: openSettings,
-                            icon: settingsIcon,
-                            label: Text(l.settings),
-                          ))
-                  : inSettings
-                  ? IconButton.filledTonal(
-                      tooltip: l.settings,
-                      icon: settingsIcon,
-                      onPressed: openSettings,
-                    )
-                  : IconButton(
-                      tooltip: l.settings,
-                      icon: settingsIcon,
-                      onPressed: openSettings,
+        child: LayoutBuilder(
+          builder: (context, constraints) => Column(
+            crossAxisAlignment: extended
+                ? CrossAxisAlignment.start
+                : CrossAxisAlignment.center,
+            children: [
+              // The month, when the sidebar is wide and tall enough for it.
+              if (extended && constraints.maxHeight > MiniCalendar.height + 96)
+                SizedBox(
+                  width: 232,
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
+                    child: MiniCalendar(
+                      onShowDate: (date) {
+                        ref.read(weekCommandsProvider).showDate(date);
+                        onSelected(1);
+                      },
                     ),
-            ),
+                  ),
+                ),
+              const Spacer(),
+              settings,
+            ],
           ),
         ),
       ),
@@ -243,7 +264,7 @@ class AppRail extends StatelessWidget {
   }
 }
 
-/// Logo (extended sidebar only) and the Add button.
+/// Logo (extended sidebar only) and the Create (desktop) or Add button.
 class _RailHeader extends StatelessWidget {
   const _RailHeader({required this.extended, required this.tourKeys});
 
@@ -291,7 +312,9 @@ class _RailHeader extends StatelessWidget {
   }
 }
 
-/// "Add" button that opens a menu: new course / one-time session.
+/// The button that opens a menu: new course / one-time session. On desktop
+/// it's Google Calendar's raised "Create" pill (an icon on a narrow rail);
+/// on tablets a floating Add button.
 class _AddMenuButton extends ConsumerWidget {
   const _AddMenuButton({required this.extended});
 
@@ -316,16 +339,11 @@ class _AddMenuButton extends ConsumerWidget {
       builder: (context, controller, _) {
         void toggle() =>
             controller.isOpen ? controller.close() : controller.open();
-        // Desktop: a toolbar-sized button, not a phone's floating one.
         if (AppIdiom.isDesktop) {
           return extended
-              ? FilledButton.tonalIcon(
-                  onPressed: toggle,
-                  icon: const Icon(LecIcons.add),
-                  label: Text(l.add),
-                )
+              ? _CreatePill(onPressed: toggle)
               : IconButton.filledTonal(
-                  tooltip: l.add,
+                  tooltip: l.create,
                   onPressed: toggle,
                   icon: const Icon(LecIcons.add),
                 );
@@ -422,4 +440,48 @@ class _BranchFadeState extends State<_BranchFade>
     opacity: _curve,
     child: ScaleTransition(scale: _scale, child: widget.child),
   );
+}
+
+/// "+ Create ▾", raised above the sidebar like Google Calendar's.
+class _CreatePill extends StatelessWidget {
+  const _CreatePill({required this.onPressed});
+
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final shape = RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(AppIdiom.radius(26)),
+    );
+    return Material(
+      color: scheme.surfaceContainerLowest,
+      elevation: 2,
+      shadowColor: scheme.shadow.withValues(alpha: 0.4),
+      shape: shape,
+      child: InkWell(
+        customBorder: shape,
+        onTap: onPressed,
+        child: Padding(
+          padding: const EdgeInsetsDirectional.fromSTEB(14, 13, 16, 13),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(LecIcons.add, size: 24, color: scheme.primary),
+              const SizedBox(width: 10),
+              Text(
+                AppLocalizations.of(context).create,
+                style: theme.textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Icon(LecIcons.expand, size: 20, color: scheme.onSurfaceVariant),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }

@@ -25,6 +25,8 @@ class Fmt {
   late final DateFormat _numericDayMonth = DateFormat.Md(locale);
   late final DateFormat _yearMonthDay = DateFormat.yMMMd(locale);
   late final DateFormat _longDate = DateFormat.MMMMEEEEd(locale);
+  late final DateFormat _monthYear = DateFormat.yMMMM(locale);
+  late final DateFormat _narrowWeekday = DateFormat('EEEEE', locale);
 
   String time(int minutes) =>
       _time.format(DateTime(2000, 1, 1, minutes ~/ 60, minutes % 60));
@@ -55,6 +57,13 @@ class Fmt {
   String isoWeekdayShort(int weekday) => _shortWeekday.format(
     DateTime(2024, 1, weekday),
   ); // 2024-01-01 is a Monday
+
+  /// One letter (or so) for an ISO weekday, for calendar headers.
+  String isoWeekdayNarrow(int weekday) =>
+      _narrowWeekday.format(DateTime(2024, 1, weekday));
+
+  /// "November 2026".
+  String monthYear(LocalDate d) => _monthYear.format(_dt(d));
 
   String isoWeekdayName(int weekday) =>
       _fullWeekday.format(DateTime(2024, 1, weekday));

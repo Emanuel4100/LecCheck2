@@ -16,6 +16,7 @@ import 'package:leccheck/domain/local_date.dart';
 import 'package:leccheck/domain/schedule_types.dart';
 import 'package:leccheck/features/courses/course_page.dart';
 import 'package:leccheck/features/session/session_tile.dart';
+import 'package:leccheck/features/week/mini_calendar.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -123,18 +124,30 @@ void main() {
   );
 
   group('desktop', () {
-    testWidgets('sidebar with Add menu; keys switch tabs and weeks', (
-      tester,
-    ) async {
+    testWidgets('sidebar with Create, a month to jump to a week; keys switch '
+        'tabs and weeks', (tester) async {
       await _start(tester);
       final rail = tester.widget<NavigationRail>(find.byType(NavigationRail));
       expect(rail.extended, isTrue);
       expect(find.text('LecCheck'), findsOneWidget);
 
-      await tester.tap(find.text('Add'));
+      await tester.tap(find.text('Create'));
       await _settle(tester);
       expect(find.text('Add one-time session'), findsOneWidget);
       await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+      await _settle(tester);
+
+      // Saturday, October 31: week 2. Week opens on it from any tab.
+      expect(find.text('October 2026'), findsOneWidget);
+      await tester.tap(
+        find.descendant(
+          of: find.byType(MiniCalendar),
+          matching: find.text('31'),
+        ),
+      );
+      await _settle(tester);
+      expect(find.text('Week 2'), findsOneWidget);
+      await tester.tap(find.byTooltip('Go to today'));
       await _settle(tester);
 
       await _ctrl(tester, LogicalKeyboardKey.digit2);

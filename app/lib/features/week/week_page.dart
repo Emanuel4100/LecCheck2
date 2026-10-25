@@ -57,18 +57,45 @@ final hourRangeProvider = Provider<(int, int)>((ref) {
   return (start, end);
 });
 
-/// Lets keyboard shortcuts (handled by the app shell) drive the week view.
+/// Lets keyboard shortcuts and the sidebar's calendar (in the app shell)
+/// drive the week view.
 class WeekCommands {
   _WeekPageState? _page;
 
+  /// A date to open on, asked for before Week was first shown.
+  LocalDate? _pending;
+
   void step(int weeks) => _page?._step(weeks);
   void thisWeek() => _page?._thisWeek();
+
+  /// Shows the week of [date].
+  void showDate(LocalDate date) {
+    final page = _page;
+    if (page == null) {
+      _pending = date;
+    } else {
+      page._showDate(date);
+    }
+  }
 
   /// Multiplies the hour height by [factor]; 0 resets to the default.
   void zoom(double factor) => _page?._zoomBy(factor);
 }
 
 final weekCommandsProvider = Provider<WeekCommands>((ref) => WeekCommands());
+
+/// The first day of the week Week shows (the sidebar's calendar highlights
+/// it); null before Week is first shown.
+class ShownWeekController extends Notifier<LocalDate?> {
+  @override
+  LocalDate? build() => null;
+
+  void show(LocalDate weekStart) => state = weekStart;
+}
+
+final shownWeekProvider = NotifierProvider<ShownWeekController, LocalDate?>(
+  ShownWeekController.new,
+);
 
 /// The session shown in the details panel of the large-window layout.
 class _SelectedSession extends Notifier<String?> {
@@ -178,6 +205,20 @@ class _WeekPageState extends ConsumerState<WeekPage> {
 
   void _thisWeek() => _goToWeek(_currentWeekCache);
 
+  void _showDate(LocalDate date) {
+    final calendar = ref.read(calendarProvider);
+    if (calendar == null) return;
+    _goToWeek(calendar.weekNumberOf(date).clamp(1, _weekCountCache));
+  }
+
+  /// Tells the sidebar's calendar which week is shown.
+  void _announce(int page) {
+    final calendar = ref.read(calendarProvider);
+    if (calendar != null) {
+      ref.read(shownWeekProvider.notifier).show(calendar.weekStartOf(page + 1));
+    }
+  }
+
   void _setHourHeight(double? value, {bool persist = true}) {
     setState(() => _hourHeight = value?.clamp(_minHour, _maxHour));
     if (!persist) return;
@@ -212,9 +253,17 @@ class _WeekPageState extends ConsumerState<WeekPage> {
     _weekCountCache = weekCount;
     _currentWeekCache = currentWeek;
     if (_controller == null) {
-      _page = currentWeek - 1;
+      final pending = _commands._pending;
+      _commands._pending = null;
+      _page = pending == null
+          ? currentWeek - 1
+          : calendar.weekNumberOf(pending).clamp(1, weekCount) - 1;
       _shown.value = _page;
       _controller = PageController(initialPage: _page);
+      final page = _page;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _announce(page);
+      });
     }
     final size = WindowSize.of(context);
     final compact = size == WindowSize.compact;
@@ -265,7 +314,10 @@ class _WeekPageState extends ConsumerState<WeekPage> {
             child: PageView.builder(
               controller: _controller,
               itemCount: weekCount,
-              onPageChanged: (i) => _shown.value = _page = i,
+              onPageChanged: (i) {
+                _shown.value = _page = i;
+                _announce(i);
+              },
               itemBuilder: (context, i) => _WeekGrid(
                 weekStart: calendar.weekStartOf(i + 1),
                 hourHeight: hourHeight,
@@ -1127,14 +1179,24 @@ class _GhostBox extends StatelessWidget {
       ),
       child: Padding(
         padding: const EdgeInsetsDirectional.fromSTEB(6, 3, 4, 0),
-        child: Text(
-          Fmt.of(context).timeRange(ghost.start, ghost.end),
-          maxLines: 1,
-          overflow: TextOverflow.clip,
-          style: theme.textTheme.labelSmall?.copyWith(
-            color: scheme.onSurface,
-            fontWeight: FontWeight.w600,
-          ),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final fmt = Fmt.of(context);
+            final style = theme.textTheme.labelSmall?.copyWith(
+              color: scheme.onSurface,
+              fontWeight: FontWeight.w600,
+            );
+            // A narrow column (phones): start and end on two lines.
+            final text = constraints.maxWidth < 110
+                ? '${fmt.time(ghost.start)}\n${fmt.time(ghost.end)}'
+                : fmt.timeRange(ghost.start, ghost.end);
+            return Text(
+              text,
+              maxLines: 2,
+              overflow: TextOverflow.clip,
+              style: style,
+            );
+          },
         ),
       ),
     );
