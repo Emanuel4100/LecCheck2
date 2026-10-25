@@ -1,25 +1,40 @@
 # Changelog
 
-## 2.0.0-beta.13 — 2026-10-25
+## 2.0.0-beta.13 — 2026-10-26
 
-- **Canceling a session drops its reminder.** A canceled class could still announce
-  itself: the reminders were updated two seconds after the change, and leaving the app
-  (home, Recents, swiping it away) in those seconds kept the old one. They're now updated
-  at once when you leave, and reminders already on screen go away too: "starts soon" for
-  a session you canceled, "how was class?" for one you marked in the app.
-- **Skipped ahead, no reminder**: a session marked Skipped before it starts gets no
-  "starts soon".
 - **Linux: no more surprise sign-outs.** On a keyring without a password (common with
   automatic login), GNOME Keyring emptied LecCheck's saved sign-in whenever it re-read
-  its file, because the value contained backslashes. It's now saved in a form without
-  any, and an older one is converted the first time it's read. If you were signed out,
-  sign in once more. And if the keyring doesn't answer at all, Account and Today now say
-  so with **Retry** instead of looking signed out; Settings → Developer's log notes why a
-  sign-in was ever removed.
+  its file, because the value contained backslashes, so you came back signed out. The
+  sign-in is now saved in a form without any, and an older one is converted the first
+  time it's read. If you were signed out, sign in once more.
+- **A sign-in that can't be read isn't a sign-out**: when the system keyring doesn't
+  answer, LecCheck asks it again, and if it still can't, Account and Today say so with
+  **Retry** and **Sign in again** instead of showing you as signed out. Nothing is removed.
+- **Canceling a session drops its reminder.** A canceled class could still announce
+  itself: reminders were updated two seconds after a change, and leaving the app (home,
+  Recents, swiping it away) in those seconds kept the old one. They're now updated at
+  once when you leave.
+- **Reminders on screen go away when they're out of date**: "class starts soon" for a
+  session you canceled or skipped since, and "how was class?" for one you marked in the
+  app (also last night's).
+- **Skipped ahead, no reminder**: a session marked Skipped before it starts gets no
+  "class starts soon".
 - **Sync now shows what it did**: the icon turns while it syncs, then the cloud with its
-  check pops in ("Up to date"), or it says it couldn't sync. Clicking the cloud icon in
-  the title bar syncs now; right-click or long-press opens Settings.
-- **Linux remembers the window size** for real: it was never saved.
+  check pops in ("Up to date"), or it says it couldn't sync (your changes are kept). It
+  also checks that the connection still works: before, pressing it while synced did
+  nothing at all. With reduced motion the icons just change, and screen readers hear
+  the result.
+- **Click the cloud icon to sync**: in the title bar (or the sidebar on wide windows),
+  clicking it syncs now, like Ctrl+R / F5; right-click or long-press opens Settings.
+- **Linux remembers the window size** and whether it was maximized: it was never saved.
+
+### Smaller things
+
+- Settings → Developer's log notes each start's sign-in and why a sign-in was ever
+  removed, and **Copy diagnostics** includes the sign-in state.
+- Settings → Developer → **Sync now** says whether the server answered.
+- Builds pointed at a local test server keep their own sign-in, so testing can't sign
+  out the installed app.
 
 ## 2.0.0-beta.12 — 2026-10-15
 
