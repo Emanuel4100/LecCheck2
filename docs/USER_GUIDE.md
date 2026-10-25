@@ -123,10 +123,17 @@ Tap any session to see its date, time, room and lecturer, and to:
   shown; without one, LecCheck shortens the name itself: small words go first ("to",
   "of"; "של", "על"), then long words are cut ("Infin. Calc. 1", "חשבון אינפי׳ 1"). Then come the room and the start time; the time is left out first in
   short sessions. A ✓ / ✗ shows how you marked it.
-- **Tap an empty spot** to add something there: **New course here**, **Add to a
-  course…** (a weekly meeting) or **One-time session…** (on that date). The slot starts
-  at the half hour before the tap and lasts two hours; the editor opens with it filled
-  in.
+- **Add from the grid**: tap an empty spot for an hour there (from the half hour
+  before the tap), or drag out the time: with the mouse on desktop, or long-press and
+  drag on a phone (15-minute steps). **Quick add** opens beside it (a sheet on phones):
+  pick a course, or **New course** and type its name right there; **Weekly** or
+  **One-time**; the type; an optional room. **Save** adds it (with **Undo**), and **More
+  options** opens the course editor with all of it filled in.
+- **Move a session** (desktop): drag it to another time or day of the week, or drag its
+  bottom edge to change when it ends; a ghost shows where it lands. A weekly meeting
+  then asks **This week only** (like "Change date, time or room") or **Every week** (the
+  meeting itself changes, and the sessions' marks move along with them). A snackbar
+  offers **Undo** for a few seconds.
 - The hours shown are at least 8:00–18:00, more when your schedule needs it; pinch with two fingers to zoom (desktop: Ctrl +
   mouse wheel or a trackpad pinch). The zoom is remembered on each device; on desktop the
   default fills the window.
@@ -272,10 +279,12 @@ The layout follows the window size, and the controls follow the device:
 
 - **Phones**: bottom navigation; details and pickers open as bottom sheets.
 - **Tablets and wide windows**: a navigation rail with an **Add** button (new course or
-  one-time session); Today and Stats in two columns; **Courses** shows the list and the
+  one-time session; **Create** on desktop); Today and Stats in two columns; **Courses** shows the list and the
   selected course side by side; **Settings** has categories on the left.
-- **Large desktop windows**: a sidebar with the logo, sync status and Add; Week gets a
-  details panel.
+- **Large desktop windows**: a sidebar with the logo, sync status, a **+ Create** button
+  (new course or one-time session) and a month calendar: click a day to see its week in
+  Week. The week you're looking at is highlighted, days with classes have a dot, and
+  no-class days are dimmed (hover for the reason). Week gets a details panel.
 - **iPhone**: iOS switches, alerts and date/time wheels.
 - **Desktop**: a denser layout with smaller corners and one-line title bars, right-click
   menus, hover actions, keyboard shortcuts, time fields you can type into, and only one

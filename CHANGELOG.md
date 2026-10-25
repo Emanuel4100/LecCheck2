@@ -1,5 +1,22 @@
 # Changelog
 
+## Unreleased
+
+- **Add on Week like in a calendar**: tap an empty spot for an hour there, drag out the
+  time with the mouse, or on a phone long-press and drag (15-minute steps). **Quick add**
+  opens beside it: pick a course or name a new one right there, weekly or one-time, the
+  type and the room, then **Save** (with Undo). **More options** opens the course editor
+  with everything filled in.
+- **Move sessions by dragging** (desktop): drag a session to another time or day, or its
+  bottom edge to change when it ends. A weekly meeting asks **This week only** or
+  **Every week**, then **Undo** is offered for a few seconds. Every week moves the
+  sessions' marks along to the new day.
+- **Desktop sidebar like Google Calendar**: a raised **+ Create** button replaces Add,
+  and a month calendar shows under the tabs: click a day to open its week; the week
+  you're looking at is highlighted, class days have a dot, and no-class days are dimmed
+  with their name on hover.
+- The Week grid scrolls by itself when a drag nears its top or bottom.
+
 ## 2.0.0-beta.13 — 2026-10-26
 
 - **Linux: no more surprise sign-outs.** On a keyring without a password (common with
