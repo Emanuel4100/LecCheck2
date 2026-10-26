@@ -204,10 +204,19 @@ jobs:
       url: ${{ steps.pages.outputs.page_url }}
     steps:
       - uses: actions/checkout@v7
+      # The release's files only (not the Flatpak job's bundle or the Pages site).
       - uses: actions/download-artifact@v8
         with:
+          name: android
           path: out
-          merge-multiple: true
+      - uses: actions/download-artifact@v8
+        with:
+          name: linux
+          path: out
+      - uses: actions/download-artifact@v8
+        with:
+          name: ios
+          path: out
       - name: AltStore / SideStore source and release notes
         run: |
           V="${GITHUB_REF_NAME#v}"
