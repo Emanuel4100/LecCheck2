@@ -14,8 +14,11 @@ abstract final class TarballInstall {
   static const appId = 'com.leccheck.app';
 
   /// LecCheck's Flatpak repository: installing this adds it as a remote.
-  static const flatpakRef =
-      'https://emanuel4100.github.io/LecCheck2/leccheck.flatpakref';
+  /// A test build can point elsewhere (`--dart-define=FLATPAK_REF=…`).
+  static const flatpakRef = String.fromEnvironment(
+    'FLATPAK_REF',
+    defaultValue: 'https://emanuel4100.github.io/LecCheck2/leccheck.flatpakref',
+  );
 
   /// The folder install.sh installed LecCheck in, when this app runs from
   /// there. Null for other builds (flutter run, a distro package, the
@@ -173,11 +176,14 @@ abstract final class TarballInstall {
   /// Quits, then runs [command]. LecCheck runs as a single instance (the
   /// Flatpak too, under the same app id): one started while this one still
   /// runs would hand over to it and exit, so a shell waits for this process
-  /// to end first.
+  /// to end first. Ended counts from when it's a zombie (state Z), which a
+  /// parent may not reap for a while: `kill -0` still succeeds then.
   static Future<void> startAfterExit(List<String> command) async {
     await Process.start('sh', [
       '-c',
-      r'while kill -0 "$1" 2>/dev/null; do sleep 0.2; done; shift; exec "$@"',
+      r'alive() { s=$(sed "s/.*) //" "/proc/$1/stat" 2>/dev/null | cut -d" " -f1); '
+          r'[ -n "$s" ] && [ "$s" != Z ]; }; '
+          r'while alive "$1"; do sleep 0.2; done; shift; exec "$@"',
       'sh',
       '$pid',
       ...command,

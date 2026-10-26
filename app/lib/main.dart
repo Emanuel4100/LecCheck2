@@ -1,6 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -75,14 +79,12 @@ void _updateChecks(ProviderContainer container) {
   void check() {
     final updates = container.read(updateProvider.notifier);
     final move = container.read(moveProvider.notifier);
-    (updates.check(), moving).wait.then((_) {
+    (updates.check(), moving).wait.then((_) async {
       // Once per launch: the move window, or while an update waits, the
       // update window.
-      final context = container
-          .read(routerProvider)
-          .routerDelegate
-          .navigatorKey
-          .currentContext;
+      final router = container.read(routerProvider);
+      await _pastSplash(router);
+      final context = router.routerDelegate.navigatorKey.currentContext;
       if (context == null || !context.mounted) return;
       if (container.read(moveProvider).offered) {
         if (move.takePrompt()) showMoveDialog(context);
@@ -101,6 +103,26 @@ void _updateChecks(ProviderContainer container) {
   check();
   AppLifecycleListener(onResume: check);
   container.read(lastErrorProvider.notifier).load();
+}
+
+/// Waits (up to 15 s) until the router has left the splash route for Today
+/// or Welcome: a window opened on the splash went away with it.
+Future<void> _pastSplash(GoRouter router) async {
+  bool past() => router.routerDelegate.currentConfiguration.uri.path != '/';
+  if (!past()) {
+    final left = Completer<void>();
+    void check() {
+      if (past() && !left.isCompleted) left.complete();
+    }
+
+    router.routerDelegate.addListener(check);
+    try {
+      await left.future.timeout(const Duration(seconds: 15), onTimeout: () {});
+    } finally {
+      router.routerDelegate.removeListener(check);
+    }
+  }
+  await SchedulerBinding.instance.endOfFrame;
 }
 
 /// The app's own license notice (full text: LICENSE in the repository).

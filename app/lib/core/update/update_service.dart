@@ -253,9 +253,14 @@ class SignedManifest {
 }
 
 /// The release workflow's update signing key (public half, raw, base64);
-/// replaced in tests.
+/// replaced in tests. A test build can trust its own key instead
+/// (`--dart-define=UPDATE_PUBLIC_KEY=…`) to try a manifest signed with it,
+/// see docs/DEVELOPMENT.md "Update notice"; release builds never set it.
 @visibleForTesting
-String updatePublicKey = 'QWUdxjAue0DGsma4sZYPduMePmsHDQwXjq+LwisWn1U=';
+String updatePublicKey = const String.fromEnvironment(
+  'UPDATE_PUBLIC_KEY',
+  defaultValue: 'QWUdxjAue0DGsma4sZYPduMePmsHDQwXjq+LwisWn1U=',
+);
 
 /// Downloads the manifest and its signature; null on any failure (offline,
 /// GitHub down): an update check never shows an error.
