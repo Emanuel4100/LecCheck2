@@ -55,6 +55,25 @@
   </supports>
   <content_rating type="oars-1.1" />
   <releases>
+    <release version="2.0.0-beta.15" date="2026-10-26" type="development">
+      <description>
+        <ul>
+          <li><em>LecCheck for Linux is a Flatpak</em>, from its own repository (signed with its own key): <code>flatpak install --user emanuel4100.github.io/LecCheck2/leccheck.flatpakref</code>, or open that file in GNOME Software or Discover. It runs on the freedesktop runtime (about 300 MB, shared with other Flatpak apps) and updates itself from then on. This is the last version for <code>install.sh</code>.</li>
+          <li><em>Move to the Flatpak</em>: LecCheck installed with <code>install.sh</code> offers the move on Today, in Settings and in a window when it starts. Signed in, everything syncs first and you sign in again in the Flatpak; otherwise save a backup and choose <em>Import backup</em> on the Flatpak's welcome screen. Then it installs the Flatpak, removes the old version (its data stays as one more backup) and opens the new one.</li>
+          <li><em>Updates through Flatpak</em>: the update window shows Flatpak's progress, then <em>Verified by Flatpak</em> (the repository is signed), and <em>Restart</em> starts the new version. The first time, your desktop asks whether LecCheck may update itself. If you chose Deny, or a new version needs new permissions, the window says what to run instead.</li>
+          <li><em>A clearer update window</em>: how big the download is before you start; a <em>Check the file</em> step you can watch, which reads the download back and checks it against the signed release, then checks itself off; What's new in its own box with a scrollbar, headings and bold, in English left to right in Hebrew too; and when something fails, what went wrong (no connection, not enough space, a file that doesn't match, Android's installer) instead of "Couldn't update".</li>
+          <li><em>Check now</em> opens the update window when there's a new version.</li>
+        </ul>
+        <p>Smaller things</p>
+        <ul>
+          <li><em>Import backup</em> on the welcome screen, for a new device or the Flatpak.</li>
+          <li>A sign-in kept by the keyring while the data folder was gone (a new install, or the Flatpak finding the old version's sign-in) looked signed in while nothing synced: an empty device now gets the account's data back, and one with data of its own stays signed out until you sign in.</li>
+          <li>The update window that opens at startup no longer closes again by itself when LecCheck moves on from its splash screen.</li>
+          <li>Linux no longer needs WebKitGTK or libsoup.</li>
+          <li>Settings → Developer → <em>Copy diagnostics</em> says how LecCheck was installed on Linux.</li>
+        </ul>
+      </description>
+    </release>
     <release version="2.0.0-beta.14" date="2026-10-26" type="development">
       <description>
         <ul>
@@ -138,24 +157,6 @@
         <ul>
           <li><em>Update from inside the app</em> (Android, and Linux installed with <code>./install.sh</code>): <em>Update</em> on the update card downloads the new version with a progress bar, checks it against the release's SHA-256, then opens Android's installer (one tap to confirm) or, on Linux, installs it and offers <em>Restart</em>. Older releases still open the browser. Updating on Linux now swaps the app folder only after the copy succeeds.</li>
           <li><em>Check now</em> (Settings → About) shows that it's checking, and a new version found there now says so right away, with <em>Update</em>. It used to appear only in the card at the top of Settings, scrolled out of sight.</li>
-        </ul>
-      </description>
-    </release>
-    <release version="2.0.0-beta.7" date="2026-10-11" type="development">
-      <description>
-        <ul>
-          <li><em>Reminders follow the semester running now</em>: looking at last semester (its stats, say) stopped this semester's reminders and emptied the widget until you switched back. Both now cover every semester running then. A semester starting next week gets its first reminders in time.</li>
-          <li><em>Mute a course</em>: a course page has <em>Reminders for this course</em>, to turn them off for one course on this device (Settings → Notifications lists the muted ones).</li>
-          <li><em>Marks follow a meeting to its new day</em>: moving a weekly meeting to another weekday for <em>All weeks</em> hid every marked session (they stayed keyed to the old day). Now each session's marks, notes and moves go with it. <em>From this week on</em> also moves sessions marked ahead of time, and an every-other-week meeting keeps its weeks instead of restarting the cycle.</li>
-          <li><em>Removing a meeting</em> with marked sessions offers to <em>end it this week</em>, keeping its past sessions in your stats. Ended and split meetings show their dates.</li>
-          <li><em>Changing a semester's dates</em> warns when marked sessions would be hidden, and adds the holidays you chose for the new days.</li>
-          <li><em>Today</em> says when this device is signed out with changes waiting (with a <em>Sign in</em> button), when changes were refused, and when an update is needed to sync. The update notice and the "report the last error" card now also appear on phones (only the wide layout had them, the update notice twice).</li>
-          <li><em>Widget</em>: it holds a week of days, so it moves on to the next day at midnight without the app (after a week it asks to open LecCheck). Marking from the widget drops that session's "How was class?" reminder.</li>
-          <li><em>Linux</em>: reminders come on time after the computer wakes up (they came late by however long it slept), and stale ones are skipped. No more error at every start (the app then offered to report it each time). The daily backup no longer fails when two start at once.</li>
-          <li><em>Recently deleted</em> lists only what was deleted on or synced to this device recently: on a newly synced device it showed every old delete as new, and restoring a course could bring back things deleted separately.</li>
-          <li><em>Sturdier with odd data</em>: a row with a date that doesn't exist (from a file or another device) no longer hides its whole semester, and imports skip such rows and say how many. Marking a session whose record was deleted with its meeting works again.</li>
-          <li><em>Sign out on all devices</em> asks first, and does nothing if the server can't be reached (it used to sign this device out anyway). Errors from it and from <em>Delete cloud data</em> are shown.</li>
-          <li><em>Long notes</em>: notes stop at 10,000 characters; the server takes changes up to 32 KB (16 KB before, so a long pasted note was refused on every retry).</li>
         </ul>
       </description>
     </release>

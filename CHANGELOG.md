@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 2.0.0-beta.15 — 2026-10-26
 
 - **LecCheck for Linux is a Flatpak**, from its own repository (signed with its own key):
   `flatpak install --user https://emanuel4100.github.io/LecCheck2/leccheck.flatpakref`, or

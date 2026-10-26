@@ -79,6 +79,13 @@
   drag sessions to move or resize them on desktop, this week only or every week, with
   Undo; a raised **+ Create** button and a month calendar in the desktop sidebar.
 
+- **Linux as a Flatpak, a clearer update window** (2.0.0-beta.15): LecCheck for Linux is a
+  Flatpak from its own signed repository on GitHub Pages (freedesktop 26.08, no
+  WebKitGTK), updating itself through the Flatpak portal with Restart; `install.sh`
+  installs move to it from inside the app. The update window shows the download's size, a
+  check of the file you can watch, What's new in its own box, and why something failed.
+  Import backup on the welcome screen.
+
 ## Not yet verified on real hardware
 
 These are built and compile, but have only been exercised in tests so far:
@@ -96,8 +103,8 @@ These are built and compile, but have only been exercised in tests so far:
 
 ## Next: 2.0.0-beta.15 — Linux as a Flatpak, a better update window
 
-Built (2026-10-26); waiting for the repository's GPG key and GitHub Pages to be set up
-(docs/SETUP.md), then the release.
+Released 2026-10-26. The repository's key (fingerprint 379AB289…AA444FF9) is in the
+password manager and the FLATPAK_GPG_KEY secret; GitHub Pages serves the repository.
 
 **Flatpak, replacing the tarball**
 - From LecCheck's own GPG-signed repository on **GitHub Pages**, with a `.flatpakref`
