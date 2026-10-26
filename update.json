@@ -1,17 +1,23 @@
 {
   "beta": {
-    "version": "2.0.0-beta.14",
-    "build": 22,
-    "date": "2026-10-25",
-    "notesUrl": "https://github.com/Emanuel4100/LecCheck2/releases/tag/v2.0.0-beta.14",
-    "notes": "- **Add on Week like in a calendar**: tap an empty spot for an hour there, drag out the\n  time with the mouse, or on a phone long-press and drag (15-minute steps). **Quick add**\n  opens beside it: pick a course or name a new one right there, weekly or one-time, the\n  type and the room, then **Save** (with Undo). **More options** opens the course editor\n  with everything filled in.\n- **Move sessions by dragging** (desktop): drag a session to another time or day, or its\n  bottom edge to change when it ends. A weekly meeting asks **This week only** or\n  **Every week**, then **Undo** is offered for a few seconds. Every week moves the\n  sessions' marks along to the new day.\n- **Desktop sidebar like Google Calendar**: a raised **+ Create** button replaces Add,\n  and a month calendar shows under the tabs: click a day to open its week; the week\n  you're looking at is highlighted, class days have a dot, and no-class days are dimmed\n  with their name on hover.\n- The Week grid scrolls by itself when a drag nears its top or bottom.",
-    "androidArm64": "https://github.com/Emanuel4100/LecCheck2/releases/download/v2.0.0-beta.14/LecCheck-2.0.0-beta.14-android-arm64.apk",
-    "androidUniversal": "https://github.com/Emanuel4100/LecCheck2/releases/download/v2.0.0-beta.14/LecCheck-2.0.0-beta.14-android.apk",
-    "linux": "https://github.com/Emanuel4100/LecCheck2/releases/download/v2.0.0-beta.14/LecCheck-2.0.0-beta.14-linux-x64.tar.gz",
+    "version": "2.0.0-beta.15",
+    "build": 23,
+    "date": "2026-10-26",
+    "notesUrl": "https://github.com/Emanuel4100/LecCheck2/releases/tag/v2.0.0-beta.15",
+    "notes": "- **LecCheck for Linux is a Flatpak**, from its own repository (signed with its own key):\n  `flatpak install --user https://emanuel4100.github.io/LecCheck2/leccheck.flatpakref`, or\n  open that file in GNOME Software or Discover. It runs on the freedesktop runtime (about\n  300 MB, shared with other Flatpak apps) and updates itself from then on. This is the last\n  version for `install.sh`.\n- **Move to the Flatpak**: LecCheck installed with `install.sh` offers the move on Today, in\n  Settings and in a window when it starts. Signed in, everything syncs first and you sign\n  in again in the Flatpak; otherwise save a backup and choose **Import backup** on the\n  Flatpak's welcome screen. Then it installs the Flatpak, removes the old version (its\n  data stays as one more backup) and opens the new one.\n- **Updates through Flatpak**: the update window shows Flatpak's progress, then\n  **Verified by Flatpak** (the repository is signed), and **Restart** starts the new\n  version. The first time, your desktop asks whether LecCheck may update itself. If you\n  chose Deny, or a new version needs new permissions, the window says what to run instead.\n- **A clearer update window**: how big the download is before you start; a **Check the\n  file** step you can watch, which reads the download back and checks it against the\n  signed release, then checks itself off; What's new in its own box with a scrollbar,\n  headings and bold, in English left to right in Hebrew too; and when something fails, what\n  went wrong (no connection, not enough space, a file that doesn't match, Android's\n  installer) instead of \"Couldn't update\".\n- **Check now** opens the update window when there's a new version.\n\n### Smaller things\n\n- **Import backup** on the welcome screen, for a new device or the Flatpak.\n- A sign-in kept by the keyring while the data folder was gone (a new install, or the\n  Flatpak finding the old version's sign-in) looked signed in while nothing synced: an\n  empty device now gets the account's data back, and one with data of its own stays\n  signed out until you sign in.\n- The update window that opens at startup no longer closes again by itself when LecCheck\n  moves on from its splash screen.\n- Linux no longer needs WebKitGTK or libsoup.\n- Settings \u2192 Developer \u2192 **Copy diagnostics** says how LecCheck was installed on Linux.",
+    "androidArm64": "https://github.com/Emanuel4100/LecCheck2/releases/download/v2.0.0-beta.15/LecCheck-2.0.0-beta.15-android-arm64.apk",
+    "androidUniversal": "https://github.com/Emanuel4100/LecCheck2/releases/download/v2.0.0-beta.15/LecCheck-2.0.0-beta.15-android.apk",
+    "linux": "https://github.com/Emanuel4100/LecCheck2/releases/download/v2.0.0-beta.15/LecCheck-2.0.0-beta.15-linux-x64.tar.gz",
+    "flatpakref": "https://emanuel4100.github.io/LecCheck2/leccheck.flatpakref",
     "sha256": {
-      "androidArm64": "6175f027221105697864d8dc8616ba481f66c845ab89748fa1432d056039ff84",
-      "androidUniversal": "2eb8699a6d5fb48565250dd9dbaa6827b9a12abf4ffac5308d4250b3a547acca",
-      "linux": "f42c1fcbc5d8548a3d689965c7ca1282658bdcbeba7c20973a56353acb02d537"
+      "androidArm64": "0ebccb916404db6dbc95074c8e8327d83a8e87ab8ab1572b2b56e028c6078899",
+      "androidUniversal": "7b5b94d6e183553d99ff483e6661fe0cab483ede3df1e2a5eda94729b7adeefc",
+      "linux": "69df80fabc5f4a70b6215f6fb5676efbcc7754b6082021e7e5ae821dff4d1f3e"
+    },
+    "size": {
+      "androidArm64": 28176439,
+      "androidUniversal": 78486014,
+      "linux": 13872453
     }
   }
 }
