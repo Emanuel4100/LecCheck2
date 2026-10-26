@@ -12,7 +12,8 @@ import 'package:http/testing.dart';
 import 'package:leccheck/app/providers.dart';
 import 'package:leccheck/app/update_controller.dart';
 import 'package:leccheck/core/notifications/android_device.dart';
-import 'package:leccheck/core/update/linux_self_update.dart';
+import 'package:leccheck/core/update/flatpak.dart';
+import 'package:leccheck/core/update/tarball_install.dart';
 import 'package:leccheck/core/update/update_download.dart';
 import 'package:leccheck/core/update/update_service.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -222,6 +223,26 @@ void main() {
     );
   });
 
+  test('sizes and the Flatpak: only what parses counts', () {
+    final update = AppUpdate.tryParse({
+      ..._entry('2.0.0', 20),
+      'sha256': {'androidUniversal': 'ab' * 32},
+      'size': {'androidUniversal': 31200000, 'linux': -1, 'androidArm64': '9'},
+      'flatpakref': 'https://example.com/leccheck.flatpakref',
+    })!;
+    expect(update.size, {'androidUniversal': 31200000});
+    expect(update.installFile(android: true, arm64: false)?.size, 31200000);
+    expect(update.flatpak, isTrue);
+    expect(AppUpdate.tryParse(_entry('2.0.0', 20))!.flatpak, isFalse);
+    expect(
+      AppUpdate.tryParse({
+        ..._entry('2.0.0', 20),
+        'flatpakref': 'http://example.com/x.flatpakref',
+      })!.flatpak,
+      isFalse,
+    );
+  });
+
   group('downloadUpdate', () {
     late Directory dir;
     late File dest;
@@ -239,40 +260,70 @@ void main() {
               http.StreamedResponse(body, status, contentLength: _apk.length),
         );
 
-    test('saves the verified file and reports progress', () async {
+    test('saves the file and reports progress; verify names it', () async {
       final progress = <(int, int?)>[];
       await downloadUpdate(
         streaming(
           Stream.fromIterable([_apk.sublist(0, 30000), _apk.sublist(30000)]),
         ),
         Uri.parse('https://example.com/a.apk'),
-        hash.toUpperCase(),
         dest,
         onProgress: (received, total) => progress.add((received, total)),
       );
-      expect(await dest.readAsBytes(), _apk);
       expect(progress, [(30000, 70000), (70000, 70000)]);
-      expect(File('${dest.path}.part').existsSync(), isFalse);
+      // Not yet the update: it hasn't been checked.
+      expect(dest.existsSync(), isFalse);
+      expect(await partOf(dest).readAsBytes(), _apk);
+
+      final checked = <int>[];
+      await verifyUpdate(dest, hash.toUpperCase(), onProgress: checked.add);
+      expect(await dest.readAsBytes(), _apk);
+      expect(checked.last, _apk.length);
+      expect(partOf(dest).existsSync(), isFalse);
     });
 
     test('a damaged, missing or broken-off download leaves nothing', () async {
       Future<void> download(http.Client client, {String url = 'https://x/a'}) =>
-          downloadUpdate(client, Uri.parse(url), hash, dest);
+          downloadUpdate(client, Uri.parse(url), dest);
 
       final damaged = [..._apk]..[100] ^= 1;
+      await download(streaming(Stream.value(damaged)));
       await expectLater(
-        download(streaming(Stream.value(damaged))),
-        throwsA(isA<UpdateFailed>()),
+        verifyUpdate(dest, hash),
+        throwsA(
+          isA<UpdateNotVerified>().having(
+            (e) => e.failure,
+            'failure',
+            UpdateFailure.notVerified,
+          ),
+        ),
       );
       await expectLater(
         download(streaming(Stream.value(_apk), status: 404)),
-        throwsA(isA<UpdateFailed>()),
+        throwsA(
+          isA<UpdateFailed>().having(
+            (e) => e.failure,
+            'failure',
+            UpdateFailure.notFound,
+          ),
+        ),
       );
       final brokenOff = StreamController<List<int>>()
         ..add(_apk.sublist(0, 1000))
         ..addError(http.ClientException('Connection closed'));
       await expectLater(
         download(streaming(brokenOff.stream)),
+        throwsA(
+          isA<UpdateFailed>().having(
+            (e) => e.failure,
+            'failure',
+            UpdateFailure.network,
+          ),
+        ),
+      );
+      // Ended early without an error: fewer bytes than the server said.
+      await expectLater(
+        download(streaming(Stream.value(_apk.sublist(0, 500)))),
         throwsA(isA<UpdateFailed>()),
       );
       await expectLater(
@@ -280,11 +331,11 @@ void main() {
         throwsA(isA<UpdateFailed>()),
       );
       expect(dest.existsSync(), isFalse);
-      expect(File('${dest.path}.part').existsSync(), isFalse);
+      expect(partOf(dest).existsSync(), isFalse);
     });
   });
 
-  group('LinuxSelfUpdate', () {
+  group('TarballInstall', () {
     late Directory dir;
 
     setUp(
@@ -292,56 +343,55 @@ void main() {
     );
     tearDown(() => dir.delete(recursive: true));
 
-    /// A tarball like the release's, whose install.sh runs [script].
-    Future<File> tarball(String script) async {
-      final root = Directory('${dir.path}/src/LecCheck-9.9.9-linux-x64');
-      await root.create(recursive: true);
-      await File('${root.path}/install.sh').writeAsString(script);
-      final tarball = File('${dir.path}/updates/update.tar.gz');
-      await tarball.parent.create();
-      final tar = await Process.run('tar', [
-        '-czf',
-        tarball.path,
-        '-C',
-        '${dir.path}/src',
-        'LecCheck-9.9.9-linux-x64',
-      ]);
-      expect(tar.exitCode, 0, reason: '${tar.stderr}');
-      return tarball;
-    }
-
-    test('runs the install.sh from the tarball, then cleans up', () async {
-      final marker = '${dir.path}/installed';
-      await LinuxSelfUpdate.install(await tarball('echo "\$0" > "$marker"'));
-      expect(
-        File(marker).readAsStringSync().trim(),
-        endsWith('/extract/LecCheck-9.9.9-linux-x64/install.sh'),
-      );
-      expect(Directory('${dir.path}/updates/extract').existsSync(), isFalse);
-    });
-
-    test('a failing install.sh fails the update, with its output', () async {
-      await expectLater(
-        LinuxSelfUpdate.install(
-          await tarball('echo "Missing system libraries" >&2; exit 1'),
-        ),
-        throwsA(
-          isA<UpdateFailed>().having(
-            (e) => e.message,
-            'message',
-            contains('Missing system libraries'),
-          ),
-        ),
-      );
-    });
-
-    test('only an app install.sh installed updates itself', () async {
+    test('only an app install.sh installed moves', () async {
       // The test runner isn't ~/.local/share/leccheck/leccheck.
-      expect(await LinuxSelfUpdate.installDir(), isNull);
+      expect(await TarballInstall.installDir(), isNull);
     });
-  }, skip: Platform.isLinux ? false : 'tar and bash: Linux only');
+
+    test('uninstall removes the app, never its data', () async {
+      final home = dir.path;
+      final data = '$home/.local/share';
+      final app = '$data/leccheck';
+      Future<File> file(String path) async =>
+          File(path)..createSync(recursive: true);
+      await file('$app/leccheck');
+      await file('$app/lib/libapp.so');
+      await file('$data/applications/com.leccheck.app.desktop');
+      await file('$data/metainfo/com.leccheck.app.metainfo.xml');
+      await file('$data/icons/hicolor/64x64/apps/com.leccheck.app.png');
+      await file('$data/com.leccheck.app/leccheck.sqlite');
+      await Directory('$home/.local/bin').create(recursive: true);
+      await Link('$home/.local/bin/leccheck').create('$app/leccheck');
+      // Someone else's leccheck command stays.
+      await file('$home/elsewhere/leccheck');
+
+      await TarballInstall.uninstall(app, dataHome: data, home: home);
+      expect(Directory(app).existsSync(), isFalse);
+      expect(Link('$home/.local/bin/leccheck').existsSync(), isFalse);
+      expect(
+        File('$data/applications/com.leccheck.app.desktop').existsSync(),
+        isFalse,
+      );
+      expect(
+        File('$data/icons/hicolor/64x64/apps/com.leccheck.app.png')
+            .existsSync(),
+        isFalse,
+      );
+      expect(
+        File('$data/com.leccheck.app/leccheck.sqlite').existsSync(),
+        isTrue,
+      );
+
+      // A link to another install isn't install.sh's: kept.
+      await Link('$home/.local/bin/leccheck')
+          .create('$home/elsewhere/leccheck');
+      await TarballInstall.uninstall(app, dataHome: data, home: home);
+      expect(Link('$home/.local/bin/leccheck').existsSync(), isTrue);
+    });
+  }, skip: Platform.isLinux ? false : 'Linux only');
 
   group('UpdateController', () {
+    final realExit = UpdateController.exitApp;
     late SharedPreferencesWithCache prefs;
     late int requests;
     late Object? served;
@@ -385,8 +435,12 @@ void main() {
       UpdateController.client = http.Client.new;
       UpdateController.directory = updatesDirectory;
       UpdateController.installApk = AndroidDevice.installApk;
-      UpdateController.linuxInstallDir = LinuxSelfUpdate.installDir;
-      UpdateController.installTarball = LinuxSelfUpdate.install;
+      UpdateController.linuxInstallDir = TarballInstall.installDir;
+      UpdateController.isFlatpak = () => Flatpak.running;
+      UpdateController.flatpakUpdate = FlatpakPortal.update;
+      UpdateController.startLatestFlatpak = FlatpakPortal.startLatest;
+      UpdateController.verifyAtLeast = const Duration(milliseconds: 900);
+      UpdateController.exitApp = realExit;
     });
 
     ProviderContainer container() {
@@ -542,45 +596,60 @@ void main() {
       setUp(() async {
         dir = await Directory.systemTemp.createTemp('update_test');
         UpdateController.directory = () async => Directory('${dir.path}/u');
+        UpdateController.verifyAtLeast = Duration.zero;
         served = {'beta': _hashed(_entry('2.0.1-beta.1', 21))};
       });
       tearDown(() => dir.delete(recursive: true));
 
-      test('Android: downloads the APK and opens the installer', () async {
-        final opened = <String>[];
-        UpdateController.installApk = (apk) async {
-          opened.add(apk);
-          return true;
-        };
-        final c = container();
-        final controller = c.read(updateProvider.notifier);
-        await controller.check(now: morning);
-        expect(c.read(updateProvider).file?.url, endsWith('-android.apk'));
+      test(
+        'Android: downloads the APK, checks it, opens the installer',
+        () async {
+          final opened = <String>[];
+          UpdateController.installApk = (apk) async {
+            opened.add(apk);
+            return true;
+          };
+          final c = container();
+          final controller = c.read(updateProvider.notifier);
+          await controller.check(now: morning);
+          expect(c.read(updateProvider).via, UpdateVia.apk);
+          expect(c.read(updateProvider).file?.url, endsWith('-android.apk'));
 
-        await controller.install();
-        final apk = '${dir.path}/u/update.apk';
-        expect(c.read(updateProvider).phase, UpdatePhase.downloaded);
-        expect(opened, [apk]);
-        expect(await File(apk).readAsBytes(), _apk);
+          final phases = <UpdatePhase>[];
+          c.listen(updateProvider, (_, next) {
+            if (phases.lastOrNull != next.phase) phases.add(next.phase);
+          });
+          await controller.install();
+          expect(phases, [
+            UpdatePhase.downloading,
+            UpdatePhase.verifying,
+            UpdatePhase.downloaded,
+          ]);
+          expect(c.read(updateProvider).checkProgress, 1);
+          final apk = '${dir.path}/u/update.apk';
+          expect(c.read(updateProvider).phase, UpdatePhase.downloaded);
+          expect(opened, [apk]);
+          expect(await File(apk).readAsBytes(), _apk);
 
-        // Back from the system dialog: the check keeps the phase, and
-        // Install opens the same file again.
-        await controller.check(force: true);
-        expect(c.read(updateProvider).phase, UpdatePhase.downloaded);
-        await controller.install();
-        expect(opened, [apk, apk]);
+          // Back from the system dialog: the check keeps the phase, and
+          // Install opens the same file again.
+          await controller.check(force: true);
+          expect(c.read(updateProvider).phase, UpdatePhase.downloaded);
+          await controller.install();
+          expect(opened, [apk, apk]);
 
-        // Once installed (the app is up to date), the APK is deleted.
-        PackageInfo.setMockInitialValues(
-          appName: 'LecCheck',
-          packageName: 'com.leccheck.app',
-          version: '2.0.1-beta.1',
-          buildNumber: '21',
-          buildSignature: '',
-        );
-        await controller.check(force: true);
-        expect(Directory('${dir.path}/u').existsSync(), isFalse);
-      });
+          // Once installed (the app is up to date), the APK is deleted.
+          PackageInfo.setMockInitialValues(
+            appName: 'LecCheck',
+            packageName: 'com.leccheck.app',
+            version: '2.0.1-beta.1',
+            buildNumber: '21',
+            buildSignature: '',
+          );
+          await controller.check(force: true);
+          expect(Directory('${dir.path}/u').existsSync(), isFalse);
+        },
+      );
 
       test('a file that doesn\'t match its hash is never installed', () async {
         served = {
@@ -597,6 +666,7 @@ void main() {
         await controller.install();
         expect(c.read(updateProvider).phase, UpdatePhase.failed);
         expect(c.read(updateProvider).failedStep, UpdateStep.verify);
+        expect(c.read(updateProvider).failure, UpdateFailure.notVerified);
         expect(opened, isFalse);
         expect(File('${dir.path}/u/update.apk').existsSync(), isFalse);
       });
@@ -642,41 +712,188 @@ void main() {
         expect(File('${dir.path}/u/update.apk.part').existsSync(), isFalse);
       });
 
-      test('Linux: installs the tarball, then Restart', () async {
+      test('Linux installs made by install.sh move to the Flatpak', () async {
         debugDefaultTargetPlatformOverride = TargetPlatform.linux;
-        PackageInfo.setMockInitialValues(
-          appName: 'LecCheck',
-          packageName: 'com.leccheck.app',
-          version: '2.0.0-beta.5',
-          buildNumber: '13',
-          buildSignature: '',
-        );
         UpdateController.linuxInstallDir = () async => '/fake/leccheck';
-        final installed = <List<int>>[];
-        UpdateController.installTarball = (tarball) async =>
-            installed.add(await tarball.readAsBytes());
         final c = container();
-        final controller = c.read(updateProvider.notifier);
-        await controller.check(now: morning);
-        expect(c.read(updateProvider).file?.url, endsWith('.tar.gz'));
-
-        await controller.install();
-        expect(c.read(updateProvider).phase, UpdatePhase.restart);
-        expect(installed, [_tarball]);
-        expect(Directory('${dir.path}/u').existsSync(), isFalse);
+        await c.read(updateProvider.notifier).check(now: morning);
+        expect(c.read(updateProvider).via, UpdateVia.move);
+        // Update does nothing itself: the move window takes over.
+        await c.read(updateProvider.notifier).install();
+        expect(c.read(updateProvider).phase, UpdatePhase.idle);
       });
 
-      test(
-        'Linux builds install.sh didn\'t install open the browser',
-        () async {
+      test('other Linux builds open the browser', () async {
+        debugDefaultTargetPlatformOverride = TargetPlatform.linux;
+        UpdateController.linuxInstallDir = () async => null;
+        final c = container();
+        await c.read(updateProvider.notifier).check(now: morning);
+        expect(c.read(updateProvider).update, isNotNull);
+        expect(c.read(updateProvider).via, UpdateVia.browser);
+        expect(c.read(updateProvider).file, isNull);
+      });
+
+      group('Flatpak', () {
+        late StreamController<FlatpakProgress> portal;
+        var restarted = 0;
+        var exited = 0;
+
+        setUp(() {
           debugDefaultTargetPlatformOverride = TargetPlatform.linux;
-          UpdateController.linuxInstallDir = () async => null;
+          PackageInfo.setMockInitialValues(
+            appName: 'LecCheck',
+            packageName: 'com.leccheck.app',
+            version: '2.0.0-beta.15',
+            buildNumber: '23',
+            buildSignature: '',
+          );
+          served = {
+            'beta': {
+              ..._entry('2.0.0-beta.16', 24),
+              'flatpakref': 'https://example.com/leccheck.flatpakref',
+            },
+          };
+          UpdateController.isFlatpak = () => true;
+          portal = StreamController();
+          UpdateController.flatpakUpdate = () => portal.stream;
+          restarted = 0;
+          exited = 0;
+          UpdateController.startLatestFlatpak = () async => restarted++;
+          UpdateController.exitApp = () async => exited++;
+        });
+
+        Future<ProviderContainer> checked() async {
           final c = container();
           await c.read(updateProvider.notifier).check(now: morning);
-          expect(c.read(updateProvider).update, isNotNull);
-          expect(c.read(updateProvider).file, isNull);
-        },
-      );
+          expect(c.read(updateProvider).via, UpdateVia.flatpak);
+          return c;
+        }
+
+        test('the portal installs it, then Restart', () async {
+          final c = await checked();
+          final controller = c.read(updateProvider.notifier);
+          final installing = controller.install();
+          expect(c.read(updateProvider).phase, UpdatePhase.downloading);
+          portal.add(const FlatpakProgress(FlatpakStatus.running, ops: 2));
+          portal.add(
+            const FlatpakProgress(
+              FlatpakStatus.running,
+              op: 1,
+              ops: 2,
+              percent: 50,
+            ),
+          );
+          await pumpEventQueue();
+          expect(c.read(updateProvider).progress, 0.75);
+          portal.add(
+            const FlatpakProgress(
+              FlatpakStatus.done,
+              op: 1,
+              ops: 2,
+              percent: 100,
+            ),
+          );
+          await portal.close();
+          await installing;
+          expect(c.read(updateProvider).phase, UpdatePhase.restart);
+
+          await controller.restart();
+          expect(restarted, 1);
+          expect(exited, 1);
+        });
+
+        test('each way it can fail says why', () async {
+          final c = await checked();
+          final controller = c.read(updateProvider.notifier);
+          Future<UpdateState> ending(FlatpakProgress last) async {
+            portal = StreamController();
+            final installing = controller.install();
+            portal.add(last);
+            await portal.close();
+            await installing;
+            return c.read(updateProvider);
+          }
+
+          expect(
+            (await ending(
+              const FlatpakProgress(
+                FlatpakStatus.failed,
+                error: 'org.freedesktop.DBus.Error.AccessDenied',
+                message: 'Application update not allowed',
+              ),
+            )).failure,
+            UpdateFailure.flatpakDenied,
+          );
+          expect(
+            (await ending(
+              const FlatpakProgress(
+                FlatpakStatus.failed,
+                error: 'org.freedesktop.DBus.Error.NotSupported',
+              ),
+            )).failure,
+            UpdateFailure.flatpakPermissions,
+          );
+          expect(
+            (await ending(const FlatpakProgress(FlatpakStatus.empty))).failure,
+            UpdateFailure.flatpakNotYet,
+          );
+          final other = await ending(
+            const FlatpakProgress(
+              FlatpakStatus.failed,
+              error: 'org.freedesktop.Flatpak.Error.RemoteNotFound',
+              message: 'No remote leccheck',
+            ),
+          );
+          expect(other.failure, UpdateFailure.flatpak);
+          expect(other.error, 'No remote leccheck');
+          expect(other.phase, UpdatePhase.failed);
+
+          // The portal isn't there at all.
+          portal = StreamController();
+          final installing = controller.install();
+          portal.addError(
+            Exception('org.freedesktop.DBus.Error.ServiceUnknown'),
+          );
+          await installing;
+          expect(c.read(updateProvider).failure, UpdateFailure.flatpak);
+        });
+
+        test('Cancel closes the portal\'s update', () async {
+          var cancelled = false;
+          portal = StreamController(onCancel: () => cancelled = true);
+          final c = await checked();
+          final controller = c.read(updateProvider.notifier);
+          final installing = controller.install();
+          portal.add(const FlatpakProgress(FlatpakStatus.running, ops: 1));
+          await pumpEventQueue();
+          controller.cancel();
+          await installing;
+          expect(cancelled, isTrue);
+          expect(c.read(updateProvider).phase, UpdatePhase.idle);
+        });
+
+        test('a release without a Flatpak opens the browser', () async {
+          served = {'beta': _entry('2.0.0-beta.16', 24)};
+          final c = container();
+          await c.read(updateProvider.notifier).check(now: morning);
+          expect(c.read(updateProvider).via, UpdateVia.browser);
+        });
+
+        test('a Restart that fails says so; the update stays', () async {
+          UpdateController.startLatestFlatpak = () async =>
+              throw Exception('No portal');
+          final c = await checked();
+          final controller = c.read(updateProvider.notifier);
+          final installing = controller.install();
+          portal.add(const FlatpakProgress(FlatpakStatus.done));
+          await portal.close();
+          await installing;
+          await controller.restart();
+          expect(exited, 0);
+          expect(c.read(updateProvider).phase, UpdatePhase.restart);
+          expect(c.read(updateProvider).failure, UpdateFailure.restart);
+        });
+      });
     });
   });
 }

@@ -16,6 +16,7 @@ import '../../domain/occurrence.dart';
 import '../../domain/schedule_types.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../session/session_actions.dart';
+import '../settings/move_dialog.dart';
 import '../settings/reminder_access.dart';
 import '../settings/report_page.dart';
 import '../settings/update_card.dart';
@@ -131,6 +132,7 @@ const _notices = <Widget>[
   SliverToBoxAdapter(child: RemindersBlockedCard()),
   SliverToBoxAdapter(child: SyncNoticeCard()),
   SliverToBoxAdapter(child: UpdateCard(onToday: true)),
+  SliverToBoxAdapter(child: MoveCard(onToday: true)),
   SliverToBoxAdapter(child: LastErrorCard()),
 ];
 

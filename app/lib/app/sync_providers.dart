@@ -182,6 +182,23 @@ class AuthController extends AsyncNotifier<Session?> {
       await _auth.clear('the server refused to renew it');
       return null;
     }
+    // A sign-in saved without this device's data: the data folder is new or
+    // was removed while the keyring kept the sign-in (the Flatpak finds the
+    // one of the version it replaced, where there's no Secret portal).
+    // Nothing would sync without an attached account. An empty device takes
+    // the account's data, like signing in; one with data of its own stays
+    // signed out, so signing in asks about keeping both (issue #2).
+    if (ref.read(attachedAccountProvider) == null) {
+      if ((await ref.read(repositoryProvider).semesters()).isNotEmpty) {
+        DevLog.add('Sign-in saved, but this device has other data: not used');
+        return null;
+      }
+      DevLog.add('Sign-in saved without data here: restoring the account');
+      ref.read(attachedAccountProvider.notifier).attach(renewed.userId);
+      ref.read(restoreProvider.notifier).wait();
+      // Once the session is the state, so the sync engine runs.
+      Timer.run(() => _afterFirstSync(const {}));
+    }
     return renewed;
   }
 

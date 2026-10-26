@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import 'package:drift/drift.dart' show driftRuntimeOptions;
+import 'package:drift/native.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -8,6 +10,10 @@ import 'package:leccheck/app/providers.dart';
 import 'package:leccheck/app/sync_providers.dart';
 import 'package:leccheck/core/auth/auth_service.dart';
 import 'package:leccheck/core/auth/session.dart';
+import 'package:leccheck/core/db/app_database.dart';
+import 'package:leccheck/core/db/schedule_repository.dart';
+import 'package:leccheck/domain/local_date.dart';
+import 'package:leccheck/domain/schedule_types.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shared_preferences_platform_interface/in_memory_shared_preferences_async.dart';
 import 'package:shared_preferences_platform_interface/shared_preferences_async_platform_interface.dart';
@@ -77,8 +83,11 @@ class _Auth extends AuthService {
 }
 
 void main() {
+  driftRuntimeOptions.dontWarnAboutMultipleDatabases = true;
+
   const saved = '{"token":"t","userId":"g:1"}';
   late SharedPreferencesWithCache prefs;
+  late AppDatabase db;
 
   setUp(() async {
     AuthController.retryWaits = const [Duration.zero, Duration.zero];
@@ -87,15 +96,21 @@ void main() {
     prefs = await SharedPreferencesWithCache.create(
       cacheOptions: const SharedPreferencesWithCacheOptions(),
     );
+    // A device signed in before: it holds the account's data.
+    await prefs.setString('sync.userId', 'g:1');
+    db = AppDatabase(NativeDatabase.memory());
+    addTearDown(db.close);
   });
 
   ProviderContainer container(_FlakyStorage storage) {
     final c = ProviderContainer(
       overrides: [
         sharedPrefsProvider.overrideWithValue(prefs),
+        databaseProvider.overrideWithValue(db),
         syncConfiguredProvider.overrideWithValue(true),
         authServiceProvider.overrideWithValue(_Auth(storage)),
         syncEngineProvider.overrideWithValue(null),
+        firstSyncProvider.overrideWithValue((_) async => false),
       ],
     );
     addTearDown(c.dispose);
@@ -128,7 +143,6 @@ void main() {
 
   test('a missing sign-in on a device that holds an account is read '
       'twice', () async {
-    await prefs.setString('sync.userId', 'g:1');
     final storage = _FlakyStorage();
     expect(await container(storage).read(authProvider.future), isNull);
     expect(storage.reads, 2);
@@ -138,6 +152,40 @@ void main() {
     final guest = _FlakyStorage();
     expect(await container(guest).read(authProvider.future), isNull);
     expect(guest.reads, 1);
+  });
+
+  group('a sign-in saved without this device\'s data', () {
+    // The data folder is new or was removed, and the keyring kept the
+    // sign-in: the Flatpak finds the one of the version it replaced.
+    setUp(() => prefs.remove('sync.userId'));
+
+    test('an empty device restores the account', () async {
+      final storage = _FlakyStorage(value: saved);
+      final c = container(storage);
+      expect((await c.read(authProvider.future))?.userId, 'g:1');
+      expect(c.read(attachedAccountProvider), 'g:1');
+      expect(c.read(restoreProvider), RestorePhase.waiting);
+      // Then the first sync (none here: no server) decides.
+      await pumpEventQueue();
+      expect(c.read(restoreProvider), RestorePhase.failed);
+    });
+
+    test('a device with data of its own stays signed out', () async {
+      await ScheduleRepository(db).saveSemester(
+        SemesterInfo(
+          id: 's1',
+          name: 'Guest semester',
+          start: LocalDate.parse('2026-10-18'),
+          end: LocalDate.parse('2027-01-15'),
+        ),
+      );
+      final storage = _FlakyStorage(value: saved);
+      final c = container(storage);
+      expect(await c.read(authProvider.future), isNull);
+      expect(c.read(attachedAccountProvider), isNull);
+      // Kept: signing in replaces it.
+      expect(storage.deletes, 0);
+    });
   });
 
   test(

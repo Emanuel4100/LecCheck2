@@ -10,6 +10,7 @@ import '../../core/icons/lec_icons.dart';
 import '../../core/sync/sync_config.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../settings/account_section.dart';
+import '../settings/backup_import.dart';
 
 class WelcomePage extends ConsumerStatefulWidget {
   const WelcomePage({super.key});
@@ -161,6 +162,15 @@ class _WelcomePageState extends ConsumerState<WelcomePage> {
                             onPressed: () => _signIn(devName: 'dev'),
                             child: Text(l.devSignIn),
                           ),
+                        // A backup from another device, or from LecCheck
+                        // before it moved to the Flatpak: once imported, the
+                        // router moves on to Today.
+                        const SizedBox(height: 16),
+                        TextButton.icon(
+                          onPressed: () => importBackup(context, ref),
+                          icon: const Icon(LecIcons.importData),
+                          label: Text(l.importData),
+                        ),
                       ],
                     ],
                   ),

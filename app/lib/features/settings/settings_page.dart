@@ -31,8 +31,11 @@ import '../developer/developer_page.dart';
 import '../session/session_actions.dart';
 import '../tour/tour_controller.dart';
 import 'account_section.dart';
+import 'backup_import.dart';
 import 'holidays_sheet.dart';
+import 'move_dialog.dart';
 import 'update_card.dart';
+import 'update_dialog.dart';
 import 'notifications_section.dart';
 
 final _versionProvider = FutureProvider<String>((ref) async {
@@ -138,6 +141,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 sliver: SliverList.list(
                   children: [
                     const UpdateCard(),
+                    const MoveCard(),
                     for (final section in sections) ...[
                       SectionHeader(title: section.title),
                       ...section.children,
@@ -197,6 +201,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                     padding: const EdgeInsets.only(bottom: 48),
                     children: [
                       const UpdateCard(),
+                      const MoveCard(),
                       SectionHeader(title: sections[selected].title),
                       ...sections[selected].children,
                     ],
@@ -228,7 +233,8 @@ class _AboutSectionState extends ConsumerState<_AboutSection> {
 
   /// Check now: a spinner while it asks, then the answer. A newer release
   /// gets a snackbar too, since its card is at the top of Settings, usually
-  /// scrolled away from here.
+  /// scrolled away from here; its button opens the update window (Update
+  /// starts installing there), or the move window for install.sh installs.
   Future<void> _checkNow() async {
     final l = AppLocalizations.of(context);
     final messenger = ScaffoldMessenger.of(context);
@@ -236,7 +242,20 @@ class _AboutSectionState extends ConsumerState<_AboutSection> {
     setState(() => _checking = true);
     final update = await controller.check(force: true);
     if (mounted) setState(() => _checking = false);
-    final installable = ref.read(updateProvider).file != null;
+    final via = ref.read(updateProvider).via;
+    void open() {
+      if (!mounted) return;
+      switch (via) {
+        case UpdateVia.move:
+          showMoveDialog(context);
+        case UpdateVia.apk || UpdateVia.flatpak:
+          controller.install();
+          showUpdateDialog(context);
+        case UpdateVia.browser:
+          showUpdateDialog(context);
+      }
+    }
+
     messenger
       ..hideCurrentSnackBar()
       ..showSnackBar(
@@ -247,11 +266,12 @@ class _AboutSectionState extends ConsumerState<_AboutSection> {
           action: update == null
               ? null
               : SnackBarAction(
-                  label: installable ? l.updateInstall : l.updateDownload,
-                  onPressed: installable
-                      ? controller.install
-                      : () async =>
-                            openUrl(await controller.downloadUrl(update)),
+                  label: switch (via) {
+                    UpdateVia.move => l.updateMove,
+                    UpdateVia.apk || UpdateVia.flatpak => l.updateInstall,
+                    UpdateVia.browser => l.updateDownload,
+                  },
+                  onPressed: open,
                 ),
         ),
       );
@@ -815,7 +835,7 @@ class _DataSection extends ConsumerWidget {
           leading: const Icon(LecIcons.importData),
           title: Text(l.importData),
           subtitle: Text(l.importDataSubtitle),
-          onTap: () => _import(context, ref),
+          onTap: () => importBackup(context, ref),
         ),
         ListTile(
           leading: const Icon(LecIcons.history),
@@ -840,50 +860,6 @@ class _DataSection extends ConsumerWidget {
         ),
       ],
     );
-  }
-
-  /// Reads the file, shows what it would change, and imports it after an
-  /// automatic backup. "Add missing" never changes existing data.
-  Future<void> _import(BuildContext context, WidgetRef ref) async {
-    final l = AppLocalizations.of(context);
-    final messenger = ScaffoldMessenger.of(context);
-    final repo = ref.read(repositoryProvider);
-    final file = await FilePicker.pickFile(allowedExtensions: const ['json']);
-    if (file == null || !context.mounted) return;
-    final ParsedBackup backup;
-    final ({int added, int changed, int skipped}) preview;
-    try {
-      backup = BackupService.parse(utf8.decode(await file.readAsBytes()));
-      preview = await repo.previewImport(backup.tables);
-    } on Object catch (e) {
-      // Not JSON, or JSON of another shape (wrong types throw TypeError).
-      debugPrint('Import refused: $e');
-      messenger.showSnackBar(SnackBar(content: Text(l.importFailed)));
-      return;
-    }
-    if (preview.added == 0 && preview.changed == 0) {
-      messenger.showSnackBar(SnackBar(content: Text(l.importNothing)));
-      return;
-    }
-    if (!context.mounted) return;
-    final mode = await showChoiceDialog<ImportMode?>(
-      context,
-      title: l.importTitle,
-      body: [
-        l.importPreview(backup.semesters, preview.added, preview.changed),
-        if (preview.skipped > 0) l.importSkipped(preview.skipped),
-      ].join('\n\n'),
-      choices: [
-        DialogChoice(l.cancel, null),
-        if (preview.changed > 0)
-          DialogChoice(l.replace, ImportMode.replace, destructive: true),
-        DialogChoice(l.importMerge, ImportMode.merge, primary: true),
-      ],
-    );
-    if (mode == null) return;
-    await ref.read(snapshotServiceProvider).take(SnapshotReason.beforeImport);
-    final count = await BackupService(repo).importParsed(backup, mode: mode);
-    messenger.showSnackBar(SnackBar(content: Text(l.importDone(count))));
   }
 }
 

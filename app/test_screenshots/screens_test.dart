@@ -15,14 +15,17 @@ import 'package:leccheck/app/app.dart';
 import 'package:leccheck/app/providers.dart';
 import 'package:leccheck/app/router.dart';
 import 'package:leccheck/app/theme/colors.dart';
+import 'package:leccheck/app/move_controller.dart';
 import 'package:leccheck/app/update_controller.dart';
 import 'package:leccheck/core/db/app_database.dart';
 import 'package:leccheck/core/db/schedule_repository.dart';
 import 'package:leccheck/core/icons/lec_icons.dart';
+import 'package:leccheck/core/update/update_download.dart';
 import 'package:leccheck/core/update/update_service.dart';
 import 'package:leccheck/domain/local_date.dart';
 import 'package:leccheck/domain/occurrence_engine.dart';
 import 'package:leccheck/domain/schedule_types.dart';
+import 'package:leccheck/features/settings/move_dialog.dart';
 import 'package:leccheck/features/settings/update_dialog.dart';
 import 'package:leccheck/features/tour/tour_controller.dart';
 import 'package:material_ui/material_ui.dart';
@@ -421,33 +424,40 @@ void main() {
     await _shot(tester, 'desktop_meeting_dialog');
   }, variant: TargetPlatformVariant.only(TargetPlatform.linux));
 
-  // A Linux update: what's new, then the download.
+  // An update: what's new, then each step (Flatpak on Linux, the APK on
+  // Android).
   const update = AppUpdate(
-    version: '2.0.0-beta.11',
-    build: 31,
+    version: '2.0.0-beta.15',
+    build: 23,
     notesUrl: 'https://example.com/notes',
-    linux: 'https://example.com/linux.tar.gz',
+    androidUniversal: 'https://example.com/a.apk',
+    flatpakRef: 'https://example.com/leccheck.flatpakref',
     notes:
-        '- **Contacts**: the lecturer and teaching assistants of each course,\n'
-        '  with buttons to send them an email.\n'
-        "- **Sessions that don't count**: leave a session out of attendance,\n"
-        "  like a first lecture that isn't counted.\n"
-        '- **Canceled sessions** are striped in their course color.\n'
-        "- **Update window**: what's new, then each step of the update.",
+        '- **Linux comes as a Flatpak** from LecCheck\'s own repository:\n'
+        '  updates arrive through Flatpak, step by step in this window.\n'
+        '- **A clearer update window**: the size before you download, a\n'
+        '  visible check of the file, and what to do when something fails.\n'
+        '- Install it once with `flatpak install --user …`; it updates\n'
+        '  itself after that.\n'
+        '\n'
+        '### Smaller things\n'
+        '- **Import backup** on the welcome screen.\n'
+        '- Linux no longer needs WebKitGTK.',
   );
-  const updateFile = UpdateFile('https://example.com/linux.tar.gz', 'hash');
+  const flatpak = UpdateState(update: update, via: UpdateVia.flatpak);
 
   Future<void> updateShot(
     WidgetTester tester,
     UpdateState state,
-    String name,
-  ) async {
+    String name, {
+    bool phone = false,
+  }) async {
     final c = await _pumpApp(
       tester,
       locale: 'en',
       mode: ThemeMode.light,
-      size: const Size(1440, 900),
-      pixelRatio: 1,
+      size: phone ? const Size(412, 915) : const Size(1440, 900),
+      pixelRatio: phone ? 2.6 : 1,
       overrides: [updateProvider.overrideWith(() => _FixedUpdate(state))],
     );
     showUpdateDialog(
@@ -459,27 +469,114 @@ void main() {
 
   testWidgets(
     'Update window · available',
+    (tester) => updateShot(tester, flatpak, 'desktop_update_available'),
+    variant: TargetPlatformVariant.only(TargetPlatform.linux),
+  );
+
+  testWidgets(
+    'Update window · the Flatpak portal installs it',
     (tester) => updateShot(
       tester,
-      const UpdateState(update: update, file: updateFile),
-      'desktop_update_available',
+      const UpdateState(
+        update: update,
+        via: UpdateVia.flatpak,
+        phase: UpdatePhase.downloading,
+        portalProgress: 0.45,
+      ),
+      'desktop_update_progress',
     ),
     variant: TargetPlatformVariant.only(TargetPlatform.linux),
   );
 
   testWidgets(
-    'Update window · downloading',
+    'Update window · verified by Flatpak, Restart',
     (tester) => updateShot(
       tester,
       const UpdateState(
         update: update,
-        file: updateFile,
-        phase: UpdatePhase.downloading,
-        received: 18400000,
+        via: UpdateVia.flatpak,
+        phase: UpdatePhase.restart,
+        portalProgress: 1,
+      ),
+      'desktop_update_restart',
+    ),
+    variant: TargetPlatformVariant.only(TargetPlatform.linux),
+  );
+
+  testWidgets(
+    'Update window · Flatpak may not update LecCheck',
+    (tester) => updateShot(
+      tester,
+      const UpdateState(
+        update: update,
+        via: UpdateVia.flatpak,
+        phase: UpdatePhase.failed,
+        failedStep: UpdateStep.download,
+        failure: UpdateFailure.flatpakDenied,
+      ),
+      'desktop_update_denied',
+    ),
+    variant: TargetPlatformVariant.only(TargetPlatform.linux),
+  );
+
+  testWidgets(
+    'Update window · checking the file (Android)',
+    (tester) => updateShot(
+      tester,
+      const UpdateState(
+        update: update,
+        via: UpdateVia.apk,
+        file: UpdateFile('https://example.com/a.apk', 'hash', size: 31200000),
+        phase: UpdatePhase.verifying,
+        received: 31200000,
         total: 31200000,
         bytesPerSecond: 4300000,
+        checked: 19000000,
       ),
-      'desktop_update_progress',
+      'en_light_update_check',
+      phone: true,
+    ),
+    variant: TargetPlatformVariant.only(TargetPlatform.android),
+  );
+
+  Future<void> moveShot(
+    WidgetTester tester,
+    MoveState state,
+    String name,
+  ) async {
+    final c = await _pumpApp(
+      tester,
+      locale: 'en',
+      mode: ThemeMode.light,
+      size: const Size(1440, 900),
+      pixelRatio: 1,
+      overrides: [moveProvider.overrideWith(() => _FixedMove(state))],
+    );
+    showMoveDialog(
+      c.read(routerProvider).routerDelegate.navigatorKey.currentContext!,
+    );
+    await _settle(tester);
+    await _shot(tester, name);
+  }
+
+  testWidgets(
+    'Move to the Flatpak · why and how',
+    (tester) =>
+        moveShot(tester, const MoveState(offered: true), 'desktop_move'),
+    variant: TargetPlatformVariant.only(TargetPlatform.linux),
+  );
+
+  testWidgets(
+    'Move to the Flatpak · installing',
+    (tester) => moveShot(
+      tester,
+      const MoveState(
+        offered: true,
+        phase: MovePhase.installing,
+        backup: '/home/me/leccheck-backup-2026-11-10.json',
+        output: 'Installing 2/3… runtime/org.freedesktop.Platform/x86_64/26.08',
+      ),
+      'desktop_move_installing',
     ),
     variant: TargetPlatformVariant.only(TargetPlatform.linux),
   );
@@ -583,6 +680,16 @@ void main() {
     await _go(tester, container, '/semester');
     await _shot(tester, 'en_light_semester_form');
   });
+}
+
+/// A fixed move instead of looking for install.sh's folder.
+class _FixedMove extends MoveController {
+  _FixedMove(this.fixed);
+
+  final MoveState fixed;
+
+  @override
+  MoveState build() => fixed;
 }
 
 /// A fixed update state instead of checking GitHub.

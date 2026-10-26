@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'app/adaptive.dart';
 import 'app/app.dart';
 import 'app/background_reminders.dart';
+import 'app/move_controller.dart';
 import 'app/notification_controller.dart';
 import 'app/providers.dart';
 import 'app/router.dart';
@@ -15,6 +16,7 @@ import 'app/widget_controller.dart';
 import 'core/dev/dev_log.dart';
 import 'core/dev/frame_stats.dart';
 import 'core/report/report_sender.dart';
+import 'features/settings/move_dialog.dart';
 import 'features/settings/report_page.dart';
 import 'features/settings/update_dialog.dart';
 
@@ -66,18 +68,25 @@ void _dailySnapshots(ProviderContainer container) {
 
 /// Looks for a new release (at most once a day), and sends bug reports that
 /// waited for a connection, at startup and when the app comes back. Offers
-/// to report an error the previous session ended with.
+/// to report an error the previous session ended with. Linux installs made
+/// by install.sh are asked to move to the Flatpak instead.
 void _updateChecks(ProviderContainer container) {
+  final moving = container.read(moveProvider.notifier).init();
   void check() {
     final updates = container.read(updateProvider.notifier);
-    updates.check().then((_) {
-      // Once per launch while an update waits: the update window.
+    final move = container.read(moveProvider.notifier);
+    (updates.check(), moving).wait.then((_) {
+      // Once per launch: the move window, or while an update waits, the
+      // update window.
       final context = container
           .read(routerProvider)
           .routerDelegate
           .navigatorKey
           .currentContext;
-      if (context != null && context.mounted && updates.takePrompt()) {
+      if (context == null || !context.mounted) return;
+      if (container.read(moveProvider).offered) {
+        if (move.takePrompt()) showMoveDialog(context);
+      } else if (updates.takePrompt()) {
         showUpdateDialog(context);
       }
     });

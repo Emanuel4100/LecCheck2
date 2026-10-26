@@ -1471,7 +1471,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get updateLinuxHint =>
-      'Download it, extract it and run ./install.sh again: your data stays.';
+      'LecCheck for Linux comes as a Flatpak now: the release page says how to install it.';
 
   @override
   String get updateDownload => 'Download';
@@ -1534,7 +1534,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get updateNotVerified =>
-      'The file doesn\'t match the release, so nothing was installed.';
+      'The downloaded file doesn\'t match the signed release, so it wasn\'t installed. Try again; if it keeps happening, download it in the browser.';
 
   @override
   String updateBytes(String done, String total) {
@@ -1546,6 +1546,177 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get updateOpensInstaller => 'Android\'s installer opens to finish';
+
+  @override
+  String updateSize(String size) {
+    return '$size download';
+  }
+
+  @override
+  String updateWhatsNewIn(String version) {
+    return 'What\'s new in $version';
+  }
+
+  @override
+  String get updateFlatpakHint =>
+      'Updates come through Flatpak. The first time, it may ask whether LecCheck can update itself.';
+
+  @override
+  String get updateChecking => 'Checking the file…';
+
+  @override
+  String get updateVerifiedFlatpak =>
+      'Verified by Flatpak: the repository is signed';
+
+  @override
+  String get updateFlatpakInstalling => 'Flatpak downloads and installs it';
+
+  @override
+  String get updateFailedNetwork =>
+      'Couldn\'t download the update. Check your internet connection and try again.';
+
+  @override
+  String get updateFailedNotFound =>
+      'The update\'s file isn\'t on GitHub yet. Try again in a few minutes.';
+
+  @override
+  String get updateFailedSpace =>
+      'There isn\'t enough space for the update. Free some up and try again.';
+
+  @override
+  String get updateFailedInstaller =>
+      'Android\'s installer didn\'t open. Allow LecCheck to install apps (Settings → Apps → LecCheck → Install unknown apps), then try again.';
+
+  @override
+  String get updateFailedFlatpakDenied =>
+      'Updating from inside LecCheck isn\'t allowed, since Deny was chosen when Flatpak asked. Update it in your software center, or allow it with this command and try again:';
+
+  @override
+  String get updateFailedFlatpakPermissions =>
+      'This version needs new permissions, so Flatpak installs it only with your consent: update LecCheck in your software center, or with this command:';
+
+  @override
+  String get updateFailedFlatpakNotYet =>
+      'Flatpak doesn\'t see the new version yet: its repository can take a few minutes to catch up. Try again soon.';
+
+  @override
+  String get updateFailedFlatpak => 'Flatpak couldn\'t install the update.';
+
+  @override
+  String get updateRestartFailed =>
+      'Couldn\'t restart LecCheck. Close it and open it again to use the new version.';
+
+  @override
+  String get updateCopyCommand => 'Copy command';
+
+  @override
+  String get updateCommandCopied => 'Command copied';
+
+  @override
+  String get updateMove => 'Move to the Flatpak';
+
+  @override
+  String get updateMoveHint =>
+      'LecCheck for Linux comes as a Flatpak now: move to it to get this version.';
+
+  @override
+  String get moveTitle => 'LecCheck is moving to Flatpak';
+
+  @override
+  String get moveIntro =>
+      'On Linux, new versions come as a Flatpak, so this version gets no more updates. Moving takes a few minutes; after that LecCheck updates through Flatpak (and your software center).';
+
+  @override
+  String get moveSignedInNote =>
+      'You\'re signed in, so your data comes along through your account: sign in again in the new LecCheck.';
+
+  @override
+  String get moveGuestNote =>
+      'Your data comes along in a backup: save it, then choose Import backup on the new LecCheck\'s welcome screen.';
+
+  @override
+  String get moveStepSync => 'Sync your data';
+
+  @override
+  String get moveStepBackup => 'Save a backup';
+
+  @override
+  String get moveStepInstall => 'Install the Flatpak';
+
+  @override
+  String get moveStepRemove => 'Remove this version';
+
+  @override
+  String get moveSyncing => 'Syncing your last changes…';
+
+  @override
+  String get moveSynced => 'Everything is in your account';
+
+  @override
+  String get moveNotSynced =>
+      'Some changes haven\'t synced, so save a backup to bring them along.';
+
+  @override
+  String get moveNothingToBring => 'Nothing to bring along';
+
+  @override
+  String moveBackupSaved(String file) {
+    return 'Saved as $file';
+  }
+
+  @override
+  String get moveSaveBackup => 'Save a backup…';
+
+  @override
+  String get moveInstalling =>
+      'Downloading LecCheck and the runtime it shares with other Flatpak apps…';
+
+  @override
+  String get moveInstalled => 'Installed';
+
+  @override
+  String get moveRemoving => 'Removing…';
+
+  @override
+  String moveRemoveNote(String path) {
+    return 'Your data here stays in $path as one more backup.';
+  }
+
+  @override
+  String get moveReadySignedIn =>
+      'Done. Open LecCheck and sign in with the same account: your data comes back.';
+
+  @override
+  String get moveReadyGuest =>
+      'Done. Open LecCheck and choose Import backup on its welcome screen.';
+
+  @override
+  String get moveReadyEmpty => 'Done. Open LecCheck to set it up.';
+
+  @override
+  String get moveStart => 'Move';
+
+  @override
+  String get moveOpen => 'Open LecCheck';
+
+  @override
+  String get moveNoFlatpak =>
+      'Flatpak isn\'t installed on this computer. Install it, then try again.';
+
+  @override
+  String get moveHowToInstallFlatpak => 'How to install Flatpak';
+
+  @override
+  String get moveInstallFailed => 'Installing the Flatpak failed.';
+
+  @override
+  String get moveRemoveFailed => 'This version couldn\'t be removed.';
+
+  @override
+  String get moveBackupFailed => 'The backup couldn\'t be saved.';
+
+  @override
+  String get moveCardSubtitle => 'Move now to keep getting updates.';
 
   @override
   String get checkForUpdates => 'Check for updates';

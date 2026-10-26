@@ -725,7 +725,7 @@
       }
     }
   },
-  "updateLinuxHint": "Download it, extract it and run ./install.sh again: your data stays.",
+  "updateLinuxHint": "LecCheck for Linux comes as a Flatpak now: the release page says how to install it.",
   "updateDownload": "Download",
   "updateWhatsNew": "What's new",
   "updateLater": "Later",
@@ -751,7 +751,7 @@
   "updateStepVerify": "Check the file",
   "updateStepInstall": "Install",
   "updateVerified": "SHA-256 matches the signed release",
-  "updateNotVerified": "The file doesn't match the release, so nothing was installed.",
+  "updateNotVerified": "The downloaded file doesn't match the signed release, so it wasn't installed. Try again; if it keeps happening, download it in the browser.",
   "updateBytes": "{done} of {total}",
   "@updateBytes": {
     "placeholders": {
@@ -765,6 +765,82 @@
   },
   "updateInstalled": "Installed",
   "updateOpensInstaller": "Android's installer opens to finish",
+  "updateSize": "{size} download",
+  "@updateSize": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "updateWhatsNewIn": "What's new in {version}",
+  "@updateWhatsNewIn": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "updateFlatpakHint": "Updates come through Flatpak. The first time, it may ask whether LecCheck can update itself.",
+  "updateChecking": "Checking the file…",
+  "updateVerifiedFlatpak": "Verified by Flatpak: the repository is signed",
+  "updateFlatpakInstalling": "Flatpak downloads and installs it",
+  "updateFailedNetwork": "Couldn't download the update. Check your internet connection and try again.",
+  "updateFailedNotFound": "The update's file isn't on GitHub yet. Try again in a few minutes.",
+  "updateFailedSpace": "There isn't enough space for the update. Free some up and try again.",
+  "updateFailedInstaller": "Android's installer didn't open. Allow LecCheck to install apps (Settings → Apps → LecCheck → Install unknown apps), then try again.",
+  "updateFailedFlatpakDenied": "Updating from inside LecCheck isn't allowed, since Deny was chosen when Flatpak asked. Update it in your software center, or allow it with this command and try again:",
+  "updateFailedFlatpakPermissions": "This version needs new permissions, so Flatpak installs it only with your consent: update LecCheck in your software center, or with this command:",
+  "updateFailedFlatpakNotYet": "Flatpak doesn't see the new version yet: its repository can take a few minutes to catch up. Try again soon.",
+  "updateFailedFlatpak": "Flatpak couldn't install the update.",
+  "updateRestartFailed": "Couldn't restart LecCheck. Close it and open it again to use the new version.",
+  "updateCopyCommand": "Copy command",
+  "updateCommandCopied": "Command copied",
+  "updateMove": "Move to the Flatpak",
+  "updateMoveHint": "LecCheck for Linux comes as a Flatpak now: move to it to get this version.",
+  "moveTitle": "LecCheck is moving to Flatpak",
+  "moveIntro": "On Linux, new versions come as a Flatpak, so this version gets no more updates. Moving takes a few minutes; after that LecCheck updates through Flatpak (and your software center).",
+  "moveSignedInNote": "You're signed in, so your data comes along through your account: sign in again in the new LecCheck.",
+  "moveGuestNote": "Your data comes along in a backup: save it, then choose Import backup on the new LecCheck's welcome screen.",
+  "moveStepSync": "Sync your data",
+  "moveStepBackup": "Save a backup",
+  "moveStepInstall": "Install the Flatpak",
+  "moveStepRemove": "Remove this version",
+  "moveSyncing": "Syncing your last changes…",
+  "moveSynced": "Everything is in your account",
+  "moveNotSynced": "Some changes haven't synced, so save a backup to bring them along.",
+  "moveNothingToBring": "Nothing to bring along",
+  "moveBackupSaved": "Saved as {file}",
+  "@moveBackupSaved": {
+    "placeholders": {
+      "file": {
+        "type": "String"
+      }
+    }
+  },
+  "moveSaveBackup": "Save a backup…",
+  "moveInstalling": "Downloading LecCheck and the runtime it shares with other Flatpak apps…",
+  "moveInstalled": "Installed",
+  "moveRemoving": "Removing…",
+  "moveRemoveNote": "Your data here stays in {path} as one more backup.",
+  "@moveRemoveNote": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
+  "moveReadySignedIn": "Done. Open LecCheck and sign in with the same account: your data comes back.",
+  "moveReadyGuest": "Done. Open LecCheck and choose Import backup on its welcome screen.",
+  "moveReadyEmpty": "Done. Open LecCheck to set it up.",
+  "moveStart": "Move",
+  "moveOpen": "Open LecCheck",
+  "moveNoFlatpak": "Flatpak isn't installed on this computer. Install it, then try again.",
+  "moveHowToInstallFlatpak": "How to install Flatpak",
+  "moveInstallFailed": "Installing the Flatpak failed.",
+  "moveRemoveFailed": "This version couldn't be removed.",
+  "moveBackupFailed": "The backup couldn't be saved.",
+  "moveCardSubtitle": "Move now to keep getting updates.",
   "checkForUpdates": "Check for updates",
   "checkForUpdatesSubtitle": "Once a day, from GitHub",
   "checkNow": "Check now",

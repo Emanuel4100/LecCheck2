@@ -16,6 +16,8 @@ class AppUpdate {
     this.androidUniversal,
     this.linux,
     this.sha256 = const {},
+    this.size = const {},
+    this.flatpakRef,
     this.notes = '',
   });
 
@@ -24,7 +26,8 @@ class AppUpdate {
 
   /// Null when [json] isn't a valid entry. Every link must be https (they're
   /// opened as downloads); a missing or broken optional one is left out, and
-  /// so is a hash that isn't 64 hex digits.
+  /// so is a hash that isn't 64 hex digits or a size that isn't a positive
+  /// number.
   static AppUpdate? tryParse(Object? json) {
     if (json is! Map<String, Object?>) return null;
     final version = json['version'];
@@ -41,6 +44,12 @@ class AppUpdate {
           if (hashes[key] case final String hash when _hex64.hasMatch(hash))
             key: hash.toLowerCase(),
     };
+    final sizes = json['size'];
+    final size = <String, int>{
+      if (sizes is Map<String, Object?>)
+        for (final key in _files)
+          if (sizes[key] case final int bytes when bytes > 0) key: bytes,
+    };
     return AppUpdate(
       version: version,
       build: build,
@@ -49,6 +58,8 @@ class AppUpdate {
       androidUniversal: _https(json['androidUniversal']),
       linux: _https(json['linux']),
       sha256: sha256,
+      size: size,
+      flatpakRef: _https(json['flatpakref']),
       notes: json['notes'] is String ? json['notes']! as String : '',
     );
   }
@@ -81,6 +92,17 @@ class AppUpdate {
   /// …). Releases before 2.0.0-beta.8 have none.
   final Map<String, String> sha256;
 
+  /// Each file's size in bytes, keyed like the links, so the window can say
+  /// how big the download is. Releases before 2.0.0-beta.15 have none.
+  final Map<String, int> size;
+
+  /// The Flatpak's `.flatpakref` (LecCheck's own repository), for releases
+  /// published as a Flatpak (2.0.0-beta.15 on): the Flatpak updates to it.
+  final String? flatpakRef;
+
+  /// Published as a Flatpak too.
+  bool get flatpak => flatpakRef != null;
+
   /// What Update installs from inside the app: the same APK as Download, or
   /// the Linux tarball. Null when that file has no hash (an older manifest):
   /// Download opens the browser instead. Never the universal APK in place of
@@ -97,11 +119,13 @@ class AppUpdate {
       _ => linux,
     };
     final hash = sha256[key];
-    return url == null || hash == null ? null : UpdateFile(url, hash);
+    return url == null || hash == null
+        ? null
+        : UpdateFile(url, hash, size: size[key]);
   }
 
-  /// What Download opens: the APK for this phone, or the release page (Linux
-  /// installs from its tarball with `./install.sh`).
+  /// What Download opens: the APK for this phone, or the release page (it
+  /// says how to install the Flatpak on Linux).
   String downloadUrl({required bool android, required bool arm64}) {
     if (android) {
       return (arm64 ? androidArm64 : null) ?? androidUniversal ?? notesUrl;
@@ -118,8 +142,10 @@ class AppUpdate {
       other.androidArm64 == androidArm64 &&
       other.androidUniversal == androidUniversal &&
       other.linux == linux &&
+      other.flatpakRef == flatpakRef &&
       other.notes == notes &&
-      mapEquals(other.sha256, sha256);
+      mapEquals(other.sha256, sha256) &&
+      mapEquals(other.size, size);
 
   @override
   int get hashCode => Object.hash(
@@ -129,9 +155,13 @@ class AppUpdate {
     androidArm64,
     androidUniversal,
     linux,
+    flatpakRef,
     notes,
     Object.hashAllUnordered(
       sha256.entries.map((e) => Object.hash(e.key, e.value)),
+    ),
+    Object.hashAllUnordered(
+      size.entries.map((e) => Object.hash(e.key, e.value)),
     ),
   );
 }
@@ -139,17 +169,23 @@ class AppUpdate {
 /// A file Update downloads and installs, with the SHA-256 it must match.
 @immutable
 class UpdateFile {
-  const UpdateFile(this.url, this.sha256);
+  const UpdateFile(this.url, this.sha256, {this.size});
 
   final String url;
   final String sha256;
 
-  @override
-  bool operator ==(Object other) =>
-      other is UpdateFile && other.url == url && other.sha256 == sha256;
+  /// In bytes, when the manifest says (2.0.0-beta.15 on).
+  final int? size;
 
   @override
-  int get hashCode => Object.hash(url, sha256);
+  bool operator ==(Object other) =>
+      other is UpdateFile &&
+      other.url == url &&
+      other.sha256 == sha256 &&
+      other.size == size;
+
+  @override
+  int get hashCode => Object.hash(url, sha256, size);
 }
 
 /// The build number of the installed app. Android's per-ABI APKs report

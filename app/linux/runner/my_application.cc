@@ -191,13 +191,48 @@ static void my_application_activate(GApplication* application) {
   gtk_widget_grab_focus(GTK_WIDGET(view));
 }
 
+// Restart after a Flatpak update starts the new version (--after-update)
+// while this one may still be quitting. LecCheck runs as a single instance,
+// so registering now would hand over to the old one: this waits, up to 20
+// seconds, until it has given up the app's name on the session bus.
+static void wait_for_previous_instance() {
+  g_autoptr(GDBusConnection) bus =
+      g_bus_get_sync(G_BUS_TYPE_SESSION, nullptr, nullptr);
+  if (bus == nullptr) return;
+  for (int attempt = 0; attempt < 100; attempt++) {
+    g_autoptr(GVariant) reply = g_dbus_connection_call_sync(
+        bus, "org.freedesktop.DBus", "/org/freedesktop/DBus",
+        "org.freedesktop.DBus", "NameHasOwner",
+        g_variant_new("(s)", APPLICATION_ID), G_VARIANT_TYPE("(b)"),
+        G_DBUS_CALL_FLAGS_NONE, -1, nullptr, nullptr);
+    if (reply == nullptr) return;
+    gboolean owned = FALSE;
+    g_variant_get(reply, "(b)", &owned);
+    if (!owned) return;
+    g_usleep(200 * G_TIME_SPAN_MILLISECOND);
+  }
+}
+
 // Implements GApplication::local_command_line.
 static gboolean my_application_local_command_line(GApplication* application,
                                                   gchar*** arguments,
                                                   int* exit_status) {
   MyApplication* self = MY_APPLICATION(application);
-  // Strip out the first argument as it is the binary name.
-  self->dart_entrypoint_arguments = g_strdupv(*arguments + 1);
+  // Strip out the first argument as it is the binary name, and
+  // --after-update, which is for the runner.
+  gboolean after_update = FALSE;
+  GPtrArray* dart_arguments = g_ptr_array_new();
+  for (gchar** argument = *arguments + 1; *argument != nullptr; argument++) {
+    if (g_strcmp0(*argument, "--after-update") == 0) {
+      after_update = TRUE;
+    } else {
+      g_ptr_array_add(dart_arguments, g_strdup(*argument));
+    }
+  }
+  g_ptr_array_add(dart_arguments, nullptr);
+  self->dart_entrypoint_arguments =
+      reinterpret_cast<gchar**>(g_ptr_array_free(dart_arguments, FALSE));
+  if (after_update) wait_for_previous_instance();
 
   g_autoptr(GError) error = nullptr;
   if (!g_application_register(application, nullptr, &error)) {

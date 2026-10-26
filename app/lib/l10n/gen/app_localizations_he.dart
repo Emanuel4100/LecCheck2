@@ -1462,7 +1462,7 @@ class AppLocalizationsHe extends AppLocalizations {
 
   @override
   String get updateLinuxHint =>
-      'יש להוריד, לחלץ ולהריץ שוב את ‎./install.sh. הנתונים נשמרים.';
+      'LecCheck ל-Linux מגיעה עכשיו כ-Flatpak: בדף הגרסה מוסבר איך להתקין אותה.';
 
   @override
   String get updateDownload => 'הורדה';
@@ -1524,7 +1524,8 @@ class AppLocalizationsHe extends AppLocalizations {
   String get updateVerified => 'ה-SHA-256 תואם לגרסה החתומה';
 
   @override
-  String get updateNotVerified => 'הקובץ לא תואם לגרסה, ולכן שום דבר לא הותקן.';
+  String get updateNotVerified =>
+      'הקובץ שהורד לא תואם לגרסה החתומה, ולכן הוא לא הותקן. אפשר לנסות שוב, ואם זה חוזר על עצמו, להוריד דרך הדפדפן.';
 
   @override
   String updateBytes(String done, String total) {
@@ -1536,6 +1537,177 @@ class AppLocalizationsHe extends AppLocalizations {
 
   @override
   String get updateOpensInstaller => 'המתקין של Android ייפתח כדי לסיים';
+
+  @override
+  String updateSize(String size) {
+    return 'הורדה של $size';
+  }
+
+  @override
+  String updateWhatsNewIn(String version) {
+    return 'מה חדש בגרסה $version';
+  }
+
+  @override
+  String get updateFlatpakHint =>
+      'העדכונים מגיעים דרך Flatpak. בפעם הראשונה ייתכן שתופיע שאלה אם לאפשר ל-LecCheck לעדכן את עצמה.';
+
+  @override
+  String get updateChecking => 'מתבצעת בדיקת הקובץ…';
+
+  @override
+  String get updateVerifiedFlatpak => 'אומת על ידי Flatpak: המאגר חתום';
+
+  @override
+  String get updateFlatpakInstalling => 'Flatpak מוריד ומתקין את העדכון';
+
+  @override
+  String get updateFailedNetwork =>
+      'לא ניתן היה להוריד את העדכון. כדאי לבדוק את החיבור לאינטרנט ולנסות שוב.';
+
+  @override
+  String get updateFailedNotFound =>
+      'קובץ העדכון עדיין לא נמצא ב-GitHub. אפשר לנסות שוב בעוד כמה דקות.';
+
+  @override
+  String get updateFailedSpace =>
+      'אין מספיק מקום לעדכון. יש לפנות מקום ולנסות שוב.';
+
+  @override
+  String get updateFailedInstaller =>
+      'המתקין של Android לא נפתח. יש לאפשר ל-LecCheck להתקין אפליקציות (הגדרות ← אפליקציות ← LecCheck ← התקנת אפליקציות לא מוכרות) ולנסות שוב.';
+
+  @override
+  String get updateFailedFlatpakDenied =>
+      'עדכון מתוך LecCheck לא מורשה, כי נבחר „דחייה” כש-Flatpak שאל. אפשר לעדכן במרכז התוכנה, או לאפשר זאת בפקודה הבאה ולנסות שוב:';
+
+  @override
+  String get updateFailedFlatpakPermissions =>
+      'הגרסה הזו צריכה הרשאות חדשות, ולכן Flatpak מתקין אותה רק באישור שלך: אפשר לעדכן את LecCheck במרכז התוכנה, או בפקודה הבאה:';
+
+  @override
+  String get updateFailedFlatpakNotYet =>
+      'Flatpak עדיין לא רואה את הגרסה החדשה: עדכון המאגר שלו יכול לקחת כמה דקות. כדאי לנסות שוב בקרוב.';
+
+  @override
+  String get updateFailedFlatpak => 'Flatpak לא הצליח להתקין את העדכון.';
+
+  @override
+  String get updateRestartFailed =>
+      'לא ניתן היה להפעיל מחדש את LecCheck. יש לסגור ולפתוח אותה שוב כדי להשתמש בגרסה החדשה.';
+
+  @override
+  String get updateCopyCommand => 'העתקת הפקודה';
+
+  @override
+  String get updateCommandCopied => 'הפקודה הועתקה';
+
+  @override
+  String get updateMove => 'מעבר ל-Flatpak';
+
+  @override
+  String get updateMoveHint =>
+      'LecCheck ל-Linux מגיעה עכשיו כ-Flatpak: כדי לקבל את הגרסה הזו צריך לעבור אליה.';
+
+  @override
+  String get moveTitle => 'LecCheck עוברת ל-Flatpak';
+
+  @override
+  String get moveIntro =>
+      'ב-Linux הגרסאות החדשות מגיעות כ-Flatpak, ולכן הגרסה הזו לא תתעדכן יותר. המעבר לוקח כמה דקות, ואחריו LecCheck מתעדכנת דרך Flatpak (וגם דרך מרכז התוכנה).';
+
+  @override
+  String get moveSignedInNote =>
+      'החשבון שלך מחובר, ולכן הנתונים עוברים דרכו: יש להתחבר שוב ב-LecCheck החדשה.';
+
+  @override
+  String get moveGuestNote =>
+      'הנתונים עוברים בגיבוי: יש לשמור אותו, ואז לבחור „ייבוא גיבוי” במסך הפתיחה של LecCheck החדשה.';
+
+  @override
+  String get moveStepSync => 'סנכרון הנתונים';
+
+  @override
+  String get moveStepBackup => 'שמירת גיבוי';
+
+  @override
+  String get moveStepInstall => 'התקנת ה-Flatpak';
+
+  @override
+  String get moveStepRemove => 'הסרת הגרסה הזו';
+
+  @override
+  String get moveSyncing => 'מתבצע סנכרון של השינויים האחרונים…';
+
+  @override
+  String get moveSynced => 'הכול נמצא בחשבון שלך';
+
+  @override
+  String get moveNotSynced =>
+      'חלק מהשינויים לא סונכרנו, ולכן כדאי לשמור גיבוי כדי להעביר אותם.';
+
+  @override
+  String get moveNothingToBring => 'אין נתונים להעביר';
+
+  @override
+  String moveBackupSaved(String file) {
+    return 'נשמר בשם $file';
+  }
+
+  @override
+  String get moveSaveBackup => 'שמירת גיבוי…';
+
+  @override
+  String get moveInstalling =>
+      'מתבצעת הורדה של LecCheck ושל סביבת ההרצה שהיא חולקת עם אפליקציות Flatpak אחרות…';
+
+  @override
+  String get moveInstalled => 'הותקן';
+
+  @override
+  String get moveRemoving => 'מתבצעת הסרה…';
+
+  @override
+  String moveRemoveNote(String path) {
+    return 'הנתונים שכאן נשארים ב-$path כגיבוי נוסף.';
+  }
+
+  @override
+  String get moveReadySignedIn =>
+      'המעבר הסתיים. יש לפתוח את LecCheck ולהתחבר עם אותו חשבון: הנתונים יחזרו.';
+
+  @override
+  String get moveReadyGuest =>
+      'המעבר הסתיים. יש לפתוח את LecCheck ולבחור „ייבוא גיבוי” במסך הפתיחה.';
+
+  @override
+  String get moveReadyEmpty =>
+      'המעבר הסתיים. יש לפתוח את LecCheck כדי להגדיר אותה.';
+
+  @override
+  String get moveStart => 'מעבר';
+
+  @override
+  String get moveOpen => 'פתיחת LecCheck';
+
+  @override
+  String get moveNoFlatpak =>
+      'Flatpak לא מותקן במחשב הזה. יש להתקין אותו ולנסות שוב.';
+
+  @override
+  String get moveHowToInstallFlatpak => 'איך מתקינים Flatpak';
+
+  @override
+  String get moveInstallFailed => 'התקנת ה-Flatpak נכשלה.';
+
+  @override
+  String get moveRemoveFailed => 'לא ניתן היה להסיר את הגרסה הזו.';
+
+  @override
+  String get moveBackupFailed => 'לא ניתן היה לשמור את הגיבוי.';
+
+  @override
+  String get moveCardSubtitle => 'כדאי לעבור עכשיו כדי להמשיך לקבל עדכונים.';
 
   @override
   String get checkForUpdates => 'בדיקת עדכונים';

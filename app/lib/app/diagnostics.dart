@@ -9,6 +9,8 @@ import '../core/dev/frame_stats.dart';
 import '../core/notifications/android_device.dart';
 import '../core/notifications/notification_service.dart';
 import '../core/sync/sync_config.dart';
+import '../core/update/flatpak.dart';
+import '../core/update/tarball_install.dart';
 import 'adaptive.dart';
 import 'providers.dart';
 import 'sync_providers.dart';
@@ -40,6 +42,7 @@ Future<String> collectDiagnostics(
     (i) => '${i.version} (${i.buildNumber})',
     onError: (Object e) => '? ($e)',
   );
+  final installed = AppIdiom.isLinux ? await linuxInstallLine() : null;
   return [
     'LecCheck $version',
     if (android != null)
@@ -48,6 +51,7 @@ Future<String> collectDiagnostics(
           '${android['backgroundRestricted']}'
     else
       'OS: ${Platform.operatingSystem} ${Platform.operatingSystemVersion}',
+    if (installed != null) 'Installed: $installed',
     'Locale: ${Platform.localeName}, app: ${localeCode ?? 'system'}',
     'Time: $now ${now.timeZoneName} (UTC${utcOffset(now.timeZoneOffset)}), '
         'reminders use ${notifications.timeZone}',
@@ -75,6 +79,24 @@ Future<String> collectDiagnostics(
     'Log (newest last):',
     ...log.skip(log.length > logLines ? log.length - logLines : 0),
   ].join('\n');
+}
+
+/// How LecCheck for Linux was installed: "Flatpak 1a2b3c4d5e (runtime
+/// org.freedesktop.Platform/x86_64/26.08)", "tarball (install.sh)", or
+/// "other" (flutter run, a distro package).
+Future<String> linuxInstallLine() async {
+  final info = Flatpak.info;
+  if (info != null) {
+    final commit = info['Instance.app-commit'];
+    final short = commit == null
+        ? '?'
+        : commit.substring(0, commit.length.clamp(0, 10));
+    return 'Flatpak $short '
+        '(runtime ${info['Application.runtime'] ?? '?'})';
+  }
+  return await TarballInstall.installDir() != null
+      ? 'tarball (install.sh)'
+      : 'other';
 }
 
 /// "Android 15 (SDK 35), samsung SM-S918B", from [AndroidDevice.info].

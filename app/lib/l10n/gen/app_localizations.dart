@@ -2519,7 +2519,7 @@ abstract class AppLocalizations {
   /// No description provided for @updateLinuxHint.
   ///
   /// In en, this message translates to:
-  /// **'Download it, extract it and run ./install.sh again: your data stays.'**
+  /// **'LecCheck for Linux comes as a Flatpak now: the release page says how to install it.'**
   String get updateLinuxHint;
 
   /// No description provided for @updateDownload.
@@ -2633,7 +2633,7 @@ abstract class AppLocalizations {
   /// No description provided for @updateNotVerified.
   ///
   /// In en, this message translates to:
-  /// **'The file doesn\'t match the release, so nothing was installed.'**
+  /// **'The downloaded file doesn\'t match the signed release, so it wasn\'t installed. Try again; if it keeps happening, download it in the browser.'**
   String get updateNotVerified;
 
   /// No description provided for @updateBytes.
@@ -2653,6 +2653,294 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Android\'s installer opens to finish'**
   String get updateOpensInstaller;
+
+  /// No description provided for @updateSize.
+  ///
+  /// In en, this message translates to:
+  /// **'{size} download'**
+  String updateSize(String size);
+
+  /// No description provided for @updateWhatsNewIn.
+  ///
+  /// In en, this message translates to:
+  /// **'What\'s new in {version}'**
+  String updateWhatsNewIn(String version);
+
+  /// No description provided for @updateFlatpakHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Updates come through Flatpak. The first time, it may ask whether LecCheck can update itself.'**
+  String get updateFlatpakHint;
+
+  /// No description provided for @updateChecking.
+  ///
+  /// In en, this message translates to:
+  /// **'Checking the file…'**
+  String get updateChecking;
+
+  /// No description provided for @updateVerifiedFlatpak.
+  ///
+  /// In en, this message translates to:
+  /// **'Verified by Flatpak: the repository is signed'**
+  String get updateVerifiedFlatpak;
+
+  /// No description provided for @updateFlatpakInstalling.
+  ///
+  /// In en, this message translates to:
+  /// **'Flatpak downloads and installs it'**
+  String get updateFlatpakInstalling;
+
+  /// No description provided for @updateFailedNetwork.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t download the update. Check your internet connection and try again.'**
+  String get updateFailedNetwork;
+
+  /// No description provided for @updateFailedNotFound.
+  ///
+  /// In en, this message translates to:
+  /// **'The update\'s file isn\'t on GitHub yet. Try again in a few minutes.'**
+  String get updateFailedNotFound;
+
+  /// No description provided for @updateFailedSpace.
+  ///
+  /// In en, this message translates to:
+  /// **'There isn\'t enough space for the update. Free some up and try again.'**
+  String get updateFailedSpace;
+
+  /// No description provided for @updateFailedInstaller.
+  ///
+  /// In en, this message translates to:
+  /// **'Android\'s installer didn\'t open. Allow LecCheck to install apps (Settings → Apps → LecCheck → Install unknown apps), then try again.'**
+  String get updateFailedInstaller;
+
+  /// No description provided for @updateFailedFlatpakDenied.
+  ///
+  /// In en, this message translates to:
+  /// **'Updating from inside LecCheck isn\'t allowed, since Deny was chosen when Flatpak asked. Update it in your software center, or allow it with this command and try again:'**
+  String get updateFailedFlatpakDenied;
+
+  /// No description provided for @updateFailedFlatpakPermissions.
+  ///
+  /// In en, this message translates to:
+  /// **'This version needs new permissions, so Flatpak installs it only with your consent: update LecCheck in your software center, or with this command:'**
+  String get updateFailedFlatpakPermissions;
+
+  /// No description provided for @updateFailedFlatpakNotYet.
+  ///
+  /// In en, this message translates to:
+  /// **'Flatpak doesn\'t see the new version yet: its repository can take a few minutes to catch up. Try again soon.'**
+  String get updateFailedFlatpakNotYet;
+
+  /// No description provided for @updateFailedFlatpak.
+  ///
+  /// In en, this message translates to:
+  /// **'Flatpak couldn\'t install the update.'**
+  String get updateFailedFlatpak;
+
+  /// No description provided for @updateRestartFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t restart LecCheck. Close it and open it again to use the new version.'**
+  String get updateRestartFailed;
+
+  /// No description provided for @updateCopyCommand.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy command'**
+  String get updateCopyCommand;
+
+  /// No description provided for @updateCommandCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Command copied'**
+  String get updateCommandCopied;
+
+  /// No description provided for @updateMove.
+  ///
+  /// In en, this message translates to:
+  /// **'Move to the Flatpak'**
+  String get updateMove;
+
+  /// No description provided for @updateMoveHint.
+  ///
+  /// In en, this message translates to:
+  /// **'LecCheck for Linux comes as a Flatpak now: move to it to get this version.'**
+  String get updateMoveHint;
+
+  /// No description provided for @moveTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'LecCheck is moving to Flatpak'**
+  String get moveTitle;
+
+  /// No description provided for @moveIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'On Linux, new versions come as a Flatpak, so this version gets no more updates. Moving takes a few minutes; after that LecCheck updates through Flatpak (and your software center).'**
+  String get moveIntro;
+
+  /// No description provided for @moveSignedInNote.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re signed in, so your data comes along through your account: sign in again in the new LecCheck.'**
+  String get moveSignedInNote;
+
+  /// No description provided for @moveGuestNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Your data comes along in a backup: save it, then choose Import backup on the new LecCheck\'s welcome screen.'**
+  String get moveGuestNote;
+
+  /// No description provided for @moveStepSync.
+  ///
+  /// In en, this message translates to:
+  /// **'Sync your data'**
+  String get moveStepSync;
+
+  /// No description provided for @moveStepBackup.
+  ///
+  /// In en, this message translates to:
+  /// **'Save a backup'**
+  String get moveStepBackup;
+
+  /// No description provided for @moveStepInstall.
+  ///
+  /// In en, this message translates to:
+  /// **'Install the Flatpak'**
+  String get moveStepInstall;
+
+  /// No description provided for @moveStepRemove.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove this version'**
+  String get moveStepRemove;
+
+  /// No description provided for @moveSyncing.
+  ///
+  /// In en, this message translates to:
+  /// **'Syncing your last changes…'**
+  String get moveSyncing;
+
+  /// No description provided for @moveSynced.
+  ///
+  /// In en, this message translates to:
+  /// **'Everything is in your account'**
+  String get moveSynced;
+
+  /// No description provided for @moveNotSynced.
+  ///
+  /// In en, this message translates to:
+  /// **'Some changes haven\'t synced, so save a backup to bring them along.'**
+  String get moveNotSynced;
+
+  /// No description provided for @moveNothingToBring.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing to bring along'**
+  String get moveNothingToBring;
+
+  /// No description provided for @moveBackupSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved as {file}'**
+  String moveBackupSaved(String file);
+
+  /// No description provided for @moveSaveBackup.
+  ///
+  /// In en, this message translates to:
+  /// **'Save a backup…'**
+  String get moveSaveBackup;
+
+  /// No description provided for @moveInstalling.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloading LecCheck and the runtime it shares with other Flatpak apps…'**
+  String get moveInstalling;
+
+  /// No description provided for @moveInstalled.
+  ///
+  /// In en, this message translates to:
+  /// **'Installed'**
+  String get moveInstalled;
+
+  /// No description provided for @moveRemoving.
+  ///
+  /// In en, this message translates to:
+  /// **'Removing…'**
+  String get moveRemoving;
+
+  /// No description provided for @moveRemoveNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Your data here stays in {path} as one more backup.'**
+  String moveRemoveNote(String path);
+
+  /// No description provided for @moveReadySignedIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Done. Open LecCheck and sign in with the same account: your data comes back.'**
+  String get moveReadySignedIn;
+
+  /// No description provided for @moveReadyGuest.
+  ///
+  /// In en, this message translates to:
+  /// **'Done. Open LecCheck and choose Import backup on its welcome screen.'**
+  String get moveReadyGuest;
+
+  /// No description provided for @moveReadyEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Done. Open LecCheck to set it up.'**
+  String get moveReadyEmpty;
+
+  /// No description provided for @moveStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Move'**
+  String get moveStart;
+
+  /// No description provided for @moveOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'Open LecCheck'**
+  String get moveOpen;
+
+  /// No description provided for @moveNoFlatpak.
+  ///
+  /// In en, this message translates to:
+  /// **'Flatpak isn\'t installed on this computer. Install it, then try again.'**
+  String get moveNoFlatpak;
+
+  /// No description provided for @moveHowToInstallFlatpak.
+  ///
+  /// In en, this message translates to:
+  /// **'How to install Flatpak'**
+  String get moveHowToInstallFlatpak;
+
+  /// No description provided for @moveInstallFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Installing the Flatpak failed.'**
+  String get moveInstallFailed;
+
+  /// No description provided for @moveRemoveFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'This version couldn\'t be removed.'**
+  String get moveRemoveFailed;
+
+  /// No description provided for @moveBackupFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'The backup couldn\'t be saved.'**
+  String get moveBackupFailed;
+
+  /// No description provided for @moveCardSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Move now to keep getting updates.'**
+  String get moveCardSubtitle;
 
   /// No description provided for @checkForUpdates.
   ///

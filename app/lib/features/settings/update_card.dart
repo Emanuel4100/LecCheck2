@@ -5,13 +5,16 @@ import 'package:material_ui/material_ui.dart';
 import '../../app/adaptive.dart';
 import '../../app/update_controller.dart';
 import '../../core/icons/lec_icons.dart';
+import '../../core/update/update_download.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../session/session_actions.dart';
 import 'update_dialog.dart';
+import 'update_steps.dart';
 
 /// "LecCheck X is available", at the top of Settings and, until "Later", of
-/// Today. Update downloads and installs it (Android, and Linux installed by
-/// install.sh); otherwise Download opens it in the browser.
+/// Today. Update downloads and installs it (Android, and the Flatpak through
+/// its portal); otherwise Download opens it in the browser. Installs made by
+/// install.sh get the move card instead (MoveCard).
 class UpdateCard extends ConsumerWidget {
   const UpdateCard({super.key, this.onToday = false});
 
@@ -21,7 +24,9 @@ class UpdateCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(updateProvider);
     final update = state.update;
-    if (update == null || (onToday && state.later)) {
+    if (update == null ||
+        state.via == UpdateVia.move ||
+        (onToday && state.later)) {
       return const SizedBox.shrink();
     }
     final l = AppLocalizations.of(context);
@@ -32,21 +37,36 @@ class UpdateCard extends ConsumerWidget {
     final percent = NumberFormat.percentPattern(
       Localizations.localeOf(context).toString(),
     );
+    final size = state.size;
     final status = switch (state.phase) {
-      UpdatePhase.idle =>
-        AppIdiom.isLinux && state.file == null ? l.updateLinuxHint : null,
+      UpdatePhase.idle
+          when state.via == UpdateVia.browser && AppIdiom.isLinux =>
+        l.updateLinuxHint,
+      UpdatePhase.idle => size == null ? null : l.updateSize(formatBytes(size)),
       UpdatePhase.downloading =>
         progress == null
             ? l.updateDownloading
             : '${l.updateDownloading} ${percent.format(progress)}',
-      UpdatePhase.installing => l.updateInstalling,
+      UpdatePhase.verifying => l.updateChecking,
       UpdatePhase.downloaded => l.updateInstallHint,
-      UpdatePhase.restart => l.updateRestartHint,
-      UpdatePhase.failed => l.updateFailed,
+      UpdatePhase.restart =>
+        state.failure == UpdateFailure.restart
+            ? l.updateRestartFailed
+            : l.updateRestartHint,
+      // The window has the command these need.
+      UpdatePhase.failed => switch (state.failure) {
+        UpdateFailure.flatpakDenied ||
+        UpdateFailure.flatpakPermissions => l.updateFailedFlatpak,
+        final failure => updateFailureText(l, failure),
+      },
     };
     final whatsNew = TextButton(
       onPressed: () => openUrl(update.notesUrl),
       child: Text(l.updateWhatsNew),
+    );
+    final details = TextButton(
+      onPressed: () => showUpdateDialog(context),
+      child: Text(l.details),
     );
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
@@ -66,13 +86,13 @@ class UpdateCard extends ConsumerWidget {
                 subtitle: status == null ? null : Text(status, style: text),
               ),
               if (state.phase
-                  case UpdatePhase.downloading || UpdatePhase.installing)
+                  case UpdatePhase.downloading || UpdatePhase.verifying)
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-                  child: LinearProgressIndicator(
+                  child: GlidingProgress(
                     value: state.phase == UpdatePhase.downloading
                         ? progress
-                        : null,
+                        : state.checkProgress,
                   ),
                 ),
               Padding(
@@ -93,19 +113,19 @@ class UpdateCard extends ConsumerWidget {
                           child: Text(l.updateSkip),
                         ),
                       whatsNew,
-                      if (state.file != null)
+                      if (state.via == UpdateVia.browser)
+                        FilledButton(
+                          onPressed: () async =>
+                              openUrl(await controller.downloadUrl(update)),
+                          child: Text(l.updateDownload),
+                        )
+                      else
                         FilledButton(
                           onPressed: () {
                             controller.install();
                             showUpdateDialog(context);
                           },
                           child: Text(l.updateInstall),
-                        )
-                      else
-                        FilledButton(
-                          onPressed: () async =>
-                              openUrl(await controller.downloadUrl(update)),
-                          child: Text(l.updateDownload),
                         ),
                     ],
                     UpdatePhase.downloading => [
@@ -113,17 +133,9 @@ class UpdateCard extends ConsumerWidget {
                         onPressed: controller.cancel,
                         child: Text(l.cancel),
                       ),
-                      TextButton(
-                        onPressed: () => showUpdateDialog(context),
-                        child: Text(l.details),
-                      ),
+                      details,
                     ],
-                    UpdatePhase.installing => [
-                      TextButton(
-                        onPressed: () => showUpdateDialog(context),
-                        child: Text(l.details),
-                      ),
-                    ],
+                    UpdatePhase.verifying => [details],
                     UpdatePhase.downloaded => [
                       whatsNew,
                       FilledButton(
@@ -138,11 +150,13 @@ class UpdateCard extends ConsumerWidget {
                       ),
                     ],
                     UpdatePhase.failed => [
-                      TextButton(
-                        onPressed: () async =>
-                            openUrl(await controller.downloadUrl(update)),
-                        child: Text(l.updateInBrowser),
-                      ),
+                      details,
+                      if (state.via != UpdateVia.flatpak)
+                        TextButton(
+                          onPressed: () async =>
+                              openUrl(await controller.downloadUrl(update)),
+                          child: Text(l.updateInBrowser),
+                        ),
                       FilledButton(
                         onPressed: controller.install,
                         child: Text(l.retry),
