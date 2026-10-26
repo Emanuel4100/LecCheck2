@@ -30,9 +30,12 @@ app/                      Flutter app
   test_screenshots/       offscreen screenshot renders (goldens/)
   test_sync/              two-device sync test against a local Worker
   android/…/widget/       Jetpack Glance home-screen widget (Kotlin)
+  linux/flatpak/          the Flatpak manifest and the repository's public key
+  third_party/            a stand-in for desktop_webview_window (no WebKitGTK)
 server/                   Cloudflare Worker sync server (TypeScript) — see server/README.md
 design/                   icon and logo sources — see design/README.md
-scripts/                  linux-install.sh, altstore_source.py
+scripts/                  release helpers: update_manifest.py, flatpak_site.py,
+                          metainfo_releases.py, altstore_source.py, linux-install.sh
 .github/workflows/        ci.yml, release.yml, deploy-server.yml
 ```
 
@@ -152,7 +155,7 @@ After the restore, sign in again (the sign-in token isn't backed up).
 | `ci.yml` | push to main, PRs | analyze + test the app, typecheck + test the server, check generated Drift code |
 | `deploy-server.yml` | push to main touching `server/`, manual, and every release | test, deploy, smoke-test, roll back on failure (see below) |
 | `server-health.yml` | every 6 hours, manual | deep health check of the live server; a failure emails you |
-| `release.yml` | tag `v*` | signed Android APKs, unsigned iOS IPA, Linux tarball, AltStore source → GitHub Release, after the server for that commit is live; `altstore-source.json` and `update.json` (the apps' update check) on the `altstore` branch |
+| `release.yml` | tag `v*` | signed Android APKs, unsigned iOS IPA, AltStore source → GitHub Release, after the server for that commit is live; the Linux Flatpak into its GPG-signed repository on GitHub Pages; then `altstore-source.json` and `update.json` (the apps' update check) on the `altstore` branch |
 
 To release: bump `version:` in `app/pubspec.yaml`, then `git tag vX.Y.Z && git push --tags`.
 Required secrets and variables are listed in [SETUP.md](SETUP.md).
@@ -165,8 +168,9 @@ Required secrets and variables are listed in [SETUP.md](SETUP.md).
    `- ` items, `**bold**` and `### ` headings (not nested lists).
 2. A last commit, "Prepare the vX pre-release": `version: 2.0.0+N` in
    `app/pubspec.yaml` (the build number **must** go up: Android, AltStore and the update
-   check compare it), the CHANGELOG heading `## 2.0.0-beta.N — YYYY-MM-DD`, and a "Done"
-   entry in `docs/ROADMAP.md`.
+   check compare it), the CHANGELOG heading `## 2.0.0-beta.N — YYYY-MM-DD`, a "Done"
+   entry in `docs/ROADMAP.md`, and `python3 scripts/metainfo_releases.py` (the Linux
+   metainfo's release notes; the release workflow runs it again anyway).
 3. Before tagging: `flutter analyze`, `TZ=Asia/Jerusalem flutter test`,
    `flutter test test_screenshots` (only intended goldens change; don't commit
    `en_light_semester_form.png`, it depends on today's date), and the E2E sync tests when
@@ -174,20 +178,28 @@ Required secrets and variables are listed in [SETUP.md](SETUP.md).
 4. Push main, then an annotated tag: `git tag -a v2.0.0-beta.N -m "LecCheck 2.0.0-beta.N"`.
 5. After the Release workflow: the arm64 APK's versionCode is 2000 + N and it carries the
    release certificate (`aapt2 dump badging`, `apksigner verify --print-certs`);
-   `update.json` on the `altstore` branch has the new version and build with sha256s
-   matching the release's asset digests; `altstore-source.json` has the new build.
+   `update.json` on the `altstore` branch has the new version and build with sha256s and
+   sizes matching the release's assets, and `flatpakref`; `altstore-source.json` has the
+   new build; `flatpak remote-info leccheck com.leccheck.app` shows the new version.
 
-**Trying a release on your own Linux PC first**: build it like the release job, but with
-the *previous* build number, and install it with the tarball's `install.sh`. The real
-release then still shows up in the update window (testing the in-app update too):
+**Trying the Flatpak on your own Linux PC**: the manifest is
+`app/linux/flatpak/com.leccheck.app.yml`. It packages the release bundle, so build that
+first, then build and install the Flatpak with
+[flatpak-builder](https://docs.flatpak.org/en/latest/flatpak-builder.html) (as a Flatpak
+itself, with the SDK, about 1 GB):
 
 ```bash
+flatpak install --user flathub org.flatpak.Builder org.freedesktop.Sdk//26.08
 cd app
 flutter build linux --release --dart-define=API_BASE_URL=<your Worker URL> \
   --build-name=2.0.0-beta.N --build-number=<previous build>
-# then package bundle/ + icons/ + linux/packaging/* + scripts/linux-install.sh as
-# release.yml's Linux job does, and run that install.sh
+flatpak run org.flatpak.Builder --user --install --force-clean \
+  --default-branch=test build-flatpak linux/flatpak/com.leccheck.app.yml
+flatpak run com.leccheck.app//test
 ```
+
+A build with the *previous* build number still sees the real release in the update window.
+Its data is in `~/.var/app/com.leccheck.app` like the real Flatpak's.
 
 ## Server deploys
 
@@ -235,26 +247,43 @@ with a higher build and point a build at it:
 per-ABI APKs report 1000 × ABI + build as their version code; `installedBuild()` undoes
 that.
 
-Each entry also has the files' SHA-256 (`sha256`, from 2.0.0-beta.8 on). With a hash,
-the card's **Update** installs the release from inside the app:
+Each entry also has the files' SHA-256 (`sha256`, from 2.0.0-beta.8 on), their sizes
+(`size`, from 2.0.0-beta.15) and, for releases in the Flatpak repository, `flatpakref`.
+With a hash, the card's **Update** installs the release from inside the app:
 
 - **Android**: it downloads the APK into `cache/updates`, checks the hash, and opens
   Android's installer through a FileProvider (`installApk` on the device channel,
   `REQUEST_INSTALL_PACKAGES`). Android asks once to allow "Install unknown apps", and
   refuses an APK not signed with the release key. An arm64 phone always gets the arm64
   APK, whose version codes are higher than the universal one's.
-- **Linux**: only when the app runs from `install.sh`'s folder
-  (`$XDG_DATA_HOME/leccheck`, see `LinuxSelfUpdate.installDir`). It downloads the
-  tarball, checks it, runs the tarball's own `install.sh` (which swaps the folder; the
-  running app keeps its old files), then **Restart** waits for this process to end
-  before starting the new one, since the app is single-instance.
+- **Flatpak**: the release must have `flatpakref`. The Flatpak portal
+  (`org.freedesktop.portal.Flatpak`) installs it: `CreateUpdateMonitor`, then `Update`,
+  whose `Progress` signals the window shows; Flatpak checks the repository's GPG
+  signature. The first time, the desktop asks whether LecCheck may update itself (the
+  answer is kept in the permission store: `flatpak permission-show com.leccheck.app`).
+  **Restart** asks the portal to `Spawn` the latest version with `--after-update`, and the
+  runner waits until the old instance has given up the D-Bus name.
+- **`install.sh` installs** (the tarball, until 2.0.0-beta.15): no updates, **Move to the
+  Flatpak** instead (`MoveController`, `TarballInstall`).
 
 Without a hash (older manifests, other Linux builds), **Download** opens the browser as
 before. To try **Update** for real, point a build with a lower build number at a test
-manifest over https (a secret gist works: `gh gist create update.json`) that lists a
-published release's files and their `sha256sum`. Sign the Android build with the release
-key, or Android refuses the update:
-`flutter build apk --split-per-abi --build-number=14 --dart-define=UPDATE_URL=<raw gist url>`.
+manifest signed with your own key, and let that build trust the key
+(`UPDATE_PUBLIC_KEY`; release builds never set it):
+
+```bash
+(umask 077 && openssl genpkey -algorithm ed25519 -out test-key.pem)
+PUB=$(openssl pkey -in test-key.pem -pubout -outform DER | tail -c 32 | base64 -w0)
+openssl pkeyutl -sign -rawin -inkey test-key.pem -in update.json | base64 -w0 > update.json.sig
+python3 -m http.server 8765   # next to update.json and update.json.sig
+flutter build apk --split-per-abi --build-number=14 \
+  --dart-define=UPDATE_URL=http://<your-ip>:8765/update.json --dart-define=UPDATE_PUBLIC_KEY=$PUB
+```
+
+List a published release's files with their `sha256sum` in it. Sign the Android build
+with the release key, or Android refuses the update. For the Flatpak, give the entry a
+`flatpakref` and install two builds from a local repository (`flatpak build-export`);
+`FLATPAK_REF` points a test build's **Move to the Flatpak** at another `.flatpakref`.
 
 ## Smoothness (Linux)
 

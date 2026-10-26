@@ -1,7 +1,7 @@
 # LecCheck — notes for Claude Code
 
 A lecture-attendance app: Flutter (`app/`, Android + iPhone via AltStore/SideStore +
-Linux, English and Hebrew/RTL) and a Cloudflare Worker sync server (`server/`, Durable
+Linux as a Flatpak, English and Hebrew/RTL) and a Cloudflare Worker sync server (`server/`, Durable
 Objects, free plan only). Tools are pinned in `mise.toml`.
 
 **Start here:** [docs/ROADMAP.md](docs/ROADMAP.md) "Next" has the next release's decided
@@ -45,3 +45,13 @@ the design; [CHANGELOG.md](CHANGELOG.md) what each beta shipped.
 - Mouse-only gestures on Week use `supportedDevices: {PointerDeviceKind.mouse}` (so touch
   scrolling isn't stolen) and `DragStartBehavior.down` (so a drag starts where the button
   went down).
+- Riverpod 3 pauses a provider nobody listens to: `ref.read(p.future)` of an unwatched
+  StreamProvider never completes. Listen while reading.
+- The router starts on `/` (a splash) and redirects once semesters load: a dialog opened
+  before that goes away with the page. Startup windows wait for `_pastSplash`.
+- Flatpak: sandboxes never see `/tmp` or Flatpak's own installation folders, and
+  `flatpak run` doesn't pass `FLATPAK_USER_DIR` (use `--env=`). flatpak-builder inside
+  the `org.flatpak.Builder` app runs `flatpak` on the host. Hyprland has no Secret
+  portal. The portal's first `Update` shows a desktop dialog (answer kept per app:
+  `flatpak permission-set flatpak updates com.leccheck.app yes` for tests).
+- Waiting for a process by pid: `kill -0` succeeds on a zombie; check `/proc/PID/stat`.

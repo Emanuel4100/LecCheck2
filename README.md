@@ -54,7 +54,7 @@ fields in the background — so it is instant, works offline, and never loses ed
 |---|---|
 | Android | APK from [Releases](https://github.com/Emanuel4100/LecCheck2/releases), or [Obtainium](https://obtainium.imranr.dev) for auto-updates |
 | iPhone | Add this source in [AltStore](https://altstore.io) / [SideStore](https://sidestore.io): `https://raw.githubusercontent.com/Emanuel4100/LecCheck2/altstore/altstore-source.json` |
-| Linux | Download the `linux-x64.tar.gz` from Releases, extract, run `./install.sh` |
+| Linux | `flatpak install --user https://emanuel4100.github.io/LecCheck2/leccheck.flatpakref` (or open it in your software center) |
 
 ## Documentation
 
@@ -76,7 +76,7 @@ fields in the background — so it is instant, works offline, and never loses ed
 | App | Flutter 3.47 (Dart 3.13), `material_ui`, Riverpod 3, go_router, Drift (SQLite) |
 | Sync server | Cloudflare Workers + Durable Objects (SQLite), Hono, jose — free plan |
 | Notifications / widget | flutter_local_notifications, home_widget + Jetpack Glance |
-| CI / releases | GitHub Actions: tests, signed APK, unsigned IPA + AltStore source, Linux tarball |
+| CI / releases | GitHub Actions: tests, signed APK, unsigned IPA + AltStore source, Linux Flatpak in its own repository on GitHub Pages |
 
 ## Quick start (development)
 
@@ -98,7 +98,7 @@ app/       Flutter app (Android, iOS, Linux, Windows, macOS)
 server/    Cloudflare Worker sync server (TypeScript)
 design/    SVG sources for the icon font, app icon and logo
 docs/      Documentation
-scripts/   Release helpers (Linux installer, AltStore source)
+scripts/   Release helpers (Flatpak site and metainfo, update list, AltStore source)
 ```
 
 ## License

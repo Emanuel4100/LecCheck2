@@ -1,5 +1,41 @@
 # Changelog
 
+## Unreleased
+
+- **LecCheck for Linux is a Flatpak**, from its own repository (signed with its own key):
+  `flatpak install --user https://emanuel4100.github.io/LecCheck2/leccheck.flatpakref`, or
+  open that file in GNOME Software or Discover. It runs on the freedesktop runtime (about
+  300 MB, shared with other Flatpak apps) and updates itself from then on. This is the last
+  version for `install.sh`.
+- **Move to the Flatpak**: LecCheck installed with `install.sh` offers the move on Today, in
+  Settings and in a window when it starts. Signed in, everything syncs first and you sign
+  in again in the Flatpak; otherwise save a backup and choose **Import backup** on the
+  Flatpak's welcome screen. Then it installs the Flatpak, removes the old version (its
+  data stays as one more backup) and opens the new one.
+- **Updates through Flatpak**: the update window shows Flatpak's progress, then
+  **Verified by Flatpak** (the repository is signed), and **Restart** starts the new
+  version. The first time, your desktop asks whether LecCheck may update itself. If you
+  chose Deny, or a new version needs new permissions, the window says what to run instead.
+- **A clearer update window**: how big the download is before you start; a **Check the
+  file** step you can watch, which reads the download back and checks it against the
+  signed release, then checks itself off; What's new in its own box with a scrollbar,
+  headings and bold, in English left to right in Hebrew too; and when something fails, what
+  went wrong (no connection, not enough space, a file that doesn't match, Android's
+  installer) instead of "Couldn't update".
+- **Check now** opens the update window when there's a new version.
+
+### Smaller things
+
+- **Import backup** on the welcome screen, for a new device or the Flatpak.
+- A sign-in kept by the keyring while the data folder was gone (a new install, or the
+  Flatpak finding the old version's sign-in) looked signed in while nothing synced: an
+  empty device now gets the account's data back, and one with data of its own stays
+  signed out until you sign in.
+- The update window that opens at startup no longer closes again by itself when LecCheck
+  moves on from its splash screen.
+- Linux no longer needs WebKitGTK or libsoup.
+- Settings → Developer → **Copy diagnostics** says how LecCheck was installed on Linux.
+
 ## 2.0.0-beta.14 — 2026-10-26
 
 - **Add on Week like in a calendar**: tap an empty spot for an hour there, drag out the

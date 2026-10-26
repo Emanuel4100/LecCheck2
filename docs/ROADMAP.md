@@ -96,50 +96,33 @@ These are built and compile, but have only been exercised in tests so far:
 
 ## Next: 2.0.0-beta.15 — Linux as a Flatpak, a better update window
 
-Decided (2026-10-25/26); plan the details when starting.
+Built (2026-10-26); waiting for the repository's GPG key and GitHub Pages to be set up
+(docs/SETUP.md), then the release.
 
 **Flatpak, replacing the tarball**
-- Served from LecCheck's own GPG-signed Flatpak repository on **GitHub Pages** (not
-  Flathub, not a bare `.flatpak` file): users run `flatpak remote-add` once (a
-  `.flatpakrepo` file), then `flatpak update` / GNOME Software / Discover update it. The
-  GPG key is kept in the password manager and as a GitHub secret.
-- Runtime **org.gnome.Platform** (WebKitGTK is pulled in by flutter_web_auth_2's
-  webview, unused on Linux). The manifest repackages the CI-built bundle (Flathub-style
-  offline builds aren't needed for an own repository).
-- finish-args: `--share=network` (sync, update check, and the Google sign-in's loopback
-  on 127.0.0.1:43823), `--socket=wayland`, `--socket=fallback-x11`, `--share=ipc`,
-  `--device=dri`, `--talk-name=org.freedesktop.Notifications` (the notifications plugin
-  calls it directly). Files (backup export/import) go through the FileChooser portal,
-  links through OpenURI.
-- **Sign-in storage: the Secret portal** (libsecret's file backend inside the sandbox),
-  not `--talk-name=org.freedesktop.secrets`. Users sign in once after moving. Since
-  2.0.0-beta.13 the session is saved without backslashes, so even GNOME Keyring's
-  password-less (plain text) keyrings keep it.
-- **The tarball is retired**: the release after the Flatpak ships gives tarball installs a
-  last update window, "Move to the Flatpak" (signed-in data comes back from the cloud;
-  guests export a backup and import it). Then `LinuxSelfUpdate`
-  (`app/lib/core/update/linux_self_update.dart`) and `scripts/linux-install.sh` go.
-  Flatpak data lives in `~/.var/app/<app id>/`.
-- To decide when starting: the app id (keep `com.leccheck.app`; a Flathub-style id would
-  only matter for Flathub), timezone detection in the sandbox (`flutter_timezone` may fall
-  back to UTC), metainfo `<releases>` and screenshots.
+- From LecCheck's own GPG-signed repository on **GitHub Pages**, with a `.flatpakref`
+  (adds the remote, runtime from Flathub) and an install page (`scripts/flatpak_site.py`).
+  One `stable` branch while in beta; each release publishes a fresh repository.
+- Runtime **org.freedesktop.Platform 26.08** (smaller than GNOME's, supported to about
+  Aug 2028). The bundle needs only GTK 3 and libsecret: `desktop_webview_window`
+  (WebKitGTK, from `flutter_web_auth_2`, unused on Linux) is replaced by a stand-in in
+  `app/third_party/`. The manifest (`app/linux/flatpak/`) repackages the CI bundle; CI
+  builds it in Flathub's `freedesktop-26.08` container.
+- Sign-in: the Secret portal where the desktop has one, the keyring
+  (`--talk-name=org.freedesktop.secrets`) elsewhere, since Hyprland and Sway have none.
+- App id stays `com.leccheck.app`; the time zone works in the sandbox (`/etc/timezone`);
+  metainfo `<releases>` come from CHANGELOG (`scripts/metainfo_releases.py`), screenshots
+  from the desktop goldens.
+- **Move to the Flatpak** in beta.15 (the last tarball): signed in, sync then sign in
+  again; otherwise a backup to import on the Flatpak's welcome screen. Then `flatpak
+  install --user`, remove the tarball's files (data stays), open the Flatpak.
+- Verified headless (Xvfb, private D-Bus, isolated installation): portal update with
+  progress, "Verified by Flatpak", Restart into the latest version; and the move from an
+  `install.sh` install.
 
-**The update window on Flatpak**
-- Same window as Android's, driven by the `org.freedesktop.portal.Flatpak` update monitor
-  (`CreateUpdateMonitor` → `Update`, with Progress signals) through the pure-Dart `dbus`
-  package: What's new → progress bar → "Verified by Flatpak" (the repository is
-  GPG-signed) with the check animation → Restart (the portal's Spawn, latest version).
-  If an update needs new sandbox permissions, the window points to the software center.
-  Verify the portal API before building on it.
-
-**Update window polish (all platforms)**
-- `size` for each file in `update.json` (`scripts/update_manifest.py`), so the size shows
-  before downloading.
-- A visible, animated "Check the file" step with its own progress bar (Android
-  re-hashes the APK), like the AFinity Jellyfin client; respects reduced motion.
-- Formatted, scrollable What's new (`app/lib/features/settings/update_dialog.dart`).
-- Check now's Update (Settings → About) opens the window too.
-- Clearer text when an install fails.
+**2.0.0-beta.16**: no tarball in the release (`update.json` then lists no `linux` file,
+and beta.15's tarball installs only see Move); `scripts/linux-install.sh` goes, and
+`TarballInstall` once nobody is left on the tarball.
 
 **The to-do list, by release**
 - Done in 2.0.0-beta.11: course emails (contacts), canceled sessions not gray, a session
@@ -149,8 +132,8 @@ Decided (2026-10-25/26); plan the details when starting.
   close (root cause: GNOME Keyring and backslashes), a sync animation.
 - Done in 2.0.0-beta.14: drag to create on Week, Google Calendar-style desktop (Create
   button, month in the sidebar, no Add).
-- 2.0.0-beta.15: the self-updater's progress and SHA-256 check animation, a proper Linux
-  install (Flatpak).
+- Done in 2.0.0-beta.15: the self-updater's progress and SHA-256 check animation, a
+  proper Linux install (Flatpak).
 - Still open after that: a more desktop-like Linux layout beyond the sidebar (ask what
   feels mobile).
 

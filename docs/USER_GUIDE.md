@@ -201,18 +201,40 @@ the **update window** opens when you start LecCheck, with what's new in it, and
 **LecCheck X is available** appears at the top of Settings (and on Today, until **Later**).
 **Later** asks again the next time you start LecCheck.
 
-- **Update** shows each step in the window: the download (size and speed; **Cancel**
-  stops it), the check that the file is exactly the one released (its SHA-256 must match
-  the signed list of releases), then the install. On Android, the system then asks you to
-  confirm the update; the first time, allow LecCheck to install apps. On Linux it
-  installs itself, and **Restart** starts the new version. Your data stays.
+- The window says how big the download is. **Update** shows each step there: the
+  download (size and speed; **Cancel** stops it), the check that the file is exactly the
+  one released (it's read back and its SHA-256 must match the signed list of releases),
+  then the install. On Android, the system then asks you to confirm the update; the first
+  time, allow LecCheck to install apps. Your data stays.
+- **Linux (Flatpak)**: Flatpak downloads and installs the update. The first time, your
+  desktop asks whether LecCheck may update itself: choose **Update**. Flatpak checks the
+  repository's signature ("Verified by Flatpak"), and **Restart** starts the new version.
+  If you chose **Deny**, or a new version needs new permissions, the window says so and
+  gives the command to run instead; `flatpak update` and software centers update it too.
+- When something goes wrong, the window says what (no connection, not enough space, a
+  file that doesn't match) and **Retry** tries again.
 - LecCheck only offers releases from a list signed by the release build, so a changed
   list or file is never installed.
-- **Download** appears instead for releases before 2.0.0-beta.8, and on Linux when
-  LecCheck wasn't installed with `./install.sh`: it gets the right file in the browser
-  (on Linux, extract it and run `./install.sh` again).
+- **Download** appears instead for releases before 2.0.0-beta.8, and for Linux builds that
+  aren't the Flatpak: it opens the release page.
 - **What's new** opens the release notes, and **Skip this version** hides it until the
   next one.
+
+### Linux: moving to the Flatpak
+
+Since 2.0.0-beta.15, LecCheck for Linux is a Flatpak (2.0.0-beta.15 was the last
+`install.sh` version). An `install.sh` install shows **LecCheck is moving to Flatpak** on
+Today and in Settings, and a window when it starts:
+
+1. **Your data**: signed in, everything is synced first, and you sign in again in the
+   Flatpak. Otherwise **Save a backup…**, then **Import backup** on the Flatpak's welcome
+   screen.
+2. **Install the Flatpak** for your user (Flatpak itself must be installed:
+   [flatpak.org/setup](https://flatpak.org/setup/)). The first time, its runtime downloads
+   too (about 300 MB, shared with other Flatpak apps).
+3. **Remove this version**: the old app goes; its data stays in
+   `~/.local/share/com.leccheck.app` as one more backup (delete it once you're happy).
+4. **Open LecCheck** starts the Flatpak.
 
 Betas get betas and stable releases; stable versions get stable releases. Turn it off,
 or check right away, in **Settings → About**. If you installed LecCheck with Obtainium,
@@ -348,7 +370,8 @@ backup**.
 ## Where your data lives
 
 Each device keeps a SQLite database and its automatic backups (Linux:
-`~/.local/share/com.leccheck.app/`, backups in `snapshots/`). Android's backup to your
+`~/.var/app/com.leccheck.app/data/com.leccheck.app/`, or
+`~/.local/share/com.leccheck.app/` for `install.sh` installs; backups in `snapshots/`). Android's backup to your
 Google Drive and iPhone's iCloud backup include them, so a new phone gets them back
 (sign in again after a restore). When signed in, the server stores your rows in your own
 private storage unit; nobody else's data is ever mixed with yours.

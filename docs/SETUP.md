@@ -134,13 +134,48 @@ gh secret set UPDATE_SIGNING_KEY < update-signing-key.pem
 **Back it up too.** Without it, installed apps can't be told about new releases; a new
 key needs a release that apps install by hand.
 
+The Linux app is a Flatpak served from LecCheck's own repository on GitHub Pages, signed
+with a GPG key. Create the key once (no passphrase: the secret protects it), commit its
+public half as `app/linux/flatpak/leccheck-repo.asc`, and put the key itself in the
+secret:
+
+```bash
+export GNUPGHOME=$(mktemp -d)
+gpg --batch --pinentry-mode loopback --passphrase '' \
+  --quick-gen-key 'LecCheck Flatpak repository' rsa4096 sign never
+FPR=$(gpg --list-keys --with-colons | awk -F: '/^fpr/ {print $10; exit}')
+{ echo "# fingerprint: $FPR"; gpg --armor --export "$FPR"; } > app/linux/flatpak/leccheck-repo.asc
+(umask 077 && gpg --armor --export-secret-keys "$FPR" > leccheck-flatpak-key.asc)
+gh secret set FLATPAK_GPG_KEY < leccheck-flatpak-key.asc
+rm -rf "$GNUPGHOME"
+```
+
+**Back it up.** Flatpak checks every update against this key: a new one means everyone
+installs LecCheck again.
+
+Then turn on GitHub Pages for the repository with **GitHub Actions** as the source, and
+let release tags publish to it (the `github-pages` environment allows only the default
+branch at first):
+
+```bash
+gh api -X POST repos/OWNER/REPO/pages -f build_type=workflow
+gh api -X PUT repos/OWNER/REPO/environments/github-pages \
+  -F deployment_branch_policy[protected_branches]=false \
+  -F deployment_branch_policy[custom_branch_policies]=true
+gh api -X POST repos/OWNER/REPO/environments/github-pages/deployment-branch-policies \
+  -f name='v*' -f type=tag
+gh api -X POST repos/OWNER/REPO/environments/github-pages/deployment-branch-policies \
+  -f name=main -f type=branch
+```
+
 ## 5. Releasing
 
 1. Bump `version:` in `app/pubspec.yaml` (e.g. `2.0.1+11`).
 2. `git tag v2.0.1 && git push --tags`.
 
 The **Release** workflow builds a signed Android APK, an unsigned iPhone IPA
-and a Linux tarball, and publishes them with an AltStore/SideStore source.
+and the Linux Flatpak, publishes them with an AltStore/SideStore source, and puts the
+Flatpak in its repository on GitHub Pages.
 
 ## 6. Installing
 
@@ -152,8 +187,11 @@ and a Linux tarball, and publishes them with an AltStore/SideStore source.
   `https://raw.githubusercontent.com/Emanuel4100/LecCheck2/altstore/altstore-source.json`.
   Free Apple IDs need the app refreshed every 7 days; AltStore/SideStore do
   that in the background.
-- **Linux**: extract `LecCheck-*-linux-x64.tar.gz` and run `./install.sh`
-  (`./install.sh uninstall` removes it).
+- **Linux**: install the Flatpak (with [Flatpak](https://flatpak.org/setup/) set up):
+  `flatpak install --user https://emanuel4100.github.io/LecCheck2/leccheck.flatpakref`,
+  or open that file in GNOME Software or Discover. It updates itself from then on;
+  `flatpak uninstall com.leccheck.app` removes it. 2.0.0-beta.15 is the last tarball
+  (`./install.sh`): those installs move to the Flatpak from inside the app.
 
 ## 7. Moving over from LecCheck v1
 

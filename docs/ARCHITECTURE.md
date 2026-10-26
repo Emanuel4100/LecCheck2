@@ -298,6 +298,20 @@ semester?". The semester list is re-read from the database there, not from the
 - **Platform runners**: Linux is single-instance (a second launch presents the existing
   window), uses a GTK header bar only on GNOME-family desktops, and has a minimum window
   size. Android enables predictive back and draws edge-to-edge on every version.
+- **Linux packaging**: a Flatpak on `org.freedesktop.Platform` (`app/linux/flatpak/`),
+  repackaging the bundle the release builds, from LecCheck's own GPG-signed repository on
+  GitHub Pages. The bundle links only GTK 3 and libsecret: `desktop_webview_window`
+  (WebKitGTK, pulled in by `flutter_web_auth_2`) is replaced by a stand-in without native
+  code, since sign-in uses the browser and a loopback port. The sign-in goes through
+  libsecret, which uses the Secret portal where the desktop has one and the keyring
+  (`--talk-name=org.freedesktop.secrets`) elsewhere.
+- **Updates** (`app/update_controller.dart`): a signed `update.json` says what's new for
+  every platform. Android downloads the APK, reads it back to check its SHA-256, and opens
+  the system installer. The Flatpak asks the Flatpak portal (`core/update/flatpak.dart`,
+  over D-Bus): `CreateUpdateMonitor`, `Update` with `Progress` signals, and `Spawn` with
+  the latest version for Restart; the runner's `--after-update` waits until the old
+  instance gives up the app's D-Bus name. `install.sh` installs (the tarball, until
+  2.0.0-beta.15) move to the Flatpak instead (`app/move_controller.dart`).
 - **Theme** (`app/theme`): `material_ui` (the standalone Material package). Presets build
   a `ColorScheme.fromSeed` with a per-preset scheme variant; `StatusColors` and
   `CourseColors` theme extensions compute light/dark tones in HCT and harmonize them with
