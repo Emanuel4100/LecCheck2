@@ -1,0 +1,12 @@
+name: desktop_webview_window
+description: >-
+  LecCheck's stand-in for desktop_webview_window, which flutter_web_auth_2
+  uses for sign-in inside a webview window on Linux and Windows. LecCheck
+  signs in through the browser instead (useWebview: false), so this keeps the
+  API without the native plugin: Linux builds need no WebKitGTK or libsoup,
+  and the Flatpak runs on the freedesktop runtime, which has neither.
+version: 0.3.0
+publish_to: none
+
+environment:
+  sdk: ">=3.5.0 <4.0.0"

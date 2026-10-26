@@ -17,19 +17,19 @@ if [[ "${1:-}" == "uninstall" ]]; then
   exit 0
 fi
 
-# Runtime libraries the app links against (GTK, keyring, sign-in web view).
+# Runtime libraries the app links against (GTK, keyring).
 libs="$(ldconfig -p 2>/dev/null || /sbin/ldconfig -p 2>/dev/null || true)"
 missing=()
 if [[ -n "$libs" ]]; then
-  for lib in libgtk-3.so.0 libsecret-1.so.0 libwebkit2gtk-4.1.so.0 libsoup-3.0.so.0; do
+  for lib in libgtk-3.so.0 libsecret-1.so.0; do
     [[ "$libs" == *"$lib "* ]] || missing+=("$lib")
   done
 fi
 if (( ${#missing[@]} )); then
   echo "Missing system libraries: ${missing[*]}"
-  echo "  Debian/Ubuntu: sudo apt install libgtk-3-0 libsecret-1-0 libwebkit2gtk-4.1-0"
-  echo "  Fedora:        sudo dnf install gtk3 libsecret webkit2gtk4.1"
-  echo "  Arch:          sudo pacman -S gtk3 libsecret webkit2gtk-4.1"
+  echo "  Debian/Ubuntu: sudo apt install libgtk-3-0 libsecret-1-0"
+  echo "  Fedora:        sudo dnf install gtk3 libsecret"
+  echo "  Arch:          sudo pacman -S gtk3 libsecret"
   echo "Install them, then run this script again."
   exit 1
 fi

@@ -54,6 +54,15 @@ dev_dependencies:
   flutter_launcher_icons: ^0.14.4
   flutter_native_splash: ^2.4.8
 
+dependency_overrides:
+  # flutter_web_auth_2 brings desktop_webview_window, a native plugin that
+  # links WebKitGTK on Linux, for sign-in inside a webview window. LecCheck
+  # signs in through the browser (useWebview: false), so a stand-in without
+  # native code replaces it: Linux needs no WebKitGTK, and the Flatpak runs
+  # on the freedesktop runtime, which has none.
+  desktop_webview_window:
+    path: third_party/desktop_webview_window
+
 flutter:
   generate: true
   uses-material-design: true
