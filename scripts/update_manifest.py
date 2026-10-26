@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 """Updates update.json, the file the Android and Linux apps check for new releases.
 
-    python3 scripts/update_manifest.py <existing-or-missing.json> <release> <build> <repo-url> [<assets-dir>] > update.json
+    python3 scripts/update_manifest.py <existing-or-missing.json> <release> <build> <repo-url> [<assets-dir> [<flatpakref-url>]] > update.json
 
 <release> is the tag without the "v" (e.g. 2.0.0-beta.5), <build> the pubspec build number.
-<assets-dir> holds the release files: their SHA-256 hashes go in "sha256", and the apps only
-install a file themselves (Update) when it has one; otherwise Download opens the browser.
+<assets-dir> holds the release files: their SHA-256 hashes go in "sha256" and their sizes in
+"size" (only files that are there are listed), and the apps only install a file themselves
+(Update) when it has a hash; otherwise Download opens the browser. <flatpakref-url> says the
+release is in LecCheck's Flatpak repository too: the Flatpak updates itself to it.
 The release's section of CHANGELOG.md goes in "notes", for the app's update window.
 The release workflow then signs the file (update.json.sig): the apps ignore an unsigned one.
 A pre-release (a "-" in <release>) updates the "beta" channel; a stable release updates
@@ -37,12 +39,20 @@ def changelog_notes(release):
 
 existing, release, build, repo = sys.argv[1:5]
 assets = sys.argv[5] if len(sys.argv) > 5 else None
+flatpakref = sys.argv[6] if len(sys.argv) > 6 else None
 download = f"{repo}/releases/download/v{release}"
 files = {
     "androidArm64": f"LecCheck-{release}-android-arm64.apk",
     "androidUniversal": f"LecCheck-{release}-android.apk",
+    # The last one is 2.0.0-beta.15: Linux releases are a Flatpak since then.
     "linux": f"LecCheck-{release}-linux-x64.tar.gz",
 }
+if assets:
+    files = {
+        key: name
+        for key, name in files.items()
+        if os.path.exists(os.path.join(assets, name))
+    }
 entry = {
     "version": release,
     "build": int(build),
@@ -51,12 +61,17 @@ entry = {
     "notes": changelog_notes(release),
     **{key: f"{download}/{name}" for key, name in files.items()},
 }
+if flatpakref:
+    entry["flatpakref"] = flatpakref
 if assets:
-    sha256 = {}
+    sha256, size = {}, {}
     for key, name in files.items():
-        with open(os.path.join(assets, name), "rb") as f:
+        path = os.path.join(assets, name)
+        with open(path, "rb") as f:
             sha256[key] = hashlib.file_digest(f, "sha256").hexdigest()
+        size[key] = os.path.getsize(path)
     entry["sha256"] = sha256
+    entry["size"] = size
 
 manifest = {}
 if os.path.exists(existing):

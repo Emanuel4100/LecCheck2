@@ -5,8 +5,10 @@ name: Release
 # Repository settings needed:
 #   Variables: API_BASE_URL (your Worker URL, e.g. https://leccheck-sync.you.workers.dev)
 #   Secrets:   ANDROID_KEYSTORE_BASE64, ANDROID_KEYSTORE_PASSWORD,
-#              ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD, and the server deploy
-#              secrets (deploy-server.yml)
+#              ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD, UPDATE_SIGNING_KEY,
+#              FLATPAK_GPG_KEY, and the server deploy secrets (deploy-server.yml)
+#   Pages:     source "GitHub Actions"; the github-pages environment lets v* tags
+#              deploy (docs/SETUP.md)
 on:
   push:
     tags: ["v*"]
@@ -92,10 +94,69 @@ jobs:
           cp ../scripts/linux-install.sh "../out/$P/install.sh"
           tar -C ../out -czf "../out/$P.tar.gz" "$P"
           rm -rf "../out/$P"
+          # For the Flatpak job (a tarball keeps the files' permissions).
+          mkdir -p ../flatpak-bundle
+          tar -C build/linux/x64/release -czf ../flatpak-bundle/bundle.tar.gz bundle
       - uses: actions/upload-artifact@v7
         with:
           name: linux
           path: out/
+      - uses: actions/upload-artifact@v7
+        with:
+          name: linux-bundle
+          path: flatpak-bundle/
+
+  # The Flatpak, from the Linux bundle above, into LecCheck's own repository
+  # (GPG-signed, served by GitHub Pages): built in Flathub's container, which
+  # has flatpak-builder and the freedesktop SDK.
+  flatpak:
+    needs: linux
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/flathub-infra/flatpak-github-actions:freedesktop-26.08
+      options: --privileged
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
+        with:
+          name: linux-bundle
+      - run: mkdir -p app/build/linux/x64/release && tar -xzf bundle.tar.gz -C app/build/linux/x64/release
+      # What's new in software centers: the newest CHANGELOG sections.
+      - run: python3 scripts/metainfo_releases.py
+      - name: Signing key
+        env:
+          FLATPAK_GPG_KEY: ${{ secrets.FLATPAK_GPG_KEY }}
+        run: |
+          if [ -z "$FLATPAK_GPG_KEY" ]; then
+            echo "::error::The FLATPAK_GPG_KEY secret is missing: Flatpak refuses an unsigned repository"
+            exit 1
+          fi
+          export GNUPGHOME="$RUNNER_TEMP/gnupg"
+          mkdir -p "$GNUPGHOME" && chmod 700 "$GNUPGHOME"
+          printf '%s\n' "$FLATPAK_GPG_KEY" | gpg --batch --import
+          echo "GNUPGHOME=$GNUPGHOME" >> "$GITHUB_ENV"
+          echo "GPG_KEY=$(gpg --list-secret-keys --with-colons | awk -F: '/^fpr/ {print $10; exit}')" >> "$GITHUB_ENV"
+      - name: Build and sign
+        run: |
+          flatpak-builder --disable-rofiles-fuse --force-clean --default-branch=stable \
+            --repo=repo --gpg-sign="$GPG_KEY" --gpg-homedir="$GNUPGHOME" \
+            build app/linux/flatpak/com.leccheck.app.yml
+          # The summary (signed), and deltas so updates download less. Each
+          # release publishes a fresh repository with only the new version:
+          # Flatpak fetches just the files that changed.
+          flatpak build-update-repo --gpg-sign="$GPG_KEY" --gpg-homedir="$GNUPGHOME" \
+            --generate-static-deltas --title=LecCheck repo
+      - name: The site
+        run: |
+          OWNER="${GITHUB_REPOSITORY_OWNER,,}"
+          python3 scripts/flatpak_site.py repo site app/linux/flatpak/leccheck-repo.asc \
+            "https://$OWNER.github.io/${GITHUB_REPOSITORY#*/}"
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: site
 
   ios:
     runs-on: macos-latest
@@ -129,10 +190,15 @@ jobs:
     secrets: inherit
 
   publish:
-    needs: [android, linux, ios, server]
+    needs: [android, linux, flatpak, ios, server]
     runs-on: ubuntu-latest
     permissions:
       contents: write # create the GitHub Release
+      pages: write # publish the Flatpak repository
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.pages.outputs.page_url }}
     steps:
       - uses: actions/checkout@v7
       - uses: actions/download-artifact@v8
@@ -154,6 +220,8 @@ jobs:
             "$BASE/download/${GITHUB_REF_NAME}/LecCheck-$V-ios.ipa" "$V" > out/altstore-source.json
           # The altstore branch always holds the newest source (see the last step).
           SOURCE="https://raw.githubusercontent.com/${GITHUB_REPOSITORY}/altstore/altstore-source.json"
+          FLATPAKREF="https://${GITHUB_REPOSITORY_OWNER,,}.github.io/${GITHUB_REPOSITORY#*/}/leccheck.flatpakref"
+          echo "FLATPAKREF=$FLATPAKREF" >> "$GITHUB_ENV"
           if [[ "$V" == *-* ]]; then
             BETA=$'> **Beta.** Not yet verified on every device: reminders and their buttons, the Android widget and the iPhone build. Please report problems in Issues.\n'
             OBTAINIUM=' Turn on **Include prereleases** to get betas.'
@@ -176,7 +244,10 @@ jobs:
             Tip: add this repo to [Obtainium](https://obtainium.imranr.dev) for automatic updates.${OBTAINIUM}
           - **iPhone**: in AltStore or SideStore, add this source:
             \`$SOURCE\`
-          - **Linux**: extract \`LecCheck-$V-linux-x64.tar.gz\` and run \`./install.sh\`.
+          - **Linux**: install the Flatpak, then it updates itself:
+            \`flatpak install --user $FLATPAKREF\`
+            (or open [leccheck.flatpakref]($FLATPAKREF) in your software center). Installed with
+            \`install.sh\` before? Update from inside LecCheck, then choose **Move to the Flatpak**.
           EOF
       - uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
         with:
@@ -185,6 +256,12 @@ jobs:
           generate_release_notes: true
           body_path: notes.md
           files: out/*
+      # The Flatpak repository goes live before update.json announces the
+      # release (the Flatpak updates itself from it).
+      - name: Publish the Flatpak repository (GitHub Pages)
+        id: pages
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: actions/deploy-pages@v5
       # GitHub's "latest" release links skip pre-releases, so AltStore / SideStore
       # read the source from the altstore branch, which always has the newest one.
       # update.json there tells the Android and Linux apps about new releases
@@ -207,7 +284,7 @@ jobs:
           git worktree add --detach "$RUNNER_TEMP/altstore" FETCH_HEAD
           cp out/altstore-source.json "$RUNNER_TEMP/altstore/"
           python3 scripts/update_manifest.py "$RUNNER_TEMP/altstore/update.json" "$V" "$BUILD" \
-            "https://github.com/${GITHUB_REPOSITORY}" out > "$RUNNER_TEMP/update.json"
+            "https://github.com/${GITHUB_REPOSITORY}" out "$FLATPAKREF" > "$RUNNER_TEMP/update.json"
           mv "$RUNNER_TEMP/update.json" "$RUNNER_TEMP/altstore/update.json"
           ( umask 077 && printf '%s\n' "$UPDATE_SIGNING_KEY" > "$RUNNER_TEMP/signing-key.pem" )
           openssl pkeyutl -sign -rawin -inkey "$RUNNER_TEMP/signing-key.pem" \

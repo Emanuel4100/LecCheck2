@@ -1,0 +1,51 @@
+# LecCheck as a Flatpak, for LecCheck's own GPG-signed repository on GitHub
+# Pages (docs/DEVELOPMENT.md "Flatpak"). It packages the Linux bundle the
+# release workflow builds with Flutter (build/linux/x64/release/bundle), so
+# the build needs no network and no Flutter SDK. The bundle links only GTK 3
+# and libsecret from the system, which the freedesktop runtime has (no
+# WebKitGTK: see third_party/desktop_webview_window).
+id: com.leccheck.app
+runtime: org.freedesktop.Platform
+runtime-version: '26.08'
+sdk: org.freedesktop.Sdk
+command: leccheck
+finish-args:
+  # Sync, the update check, and Google sign-in's loopback (127.0.0.1:43823).
+  - --share=network
+  - --share=ipc
+  - --socket=wayland
+  - --socket=fallback-x11
+  - --device=dri
+  # Reminders: flutter_local_notifications talks to it directly.
+  - --talk-name=org.freedesktop.Notifications
+  # The sign-in: libsecret uses the Secret portal where the desktop has one
+  # (GNOME, KDE) and the keyring itself elsewhere (Hyprland, Sway, …).
+  - --talk-name=org.freedesktop.secrets
+  # Files (backups) go through the FileChooser portal and links through
+  # OpenURI, so no filesystem access.
+modules:
+  - name: leccheck
+    buildsystem: simple
+    build-options:
+      # Flutter's release build has no debug info to split off.
+      no-debuginfo: true
+    sources:
+      - type: dir
+        path: ../../build/linux/x64/release/bundle
+        dest: bundle
+      - type: file
+        path: ../packaging/com.leccheck.app.desktop
+      - type: file
+        path: ../packaging/com.leccheck.app.metainfo.xml
+      - type: dir
+        path: ../assets
+        dest: icons
+    build-commands:
+      - install -d /app/lib
+      - cp -a bundle /app/lib/leccheck
+      - install -d /app/bin
+      - ln -s ../lib/leccheck/leccheck /app/bin/leccheck
+      - install -Dm644 -t /app/share/applications com.leccheck.app.desktop
+      - install -Dm644 -t /app/share/metainfo com.leccheck.app.metainfo.xml
+      - for size in 64 128 256 512; do install -Dm644 icons/com.leccheck.app-$size.png
+        /app/share/icons/hicolor/${size}x${size}/apps/com.leccheck.app.png; done

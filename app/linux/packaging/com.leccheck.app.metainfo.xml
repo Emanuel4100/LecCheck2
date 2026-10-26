@@ -5,14 +5,159 @@
   <project_license>GPL-3.0-or-later</project_license>
   <name>LecCheck</name>
   <summary>Track the lectures, practices and labs you attend</summary>
+  <summary xml:lang="he">מעקב אחרי הרצאות, תרגולים ומעבדות שהשתתפת בהם</summary>
+  <developer id="io.github.emanuel4100">
+    <name>Emanuel</name>
+  </developer>
   <description>
-    <p>Mark every class you attend during the semester and see your progress at a glance.
-    Works offline and syncs live between your phone and computer.</p>
+    <p>Mark every class you attend during the semester and see your progress at a
+    glance. LecCheck works offline and syncs live between your phone and computer.</p>
+    <ul>
+      <li>Today, Week and course pages with every lecture, practice and lab</li>
+      <li>Attendance requirements and statistics for each course</li>
+      <li>Reminders before class, and a quick question after it</li>
+      <li>Jewish and Israeli holidays as days without classes</li>
+      <li>English and Hebrew</li>
+    </ul>
   </description>
   <launchable type="desktop-id">com.leccheck.app.desktop</launchable>
+  <provides>
+    <binary>leccheck</binary>
+  </provides>
   <url type="homepage">https://github.com/Emanuel4100/LecCheck2</url>
+  <url type="bugtracker">https://github.com/Emanuel4100/LecCheck2/issues</url>
+  <url type="vcs-browser">https://github.com/Emanuel4100/LecCheck2</url>
+  <screenshots>
+    <screenshot type="default">
+      <image>https://emanuel4100.github.io/LecCheck2/screenshots/today.png</image>
+      <caption>Today: the class going on now and what's next</caption>
+    </screenshot>
+    <screenshot>
+      <image>https://emanuel4100.github.io/LecCheck2/screenshots/week.png</image>
+      <caption>The week, like a calendar</caption>
+    </screenshot>
+    <screenshot>
+      <image>https://emanuel4100.github.io/LecCheck2/screenshots/stats.png</image>
+      <caption>Attendance for each course</caption>
+    </screenshot>
+  </screenshots>
+  <branding>
+    <color type="primary" scheme_preference="light">#d8e2ff</color>
+    <color type="primary" scheme_preference="dark">#21305f</color>
+  </branding>
+  <requires>
+    <display_length compare="ge">360</display_length>
+  </requires>
+  <supports>
+    <control>pointing</control>
+    <control>keyboard</control>
+    <control>touch</control>
+  </supports>
   <content_rating type="oars-1.1" />
   <releases>
-    <release version="2.0.0" date="2026-10-04" />
+    <release version="2.0.0-beta.14" date="2026-10-26" type="development">
+      <description>
+        <ul>
+          <li><em>Add on Week like in a calendar</em>: tap an empty spot for an hour there, drag out the time with the mouse, or on a phone long-press and drag (15-minute steps). <em>Quick add</em> opens beside it: pick a course or name a new one right there, weekly or one-time, the type and the room, then <em>Save</em> (with Undo). <em>More options</em> opens the course editor with everything filled in.</li>
+          <li><em>Move sessions by dragging</em> (desktop): drag a session to another time or day, or its bottom edge to change when it ends. A weekly meeting asks <em>This week only</em> or <em>Every week</em>, then <em>Undo</em> is offered for a few seconds. Every week moves the sessions' marks along to the new day.</li>
+          <li><em>Desktop sidebar like Google Calendar</em>: a raised <em>+ Create</em> button replaces Add, and a month calendar shows under the tabs: click a day to open its week; the week you're looking at is highlighted, class days have a dot, and no-class days are dimmed with their name on hover.</li>
+          <li>The Week grid scrolls by itself when a drag nears its top or bottom.</li>
+        </ul>
+      </description>
+    </release>
+    <release version="2.0.0-beta.13" date="2026-10-26" type="development">
+      <description>
+        <ul>
+          <li><em>Linux: no more surprise sign-outs.</em> On a keyring without a password (common with automatic login), GNOME Keyring emptied LecCheck's saved sign-in whenever it re-read its file, because the value contained backslashes, so you came back signed out. The sign-in is now saved in a form without any, and an older one is converted the first time it's read. If you were signed out, sign in once more.</li>
+          <li><em>A sign-in that can't be read isn't a sign-out</em>: when the system keyring doesn't answer, LecCheck asks it again, and if it still can't, Account and Today say so with <em>Retry</em> and <em>Sign in again</em> instead of showing you as signed out. Nothing is removed.</li>
+          <li><em>Canceling a session drops its reminder.</em> A canceled class could still announce itself: reminders were updated two seconds after a change, and leaving the app (home, Recents, swiping it away) in those seconds kept the old one. They're now updated at once when you leave.</li>
+          <li><em>Reminders on screen go away when they're out of date</em>: "class starts soon" for a session you canceled or skipped since, and "how was class?" for one you marked in the app (also last night's).</li>
+          <li><em>Skipped ahead, no reminder</em>: a session marked Skipped before it starts gets no "class starts soon".</li>
+          <li><em>Sync now shows what it did</em>: the icon turns while it syncs, then the cloud with its check pops in ("Up to date"), or it says it couldn't sync (your changes are kept). It also checks that the connection still works: before, pressing it while synced did nothing at all. With reduced motion the icons just change, and screen readers hear the result.</li>
+          <li><em>Click the cloud icon to sync</em>: in the title bar (or the sidebar on wide windows), clicking it syncs now, like Ctrl+R / F5; right-click or long-press opens Settings.</li>
+          <li><em>Linux remembers the window size</em> and whether it was maximized: it was never saved.</li>
+        </ul>
+        <p>Smaller things</p>
+        <ul>
+          <li>Settings → Developer's log notes each start's sign-in and why a sign-in was ever removed, and <em>Copy diagnostics</em> includes the sign-in state.</li>
+          <li>Settings → Developer → <em>Sync now</em> says whether the server answered.</li>
+          <li>Builds pointed at a local test server keep their own sign-in, so testing can't sign out the installed app.</li>
+        </ul>
+      </description>
+    </release>
+    <release version="2.0.0-beta.12" date="2026-10-15" type="development">
+      <description>
+        <ul>
+          <li><em>Moving a meeting to another day</em> kept the session's mark and notes but dropped <em>Counts toward attendance</em> when the new day already had a record, so a session left out quietly counted again.</li>
+          <li>A failed update no longer draws its steps as if everything had finished.</li>
+          <li>Contact cards in the course editor line up in Hebrew.</li>
+        </ul>
+      </description>
+    </release>
+    <release version="2.0.0-beta.11" date="2026-10-15" type="development">
+      <description>
+        <ul>
+          <li><em>Linux: updates no longer erase your data.</em> LecCheck kept its database and settings in the folder <code>install.sh</code> installs it to, so every update deleted them and you came back signed out with an empty schedule. Data now lives in <code>~/.local/share/com.leccheck.app</code>, and the next update moves it there first.</li>
+          <li><em>Android: opening LecCheck from the home-screen widget</em> no longer shows an error ("no routes for location").</li>
+          <li><em>Update window</em>: when a new version is out, a window opens at launch with what's new, and <em>Update</em> shows each step there: the download with its size and speed, the check that the file is exactly the released one, then the install and <em>Restart</em>. <em>Later</em> asks again next time; <em>Skip this version</em> waits for the next one. Updates are now signed: LecCheck only installs releases from a list signed by the release build.</li>
+          <li><em>Contacts</em>: a course has its lecturer and teaching assistants, each with a name, role and email, edited in a <em>Contacts</em> row of the course editor. The course page lists them with buttons to send an email or copy the address. A course's lecturer becomes its first contact.</li>
+          <li><em>Sessions that don't count</em>: turn off <em>Counts toward attendance</em> on a session (in its details, or right-click) when the course doesn't take attendance in it, like a first lecture. It keeps its status but is left out of the percentage, the streak and the requirement, so 80% of 10 lectures becomes 80% of 9.</li>
+          <li><em>Canceled sessions</em> keep their course color with diagonal stripes, instead of turning gray, and have their own color in status icons.</li>
+          <li><em>Desktop</em>: a denser layout with smaller corners, one-line title bars and a regular <em>Add</em> button; <em>Settings</em> keeps the sidebar, so the tabs are one click away. On Linux the window reopens at the size you left it, maximized if it was.</li>
+        </ul>
+      </description>
+    </release>
+    <release version="2.0.0-beta.10" date="2026-10-13" type="development">
+      <description>
+        <ul>
+          <li><em>A roomier course editor</em>. Meetings are one line each ("Lecture · Sunday, 10:00–12:00 · 201") and open in a sheet (a dialog on wide screens) where the type and how it repeats are menus, and the length shows under the end time. A new meeting can be on several days at once. Short name, code and lecturer wait behind <em>+</em> chips, the color is a dot in the name field, and the attendance requirement, notes and links fold into rows. Wide windows get two columns.</li>
+          <li><em>Add from Week</em>: tap an empty spot to add a new course, a meeting of a course, or a one-time session there, with the day and time filled in. The grid always shows at least 8:00–18:00 so there's room to tap.</li>
+          <li><em>Course page</em>: sessions are listed by type ("Lecture #3") instead of repeating the course name, and on phones <em>Add one-time session</em> moved to the app bar instead of covering the list. Meetings that start mid-semester or every other week from week 2 now say so.</li>
+          <li><em>Today</em>: the class in progress is marked from the Now card only, not listed again under Needs marking. Session rows no longer break mid-detail: the type and day (and the time when it fits) come first, then the room after a pin. The swipe hint goes away once you've swiped, and classes that haven't started yet don't show the "to mark" circle.</li>
+          <li><em>Stats</em>: the weekly chart shows each week's percentage and labels its lines (0%, 50%, 100%); the attendance card says it briefly, with the full rule behind an ⓘ button.</li>
+          <li><em>Welcome</em>: the language switch moved to the top corner.</li>
+        </ul>
+      </description>
+    </release>
+    <release version="2.0.0-beta.9" date="2026-10-12" type="development">
+      <description>
+        <ul>
+          <li><em>No more empty semesters when signing in</em> (issue #2). Signing in on a new device sometimes opened the semester setup before the account's data arrived, and creating it added an empty semester to the account, again on every new device. Now LecCheck waits for your data (with <em>Retry</em> if it doesn't come), then asks <em>Which semester?</em> (or <em>Start a new semester</em>). A semester made before signing in no longer joins the account silently: when the account has data too, you choose <em>Use my account's</em> (the device's data is backed up first) or <em>Keep both</em>. An account whose data was deleted in the last 30 days offers to bring it back.</li>
+          <li><em>A quick tour of the app</em> (issue #1) after setting up the first semester: each step dims the app around one item (Today, Week, Courses, Stats, Settings) and explains it, and the last one opens <em>Add course</em>. Replay it from Settings → About → <em>Show the app tour</em>. Works on phones and wide windows, in English and Hebrew, and with the keyboard (arrows, Enter, Esc).</li>
+          <li><em>Long course names in Week</em>: when a name doesn't fit a tile and the course has no short name, LecCheck shortens it, dropping small words, then cutting long ones ("Infinitesimal Calculus 1" → "Infin. Calc. 1", "חשבון אינפיניטסימלי 1" → "חשבון אינפי׳ 1"), instead of cutting it off. The course editor suggests a short name for long names.</li>
+          <li><em>Respects "remove animations"</em>: with the system's reduced-motion setting on, LecCheck switches tabs, turns week pages and draws charts without animating.</li>
+          <li><em>What's new</em> on the update card now shows the release's changes (the release notes carry this CHANGELOG section), not just the download links.</li>
+          <li><em>Bring back deleted cloud data</em>: Settings → Account offers it for 30 days after <em>Delete cloud data</em> (until now only the server could).</li>
+        </ul>
+      </description>
+    </release>
+    <release version="2.0.0-beta.8" date="2026-10-12" type="development">
+      <description>
+        <p>Coming from beta.7 or older: install this version as before (Download, or</p>
+        <p><code>./install.sh</code> on Linux). From the next release on, <em>Update</em> does it inside the app.</p>
+        <ul>
+          <li><em>Update from inside the app</em> (Android, and Linux installed with <code>./install.sh</code>): <em>Update</em> on the update card downloads the new version with a progress bar, checks it against the release's SHA-256, then opens Android's installer (one tap to confirm) or, on Linux, installs it and offers <em>Restart</em>. Older releases still open the browser. Updating on Linux now swaps the app folder only after the copy succeeds.</li>
+          <li><em>Check now</em> (Settings → About) shows that it's checking, and a new version found there now says so right away, with <em>Update</em>. It used to appear only in the card at the top of Settings, scrolled out of sight.</li>
+        </ul>
+      </description>
+    </release>
+    <release version="2.0.0-beta.7" date="2026-10-11" type="development">
+      <description>
+        <ul>
+          <li><em>Reminders follow the semester running now</em>: looking at last semester (its stats, say) stopped this semester's reminders and emptied the widget until you switched back. Both now cover every semester running then. A semester starting next week gets its first reminders in time.</li>
+          <li><em>Mute a course</em>: a course page has <em>Reminders for this course</em>, to turn them off for one course on this device (Settings → Notifications lists the muted ones).</li>
+          <li><em>Marks follow a meeting to its new day</em>: moving a weekly meeting to another weekday for <em>All weeks</em> hid every marked session (they stayed keyed to the old day). Now each session's marks, notes and moves go with it. <em>From this week on</em> also moves sessions marked ahead of time, and an every-other-week meeting keeps its weeks instead of restarting the cycle.</li>
+          <li><em>Removing a meeting</em> with marked sessions offers to <em>end it this week</em>, keeping its past sessions in your stats. Ended and split meetings show their dates.</li>
+          <li><em>Changing a semester's dates</em> warns when marked sessions would be hidden, and adds the holidays you chose for the new days.</li>
+          <li><em>Today</em> says when this device is signed out with changes waiting (with a <em>Sign in</em> button), when changes were refused, and when an update is needed to sync. The update notice and the "report the last error" card now also appear on phones (only the wide layout had them, the update notice twice).</li>
+          <li><em>Widget</em>: it holds a week of days, so it moves on to the next day at midnight without the app (after a week it asks to open LecCheck). Marking from the widget drops that session's "How was class?" reminder.</li>
+          <li><em>Linux</em>: reminders come on time after the computer wakes up (they came late by however long it slept), and stale ones are skipped. No more error at every start (the app then offered to report it each time). The daily backup no longer fails when two start at once.</li>
+          <li><em>Recently deleted</em> lists only what was deleted on or synced to this device recently: on a newly synced device it showed every old delete as new, and restoring a course could bring back things deleted separately.</li>
+          <li><em>Sturdier with odd data</em>: a row with a date that doesn't exist (from a file or another device) no longer hides its whole semester, and imports skip such rows and say how many. Marking a session whose record was deleted with its meeting works again.</li>
+          <li><em>Sign out on all devices</em> asks first, and does nothing if the server can't be reached (it used to sign this device out anyway). Errors from it and from <em>Delete cloud data</em> are shown.</li>
+          <li><em>Long notes</em>: notes stop at 10,000 characters; the server takes changes up to 32 KB (16 KB before, so a long pasted note was refused on every retry).</li>
+        </ul>
+      </description>
+    </release>
   </releases>
 </component>
