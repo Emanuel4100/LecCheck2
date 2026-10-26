@@ -23,8 +23,9 @@ def releases(changelog):
 
 
 def inline(text):
-    """Markdown marks as AppStream's: **bold** → <em>, `code` → <code>, links → their text."""
-    text = html.escape(text, quote=False)
+    """Markdown marks as AppStream's: **bold** → <em>, `code` → <code>, links → their text.
+    Plain URLs lose their scheme: AppStream doesn't allow them in descriptions."""
+    text = re.sub(r"https?://", "", html.escape(text, quote=False))
     text = re.sub(r"\*\*(.+?)\*\*", r"<em>\1</em>", text)
     text = re.sub(r"`([^`]+)`", r"<code>\1</code>", text)
     return re.sub(r"\[([^\]]+)\]\([^)]*\)", r"\1", text)
