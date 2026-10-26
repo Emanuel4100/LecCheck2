@@ -189,8 +189,11 @@ jobs:
     uses: ./.github/workflows/deploy-server.yml
     secrets: inherit
 
+  # Run by hand (Run workflow on main), everything above builds and nothing is
+  # published: a dry run before tagging.
   publish:
     needs: [android, linux, flatpak, ios, server]
+    if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
     permissions:
       contents: write # create the GitHub Release
