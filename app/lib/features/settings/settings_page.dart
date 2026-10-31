@@ -47,14 +47,43 @@ final _pinSupportedProvider = FutureProvider<bool>(
   (ref) => TodayWidget.canPin(),
 );
 
-/// One settings category: a header and its tiles on phones, an entry of the
-/// category list on wide windows.
+/// One settings category: a row that opens its own page on phones, an entry
+/// of the category list on wide windows.
 class _Section {
-  const _Section(this.icon, this.title, this.children);
+  const _Section(this.icon, this.title, this.summary, this.children);
 
   final IconData icon;
   final String title;
+
+  /// What's inside, under the title in the phone's list.
+  final String summary;
   final List<Widget> children;
+}
+
+/// A settings category on its own page (phones).
+class _SectionPage extends StatelessWidget {
+  const _SectionPage(this.section);
+
+  final _Section section;
+
+  @override
+  Widget build(BuildContext context) {
+    return PageShortcuts(
+      child: Scaffold(
+        appBar: AppBar(title: Text(section.title)),
+        body: Align(
+          alignment: Alignment.topCenter,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 720),
+            child: ListView(
+              padding: const EdgeInsets.only(top: 8, bottom: 48),
+              children: section.children,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class SettingsPage extends ConsumerStatefulWidget {
@@ -73,25 +102,38 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         AppIdiom.isIOS ||
         (ref.watch(_pinSupportedProvider).value ?? false);
     return [
-      _Section(LecIcons.account, l.account, const [AccountSection()]),
-      _Section(LecIcons.palette, l.appearance, const [
+      _Section(LecIcons.account, l.account, l.accountSummary, const [
+        AccountSection(),
+      ]),
+      _Section(LecIcons.palette, l.appearance, l.appearanceSummary, const [
         _ThemePresetPicker(),
         _ModeAndLanguage(),
       ]),
-      _Section(LecIcons.notifications, l.notifications, const [
-        NotificationsSection(),
-      ]),
-      _Section(LecIcons.semester, l.semesterSection, const [
+      _Section(
+        LecIcons.notifications,
+        l.notifications,
+        l.notificationsSummary,
+        const [NotificationsSection()],
+      ),
+      _Section(LecIcons.semester, l.semesterSection, l.semesterSummary, const [
         _SemesterSection(),
         _NoClassSection(),
       ]),
-      _Section(LecIcons.courses, l.navCourses, const [_CourseOptions()]),
-      _Section(LecIcons.exportData, l.data, const [_DataSection()]),
+      _Section(LecIcons.courses, l.navCourses, l.coursesSummary, const [
+        _CourseOptions(),
+      ]),
+      _Section(LecIcons.exportData, l.data, l.dataSummary, const [
+        _DataSection(),
+      ]),
       if (device)
-        _Section(LecIcons.device, l.thisDevice, const [_DeviceSection()]),
-      _Section(LecIcons.info, l.about, const [_AboutSection()]),
+        _Section(LecIcons.device, l.thisDevice, l.deviceSummary, const [
+          _DeviceSection(),
+        ]),
+      _Section(LecIcons.info, l.about, l.aboutSummary, const [_AboutSection()]),
       if (ref.watch(devModeProvider))
-        _Section(LecIcons.developer, l.developer, const [_DeveloperSection()]),
+        _Section(LecIcons.developer, l.developer, l.developerSummary, const [
+          _DeveloperSection(),
+        ]),
     ];
   }
 
@@ -142,10 +184,18 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                   children: [
                     const UpdateCard(),
                     const MoveCard(),
-                    for (final section in sections) ...[
-                      SectionHeader(title: section.title),
-                      ...section.children,
-                    ],
+                    for (final section in sections)
+                      ListTile(
+                        leading: Icon(section.icon),
+                        title: Text(section.title),
+                        subtitle: Text(section.summary),
+                        trailing: const Icon(LecIcons.chevronEnd),
+                        onTap: () => Navigator.of(context).push(
+                          MaterialPageRoute<void>(
+                            builder: (_) => _SectionPage(section),
+                          ),
+                        ),
+                      ),
                     const SizedBox(height: 48),
                   ],
                 ),

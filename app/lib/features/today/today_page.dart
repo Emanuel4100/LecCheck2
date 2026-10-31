@@ -281,7 +281,7 @@ class _HeroSession extends ConsumerWidget {
           onSecondaryTapUp: (d) =>
               showSessionMenu(context, ref, session, d.globalPosition),
           child: Padding(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -317,7 +317,7 @@ class _HeroSession extends ConsumerWidget {
                     Icon(session.type.icon, color: tone.onContainer),
                   ],
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 12),
                 Text(
                   course?.name ?? '',
                   style: theme.textTheme.headlineSmall?.copyWith(
@@ -338,7 +338,7 @@ class _HeroSession extends ConsumerWidget {
                   ),
                 ),
                 if (inProgress || link != null) ...[
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 12),
                   if (inProgress)
                     MarkButton(
                       selected: session.explicitStatus,
@@ -504,9 +504,9 @@ class _TodayTimeline extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l = AppLocalizations.of(context);
     final today = ref.watch(todayProvider);
-    final ids = ref.watch(dayIdsProvider(today)).items;
+    final all = ref.watch(dayIdsProvider(today)).items;
     final nowNext = ref.watch(nowNextProvider);
-    if (ids.isEmpty) {
+    if (all.isEmpty) {
       return SliverToBoxAdapter(
         child: SectionHeader(
           title: l.todaySchedule,
@@ -514,6 +514,12 @@ class _TodayTimeline extends ConsumerWidget {
         ),
       );
     }
+    // The session in the big card isn't listed a second time.
+    final ids = [
+      for (final id in all)
+        if (id != nowNext) id,
+    ];
+    if (ids.isEmpty) return const SliverToBoxAdapter(child: SizedBox.shrink());
     return SliverMainAxisGroup(
       slivers: [
         SliverToBoxAdapter(child: SectionHeader(title: l.todaySchedule)),
@@ -522,8 +528,7 @@ class _TodayTimeline extends ConsumerWidget {
           sliver: SliverList.separated(
             itemCount: ids.length,
             separatorBuilder: (_, _) => const SizedBox(height: 8),
-            itemBuilder: (context, i) =>
-                SessionTile(sessionId: ids[i], highlight: ids[i] == nowNext),
+            itemBuilder: (context, i) => SessionTile(sessionId: ids[i]),
           ),
         ),
       ],

@@ -43,7 +43,6 @@ class SessionTile extends ConsumerWidget {
     this.showDate = false,
     this.showCourse = true,
     this.quickActions = false,
-    this.highlight = false,
     this.onSwipeMarked,
   });
 
@@ -55,7 +54,6 @@ class SessionTile extends ConsumerWidget {
 
   /// Shows ✓ / ✗ buttons for pending sessions.
   final bool quickActions;
-  final bool highlight;
 
   /// When set, a swipe dismisses the tile and calls this instead of marking
   /// in place (used by the "needs marking" queue).
@@ -93,7 +91,6 @@ class SessionTile extends ConsumerWidget {
     );
 
     Widget card(bool hovered) => Card(
-      color: highlight ? tone.container : null,
       child: InkWell(
         onTap: () => showSessionSheet(context, session.id),
         onLongPress: () => showStatusPicker(context, ref, session),

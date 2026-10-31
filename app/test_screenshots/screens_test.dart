@@ -323,6 +323,28 @@ Future<void> _openFirstMeeting(WidgetTester tester) async {
   await _settle(tester);
 }
 
+/// Week with this Wednesday off, for one screenshot.
+Future<void> _dayOff(
+  WidgetTester tester,
+  ProviderContainer c,
+  String label,
+  String shot,
+) async {
+  final repo = c.read(repositoryProvider);
+  final range = NoClassRange(
+    id: 'off',
+    semesterId: 'sem',
+    start: LocalDate.parse('2026-11-11'),
+    end: LocalDate.parse('2026-11-11'),
+    label: label,
+  );
+  await tester.runAsync(() => repo.saveNoClassRange(range));
+  await _settle(tester);
+  await _shot(tester, shot);
+  await tester.runAsync(() => repo.deleteNoClassRange(range.id));
+  await _settle(tester);
+}
+
 Future<void> _shot(WidgetTester tester, String name) => expectLater(
   find.byType(LecCheckApp),
   matchesGoldenFile('goldens/$name.png'),
@@ -341,6 +363,13 @@ void main() {
 
   setUpAll(_loadFonts);
 
+  testWidgets('a marked session', (tester) async {
+    await _pumpApp(tester, locale: 'en', mode: ThemeMode.light);
+    await tester.tap(find.text('Attended').first);
+    await _settle(tester);
+    await _shot(tester, 'en_light_today_marked');
+  });
+
   testWidgets('English · light', (tester) async {
     final c = await _pumpApp(tester, locale: 'en', mode: ThemeMode.light);
     await _shot(tester, 'en_light_today');
@@ -356,6 +385,7 @@ void main() {
     await _shot(tester, 'en_light_week_next');
     c.read(weekCommandsProvider).thisWeek();
     await _settle(tester);
+    await _dayOff(tester, c, 'Hanukkah', 'en_light_week_off');
     // An empty slot: Thursday 13:10 (the grid starts at 8:00, 60 px an
     // hour).
     final thursday = tester.getRect(
@@ -374,8 +404,21 @@ void main() {
     await _shot(tester, 'en_light_course');
     await _go(tester, c, '/stats');
     await _shot(tester, 'en_light_stats');
+    await tester.scrollUntilVisible(
+      find.text('More details'),
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.tap(find.text('More details'));
+    await _settle(tester);
+    await _shot(tester, 'en_light_stats_details');
     await _go(tester, c, '/settings');
     await _shot(tester, 'en_light_settings');
+    await tester.tap(find.text('Appearance'));
+    await _settle(tester);
+    await _shot(tester, 'en_light_settings_appearance');
+    await tester.pageBack();
+    await _settle(tester);
     await _go(tester, c, '/course-editor?id=calc');
     await _shot(tester, 'en_light_editor');
     await _openFirstMeeting(tester);
@@ -402,8 +445,11 @@ void main() {
     await _shot(tester, 'he_dark_week_next');
     c.read(weekCommandsProvider).thisWeek();
     await _settle(tester);
+    await _dayOff(tester, c, 'חנוכה', 'he_dark_week_off');
     await _go(tester, c, '/stats');
     await _shot(tester, 'he_dark_stats');
+    await _go(tester, c, '/settings');
+    await _shot(tester, 'he_dark_settings');
     await _go(tester, c, '/course-editor?id=calc');
     await _shot(tester, 'he_dark_editor');
     await _openFirstMeeting(tester);

@@ -430,10 +430,8 @@
   "statsTitle": "Stats",
   "attendance": "Attendance",
   "attendanceSubtitle": "Attended or watched, out of sessions you attended, watched or missed.",
-  "attendanceShort": "Attended or watched",
   "attendanceHow": "How it's counted",
   "attendanceExplained": "Sessions you attended or watched, out of those you attended, watched or missed. Skipped and canceled sessions, and ones you haven't marked yet, don't count.",
-  "semesterProgress": "Semester progress",
   "streak": "Streak",
   "streakValue": "{count, plural, =1{1 session} other{{count} sessions}}",
   "@streakValue": {
@@ -1027,5 +1025,15 @@
       }
     }
   },
-  "syncPausedSubtitle": "The sync server is busy. Your changes are saved on this device and sync then."
+  "syncPausedSubtitle": "The sync server is busy. Your changes are saved on this device and sync then.",
+  "moreDetails": "More details",
+  "accountSummary": "Sign-in and sync",
+  "appearanceSummary": "Theme, language and time format",
+  "notificationsSummary": "Reminders before and after class",
+  "semesterSummary": "Dates and no-class days",
+  "coursesSummary": "Meeting numbers",
+  "dataSummary": "Backups and import",
+  "deviceSummary": "The tab to open on and more",
+  "aboutSummary": "Version and updates",
+  "developerSummary": "Tools for testing"
 }

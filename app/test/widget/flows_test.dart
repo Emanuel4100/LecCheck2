@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'dart:convert';
 
 import 'package:cryptography/cryptography.dart';
@@ -17,6 +19,8 @@ import 'package:leccheck/app/sync_providers.dart';
 import 'package:leccheck/app/update_controller.dart';
 import 'package:leccheck/core/db/app_database.dart';
 import 'package:leccheck/core/db/schedule_repository.dart';
+import 'package:leccheck/features/session/session_sheet.dart';
+import 'package:leccheck/features/today/today_page.dart';
 import 'package:leccheck/core/update/update_service.dart';
 import 'package:leccheck/core/icons/lec_icons.dart';
 import 'package:leccheck/domain/local_date.dart';
@@ -281,7 +285,6 @@ void main() {
     final (container, _) = await _start(tester);
     container.read(routerProvider).go('/stats');
     await _settle(tester);
-    expect(find.text('Attended or watched'), findsOneWidget);
     await tester.tap(find.byTooltip("How it's counted"));
     await _settle(tester);
     expect(
@@ -291,6 +294,61 @@ void main() {
     await tester.tap(find.text('Done'));
     await _settle(tester);
     expect(find.textContaining('Skipped and canceled sessions'), findsNothing);
+  });
+
+  testWidgets('Stats folds the details on phones', (tester) async {
+    final (container, _) = await _start(tester);
+    container.read(routerProvider).go('/stats');
+    await _settle(tester);
+    expect(find.text('By type'), findsNothing);
+    await tester.scrollUntilVisible(
+      find.text('More details'),
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.tap(find.text('More details'));
+    await _settle(tester);
+    expect(find.text('By type'), findsOneWidget);
+  });
+
+  testWidgets('a saved recording is a link with an edit button', (
+    tester,
+  ) async {
+    final (container, db) = await _start(tester);
+    final session = container.read(occurrenceIndexProvider).all.first;
+    await tester.runAsync(
+      () =>
+          ScheduleRepository(db)
+              .setRecordingUrl(session, 'https://example.com/rec'),
+    );
+    await _settle(tester);
+    unawaited(
+      showSessionSheet(tester.element(find.byType(TodayPage)), session.id),
+    );
+    await _settle(tester);
+    await tester.ensureVisible(find.text('Recording link'));
+    await _settle(tester);
+    expect(find.text('Recording link'), findsOneWidget);
+    expect(find.byType(TextField), findsOneWidget); // only the notes
+    expect(find.text('https://example.com/rec'), findsNothing);
+
+    await tester.tap(find.byTooltip('Edit'));
+    await _settle(tester);
+    expect(find.text('https://example.com/rec'), findsOneWidget);
+
+    // Leaving the field saves the change and goes back to the link.
+    await tester.enterText(
+      find.widgetWithText(TextField, 'https://example.com/rec'),
+      'https://example.com/new',
+    );
+    FocusManager.instance.primaryFocus!.unfocus();
+    await _settle(tester);
+    expect(find.text('https://example.com/new'), findsNothing);
+    expect(find.byTooltip('Edit'), findsOneWidget);
+    expect(
+      container.read(sessionProvider(session.id))?.recordingUrl,
+      'https://example.com/new',
+    );
   });
 
   testWidgets('empty semester shows the add-course call to action', (
@@ -307,13 +365,14 @@ void main() {
     final (container, _) = await _start(tester);
     container.read(routerProvider).push('/settings');
     await _settle(tester);
-    final list = find.byType(Scrollable).first;
+    expect(find.text('Developer'), findsNothing);
+    await tester.tap(find.text('About'));
+    await _settle(tester);
     await tester.scrollUntilVisible(
       find.text('Version'),
       300,
-      scrollable: list,
+      scrollable: find.byType(Scrollable).last,
     );
-    expect(find.text('Developer tools'), findsNothing);
 
     for (var i = 0; i < 6; i++) {
       await tester.tap(find.text('Version'));
@@ -325,11 +384,11 @@ void main() {
     expect(find.text('Developer mode is on'), findsOneWidget);
     expect(container.read(sharedPrefsProvider).getBool('dev.mode'), isTrue);
 
-    await tester.scrollUntilVisible(
-      find.text('Developer tools'),
-      300,
-      scrollable: list,
-    );
+    // Its category joins the list behind this page.
+    await tester.pageBack();
+    await _settle(tester);
+    await tester.tap(find.text('Developer'));
+    await _settle(tester);
     await tester.tap(find.text('Developer tools'));
     await _settle(tester);
     expect(find.text('Show a notification now'), findsOneWidget);
@@ -401,10 +460,12 @@ void main() {
       final (container, _) = await _start(tester);
       container.read(routerProvider).push('/settings');
       await _settle(tester);
+      await tester.tap(find.text('About'));
+      await _settle(tester);
       await tester.scrollUntilVisible(
         find.text('Check now'),
         300,
-        scrollable: find.byType(Scrollable).first,
+        scrollable: find.byType(Scrollable).last,
       );
       await tester.ensureVisible(find.text('Check now'));
       await tester.pump();

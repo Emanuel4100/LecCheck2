@@ -1412,12 +1412,6 @@ abstract class AppLocalizations {
   /// **'Attended or watched, out of sessions you attended, watched or missed.'**
   String get attendanceSubtitle;
 
-  /// No description provided for @attendanceShort.
-  ///
-  /// In en, this message translates to:
-  /// **'Attended or watched'**
-  String get attendanceShort;
-
   /// No description provided for @attendanceHow.
   ///
   /// In en, this message translates to:
@@ -1429,12 +1423,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Sessions you attended or watched, out of those you attended, watched or missed. Skipped and canceled sessions, and ones you haven\'t marked yet, don\'t count.'**
   String get attendanceExplained;
-
-  /// No description provided for @semesterProgress.
-  ///
-  /// In en, this message translates to:
-  /// **'Semester progress'**
-  String get semesterProgress;
 
   /// No description provided for @streak.
   ///
@@ -3403,6 +3391,66 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'The sync server is busy. Your changes are saved on this device and sync then.'**
   String get syncPausedSubtitle;
+
+  /// No description provided for @moreDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'More details'**
+  String get moreDetails;
+
+  /// No description provided for @accountSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign-in and sync'**
+  String get accountSummary;
+
+  /// No description provided for @appearanceSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'Theme, language and time format'**
+  String get appearanceSummary;
+
+  /// No description provided for @notificationsSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'Reminders before and after class'**
+  String get notificationsSummary;
+
+  /// No description provided for @semesterSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'Dates and no-class days'**
+  String get semesterSummary;
+
+  /// No description provided for @coursesSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'Meeting numbers'**
+  String get coursesSummary;
+
+  /// No description provided for @dataSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'Backups and import'**
+  String get dataSummary;
+
+  /// No description provided for @deviceSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'The tab to open on and more'**
+  String get deviceSummary;
+
+  /// No description provided for @aboutSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'Version and updates'**
+  String get aboutSummary;
+
+  /// No description provided for @developerSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'Tools for testing'**
+  String get developerSummary;
 }
 
 class _AppLocalizationsDelegate

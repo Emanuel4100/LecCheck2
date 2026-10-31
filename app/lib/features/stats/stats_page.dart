@@ -14,6 +14,7 @@ import '../../app/widgets/tab_app_bar.dart';
 import '../../core/icons/lec_icons.dart';
 import '../../domain/attendance_stats.dart';
 import '../../domain/occurrence.dart';
+import '../../domain/requirements.dart';
 import '../../domain/schedule_types.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../courses/course_actions.dart';
@@ -66,16 +67,17 @@ class StatsPage extends ConsumerWidget {
     final l = AppLocalizations.of(context);
     final stats = ref.watch(_statsProvider);
     final hasData = stats.overall.total > 0;
-    final catchUp = [
-      SliverToBoxAdapter(child: SectionHeader(title: l.catchUp)),
-      if (stats.catchUp.isEmpty)
-        SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Text(l.catchUpEmpty),
-          ),
-        )
-      else
+    final details = [
+      _ByType(stats: stats),
+      _WeeklyTrend(stats: stats),
+      _StatusMix(counts: stats.overall),
+    ];
+    final overview = [
+      SliverToBoxAdapter(child: _Hero(stats: stats)),
+      SliverToBoxAdapter(child: _ByCourse(stats: stats)),
+      // Only when there's something to catch up on.
+      if (stats.catchUp.isNotEmpty) ...[
+        SliverToBoxAdapter(child: SectionHeader(title: l.catchUp)),
         SliverPadding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           sliver: SliverList.separated(
@@ -85,8 +87,9 @@ class StatsPage extends ConsumerWidget {
                 SessionTile(sessionId: stats.catchUp[i].id, showDate: true),
           ),
         ),
-      const SliverToBoxAdapter(child: SizedBox(height: 40)),
+      ],
     ];
+    const bottom = SliverToBoxAdapter(child: SizedBox(height: 40));
 
     return Scaffold(
       body: CustomScrollView(
@@ -98,34 +101,22 @@ class StatsPage extends ConsumerWidget {
               child: EmptyState(icon: LecIcons.stats, title: l.noDataYet),
             )
           else if (WindowSize.of(context).isWide)
-            // Dashboard: overview and lists | charts.
+            // Dashboard: overview and courses | the details, with room for
+            // them open.
             SliverCentered(
               maxWidth: 1400,
               sliver: SliverCrossAxisGroup(
                 slivers: [
                   SliverCrossAxisExpanded(
                     flex: 1,
-                    sliver: SliverMainAxisGroup(
-                      slivers: [
-                        SliverToBoxAdapter(child: _Hero(stats: stats)),
-                        SliverToBoxAdapter(child: _Metrics(stats: stats)),
-                        const SliverToBoxAdapter(
-                          child: _RequirementsOverview(),
-                        ),
-                        SliverToBoxAdapter(child: _ByCourse(stats: stats)),
-                        ...catchUp,
-                      ],
-                    ),
+                    sliver: SliverMainAxisGroup(slivers: [...overview, bottom]),
                   ),
                   SliverCrossAxisExpanded(
                     flex: 1,
                     sliver: SliverMainAxisGroup(
                       slivers: [
-                        SliverToBoxAdapter(child: _ByType(stats: stats)),
-                        SliverToBoxAdapter(child: _WeeklyTrend(stats: stats)),
-                        SliverToBoxAdapter(
-                          child: _StatusMix(counts: stats.overall),
-                        ),
+                        for (final d in details) SliverToBoxAdapter(child: d),
+                        bottom,
                       ],
                     ),
                   ),
@@ -137,14 +128,21 @@ class StatsPage extends ConsumerWidget {
               maxWidth: 720,
               sliver: SliverMainAxisGroup(
                 slivers: [
-                  SliverToBoxAdapter(child: _Hero(stats: stats)),
-                  SliverToBoxAdapter(child: _Metrics(stats: stats)),
-                  const SliverToBoxAdapter(child: _RequirementsOverview()),
-                  SliverToBoxAdapter(child: _ByCourse(stats: stats)),
-                  SliverToBoxAdapter(child: _ByType(stats: stats)),
-                  SliverToBoxAdapter(child: _WeeklyTrend(stats: stats)),
-                  SliverToBoxAdapter(child: _StatusMix(counts: stats.overall)),
-                  ...catchUp,
+                  ...overview,
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.only(top: 8),
+                      child: ExpansionTile(
+                        title: Text(l.moreDetails),
+                        shape: const Border(),
+                        collapsedShape: const Border(),
+                        childrenPadding: const EdgeInsets.only(bottom: 8),
+                        expandedCrossAxisAlignment: CrossAxisAlignment.start,
+                        children: details,
+                      ),
+                    ),
+                  ),
+                  bottom,
                 ],
               ),
             ),
@@ -154,42 +152,37 @@ class StatsPage extends ConsumerWidget {
   }
 }
 
-class _Hero extends ConsumerWidget {
+class _Hero extends StatelessWidget {
   const _Hero({required this.stats});
 
   final _Stats stats;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
     final theme = Theme.of(context);
-    final calendar = ref.watch(calendarProvider);
-    final today = ref.watch(todayProvider);
     final progress = stats.overall.progress;
-    final semesterProgress = calendar?.progressAt(today) ?? 0;
+    final color = theme.colorScheme.onPrimaryContainer;
+    final detail = theme.textTheme.bodyMedium?.copyWith(color: color);
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Card(
         color: theme.colorScheme.primaryContainer,
         child: Padding(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.all(16),
           child: Row(
             children: [
               ProgressRing(
                 value: progress,
-                size: 120,
-                stroke: 12,
-                trackColor: theme.colorScheme.onPrimaryContainer.withValues(
-                  alpha: 0.12,
-                ),
+                size: 96,
+                stroke: 10,
+                trackColor: color.withValues(alpha: 0.12),
                 child: Text(
                   progress == null ? '–' : '${(progress * 100).round()}%',
-                  style: theme.textTheme.headlineMedium?.copyWith(
-                    color: theme.colorScheme.onPrimaryContainer,
-                  ),
+                  style: theme.textTheme.headlineSmall?.copyWith(color: color),
                 ),
               ),
-              const SizedBox(width: 20),
+              const SizedBox(width: 16),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -200,14 +193,14 @@ class _Hero extends ConsumerWidget {
                           child: Text(
                             l.attendance,
                             style: theme.textTheme.titleLarge?.copyWith(
-                              color: theme.colorScheme.onPrimaryContainer,
+                              color: color,
                             ),
                           ),
                         ),
                         IconButton(
                           tooltip: l.attendanceHow,
                           visualDensity: VisualDensity.compact,
-                          color: theme.colorScheme.onPrimaryContainer,
+                          color: color,
                           icon: const Icon(LecIcons.info, size: 20),
                           onPressed: () => showChoiceDialog<void>(
                             context,
@@ -221,28 +214,24 @@ class _Hero extends ConsumerWidget {
                       ],
                     ),
                     Text(
-                      l.attendanceShort,
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onPrimaryContainer,
-                      ),
+                      '${l.streak}: ${l.streakValue(stats.streak.current)} · '
+                      '${l.bestStreak(stats.streak.best)}',
+                      style: detail,
                     ),
-                    const SizedBox(height: 16),
-                    Text(
-                      l.semesterProgress,
-                      style: theme.textTheme.labelMedium?.copyWith(
-                        color: theme.colorScheme.onPrimaryContainer,
+                    if (stats.toMark > 0)
+                      InkWell(
+                        onTap: () => context.go('/today'),
+                        child: Padding(
+                          padding: const EdgeInsets.only(top: 4),
+                          child: Text(
+                            '${l.toMark}: ${stats.toMark}',
+                            style: detail?.copyWith(
+                              decoration: TextDecoration.underline,
+                              decorationColor: color,
+                            ),
+                          ),
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 6),
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(6),
-                      child: LinearProgressIndicator(
-                        value: semesterProgress,
-                        minHeight: 8,
-                        backgroundColor: theme.colorScheme.onPrimaryContainer
-                            .withValues(alpha: 0.12),
-                      ),
-                    ),
                   ],
                 ),
               ),
@@ -254,117 +243,6 @@ class _Hero extends ConsumerWidget {
   }
 }
 
-class _Metrics extends StatelessWidget {
-  const _Metrics({required this.stats});
-
-  final _Stats stats;
-
-  @override
-  Widget build(BuildContext context) {
-    final l = AppLocalizations.of(context);
-    final theme = Theme.of(context);
-    Widget tile(
-      IconData icon,
-      Color color,
-      String label,
-      String value,
-      String? sub,
-      VoidCallback? onTap,
-    ) => Expanded(
-      child: Card(
-        child: InkWell(
-          onTap: onTap,
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Icon(icon, color: color),
-                const SizedBox(height: 8),
-                Text(value, style: theme.textTheme.headlineSmall),
-                Text(label, style: theme.textTheme.labelLarge),
-                if (sub != null)
-                  Text(
-                    sub,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-      child: IntrinsicHeight(
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            tile(
-              LecIcons.streak,
-              Colors.deepOrange,
-              l.streak,
-              l.streakValue(stats.streak.current),
-              l.bestStreak(stats.streak.best),
-              null,
-            ),
-            const SizedBox(width: 12),
-            tile(
-              LecIcons.pending,
-              theme.colorScheme.error,
-              l.toMark,
-              '${stats.toMark}',
-              null,
-              () => context.go('/today'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _RequirementsOverview extends ConsumerWidget {
-  const _RequirementsOverview();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final l = AppLocalizations.of(context);
-    final courses = ref.watch(coursesProvider).items;
-    final rows = [
-      for (final c in courses)
-        if (ref.watch(courseSummaryProvider(c.id)).requirements.items
-            case final reqs when reqs.isNotEmpty)
-          (c, reqs),
-    ];
-    if (rows.isEmpty) return const SizedBox.shrink();
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        SectionHeader(title: l.requirementsOverview),
-        for (final (course, reqs) in rows)
-          ListTile(
-            title: Text(course.name),
-            subtitle: Padding(
-              padding: const EdgeInsets.only(top: 6),
-              child: Wrap(
-                spacing: 6,
-                runSpacing: 6,
-                children: [
-                  for (final r in reqs)
-                    RequirementChip(progress: r, showType: true),
-                ],
-              ),
-            ),
-            onTap: () => openCourse(context, ref, course.id),
-          ),
-      ],
-    );
-  }
-}
-
 /// Horizontal bar: present share in [color], missed share in the missed tone.
 class _AttendanceBar extends StatelessWidget {
   const _AttendanceBar({
@@ -372,12 +250,16 @@ class _AttendanceBar extends StatelessWidget {
     required this.counts,
     required this.color,
     this.onTap,
+    this.requirements = const [],
   });
 
   final String label;
   final StatusCounts counts;
   final Color color;
   final VoidCallback? onTap;
+
+  /// The course's requirements, under its bar.
+  final List<RequirementProgress> requirements;
 
   @override
   Widget build(BuildContext context) {
@@ -439,6 +321,17 @@ class _AttendanceBar extends StatelessWidget {
                 ),
               ),
             ),
+            if (requirements.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 6,
+                runSpacing: 6,
+                children: [
+                  for (final r in requirements)
+                    RequirementChip(progress: r, showType: true),
+                ],
+              ),
+            ],
           ],
         ),
       ),
@@ -466,6 +359,10 @@ class _ByCourse extends ConsumerWidget {
             counts: stats.byCourse[c.id] ?? StatusCounts(),
             color: colors.tone(c.colorKey).accent,
             onTap: () => openCourse(context, ref, c.id),
+            requirements: ref
+                .watch(courseSummaryProvider(c.id))
+                .requirements
+                .items,
           ),
       ],
     );

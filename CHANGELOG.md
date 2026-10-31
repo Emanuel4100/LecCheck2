@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased
+
+- **A calmer way to mark a session.** One Attended button with a menu for the other
+  statuses replaces the green and red buttons; the color only shows once it's marked.
+- **Today is less crowded**: the session in the big card isn't listed again in the schedule.
+- **Stats starts with your courses**: overall attendance, then each course with its
+  requirements under it. On phones the charts fold under More details.
+- **Settings on phones is a short list** of categories, each on its own page.
+- **Days off stand out on Week**: the whole day is tinted with its name at the top, and a
+  new icon replaces the umbrella. The date stays visible.
+- **A saved recording is one tap away**: "Recording link" opens it, and Edit changes it.
+
 ## 2.0.0-beta.16 — 2026-10-31
 
 - **Typing on desktop no longer loses letters.** A key that's also a shortcut (T, the

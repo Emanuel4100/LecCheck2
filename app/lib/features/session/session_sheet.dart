@@ -79,6 +79,9 @@ class _SessionSheetState extends ConsumerState<SessionSheet> {
   Timer? _recordingTimer;
   Occurrence? _last;
 
+  /// The saved recording link is open for editing.
+  bool _editingRecording = false;
+
   /// Captured up front: pending edits are flushed in dispose(), where `ref`
   /// may no longer be used.
   late final _repo = ref.read(repositoryProvider);
@@ -87,6 +90,18 @@ class _SessionSheetState extends ConsumerState<SessionSheet> {
   void initState() {
     super.initState();
     _repo; // initialize while ref is valid
+    _recordingFocus.addListener(_onRecordingFocus);
+  }
+
+  /// Leaving the field saves what's there and shows it as a link.
+  void _onRecordingFocus() {
+    if (_recordingFocus.hasFocus) return;
+    if (_recordingTimer?.isActive ?? false) {
+      _recordingTimer!.cancel();
+      final session = _last;
+      if (session != null) _repo.setRecordingUrl(session, _recording.text);
+    }
+    if (mounted) setState(() => _editingRecording = false);
   }
 
   @override
@@ -275,32 +290,59 @@ class _SessionSheetState extends ConsumerState<SessionSheet> {
               },
             ),
             const SizedBox(height: 12),
-            TextField(
-              controller: _recording,
-              focusNode: _recordingFocus,
-              keyboardType: TextInputType.url,
-              decoration: InputDecoration(
-                labelText: l.recordingLink,
-                hintText: 'https://',
-                prefixIcon: const Icon(LecIcons.recording),
-                suffixIcon: _recording.text.trim().isEmpty
-                    ? null
-                    : IconButton(
-                        tooltip: l.openLink,
-                        icon: const Icon(LecIcons.openLink),
-                        onPressed: () =>
-                            openUrl(_recording.text.trim(), context: context),
+            if (_recording.text.trim().isNotEmpty &&
+                !_editingRecording &&
+                !_recordingFocus.hasFocus)
+              Row(
+                children: [
+                  Expanded(
+                    child: ListTile(
+                      contentPadding: const EdgeInsetsDirectional.only(
+                        start: 12,
+                        end: 8,
                       ),
+                      leading: const Icon(LecIcons.recording),
+                      title: Text(
+                        l.recordingLink,
+                        style: TextStyle(color: theme.colorScheme.primary),
+                      ),
+                      trailing: Icon(
+                        LecIcons.openLink,
+                        size: 18,
+                        color: theme.colorScheme.primary,
+                      ),
+                      onTap: () =>
+                          openUrl(_recording.text.trim(), context: context),
+                    ),
+                  ),
+                  IconButton(
+                    tooltip: l.edit,
+                    icon: const Icon(LecIcons.edit),
+                    onPressed: () => setState(() => _editingRecording = true),
+                  ),
+                ],
+              )
+            else
+              TextField(
+                controller: _recording,
+                focusNode: _recordingFocus,
+                autofocus: _editingRecording,
+                keyboardType: TextInputType.url,
+                textInputAction: TextInputAction.done,
+                decoration: InputDecoration(
+                  labelText: l.recordingLink,
+                  hintText: 'https://',
+                  prefixIcon: const Icon(LecIcons.recording),
+                ),
+                onTapOutside: (_) => _recordingFocus.unfocus(),
+                onChanged: (text) {
+                  _recordingTimer?.cancel();
+                  _recordingTimer = Timer(
+                    const Duration(milliseconds: 600),
+                    () => repo.setRecordingUrl(session, text),
+                  );
+                },
               ),
-              onChanged: (text) {
-                setState(() {});
-                _recordingTimer?.cancel();
-                _recordingTimer = Timer(
-                  const Duration(milliseconds: 600),
-                  () => repo.setRecordingUrl(session, text),
-                );
-              },
-            ),
             if (links.isNotEmpty) ...[
               const SizedBox(height: 20),
               Text(l.courseLinks, style: theme.textTheme.titleSmall),

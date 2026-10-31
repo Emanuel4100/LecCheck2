@@ -909,7 +909,6 @@ class _DayHeader extends ConsumerWidget {
     final theme = Theme.of(context);
     final fmt = Fmt.of(context);
     final noClassLabel = ref.watch(noClassLabelProvider(date));
-    final noClass = noClassLabel != null;
     final scheme = theme.colorScheme;
     final header = InkWell(
       borderRadius: BorderRadius.circular(16),
@@ -934,18 +933,12 @@ class _DayHeader extends ConsumerWidget {
               color: isToday ? scheme.primary : null,
               shape: BoxShape.circle,
             ),
-            child: noClass
-                ? Icon(
-                    LecIcons.holiday,
-                    size: 16,
-                    color: isToday ? scheme.onPrimary : scheme.tertiary,
-                  )
-                : Text(
-                    '${date.day}',
-                    style: theme.textTheme.titleSmall?.copyWith(
-                      color: isToday ? scheme.onPrimary : scheme.onSurface,
-                    ),
-                  ),
+            child: Text(
+              '${date.day}',
+              style: theme.textTheme.titleSmall?.copyWith(
+                color: isToday ? scheme.onPrimary : scheme.onSurface,
+              ),
+            ),
           ),
         ],
       ),
@@ -1100,6 +1093,7 @@ class _DayColumnState extends ConsumerState<_DayColumn> {
     final placed = _layoutDay(sessions);
     final grid = _GridScope.of(context);
     final desktop = AppIdiom.isDesktop;
+    final noClassLabel = ref.watch(noClassLabelProvider(date));
     double y(int minutes) =>
         (minutes - widget.startHour * 60) / 60 * widget.hourHeight;
 
@@ -1114,6 +1108,8 @@ class _DayColumnState extends ConsumerState<_DayColumn> {
             child: Stack(
               clipBehavior: Clip.none,
               children: [
+                if (noClassLabel != null)
+                  Positioned.fill(child: _NoClassBackdrop(noClassLabel)),
                 // Behind the tiles: only presses on empty space reach it.
                 // A tap adds an hour there; a long press (phones) or a
                 // mouse drag (desktop) drags out the time.
@@ -1198,6 +1194,43 @@ class _DayColumnState extends ConsumerState<_DayColumn> {
             ),
           );
         },
+      ),
+    );
+  }
+}
+
+/// A day off: the whole column tinted, with the icon and the day's name at
+/// its top. Stripes stay reserved for canceled sessions.
+class _NoClassBackdrop extends StatelessWidget {
+  const _NoClassBackdrop(this.label);
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    return ColoredBox(
+      color: scheme.tertiaryContainer.withValues(alpha: 0.4),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(2, 8, 2, 0),
+        child: Column(
+          children: [
+            Icon(LecIcons.holiday, size: 18, color: scheme.tertiary),
+            if (label.isNotEmpty) ...[
+              const SizedBox(height: 4),
+              Text(
+                label,
+                textAlign: TextAlign.center,
+                maxLines: 3,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: scheme.onTertiaryContainer,
+                ),
+              ),
+            ],
+          ],
+        ),
       ),
     );
   }

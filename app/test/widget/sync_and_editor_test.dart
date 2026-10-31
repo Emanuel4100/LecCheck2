@@ -153,6 +153,8 @@ void main() {
     );
     container.read(routerProvider).push('/settings');
     await _settle(tester);
+    await tester.tap(find.text('Account'));
+    await _settle(tester);
     await tester.tap(find.text('Sign out on all devices'));
     await _settle(tester);
     expect(find.text('Sign out on all devices?'), findsOneWidget);

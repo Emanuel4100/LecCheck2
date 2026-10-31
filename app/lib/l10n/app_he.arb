@@ -350,10 +350,8 @@
   "statsTitle": "סטטיסטיקה",
   "attendance": "נוכחות",
   "attendanceSubtitle": "נוכחות או צפייה, מתוך המפגשים שנכחתם, צפיתם או החסרתם.",
-  "attendanceShort": "נוכחות או צפייה",
   "attendanceHow": "איך זה מחושב",
   "attendanceExplained": "מפגשים שנכחתם בהם או צפיתם בהקלטה, מתוך אלה שנכחתם, צפיתם או החסרתם. מפגשים שדילגתם עליהם, שבוטלו או שעוד לא סימנתם לא נספרים.",
-  "semesterProgress": "התקדמות הסמסטר",
   "streak": "רצף",
   "streakValue": "{count, plural, =1{מפגש אחד} =2{שני מפגשים} other{{count} מפגשים}}",
   "@streakValue": {
@@ -750,5 +748,15 @@
   "syncFailedSubtitle": "הם נשמרים במכשיר הזה.",
   "retry": "ניסיון חוזר",
   "syncPaused": "הסנכרון מושהה עד {time}",
-  "syncPausedSubtitle": "שרת הסנכרון עמוס. השינויים שלך שמורים במכשיר הזה ויסונכרנו אז."
+  "syncPausedSubtitle": "שרת הסנכרון עמוס. השינויים שלך שמורים במכשיר הזה ויסונכרנו אז.",
+  "moreDetails": "פרטים נוספים",
+  "accountSummary": "התחברות וסנכרון",
+  "appearanceSummary": "ערכת נושא, שפה ותצוגת שעה",
+  "notificationsSummary": "תזכורות לפני השיעור ואחריו",
+  "semesterSummary": "תאריכים וימים ללא לימודים",
+  "coursesSummary": "מספור מפגשים",
+  "dataSummary": "גיבויים וייבוא",
+  "deviceSummary": "הלשונית לפתיחה ועוד",
+  "aboutSummary": "גרסה ועדכונים",
+  "developerSummary": "כלים לבדיקות"
 }

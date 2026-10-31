@@ -179,7 +179,8 @@ void main() {
   testWidgets('a class that has not started shows no "to mark" circle', (
     tester,
   ) async {
-    await _start(tester, now: DateTime(2026, 10, 27, 13));
+    // Lecture #2 is in the big card, Practice #2 comes later.
+    await _start(tester, now: DateTime(2026, 10, 27, 8));
     await tester.scrollUntilVisible(
       _tileWith('Practice #2'),
       200,
@@ -190,7 +191,20 @@ void main() {
       find.descendant(of: later, matching: find.byType(StatusIndicator)),
       findsNothing,
     );
-    // A past one waiting to be marked still has it.
+  });
+
+  testWidgets('the session in the big card is not listed again', (
+    tester,
+  ) async {
+    await _start(tester, now: DateTime(2026, 10, 27, 8));
+    expect(_text('Lecture #2'), findsOneWidget);
+    expect(_tileWith('Lecture #2'), findsNothing);
+  });
+
+  testWidgets('a past class waiting to be marked has the circle', (
+    tester,
+  ) async {
+    await _start(tester, now: DateTime(2026, 10, 27, 13));
     final past = find.descendant(
       of: find.byWidgetPredicate((w) => w is SessionTile && !w.quickActions),
       matching: _text('Lecture #2'),

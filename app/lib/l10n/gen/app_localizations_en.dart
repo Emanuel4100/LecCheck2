@@ -781,17 +781,11 @@ class AppLocalizationsEn extends AppLocalizations {
       'Attended or watched, out of sessions you attended, watched or missed.';
 
   @override
-  String get attendanceShort => 'Attended or watched';
-
-  @override
   String get attendanceHow => 'How it\'s counted';
 
   @override
   String get attendanceExplained =>
       'Sessions you attended or watched, out of those you attended, watched or missed. Skipped and canceled sessions, and ones you haven\'t marked yet, don\'t count.';
-
-  @override
-  String get semesterProgress => 'Semester progress';
 
   @override
   String get streak => 'Streak';
@@ -2016,4 +2010,34 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get syncPausedSubtitle =>
       'The sync server is busy. Your changes are saved on this device and sync then.';
+
+  @override
+  String get moreDetails => 'More details';
+
+  @override
+  String get accountSummary => 'Sign-in and sync';
+
+  @override
+  String get appearanceSummary => 'Theme, language and time format';
+
+  @override
+  String get notificationsSummary => 'Reminders before and after class';
+
+  @override
+  String get semesterSummary => 'Dates and no-class days';
+
+  @override
+  String get coursesSummary => 'Meeting numbers';
+
+  @override
+  String get dataSummary => 'Backups and import';
+
+  @override
+  String get deviceSummary => 'The tab to open on and more';
+
+  @override
+  String get aboutSummary => 'Version and updates';
+
+  @override
+  String get developerSummary => 'Tools for testing';
 }

@@ -778,17 +778,11 @@ class AppLocalizationsHe extends AppLocalizations {
       'נוכחות או צפייה, מתוך המפגשים שנכחתם, צפיתם או החסרתם.';
 
   @override
-  String get attendanceShort => 'נוכחות או צפייה';
-
-  @override
   String get attendanceHow => 'איך זה מחושב';
 
   @override
   String get attendanceExplained =>
       'מפגשים שנכחתם בהם או צפיתם בהקלטה, מתוך אלה שנכחתם, צפיתם או החסרתם. מפגשים שדילגתם עליהם, שבוטלו או שעוד לא סימנתם לא נספרים.';
-
-  @override
-  String get semesterProgress => 'התקדמות הסמסטר';
 
   @override
   String get streak => 'רצף';
@@ -2010,4 +2004,34 @@ class AppLocalizationsHe extends AppLocalizations {
   @override
   String get syncPausedSubtitle =>
       'שרת הסנכרון עמוס. השינויים שלך שמורים במכשיר הזה ויסונכרנו אז.';
+
+  @override
+  String get moreDetails => 'פרטים נוספים';
+
+  @override
+  String get accountSummary => 'התחברות וסנכרון';
+
+  @override
+  String get appearanceSummary => 'ערכת נושא, שפה ותצוגת שעה';
+
+  @override
+  String get notificationsSummary => 'תזכורות לפני השיעור ואחריו';
+
+  @override
+  String get semesterSummary => 'תאריכים וימים ללא לימודים';
+
+  @override
+  String get coursesSummary => 'מספור מפגשים';
+
+  @override
+  String get dataSummary => 'גיבויים וייבוא';
+
+  @override
+  String get deviceSummary => 'הלשונית לפתיחה ועוד';
+
+  @override
+  String get aboutSummary => 'גרסה ועדכונים';
+
+  @override
+  String get developerSummary => 'כלים לבדיקות';
 }
