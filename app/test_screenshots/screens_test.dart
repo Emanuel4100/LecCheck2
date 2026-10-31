@@ -27,6 +27,7 @@ import 'package:leccheck/domain/occurrence_engine.dart';
 import 'package:leccheck/domain/schedule_types.dart';
 import 'package:leccheck/features/settings/move_dialog.dart';
 import 'package:leccheck/features/settings/update_dialog.dart';
+import 'package:leccheck/features/week/week_page.dart';
 import 'package:leccheck/features/tour/tour_controller.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -350,6 +351,11 @@ void main() {
     await _settle(tester);
     await _go(tester, c, '/week');
     await _shot(tester, 'en_light_week');
+    c.read(weekCommandsProvider).step(1);
+    await _settle(tester);
+    await _shot(tester, 'en_light_week_next');
+    c.read(weekCommandsProvider).thisWeek();
+    await _settle(tester);
     // An empty slot: Thursday 13:10 (the grid starts at 8:00, 60 px an
     // hour).
     final thursday = tester.getRect(
@@ -391,6 +397,11 @@ void main() {
     await _shot(tester, 'he_dark_today');
     await _go(tester, c, '/week');
     await _shot(tester, 'he_dark_week');
+    c.read(weekCommandsProvider).step(1);
+    await _settle(tester);
+    await _shot(tester, 'he_dark_week_next');
+    c.read(weekCommandsProvider).thisWeek();
+    await _settle(tester);
     await _go(tester, c, '/stats');
     await _shot(tester, 'he_dark_stats');
     await _go(tester, c, '/course-editor?id=calc');

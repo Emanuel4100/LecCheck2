@@ -319,7 +319,14 @@ class UpdateController extends Notifier<UpdateState> {
   /// Checks for a newer release: from the network at most once a day
   /// ([force]: now, even after "Skip this version"), otherwise from the last
   /// answer. Returns the newer release, if any. Never throws.
-  Future<AppUpdate?> check({bool force = false, DateTime? now}) async {
+  ///
+  /// [startup] asks the server even if it was asked today; returning to the
+  /// app stays at once a day.
+  Future<AppUpdate?> check({
+    bool force = false,
+    bool startup = false,
+    DateTime? now,
+  }) async {
     if (!supported || (!force && !state.enabled)) return null;
     final PackageInfo info;
     try {
@@ -333,6 +340,7 @@ class UpdateController extends Notifier<UpdateState> {
     final checkedAt = _prefs.getInt(_checkedAtKey);
     final due =
         force ||
+        startup ||
         checkedAt == null ||
         now.millisecondsSinceEpoch - checkedAt >=
             const Duration(days: 1).inMilliseconds;

@@ -331,12 +331,13 @@ class AccountSection extends ConsumerWidget {
   Future<void> _deleteCloud(BuildContext context, WidgetRef ref) async {
     final l = AppLocalizations.of(context);
     final messenger = ScaffoldMessenger.maybeOf(context);
-    final ok = await confirmDialog(
+    final ok = await confirmTypedDialog(
       context,
       title: l.deleteCloudTitle,
       body: l.deleteCloudBody,
+      // In Hebrew too: the English word works without switching keyboards back.
+      words: [l.deleteCloudWord, 'DELETE'],
       confirmLabel: l.delete,
-      destructive: true,
     );
     if (!ok) return;
     try {

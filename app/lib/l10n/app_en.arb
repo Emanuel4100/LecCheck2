@@ -142,6 +142,25 @@
       }
     }
   },
+  "durationDays": "{days}d",
+  "@durationDays": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "durationDaysHours": "{days}d {hours}h",
+  "@durationDaysHours": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      },
+      "hours": {
+        "type": "int"
+      }
+    }
+  },
   "durationHours": "{hours}h",
   "@durationHours": {
     "placeholders": {
@@ -582,6 +601,15 @@
   "signOutEverywhereBody": "Every device signed in to this account, this one included, will have to sign in again. Your data stays in the account and on each device.",
   "accountActionFailed": "Couldn't reach the server, so nothing changed. Try again when you're online.",
   "deleteCloudData": "Delete cloud data",
+  "deleteCloudWord": "DELETE",
+  "typeToConfirm": "Type {word} to confirm",
+  "@typeToConfirm": {
+    "placeholders": {
+      "word": {
+        "type": "String"
+      }
+    }
+  },
   "deleteCloudTitle": "Delete your cloud data?",
   "deleteCloudBody": "Your synced data will be removed from the server, and your devices will be signed out. This device keeps its copy. If another device signs in to this account again, its copy is synced back.",
   "linkNotOpened": "Can't open this link",
@@ -842,7 +870,7 @@
   "moveBackupFailed": "The backup couldn't be saved.",
   "moveCardSubtitle": "Move now to keep getting updates.",
   "checkForUpdates": "Check for updates",
-  "checkForUpdatesSubtitle": "Once a day, from GitHub",
+  "checkForUpdatesSubtitle": "At every start, from GitHub",
   "checkNow": "Check now",
   "upToDate": "LecCheck is up to date",
   "upgradeRequired": "Update LecCheck to keep syncing",

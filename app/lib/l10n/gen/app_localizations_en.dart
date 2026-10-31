@@ -270,6 +270,16 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String durationDays(int days) {
+    return '${days}d';
+  }
+
+  @override
+  String durationDaysHours(int days, int hours) {
+    return '${days}d ${hours}h';
+  }
+
+  @override
   String durationHours(int hours) {
     return '${hours}h';
   }
@@ -1196,6 +1206,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get deleteCloudData => 'Delete cloud data';
 
   @override
+  String get deleteCloudWord => 'DELETE';
+
+  @override
+  String typeToConfirm(String word) {
+    return 'Type $word to confirm';
+  }
+
+  @override
   String get deleteCloudTitle => 'Delete your cloud data?';
 
   @override
@@ -1722,7 +1740,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get checkForUpdates => 'Check for updates';
 
   @override
-  String get checkForUpdatesSubtitle => 'Once a day, from GitHub';
+  String get checkForUpdatesSubtitle => 'At every start, from GitHub';
 
   @override
   String get checkNow => 'Check now';

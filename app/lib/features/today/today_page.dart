@@ -267,8 +267,8 @@ class _HeroSession extends ConsumerWidget {
     final tone = CourseColors.of(context).tone(course?.colorKey ?? 'ocean');
     final inProgress = session.isInProgress(now);
     final countdown = inProgress
-        ? l.endsIn(formatDuration(session.end.difference(now), l))
-        : l.startsIn(formatDuration(session.start.difference(now), l));
+        ? l.endsIn(formatCountdown(session.end.difference(now), l))
+        : l.startsIn(formatCountdown(session.start.difference(now), l));
     final link =
         meeting?.links.firstOrNull?.url ?? course?.links.firstOrNull?.url;
 

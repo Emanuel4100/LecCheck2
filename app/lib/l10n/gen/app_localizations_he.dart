@@ -269,6 +269,16 @@ class AppLocalizationsHe extends AppLocalizations {
   }
 
   @override
+  String durationDays(int days) {
+    return '$days י׳';
+  }
+
+  @override
+  String durationDaysHours(int days, int hours) {
+    return '$days י׳ $hours ש׳';
+  }
+
+  @override
   String durationHours(int hours) {
     return '$hours ש׳';
   }
@@ -1193,6 +1203,14 @@ class AppLocalizationsHe extends AppLocalizations {
   String get deleteCloudData => 'מחיקת הנתונים בענן';
 
   @override
+  String get deleteCloudWord => 'מחיקה';
+
+  @override
+  String typeToConfirm(String word) {
+    return 'כדי לאשר, יש להקליד $word';
+  }
+
+  @override
   String get deleteCloudTitle => 'למחוק את הנתונים בענן?';
 
   @override
@@ -1713,7 +1731,7 @@ class AppLocalizationsHe extends AppLocalizations {
   String get checkForUpdates => 'בדיקת עדכונים';
 
   @override
-  String get checkForUpdatesSubtitle => 'פעם ביום, מ-GitHub';
+  String get checkForUpdatesSubtitle => 'בכל הפעלה, מ-GitHub';
 
   @override
   String get checkNow => 'לבדוק עכשיו';

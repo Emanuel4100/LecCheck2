@@ -536,6 +536,18 @@ abstract class AppLocalizations {
   /// **'Ends in {duration}'**
   String endsIn(String duration);
 
+  /// No description provided for @durationDays.
+  ///
+  /// In en, this message translates to:
+  /// **'{days}d'**
+  String durationDays(int days);
+
+  /// No description provided for @durationDaysHours.
+  ///
+  /// In en, this message translates to:
+  /// **'{days}d {hours}h'**
+  String durationDaysHours(int days, int hours);
+
   /// No description provided for @durationHours.
   ///
   /// In en, this message translates to:
@@ -2048,6 +2060,18 @@ abstract class AppLocalizations {
   /// **'Delete cloud data'**
   String get deleteCloudData;
 
+  /// No description provided for @deleteCloudWord.
+  ///
+  /// In en, this message translates to:
+  /// **'DELETE'**
+  String get deleteCloudWord;
+
+  /// No description provided for @typeToConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Type {word} to confirm'**
+  String typeToConfirm(String word);
+
   /// No description provided for @deleteCloudTitle.
   ///
   /// In en, this message translates to:
@@ -2951,7 +2975,7 @@ abstract class AppLocalizations {
   /// No description provided for @checkForUpdatesSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Once a day, from GitHub'**
+  /// **'At every start, from GitHub'**
   String get checkForUpdatesSubtitle;
 
   /// No description provided for @checkNow.

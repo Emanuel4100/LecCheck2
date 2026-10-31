@@ -366,10 +366,12 @@ class _WeekPageState extends ConsumerState<WeekPage> {
             valueListenable: _shown,
             builder: (context, page, _) => page + 1 == currentWeek
                 ? const SizedBox.shrink()
-                : IconButton(
-                    tooltip: l.goToToday,
-                    icon: const Icon(LecIcons.today),
-                    onPressed: _thisWeek,
+                : Tooltip(
+                    message: l.goToToday,
+                    child: TextButton(
+                      onPressed: _thisWeek,
+                      child: Text(l.today),
+                    ),
                   ),
           ),
           if (arrows) ...[

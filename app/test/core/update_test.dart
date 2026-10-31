@@ -476,6 +476,18 @@ void main() {
       expect(requests, 2);
     });
 
+    test('every start asks, even when asked today', () async {
+      final c = container();
+      final controller = c.read(updateProvider.notifier);
+      await controller.check(now: morning);
+      expect(requests, 1);
+      await controller.check(
+        startup: true,
+        now: morning.add(const Duration(minutes: 5)),
+      );
+      expect(requests, 2);
+    });
+
     test('only a manifest with a matching signature counts', () async {
       UpdateController.client = () => MockClient((request) async {
         if (request.url.path.endsWith('.sig')) {

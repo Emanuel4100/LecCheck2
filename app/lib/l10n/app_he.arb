@@ -135,6 +135,25 @@
       }
     }
   },
+  "durationDays": "{days} י׳",
+  "@durationDays": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "durationDaysHours": "{days} י׳ {hours} ש׳",
+  "@durationDaysHours": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      },
+      "hours": {
+        "type": "int"
+      }
+    }
+  },
   "durationHours": "{hours} ש׳",
   "@durationHours": {
     "placeholders": {
@@ -474,6 +493,15 @@
   "signOutEverywhereBody": "כל המכשירים שמחוברים לחשבון, כולל המכשיר הזה, יצטרכו להתחבר מחדש. הנתונים יישארו בחשבון ובכל מכשיר.",
   "accountActionFailed": "אין חיבור לשרת, ולכן שום דבר לא השתנה. אפשר לנסות שוב כשיהיה חיבור.",
   "deleteCloudData": "מחיקת הנתונים בענן",
+  "deleteCloudWord": "מחיקה",
+  "typeToConfirm": "כדי לאשר, יש להקליד {word}",
+  "@typeToConfirm": {
+    "placeholders": {
+      "word": {
+        "type": "String"
+      }
+    }
+  },
   "deleteCloudTitle": "למחוק את הנתונים בענן?",
   "deleteCloudBody": "הנתונים המסונכרנים יימחקו מהשרת, וכל המכשירים יתנתקו. במכשיר הזה יישאר עותק. אם מכשיר אחר יתחבר שוב לחשבון, העותק שלו יסונכרן חזרה.",
   "linkNotOpened": "אי אפשר לפתוח את הקישור הזה",
@@ -651,7 +679,7 @@
   "moveBackupFailed": "לא ניתן היה לשמור את הגיבוי.",
   "moveCardSubtitle": "כדאי לעבור עכשיו כדי להמשיך לקבל עדכונים.",
   "checkForUpdates": "בדיקת עדכונים",
-  "checkForUpdatesSubtitle": "פעם ביום, מ-GitHub",
+  "checkForUpdatesSubtitle": "בכל הפעלה, מ-GitHub",
   "checkNow": "לבדוק עכשיו",
   "upToDate": "LecCheck מעודכנת",
   "upgradeRequired": "יש לעדכן את LecCheck כדי להמשיך לסנכרן",

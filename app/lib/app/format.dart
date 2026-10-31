@@ -92,6 +92,15 @@ String formatDuration(Duration d, AppLocalizations l) {
   return l.durationHoursMinutes(hours, minutes);
 }
 
+/// A countdown: days and hours from 24 hours on, otherwise [formatDuration].
+String formatCountdown(Duration d, AppLocalizations l) {
+  if (d.inHours < 24) return formatDuration(d, l);
+  final hours = d.inHours % 24;
+  return hours == 0
+      ? l.durationDays(d.inDays)
+      : l.durationDaysHours(d.inDays, hours);
+}
+
 class FmtScope extends InheritedWidget {
   const FmtScope({super.key, required this.fmt, required super.child});
 

@@ -70,16 +70,16 @@ void _dailySnapshots(ProviderContainer container) {
   AppLifecycleListener(onResume: take);
 }
 
-/// Looks for a new release (at most once a day), and sends bug reports that
-/// waited for a connection, at startup and when the app comes back. Offers
+/// Looks for a new release (at every start, and at most once a day when the
+/// app comes back), and sends bug reports that waited for a connection. Offers
 /// to report an error the previous session ended with. Linux installs made
 /// by install.sh are asked to move to the Flatpak instead.
 void _updateChecks(ProviderContainer container) {
   final moving = container.read(moveProvider.notifier).init();
-  void check() {
+  void check({bool startup = false}) {
     final updates = container.read(updateProvider.notifier);
     final move = container.read(moveProvider.notifier);
-    (updates.check(), moving).wait.then((_) async {
+    (updates.check(startup: startup), moving).wait.then((_) async {
       // Once per launch: the move window, or while an update waits, the
       // update window.
       final router = container.read(routerProvider);
@@ -100,7 +100,7 @@ void _updateChecks(ProviderContainer container) {
     }
   }
 
-  check();
+  check(startup: true);
   AppLifecycleListener(onResume: check);
   container.read(lastErrorProvider.notifier).load();
 }

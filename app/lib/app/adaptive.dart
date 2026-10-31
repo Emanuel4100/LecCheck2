@@ -4,6 +4,7 @@ import 'package:cupertino_ui/cupertino_ui.dart'
         CupertinoDatePicker,
         CupertinoDatePickerMode,
         CupertinoDialogAction,
+        CupertinoTextField,
         CupertinoTheme,
         CupertinoThemeData,
         showCupertinoDialog,
@@ -179,6 +180,136 @@ Future<bool> confirmDialog(
       ],
     ) ??
     false;
+
+/// [confirmDialog] for what's hard to take back: the button only works once
+/// one of [words] is typed (the first is the one asked for).
+Future<bool> confirmTypedDialog(
+  BuildContext context, {
+  required String title,
+  required String body,
+  required List<String> words,
+  required String confirmLabel,
+}) async {
+  Widget builder(BuildContext context) => _TypedConfirm(
+    title: title,
+    body: body,
+    words: words,
+    confirmLabel: confirmLabel,
+  );
+  final confirmed = AppIdiom.isApple
+      ? await showCupertinoDialog<bool>(
+          context: context,
+          barrierDismissible: true,
+          builder: builder,
+        )
+      : await showDialog<bool>(context: context, builder: builder);
+  return confirmed ?? false;
+}
+
+class _TypedConfirm extends StatefulWidget {
+  const _TypedConfirm({
+    required this.title,
+    required this.body,
+    required this.words,
+    required this.confirmLabel,
+  });
+
+  final String title;
+  final String body;
+  final List<String> words;
+  final String confirmLabel;
+
+  @override
+  State<_TypedConfirm> createState() => _TypedConfirmState();
+}
+
+class _TypedConfirmState extends State<_TypedConfirm> {
+  final _typed = TextEditingController();
+
+  @override
+  void dispose() {
+    _typed.dispose();
+    super.dispose();
+  }
+
+  bool get _matches => widget.words.contains(_typed.text.trim());
+
+  void _confirm() {
+    if (_matches) Navigator.pop(context, true);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    final hint = l.typeToConfirm(widget.words.first);
+    return ValueListenableBuilder(
+      valueListenable: _typed,
+      builder: (context, _, _) {
+        if (AppIdiom.isApple) {
+          return CupertinoAlertDialog(
+            title: Text(widget.title),
+            content: Column(
+              children: [
+                Text(widget.body),
+                const SizedBox(height: 12),
+                CupertinoTextField(
+                  controller: _typed,
+                  placeholder: hint,
+                  autocorrect: false,
+                  onSubmitted: (_) => _confirm(),
+                ),
+              ],
+            ),
+            actions: [
+              CupertinoDialogAction(
+                onPressed: () => Navigator.pop(context, false),
+                child: Text(l.cancel),
+              ),
+              CupertinoDialogAction(
+                isDestructiveAction: true,
+                onPressed: _matches ? _confirm : null,
+                child: Text(widget.confirmLabel),
+              ),
+            ],
+          );
+        }
+        final scheme = Theme.of(context).colorScheme;
+        return AlertDialog(
+          title: Text(widget.title),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(widget.body),
+              const SizedBox(height: 16),
+              TextField(
+                controller: _typed,
+                autofocus: true,
+                autocorrect: false,
+                decoration: InputDecoration(labelText: hint),
+                onSubmitted: (_) => _confirm(),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: Text(l.cancel),
+            ),
+            FilledButton(
+              style: FilledButton.styleFrom(
+                backgroundColor: scheme.error,
+                foregroundColor: scheme.onError,
+              ),
+              onPressed: _matches ? _confirm : null,
+              child: Text(widget.confirmLabel),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
 
 final _firstDay = DateTime(2020);
 final _lastDay = DateTime(2040, 12, 31);
