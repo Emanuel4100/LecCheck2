@@ -44,8 +44,6 @@ download = f"{repo}/releases/download/v{release}"
 files = {
     "androidArm64": f"LecCheck-{release}-android-arm64.apk",
     "androidUniversal": f"LecCheck-{release}-android.apk",
-    # The last one is 2.0.0-beta.15: Linux releases are a Flatpak since then.
-    "linux": f"LecCheck-{release}-linux-x64.tar.gz",
 }
 if assets:
     files = {

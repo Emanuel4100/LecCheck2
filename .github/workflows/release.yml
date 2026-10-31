@@ -83,24 +83,11 @@ jobs:
       # The full tag (e.g. 2.0.0-beta.1), like Android: About shows it, and the
       # update notice reads the channel from it.
       - run: flutter build linux --release $DEFINES --build-name="${GITHUB_REF_NAME#v}"
+      # For the Flatpak job (a tarball keeps the files' permissions).
       - name: Package
         run: |
-          V="${GITHUB_REF_NAME#v}"
-          P="LecCheck-$V-linux-x64"
-          mkdir -p "../out/$P/icons"
-          cp -r build/linux/x64/release/bundle "../out/$P/bundle"
-          cp linux/assets/com.leccheck.app-*.png "../out/$P/icons/"
-          cp linux/packaging/* "../out/$P/"
-          cp ../scripts/linux-install.sh "../out/$P/install.sh"
-          tar -C ../out -czf "../out/$P.tar.gz" "$P"
-          rm -rf "../out/$P"
-          # For the Flatpak job (a tarball keeps the files' permissions).
           mkdir -p ../flatpak-bundle
           tar -C build/linux/x64/release -czf ../flatpak-bundle/bundle.tar.gz bundle
-      - uses: actions/upload-artifact@v7
-        with:
-          name: linux
-          path: out/
       - uses: actions/upload-artifact@v7
         with:
           name: linux-bundle
@@ -211,10 +198,6 @@ jobs:
           path: out
       - uses: actions/download-artifact@v8
         with:
-          name: linux
-          path: out
-      - uses: actions/download-artifact@v8
-        with:
           name: ios
           path: out
       - name: AltStore / SideStore source and release notes
@@ -259,7 +242,8 @@ jobs:
           - **Linux**: install the Flatpak, then it updates itself:
             \`flatpak install --user $FLATPAKREF\`
             (or open [leccheck.flatpakref]($FLATPAKREF) in your software center). Installed with
-            \`install.sh\` before? Update from inside LecCheck, then choose **Move to the Flatpak**.
+            \`install.sh\` before? 2.0.0-beta.15 offers **Move to the Flatpak**; from an older one,
+            install the Flatpak as above and sign in or import a backup.
           EOF
       - uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
         with:
