@@ -26,6 +26,7 @@ class _FlakyStorage extends FlutterSecureStorage {
   String? value;
   int reads = 0;
   int deletes = 0;
+  bool failDeletes = false;
 
   @override
   Future<String?> read({
@@ -71,7 +72,10 @@ class _FlakyStorage extends FlutterSecureStorage {
     WebOptions? webOptions,
     AppleOptions? mOptions,
     WindowsOptions? wOptions,
-  }) async => deletes++;
+  }) async {
+    deletes++;
+    if (failDeletes) throw PlatformException(code: 'Libsecret error');
+  }
 }
 
 /// Loads from [storage]; never renews (no server).
@@ -116,6 +120,15 @@ void main() {
     addTearDown(c.dispose);
     return c;
   }
+
+  test('a keyring that refuses to delete does not stop a sign-out', () async {
+    final storage = _FlakyStorage(value: saved)..failDeletes = true;
+    final c = container(storage);
+    await c.read(authProvider.future);
+    await c.read(authProvider.notifier).signOut(SignOutMode.keepData);
+    expect(storage.deletes, 1);
+    expect(c.read(authProvider).value, isNull);
+  });
 
   test('a keyring that fails at first still signs in', () async {
     final storage = _FlakyStorage(failures: 2, value: saved);

@@ -143,10 +143,15 @@ class AuthService {
   );
 
   /// Removes the saved session; [reason] goes to the log, so a sign-out
-  /// nobody asked for can be traced.
-  Future<void> clear(String reason) {
+  /// nobody asked for can be traced. Never throws: a keyring that doesn't
+  /// answer mustn't stop a sign-out halfway.
+  Future<void> clear(String reason) async {
     DevLog.add('Sign-in removed: $reason');
-    return _storage.delete(key: _key);
+    try {
+      await _storage.delete(key: _key);
+    } on Object catch (e) {
+      DevLog.add('Sign-in not removed: $e');
+    }
   }
 
   Future<Session> signInWithGoogle() async {
