@@ -55,6 +55,22 @@
   </supports>
   <content_rating type="oars-1.1" />
   <releases>
+    <release version="2.0.0-beta.16" date="2026-10-31" type="development">
+      <description>
+        <ul>
+          <li><em>Typing on desktop no longer loses letters.</em> A key that's also a shortcut (T, the digits in a session's notes, Home, the arrows) was taken by the shortcut even in a text field, so the letter never appeared.</li>
+          <li><em>LecCheck looks for updates every time it starts</em>, not once a day.</li>
+          <li><em>The countdown on Today shows days</em> from 24 hours on, like "2d 3h".</li>
+          <li><em>Delete cloud data asks you to type DELETE</em> first.</li>
+          <li><em>A Today button on Week</em>, in words, takes you back to this week. The icon was easy to miss.</li>
+          <li><em>Ctrl+Z on Week</em> undoes your last change: a move, a quick add or a mark.</li>
+          <li><em>The mouse wheel changes the week</em>: Shift+wheel, a sideways scroll, or the wheel over the day names. The plain wheel still scrolls the hours and Ctrl+wheel still zooms.</li>
+          <li><em>Choose the tab LecCheck opens on</em>, for each device, in Settings.</li>
+          <li>A keyring that doesn't answer can't stop a sign-out halfway.</li>
+          <li>Linux releases are only the Flatpak now: the tarball and <code>install.sh</code> are gone. Installs from 2.0.0-beta.15 move from inside the app.</li>
+        </ul>
+      </description>
+    </release>
     <release version="2.0.0-beta.15" date="2026-10-26" type="development">
       <description>
         <ul>
@@ -147,16 +163,6 @@
           <li><em>Respects "remove animations"</em>: with the system's reduced-motion setting on, LecCheck switches tabs, turns week pages and draws charts without animating.</li>
           <li><em>What's new</em> on the update card now shows the release's changes (the release notes carry this CHANGELOG section), not just the download links.</li>
           <li><em>Bring back deleted cloud data</em>: Settings → Account offers it for 30 days after <em>Delete cloud data</em> (until now only the server could).</li>
-        </ul>
-      </description>
-    </release>
-    <release version="2.0.0-beta.8" date="2026-10-12" type="development">
-      <description>
-        <p>Coming from beta.7 or older: install this version as before (Download, or</p>
-        <p><code>./install.sh</code> on Linux). From the next release on, <em>Update</em> does it inside the app.</p>
-        <ul>
-          <li><em>Update from inside the app</em> (Android, and Linux installed with <code>./install.sh</code>): <em>Update</em> on the update card downloads the new version with a progress bar, checks it against the release's SHA-256, then opens Android's installer (one tap to confirm) or, on Linux, installs it and offers <em>Restart</em>. Older releases still open the browser. Updating on Linux now swaps the app folder only after the copy succeeds.</li>
-          <li><em>Check now</em> (Settings → About) shows that it's checking, and a new version found there now says so right away, with <em>Update</em>. It used to appear only in the card at the top of Settings, scrolled out of sight.</li>
         </ul>
       </description>
     </release>

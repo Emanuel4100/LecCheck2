@@ -85,6 +85,10 @@
   installs move to it from inside the app. The update window shows the download's size, a
   check of the file you can watch, What's new in its own box, and why something failed.
   Import backup on the welcome screen.
+- **Typing that works, quicker on desktop** (2.0.0-beta.16): keys that are shortcuts reach
+  text fields; updates checked at every start; days in Today's countdown; type DELETE to
+  delete cloud data; a Today button on Week; Ctrl+Z and the mouse wheel on Week; a tab to
+  open on for each device. Linux releases are only the Flatpak.
 
 ## Not yet verified on real hardware
 
@@ -141,7 +145,13 @@ goes once nobody is left on the tarball. Also the quick fixes in the changelog's
   button, month in the sidebar, no Add).
 - Done in 2.0.0-beta.15: the self-updater's progress and SHA-256 check animation, a
   proper Linux install (Flatpak).
-- Still open after that: a more desktop-like Linux layout beyond the sidebar (ask what
+- Done in 2.0.0-beta.16: the typing bug, updates at every start, days in the countdown,
+  type DELETE, the "this week" button, Ctrl+Z, wheel navigation, the tab to open on.
+- Next: the redesign (Today, Stats, mobile settings, recording link, off days), then
+  reception hours (per course, shown only with an extra option in Settings), the chatbot
+  prompt, crash reporting and a Hebrew wording review.
+- Still open after that: Linux at more than 60 Hz (waiting on a measurement), and a more
+  desktop-like Linux layout beyond the sidebar (ask what
   feels mobile).
 
 ## Later (M4)

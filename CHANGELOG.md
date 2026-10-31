@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 2.0.0-beta.16 — 2026-10-31
 
 - **Typing on desktop no longer loses letters.** A key that's also a shortcut (T, the
   digits in a session's notes, Home, the arrows) was taken by the shortcut even in a text
