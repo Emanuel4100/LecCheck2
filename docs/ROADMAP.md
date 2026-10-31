@@ -127,9 +127,9 @@ password manager and the FLATPAK_GPG_KEY secret; GitHub Pages serves the reposit
   progress, "Verified by Flatpak", Restart into the latest version; and the move from an
   `install.sh` install.
 
-**2.0.0-beta.16**: no tarball in the release (`update.json` then lists no `linux` file,
-and beta.15's tarball installs only see Move); `scripts/linux-install.sh` goes, and
-`TarballInstall` once nobody is left on the tarball.
+**2.0.0-beta.16**: no tarball in the release (`update.json` lists no `linux` file, and
+beta.15's tarball installs only see Move); `scripts/linux-install.sh` is gone. `TarballInstall`
+goes once nobody is left on the tarball. Also the quick fixes in the changelog's Unreleased.
 
 **The to-do list, by release**
 - Done in 2.0.0-beta.11: course emails (contacts), canceled sessions not gray, a session

@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased
+
+- **Typing on desktop no longer loses letters.** A key that's also a shortcut (T, the
+  digits in a session's notes, Home, the arrows) was taken by the shortcut even in a text
+  field, so the letter never appeared.
+- **LecCheck looks for updates every time it starts**, not once a day.
+- **The countdown on Today shows days** from 24 hours on, like "2d 3h".
+- **Delete cloud data asks you to type DELETE** first.
+- **A Today button on Week**, in words, takes you back to this week. The icon was easy to miss.
+- A keyring that doesn't answer can't stop a sign-out halfway.
+- Linux releases are only the Flatpak now: the tarball and `install.sh` are gone. Installs
+  from 2.0.0-beta.15 move from inside the app.
+
 ## 2.0.0-beta.15 — 2026-10-26
 
 - **LecCheck for Linux is a Flatpak**, from its own repository (signed with its own key):

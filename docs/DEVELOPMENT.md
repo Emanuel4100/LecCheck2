@@ -35,7 +35,7 @@ app/                      Flutter app
 server/                   Cloudflare Worker sync server (TypeScript) — see server/README.md
 design/                   icon and logo sources — see design/README.md
 scripts/                  release helpers: update_manifest.py, flatpak_site.py,
-                          metainfo_releases.py, altstore_source.py, linux-install.sh
+                          metainfo_releases.py, altstore_source.py
 .github/workflows/        ci.yml, release.yml, deploy-server.yml
 ```
 
@@ -243,7 +243,8 @@ URLs to Workers with Durable Objects. That's why the tests run against the real
 
 `update.json` on the `altstore` branch has a `beta` and a `stable` channel
 (`scripts/update_manifest.py`): betas update `beta`, stable releases both. The apps read
-it at most once a day (`app/update_controller.dart`). To try the notice, serve a manifest
+it at every start, and at most once a day when the app comes back
+(`app/update_controller.dart`). To try the notice, serve a manifest
 with a higher build and point a build at it:
 `flutter run --dart-define=UPDATE_URL=http://<your-ip>:8000/update.json`. Android's
 per-ABI APKs report 1000 × ABI + build as their version code; `installedBuild()` undoes

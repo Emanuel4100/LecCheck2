@@ -196,7 +196,7 @@ useful, like "class starts soon" for a class already under way, are skipped).
 
 ## Updates
 
-On Android and Linux, LecCheck checks for a new version once a day. When there is one,
+On Android and Linux, LecCheck checks for a new version every time it starts. When there is one,
 the **update window** opens when you start LecCheck, with what's new in it, and
 **LecCheck X is available** appears at the top of Settings (and on Today, until **Later**).
 **Later** asks again the next time you start LecCheck.
@@ -287,7 +287,7 @@ it. Tap the widget to open the app.
 - **Signed out on a device that keeps the account's data**: changes you make there wait,
   and **Today** says how many, with a **Sign in** button. Refused changes and "update
   LecCheck to keep syncing" also show on Today.
-- **Delete cloud data** — removes your data from the server (this device keeps a copy;
+- **Delete cloud data** — asks you to type **DELETE** first, then removes your data from the server (this device keeps a copy;
   the server keeps a copy for 30 days in case it was a mistake). Other devices are signed
   out but keep their copy; if one of them signs in to the account again, its copy syncs
   back up.
