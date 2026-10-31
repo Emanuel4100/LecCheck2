@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 2.0.0-beta.17 — 2026-10-31
 
 - **A calmer way to mark a session.** One Attended button with a menu for the other
   statuses replaces the green and red buttons; the color only shows once it's marked.

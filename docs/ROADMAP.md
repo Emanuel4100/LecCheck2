@@ -89,6 +89,10 @@
   text fields; updates checked at every start; days in Today's countdown; type DELETE to
   delete cloud data; a Today button on Week; Ctrl+Z and the mouse wheel on Week; a tab to
   open on for each device. Linux releases are only the Flatpak.
+- **A calmer redesign, reception hours, timetable import** (2.0.0-beta.17): one Attended
+  button with a menu; Today, Stats and phone Settings simplified; days off tinted on Week
+  with a new icon; a recording link with Edit; optional reception hours per course;
+  importing a timetable through your own chatbot; a first Hebrew wording pass.
 
 ## Not yet verified on real hardware
 
@@ -147,9 +151,9 @@ goes once nobody is left on the tarball. Also the quick fixes in the changelog's
   proper Linux install (Flatpak).
 - Done in 2.0.0-beta.16: the typing bug, updates at every start, days in the countdown,
   type DELETE, the "this week" button, Ctrl+Z, wheel navigation, the tab to open on.
-- In 2.0.0-beta.17: the redesign (Today, Stats, mobile settings, recording link, off days).
-- In 2.0.0-beta.18: reception hours, the timetable import through a chatbot, a first Hebrew
-  wording pass.
+- Done in 2.0.0-beta.17: the redesign (Today, Stats, mobile settings, recording link, off
+  days), reception hours, the timetable import through a chatbot, a first Hebrew wording
+  pass.
 - Later: a translation platform, the way open source apps do it. On hold: crash reporting, Panopto, Linux above 60 Hz.
 - Still open after that: Linux at more than 60 Hz (waiting on a measurement), and a more
   desktop-like Linux layout beyond the sidebar (ask what

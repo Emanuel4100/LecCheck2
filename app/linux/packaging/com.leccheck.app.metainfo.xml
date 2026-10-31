@@ -55,6 +55,21 @@
   </supports>
   <content_rating type="oars-1.1" />
   <releases>
+    <release version="2.0.0-beta.17" date="2026-10-31" type="development">
+      <description>
+        <ul>
+          <li><em>A calmer way to mark a session.</em> One Attended button with a menu for the other statuses replaces the green and red buttons; the color only shows once it's marked.</li>
+          <li><em>Today is less crowded</em>: the session in the big card isn't listed again in the schedule.</li>
+          <li><em>Stats starts with your courses</em>: overall attendance, then each course with its requirements under it. On phones the charts fold under More details.</li>
+          <li><em>Settings on phones is a short list</em> of categories, each on its own page.</li>
+          <li><em>Days off stand out on Week</em>: the whole day is tinted with its name at the top, and a new icon replaces the umbrella. The date stays visible.</li>
+          <li><em>A saved recording is one tap away</em>: "Recording link" opens it, and Edit changes it.</li>
+          <li><em>Reception hours</em>: turn them on in Settings → Courses, add them to a course like a meeting, and they show on Week as an outline. They never count toward attendance.</li>
+          <li><em>Import a timetable with a chatbot</em>: copy LecCheck's prompt, give it to your own chatbot with a screenshot or file of your schedule, and bring back what it writes. It's checked and previewed, and only adds a new semester.</li>
+          <li><em>Clearer Hebrew</em>: statuses read as nouns, like נוכחות and היעדרות, and other awkward wording is fixed.</li>
+        </ul>
+      </description>
+    </release>
     <release version="2.0.0-beta.16" date="2026-10-31" type="development">
       <description>
         <ul>
@@ -151,18 +166,6 @@
           <li><em>Today</em>: the class in progress is marked from the Now card only, not listed again under Needs marking. Session rows no longer break mid-detail: the type and day (and the time when it fits) come first, then the room after a pin. The swipe hint goes away once you've swiped, and classes that haven't started yet don't show the "to mark" circle.</li>
           <li><em>Stats</em>: the weekly chart shows each week's percentage and labels its lines (0%, 50%, 100%); the attendance card says it briefly, with the full rule behind an ⓘ button.</li>
           <li><em>Welcome</em>: the language switch moved to the top corner.</li>
-        </ul>
-      </description>
-    </release>
-    <release version="2.0.0-beta.9" date="2026-10-12" type="development">
-      <description>
-        <ul>
-          <li><em>No more empty semesters when signing in</em> (issue #2). Signing in on a new device sometimes opened the semester setup before the account's data arrived, and creating it added an empty semester to the account, again on every new device. Now LecCheck waits for your data (with <em>Retry</em> if it doesn't come), then asks <em>Which semester?</em> (or <em>Start a new semester</em>). A semester made before signing in no longer joins the account silently: when the account has data too, you choose <em>Use my account's</em> (the device's data is backed up first) or <em>Keep both</em>. An account whose data was deleted in the last 30 days offers to bring it back.</li>
-          <li><em>A quick tour of the app</em> (issue #1) after setting up the first semester: each step dims the app around one item (Today, Week, Courses, Stats, Settings) and explains it, and the last one opens <em>Add course</em>. Replay it from Settings → About → <em>Show the app tour</em>. Works on phones and wide windows, in English and Hebrew, and with the keyboard (arrows, Enter, Esc).</li>
-          <li><em>Long course names in Week</em>: when a name doesn't fit a tile and the course has no short name, LecCheck shortens it, dropping small words, then cutting long ones ("Infinitesimal Calculus 1" → "Infin. Calc. 1", "חשבון אינפיניטסימלי 1" → "חשבון אינפי׳ 1"), instead of cutting it off. The course editor suggests a short name for long names.</li>
-          <li><em>Respects "remove animations"</em>: with the system's reduced-motion setting on, LecCheck switches tabs, turns week pages and draws charts without animating.</li>
-          <li><em>What's new</em> on the update card now shows the release's changes (the release notes carry this CHANGELOG section), not just the download links.</li>
-          <li><em>Bring back deleted cloud data</em>: Settings → Account offers it for 30 days after <em>Delete cloud data</em> (until now only the server could).</li>
         </ul>
       </description>
     </release>
