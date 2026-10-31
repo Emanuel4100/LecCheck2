@@ -178,6 +178,7 @@ Required secrets and variables are listed in [SETUP.md](SETUP.md).
 4. Push main, then an annotated tag: `git tag -a v2.0.0-beta.N -m "LecCheck 2.0.0-beta.N"`.
    To try every build first (the Flatpak too) without publishing anything, run the
    Release workflow by hand on main: `gh workflow run release.yml --ref main`.
+   `python3 scripts/watch_run.py` follows the latest Release run with a progress bar.
 5. After the Release workflow: the arm64 APK's versionCode is 2000 + N and it carries the
    release certificate (`aapt2 dump badging`, `apksigner verify --print-certs`);
    `update.json` on the `altstore` branch has the new version and build with sha256s and
