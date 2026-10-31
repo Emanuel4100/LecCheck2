@@ -1,20 +1,20 @@
 {
   "beta": {
-    "version": "2.0.0-beta.16",
-    "build": 24,
+    "version": "2.0.0-beta.17",
+    "build": 25,
     "date": "2026-10-31",
-    "notesUrl": "https://github.com/Emanuel4100/LecCheck2/releases/tag/v2.0.0-beta.16",
-    "notes": "- **Typing on desktop no longer loses letters.** A key that's also a shortcut (T, the\n  digits in a session's notes, Home, the arrows) was taken by the shortcut even in a text\n  field, so the letter never appeared.\n- **LecCheck looks for updates every time it starts**, not once a day.\n- **The countdown on Today shows days** from 24 hours on, like \"2d 3h\".\n- **Delete cloud data asks you to type DELETE** first.\n- **A Today button on Week**, in words, takes you back to this week. The icon was easy to miss.\n- **Ctrl+Z on Week** undoes your last change: a move, a quick add or a mark.\n- **The mouse wheel changes the week**: Shift+wheel, a sideways scroll, or the wheel over\n  the day names. The plain wheel still scrolls the hours and Ctrl+wheel still zooms.\n- **Choose the tab LecCheck opens on**, for each device, in Settings.\n- A keyring that doesn't answer can't stop a sign-out halfway.\n- Linux releases are only the Flatpak now: the tarball and `install.sh` are gone. Installs\n  from 2.0.0-beta.15 move from inside the app.",
-    "androidArm64": "https://github.com/Emanuel4100/LecCheck2/releases/download/v2.0.0-beta.16/LecCheck-2.0.0-beta.16-android-arm64.apk",
-    "androidUniversal": "https://github.com/Emanuel4100/LecCheck2/releases/download/v2.0.0-beta.16/LecCheck-2.0.0-beta.16-android.apk",
+    "notesUrl": "https://github.com/Emanuel4100/LecCheck2/releases/tag/v2.0.0-beta.17",
+    "notes": "- **A calmer way to mark a session.** One Attended button with a menu for the other\n  statuses replaces the green and red buttons; the color only shows once it's marked.\n- **Today is less crowded**: the session in the big card isn't listed again in the schedule.\n- **Stats starts with your courses**: overall attendance, then each course with its\n  requirements under it. On phones the charts fold under More details.\n- **Settings on phones is a short list** of categories, each on its own page.\n- **Days off stand out on Week**: the whole day is tinted with its name at the top, and a\n  new icon replaces the umbrella. The date stays visible.\n- **A saved recording is one tap away**: \"Recording link\" opens it, and Edit changes it.\n- **Reception hours**: turn them on in Settings \u2192 Courses, add them to a course like a\n  meeting, and they show on Week as an outline. They never count toward attendance.\n- **Import a timetable with a chatbot**: copy LecCheck's prompt, give it to your own chatbot\n  with a screenshot or file of your schedule, and bring back what it writes. It's checked\n  and previewed, and only adds a new semester.\n- **Clearer Hebrew**: statuses read as nouns, like \u05e0\u05d5\u05db\u05d7\u05d5\u05ea and \u05d4\u05d9\u05e2\u05d3\u05e8\u05d5\u05ea, and other awkward wording is fixed.",
+    "androidArm64": "https://github.com/Emanuel4100/LecCheck2/releases/download/v2.0.0-beta.17/LecCheck-2.0.0-beta.17-android-arm64.apk",
+    "androidUniversal": "https://github.com/Emanuel4100/LecCheck2/releases/download/v2.0.0-beta.17/LecCheck-2.0.0-beta.17-android.apk",
     "flatpakref": "https://emanuel4100.github.io/LecCheck2/leccheck.flatpakref",
     "sha256": {
-      "androidArm64": "065e79d7c45ca2b209d1894ea01096ab90c7967c1d09f67478c247aacd197038",
-      "androidUniversal": "aa4dcab10df8884291e9128b189ef41f3896ffe134b9c00c58c2587e43483052"
+      "androidArm64": "8f978d70c2b7c8eb4fd6ec0f0cf3ce283418fed2fe821c06992a0571758c06df",
+      "androidUniversal": "f6812e24e2aaeef1a6c0a129aa9fe9b60ef7f7724c20acbb3087a00d64f41350"
     },
     "size": {
-      "androidArm64": 28241971,
-      "androidUniversal": 78600698
+      "androidArm64": 28307227,
+      "androidUniversal": 78846178
     }
   }
 }
