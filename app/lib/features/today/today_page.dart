@@ -340,15 +340,13 @@ class _HeroSession extends ConsumerWidget {
                 if (inProgress || link != null) ...[
                   const SizedBox(height: 16),
                   if (inProgress)
-                    StatusButtonGroup(
+                    MarkButton(
                       selected: session.explicitStatus,
-                      statuses: const [
-                        AttendanceStatus.attended,
-                        AttendanceStatus.missed,
-                        AttendanceStatus.watched,
-                      ],
-                      unselectedColor: tone.onContainer.withValues(alpha: 0.08),
+                      background: tone.onContainer.withValues(alpha: 0.08),
+                      foreground: tone.onContainer,
                       onSelected: (s) => markSession(context, ref, session, s),
+                      onClear: () =>
+                          ref.read(repositoryProvider).setStatus(session, null),
                     ),
                   if (link != null)
                     Padding(

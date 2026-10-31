@@ -236,22 +236,15 @@ class SessionTile extends ConsumerWidget {
     Occurrence session,
     AppLocalizations l,
   ) {
-    final status = StatusColors.of(context);
-    Widget button(AttendanceStatus s) => IconButton.filledTonal(
-      tooltip: s.action(l),
-      style: IconButton.styleFrom(
-        backgroundColor: status[s].container,
-        foregroundColor: status[s].onContainer,
-      ),
-      onPressed: () => onSwipeMarked != null
-          ? onSwipeMarked!(session, s)
-          : markSession(context, ref, session, s),
-      icon: Icon(s.icon),
-    );
     return [
-      const SizedBox(width: 4),
-      button(AttendanceStatus.missed),
-      button(AttendanceStatus.attended),
+      const SizedBox(width: 8),
+      MarkButton(
+        selected: null,
+        compact: true,
+        onSelected: (s) => onSwipeMarked != null
+            ? onSwipeMarked!(session, s)
+            : markSession(context, ref, session, s),
+      ),
     ];
   }
 }

@@ -213,6 +213,18 @@ void main() {
     });
   });
 
+  testWidgets('the arrow beside Attended offers every status', (tester) async {
+    final (_, db) = await _start(tester);
+    await tester.tap(find.byTooltip('More options').first);
+    await tester.pumpAndSettle();
+    for (final label in ['Attended', 'Missed', 'Watched', 'Skipped']) {
+      expect(find.text(label), findsOneWidget, reason: label);
+    }
+    await tester.tap(find.text('Missed'));
+    await _settle(tester);
+    expect(await _statusOf(tester, db), 'missed');
+  });
+
   testWidgets('course editor requires a name', (tester) async {
     final (container, db) = await _start(tester, withCourse: false);
     container.read(routerProvider).push('/course-editor');
