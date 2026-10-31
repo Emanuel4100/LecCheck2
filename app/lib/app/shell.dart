@@ -64,17 +64,17 @@ class AppShell extends ConsumerWidget {
       const SingleActivator(LogicalKeyboardKey.f1): help,
       primaryKey(LogicalKeyboardKey.slash): help,
       // Week view. Arrows follow the screen: in Hebrew, left is "next".
-      const SingleActivator(LogicalKeyboardKey.arrowLeft): () =>
+      const UnlessTyping(SingleActivator(LogicalKeyboardKey.arrowLeft)): () =>
           onWeek(() => week.step(rtl ? 1 : -1)),
-      const SingleActivator(LogicalKeyboardKey.arrowRight): () =>
+      const UnlessTyping(SingleActivator(LogicalKeyboardKey.arrowRight)): () =>
           onWeek(() => week.step(rtl ? -1 : 1)),
-      const SingleActivator(LogicalKeyboardKey.pageUp): () =>
+      const UnlessTyping(SingleActivator(LogicalKeyboardKey.pageUp)): () =>
           onWeek(() => week.step(-1)),
-      const SingleActivator(LogicalKeyboardKey.pageDown): () =>
+      const UnlessTyping(SingleActivator(LogicalKeyboardKey.pageDown)): () =>
           onWeek(() => week.step(1)),
-      const SingleActivator(LogicalKeyboardKey.keyT): () =>
+      const UnlessTyping(SingleActivator(LogicalKeyboardKey.keyT)): () =>
           onWeek(week.thisWeek),
-      const SingleActivator(LogicalKeyboardKey.home): () =>
+      const UnlessTyping(SingleActivator(LogicalKeyboardKey.home)): () =>
           onWeek(week.thisWeek),
       primaryKey(LogicalKeyboardKey.equal): zoomIn,
       primaryKey(LogicalKeyboardKey.equal, shift: true): zoomIn,

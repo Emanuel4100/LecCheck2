@@ -22,10 +22,25 @@ bool get isTyping {
       context.findAncestorStateOfType<EditableTextState>() != null;
 }
 
-/// [action] that does nothing while the user is typing.
-VoidCallback unlessTyping(VoidCallback action) => () {
-  if (!isTyping) action();
-};
+/// [activator], except while the user is typing: the key then goes on to the
+/// text field. (Checking [isTyping] inside the shortcut's callback isn't
+/// enough: CallbackShortcuts has handled the key by then, and on desktop the
+/// letter never arrives.)
+class UnlessTyping extends ShortcutActivator {
+  const UnlessTyping(this.activator);
+
+  final ShortcutActivator activator;
+
+  @override
+  Iterable<LogicalKeyboardKey>? get triggers => activator.triggers;
+
+  @override
+  bool accepts(KeyEvent event, HardwareKeyboard state) =>
+      !isTyping && activator.accepts(event, state);
+
+  @override
+  String debugDescribeKeys() => activator.debugDescribeKeys();
+}
 
 /// Keyboard shortcuts for one pushed page: [bindings] plus Esc to go back
 /// (which still runs the page's PopScope, e.g. "discard changes?"). Takes

@@ -219,7 +219,7 @@ class _SessionSheetState extends ConsumerState<SessionSheet> {
     return CallbackShortcuts(
       bindings: {
         for (final (i, status) in markableStatuses.indexed)
-          SingleActivator(_digitKeys[i]): unlessTyping(() => setStatus(status)),
+          UnlessTyping(SingleActivator(_digitKeys[i])): () => setStatus(status),
       },
       child: Focus(
         autofocus: true,

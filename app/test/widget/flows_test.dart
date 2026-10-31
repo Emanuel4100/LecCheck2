@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:cryptography/cryptography.dart';
 import 'package:drift/drift.dart' show driftRuntimeOptions;
 import 'package:drift/native.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
@@ -126,6 +127,19 @@ void main() {
     await _settle(tester);
     expect(await _statusOf(tester, db), isNull);
     expect(find.text('Needs marking'), findsOneWidget);
+  });
+
+  testWidgets('a letter that is also a shortcut reaches a text field', (
+    tester,
+  ) async {
+    final (container, _) = await _start(tester);
+    container.read(routerProvider).go('/today/sessions');
+    await _settle(tester);
+    await tester.tap(find.byType(SearchBar));
+    await tester.pump();
+
+    final handled = await tester.sendKeyEvent(LogicalKeyboardKey.keyT);
+    expect(handled, isFalse, reason: 'the "this week" shortcut took the key');
   });
 
   testWidgets('course editor requires a name', (tester) async {
