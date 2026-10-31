@@ -863,12 +863,23 @@ class _CourseOptions extends ConsumerWidget {
     final numbers = ref.watch(
       userPrefsProvider.select((p) => p.value?.meetingNumbers ?? true),
     );
-    return SwitchListTile.adaptive(
-      secondary: const Icon(LecIcons.numbers),
-      title: Text(l.meetingNumbers),
-      subtitle: Text(l.meetingNumbersSubtitle),
-      value: numbers,
-      onChanged: (v) => ref.read(repositoryProvider).setMeetingNumbers(v),
+    return Column(
+      children: [
+        SwitchListTile.adaptive(
+          secondary: const Icon(LecIcons.numbers),
+          title: Text(l.meetingNumbers),
+          subtitle: Text(l.meetingNumbersSubtitle),
+          value: numbers,
+          onChanged: (v) => ref.read(repositoryProvider).setMeetingNumbers(v),
+        ),
+        SwitchListTile.adaptive(
+          secondary: const Icon(LecIcons.lecturer),
+          title: Text(l.receptionHours),
+          subtitle: Text(l.receptionHoursSubtitle),
+          value: ref.watch(receptionHoursProvider),
+          onChanged: (v) => ref.read(receptionHoursProvider.notifier).set(v),
+        ),
+      ],
     );
   }
 }
@@ -907,6 +918,12 @@ class _DataSection extends ConsumerWidget {
           title: Text(l.importData),
           subtitle: Text(l.importDataSubtitle),
           onTap: () => importBackup(context, ref),
+        ),
+        ListTile(
+          leading: const Icon(LecIcons.date),
+          title: Text(l.timetableImport),
+          subtitle: Text(l.timetableImportSubtitle),
+          onTap: () => context.push('/timetable-import'),
         ),
         ListTile(
           leading: const Icon(LecIcons.history),

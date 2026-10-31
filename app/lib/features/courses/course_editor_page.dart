@@ -1203,7 +1203,7 @@ class _RequirementRow extends StatelessWidget {
                     underline: const SizedBox.shrink(),
                     items: [
                       DropdownMenuItem(value: null, child: Text(l.allTypes)),
-                      for (final t in SessionType.values)
+                      for (final t in SessionType.attendable)
                         DropdownMenuItem(value: t, child: Text(t.label(l))),
                     ],
                     onChanged: (t) {

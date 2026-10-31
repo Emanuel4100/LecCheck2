@@ -94,19 +94,19 @@ class AppLocalizationsHe extends AppLocalizations {
   String get typeOther => 'אחר';
 
   @override
-  String get statusPending => 'ממתין';
+  String get statusPending => 'טרם סומן';
 
   @override
-  String get statusAttended => 'נכח';
+  String get statusAttended => 'נוכחות';
 
   @override
   String get statusWatched => 'נצפה בהקלטה';
 
   @override
-  String get statusMissed => 'החסיר';
+  String get statusMissed => 'היעדרות';
 
   @override
-  String get statusSkipped => 'דילג';
+  String get statusSkipped => 'דילוג';
 
   @override
   String get statusCanceled => 'מבוטל';
@@ -115,22 +115,22 @@ class AppLocalizationsHe extends AppLocalizations {
   String get statusCanceledHoliday => 'אין שיעור';
 
   @override
-  String get markAttended => 'נכח';
+  String get markAttended => 'נוכחות';
 
   @override
-  String get markMissed => 'החסיר';
+  String get markMissed => 'היעדרות';
 
   @override
-  String get markWatched => 'צפייה';
+  String get markWatched => 'צפייה בהקלטה';
 
   @override
-  String get markSkipped => 'דילג';
+  String get markSkipped => 'דילוג';
 
   @override
-  String get markCanceled => 'בוטל';
+  String get markCanceled => 'מבוטל';
 
   @override
-  String get clearStatus => 'ניקוי סטטוס';
+  String get clearStatus => 'הסרת הסימון';
 
   @override
   String markedAs(String status) {
@@ -157,7 +157,7 @@ class AppLocalizationsHe extends AppLocalizations {
       'סמנו כל הרצאה, תרגול ומעבדה שהייתם בהם, וראו את כל הסמסטר במבט אחד.';
 
   @override
-  String get continueAsGuest => 'המשך בלי חשבון';
+  String get continueAsGuest => 'המשך ללא חשבון';
 
   @override
   String get guestNote => 'הכול נשמר במכשיר הזה. אפשר להתחבר בהמשך כדי לסנכרן.';
@@ -285,12 +285,12 @@ class AppLocalizationsHe extends AppLocalizations {
 
   @override
   String durationMinutes(int minutes) {
-    return '$minutes ד׳';
+    return '$minutes דק׳';
   }
 
   @override
   String durationHoursMinutes(int hours, int minutes) {
-    return '$hours ש׳ $minutes ד׳';
+    return '$hours ש׳ $minutes דק׳';
   }
 
   @override
@@ -324,10 +324,10 @@ class AppLocalizationsHe extends AppLocalizations {
   String get allCaughtUpSubtitle => 'לכל מפגש שעבר יש סטטוס.';
 
   @override
-  String get markAllAttended => 'סימון כולם כנוכחות';
+  String get markAllAttended => 'סימון הכול כנוכחות';
 
   @override
-  String get todaySchedule => 'הלו״ז של היום';
+  String get todaySchedule => 'המפגשים של היום';
 
   @override
   String get comingUp => 'בקרוב';
@@ -877,13 +877,13 @@ class AppLocalizationsHe extends AppLocalizations {
   String get presetForest => 'יער';
 
   @override
-  String get presetGrape => 'ענבים';
+  String get presetGrape => 'ענב';
 
   @override
   String get presetRose => 'ורד';
 
   @override
-  String get presetMono => 'מונו';
+  String get presetMono => 'מונוכרום';
 
   @override
   String get language => 'שפה';
@@ -892,7 +892,7 @@ class AppLocalizationsHe extends AppLocalizations {
   String get languageSystem => 'ברירת המחדל של המערכת';
 
   @override
-  String get time24h => 'שעון 24 שעות';
+  String get time24h => 'תצוגת 24 שעות';
 
   @override
   String get time24hSubtitle => 'הצגת 14:30 במקום 2:30 PM';
@@ -1093,7 +1093,7 @@ class AppLocalizationsHe extends AppLocalizations {
   String get signInFailed => 'ההתחברות נכשלה. בדקו את החיבור ונסו שוב.';
 
   @override
-  String get syncSignedOutTitle => 'אין חיבור לחשבון';
+  String get syncSignedOutTitle => 'התנתקת מהחשבון';
 
   @override
   String get signInUnreadableTitle => 'לא ניתן לקרוא את פרטי ההתחברות';
@@ -1255,7 +1255,7 @@ class AppLocalizationsHe extends AppLocalizations {
 
   @override
   String minutesShort(int minutes) {
-    return '$minutes ד׳';
+    return '$minutes דק׳';
   }
 
   @override
@@ -1272,7 +1272,7 @@ class AppLocalizationsHe extends AppLocalizations {
 
   @override
   String notifyBeforeTitle(String course, String type, int minutes) {
-    return '$course · $type בעוד $minutes ד׳';
+    return '$course · $type בעוד $minutes דק׳';
   }
 
   @override
@@ -1329,7 +1329,8 @@ class AppLocalizationsHe extends AppLocalizations {
   String get shortcutZoom => 'הגדלה / הקטנה / איפוס של תצוגת השבוע';
 
   @override
-  String get shortcutMark => 'סימון המפגש הפתוח: נכח, החסיר, צפייה, דילג, בוטל';
+  String get shortcutMark =>
+      'סימון המפגש הפתוח: נוכחות, היעדרות, צפייה בהקלטה, דילוג, מבוטל';
 
   @override
   String get shortcutBack => 'סגירה / חזרה';
@@ -1344,7 +1345,7 @@ class AppLocalizationsHe extends AppLocalizations {
   String get startTab => 'פתיחה במסך';
 
   @override
-  String get startTabSubtitle => 'המסך שבו LecCheck נפתח במכשיר הזה';
+  String get startTabSubtitle => 'המסך שבו LecCheck נפתחת במכשיר הזה';
 
   @override
   String get shortcutHelp => 'הצגת הרשימה הזו';
@@ -1758,7 +1759,7 @@ class AppLocalizationsHe extends AppLocalizations {
   String get reportDescription => 'מה קרה?';
 
   @override
-  String get reportDescriptionHint => 'מה עשית, מה ציפית שיקרה, ומה קרה בפועל?';
+  String get reportDescriptionHint => 'מה עשיתם, למה ציפיתם ומה קרה בפועל?';
 
   @override
   String get reportContact => 'אימייל לתשובה (לא חובה)';
@@ -2021,17 +2022,102 @@ class AppLocalizationsHe extends AppLocalizations {
   String get semesterSummary => 'תאריכים וימים ללא לימודים';
 
   @override
-  String get coursesSummary => 'מספור מפגשים';
+  String get coursesSummary => 'מספור מפגשים ושעות קבלה';
 
   @override
   String get dataSummary => 'גיבויים וייבוא';
 
   @override
-  String get deviceSummary => 'הלשונית לפתיחה ועוד';
+  String get deviceSummary => 'המסך לפתיחה ועוד';
 
   @override
   String get aboutSummary => 'גרסה ועדכונים';
 
   @override
   String get developerSummary => 'כלים לבדיקות';
+
+  @override
+  String get typeReception => 'שעות קבלה';
+
+  @override
+  String get receptionHours => 'שעות קבלה';
+
+  @override
+  String get receptionHoursSubtitle =>
+      'אפשר להוסיף אותן לקורס ולראות אותן בתצוגה השבועית. הן אף פעם לא נספרות בנוכחות.';
+
+  @override
+  String get timetableImport => 'ייבוא מערכת שעות בעזרת צ׳אטבוט';
+
+  @override
+  String get timetableImportSubtitle =>
+      'הפכו צילום מסך או קובץ של המערכת לסמסטר';
+
+  @override
+  String get timetableStepPrompt => 'קבלו את הפרומפט';
+
+  @override
+  String get timetableStepPromptBody =>
+      'הוא מסביר לצ׳אטבוט בדיוק מה LecCheck צריכה.';
+
+  @override
+  String get timetableCopyPrompt => 'העתקת הפרומפט';
+
+  @override
+  String get timetableSavePrompt => 'שמירה כ־md.';
+
+  @override
+  String get timetablePromptCopied => 'הפרומפט הועתק';
+
+  @override
+  String get timetableStepChatbot => 'תנו אותו לצ׳אטבוט שלכם';
+
+  @override
+  String get timetableStepChatbotBody =>
+      'צרפו צילום מסך או קובץ של המערכת, מאפליקציית האוניברסיטה, מיומן Google או מכל מקום אחר. הם נשלחים לצ׳אטבוט שבחרתם, לא ל־LecCheck. ענו על כל מה שהוא ישאל.';
+
+  @override
+  String get timetableStepImport => 'החזירו לכאן את מה שהוא כתב';
+
+  @override
+  String get timetableStepImportBody =>
+      'הדביקו כאן את התשובה או בחרו את הקובץ שהוא יצר, ואז בדקו את הסיכום. השוו את התוצאה למערכת שלכם, כי צ׳אטבוטים טועים.';
+
+  @override
+  String get timetablePaste => 'התשובה של הצ׳אטבוט';
+
+  @override
+  String get timetableChooseFile => 'בחירת קובץ';
+
+  @override
+  String timetableInvalid(String reason) {
+    return 'אי אפשר לייבא את זה: $reason';
+  }
+
+  @override
+  String timetableMeetings(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count מפגשים',
+      two: 'שני מפגשים',
+      one: 'מפגש אחד',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get timetableAddsSemester =>
+      'פעולה זו מוסיפה סמסטר חדש. הנתונים הקיימים לא משתנים.';
+
+  @override
+  String get timetableAdd => 'הוספת הסמסטר';
+
+  @override
+  String timetableAdded(String name) {
+    return '$name נוסף';
+  }
+
+  @override
+  String get timetableSaveFailed => 'לא ניתן היה להוסיף. הנתונים שלך לא השתנו.';
 }

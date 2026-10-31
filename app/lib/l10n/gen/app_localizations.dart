@@ -3425,7 +3425,7 @@ abstract class AppLocalizations {
   /// No description provided for @coursesSummary.
   ///
   /// In en, this message translates to:
-  /// **'Meeting numbers'**
+  /// **'Meeting numbers and reception hours'**
   String get coursesSummary;
 
   /// No description provided for @dataSummary.
@@ -3451,6 +3451,138 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Tools for testing'**
   String get developerSummary;
+
+  /// No description provided for @typeReception.
+  ///
+  /// In en, this message translates to:
+  /// **'Reception hours'**
+  String get typeReception;
+
+  /// No description provided for @receptionHours.
+  ///
+  /// In en, this message translates to:
+  /// **'Reception hours'**
+  String get receptionHours;
+
+  /// No description provided for @receptionHoursSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Add them to a course and see them on Week. They never count toward attendance.'**
+  String get receptionHoursSubtitle;
+
+  /// No description provided for @timetableImport.
+  ///
+  /// In en, this message translates to:
+  /// **'Import timetable with a chatbot'**
+  String get timetableImport;
+
+  /// No description provided for @timetableImportSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn a screenshot or file of your schedule into a semester'**
+  String get timetableImportSubtitle;
+
+  /// No description provided for @timetableStepPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Get the prompt'**
+  String get timetableStepPrompt;
+
+  /// No description provided for @timetableStepPromptBody.
+  ///
+  /// In en, this message translates to:
+  /// **'It tells a chatbot exactly what LecCheck needs.'**
+  String get timetableStepPromptBody;
+
+  /// No description provided for @timetableCopyPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy prompt'**
+  String get timetableCopyPrompt;
+
+  /// No description provided for @timetableSavePrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Save as .md'**
+  String get timetableSavePrompt;
+
+  /// No description provided for @timetablePromptCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Prompt copied'**
+  String get timetablePromptCopied;
+
+  /// No description provided for @timetableStepChatbot.
+  ///
+  /// In en, this message translates to:
+  /// **'Give it to your chatbot'**
+  String get timetableStepChatbot;
+
+  /// No description provided for @timetableStepChatbotBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a screenshot or file of your schedule, from your university\'s app, Google Calendar or anywhere else. It goes to the chatbot you choose, not to LecCheck. Answer anything it asks.'**
+  String get timetableStepChatbotBody;
+
+  /// No description provided for @timetableStepImport.
+  ///
+  /// In en, this message translates to:
+  /// **'Bring back what it wrote'**
+  String get timetableStepImport;
+
+  /// No description provided for @timetableStepImportBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Paste its reply here or choose the file it made, then check the summary. Compare the result with your schedule, since chatbots make mistakes.'**
+  String get timetableStepImportBody;
+
+  /// No description provided for @timetablePaste.
+  ///
+  /// In en, this message translates to:
+  /// **'Chatbot\'s reply'**
+  String get timetablePaste;
+
+  /// No description provided for @timetableChooseFile.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose file'**
+  String get timetableChooseFile;
+
+  /// No description provided for @timetableInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'This can\'t be imported: {reason}'**
+  String timetableInvalid(String reason);
+
+  /// No description provided for @timetableMeetings.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 meeting} other{{count} meetings}}'**
+  String timetableMeetings(int count);
+
+  /// No description provided for @timetableAddsSemester.
+  ///
+  /// In en, this message translates to:
+  /// **'This adds a new semester. Your existing data doesn\'t change.'**
+  String get timetableAddsSemester;
+
+  /// No description provided for @timetableAdd.
+  ///
+  /// In en, this message translates to:
+  /// **'Add semester'**
+  String get timetableAdd;
+
+  /// No description provided for @timetableAdded.
+  ///
+  /// In en, this message translates to:
+  /// **'Added {name}'**
+  String timetableAdded(String name);
+
+  /// No description provided for @timetableSaveFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t add it. Your data didn\'t change.'**
+  String get timetableSaveFailed;
 }
 
 class _AppLocalizationsDelegate

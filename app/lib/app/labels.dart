@@ -11,6 +11,7 @@ extension SessionTypeLabels on SessionType {
     SessionType.practice => l.typePractice,
     SessionType.lab => l.typeLab,
     SessionType.other => l.typeOther,
+    SessionType.reception => l.typeReception,
   };
 
   IconData get icon => switch (this) {
@@ -18,6 +19,7 @@ extension SessionTypeLabels on SessionType {
     SessionType.practice => LecIcons.practice,
     SessionType.lab => LecIcons.lab,
     SessionType.other => LecIcons.other,
+    SessionType.reception => LecIcons.lecturer,
   };
 }
 

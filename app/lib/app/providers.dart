@@ -66,6 +66,23 @@ final startTabProvider = NotifierProvider<StartTabController, int>(
   StartTabController.new,
 );
 
+/// Reception hours show on Week and can be added (on this device).
+class ReceptionHoursController extends Notifier<bool> {
+  static const _key = 'week.receptionHours';
+
+  @override
+  bool build() => ref.read(sharedPrefsProvider).getBool(_key) ?? false;
+
+  void set(bool on) {
+    ref.read(sharedPrefsProvider).setBool(_key, on);
+    state = on;
+  }
+}
+
+final receptionHoursProvider = NotifierProvider<ReceptionHoursController, bool>(
+  ReceptionHoursController.new,
+);
+
 final databaseProvider = Provider<AppDatabase>((ref) {
   final db = AppDatabase();
   ref.onDispose(db.close);
@@ -285,6 +302,25 @@ final occurrenceIndexProvider = Provider<OccurrenceIndex>((ref) {
     overrides: data.overrides,
     noClassRanges: data.noClassRanges,
   );
+});
+
+/// The reception hours on a day, when they're shown: not on days off.
+final receptionOnDayProvider = Provider.family<EqList<MeetingRule>, LocalDate>((
+  ref,
+  day,
+) {
+  final data = ref.watch(semesterDataProvider).value;
+  if (data == null ||
+      !ref.watch(receptionHoursProvider) ||
+      data.noClassRanges.any((r) => r.contains(day))) {
+    return EqList(const []);
+  }
+  return EqList([
+    for (final m in data.meetings)
+      if (m.type == SessionType.reception &&
+          OccurrenceEngine.datesFor(m, data.semester).contains(day))
+        m,
+  ]);
 });
 
 final sessionProvider = Provider.family<Occurrence?, String>(

@@ -148,8 +148,9 @@ goes once nobody is left on the tarball. Also the quick fixes in the changelog's
 - Done in 2.0.0-beta.16: the typing bug, updates at every start, days in the countdown,
   type DELETE, the "this week" button, Ctrl+Z, wheel navigation, the tab to open on.
 - In 2.0.0-beta.17: the redesign (Today, Stats, mobile settings, recording link, off days).
-- Next: reception hours (per course, shown only with an extra option in Settings), the
-  chatbot prompt, crash reporting and a Hebrew wording review.
+- In 2.0.0-beta.18: reception hours, the timetable import through a chatbot, a first Hebrew
+  wording pass.
+- Later: a translation platform, the way open source apps do it. On hold: crash reporting, Panopto, Linux above 60 Hz.
 - Still open after that: Linux at more than 60 Hz (waiting on a measurement), and a more
   desktop-like Linux layout beyond the sidebar (ask what
   feels mobile).

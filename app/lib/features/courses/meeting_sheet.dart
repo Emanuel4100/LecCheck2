@@ -1,8 +1,10 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../app/adaptive.dart';
 import '../../app/format.dart';
 import '../../app/labels.dart';
+import '../../app/providers.dart';
 import '../../core/icons/lec_icons.dart';
 import '../../domain/local_date.dart';
 import '../../domain/schedule_types.dart';
@@ -363,16 +365,25 @@ class _MeetingSheetState extends State<_MeetingSheet> {
               spacing: 8,
               runSpacing: 8,
               children: [
-                MenuChipButton<SessionType>(
-                  icon: d.type.icon,
-                  label: d.type.label(l),
-                  values: SessionType.values,
-                  itemIcon: (t) => t.icon,
-                  itemLabel: (t) => t.label(l),
-                  onSelected: (t) {
-                    d.type = t;
-                    _changed();
-                  },
+                Consumer(
+                  builder: (context, ref, _) => MenuChipButton<SessionType>(
+                    icon: d.type.icon,
+                    label: d.type.label(l),
+                    values: [
+                      ...SessionType.attendable,
+                      // Not for a meeting that may have marks: they would
+                      // stop counting.
+                      if (d.type == SessionType.reception ||
+                          (widget.isNew && ref.watch(receptionHoursProvider)))
+                        SessionType.reception,
+                    ],
+                    itemIcon: (t) => t.icon,
+                    itemLabel: (t) => t.label(l),
+                    onSelected: (t) {
+                      d.type = t;
+                      _changed();
+                    },
+                  ),
                 ),
                 MenuChipButton<_Repeat>(
                   tooltip: l.repeats,

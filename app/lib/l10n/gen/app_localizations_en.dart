@@ -2027,7 +2027,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get semesterSummary => 'Dates and no-class days';
 
   @override
-  String get coursesSummary => 'Meeting numbers';
+  String get coursesSummary => 'Meeting numbers and reception hours';
 
   @override
   String get dataSummary => 'Backups and import';
@@ -2040,4 +2040,89 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get developerSummary => 'Tools for testing';
+
+  @override
+  String get typeReception => 'Reception hours';
+
+  @override
+  String get receptionHours => 'Reception hours';
+
+  @override
+  String get receptionHoursSubtitle =>
+      'Add them to a course and see them on Week. They never count toward attendance.';
+
+  @override
+  String get timetableImport => 'Import timetable with a chatbot';
+
+  @override
+  String get timetableImportSubtitle =>
+      'Turn a screenshot or file of your schedule into a semester';
+
+  @override
+  String get timetableStepPrompt => 'Get the prompt';
+
+  @override
+  String get timetableStepPromptBody =>
+      'It tells a chatbot exactly what LecCheck needs.';
+
+  @override
+  String get timetableCopyPrompt => 'Copy prompt';
+
+  @override
+  String get timetableSavePrompt => 'Save as .md';
+
+  @override
+  String get timetablePromptCopied => 'Prompt copied';
+
+  @override
+  String get timetableStepChatbot => 'Give it to your chatbot';
+
+  @override
+  String get timetableStepChatbotBody =>
+      'Add a screenshot or file of your schedule, from your university\'s app, Google Calendar or anywhere else. It goes to the chatbot you choose, not to LecCheck. Answer anything it asks.';
+
+  @override
+  String get timetableStepImport => 'Bring back what it wrote';
+
+  @override
+  String get timetableStepImportBody =>
+      'Paste its reply here or choose the file it made, then check the summary. Compare the result with your schedule, since chatbots make mistakes.';
+
+  @override
+  String get timetablePaste => 'Chatbot\'s reply';
+
+  @override
+  String get timetableChooseFile => 'Choose file';
+
+  @override
+  String timetableInvalid(String reason) {
+    return 'This can\'t be imported: $reason';
+  }
+
+  @override
+  String timetableMeetings(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count meetings',
+      one: '1 meeting',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get timetableAddsSemester =>
+      'This adds a new semester. Your existing data doesn\'t change.';
+
+  @override
+  String get timetableAdd => 'Add semester';
+
+  @override
+  String timetableAdded(String name) {
+    return 'Added $name';
+  }
+
+  @override
+  String get timetableSaveFailed =>
+      'Couldn\'t add it. Your data didn\'t change.';
 }

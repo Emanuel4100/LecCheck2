@@ -171,6 +171,11 @@ class _WelcomePageState extends ConsumerState<WelcomePage> {
                           icon: const Icon(LecIcons.importData),
                           label: Text(l.importData),
                         ),
+                        TextButton.icon(
+                          onPressed: () => context.push('/timetable-import'),
+                          icon: const Icon(LecIcons.date),
+                          label: Text(l.timetableImport),
+                        ),
                       ],
                     ],
                   ),

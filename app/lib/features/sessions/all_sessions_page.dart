@@ -127,7 +127,7 @@ class _AllSessionsPageState extends ConsumerState<AllSessionsPage> {
                             active: _type != null,
                             options: {
                               null: l.allTypes,
-                              for (final t in SessionType.values) t: t.label(l),
+                              for (final t in SessionType.attendable) t: t.label(l),
                             },
                             onSelected: (v) => setState(() => _type = v),
                           ),

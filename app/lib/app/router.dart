@@ -13,6 +13,7 @@ import '../features/semester/semester_form_page.dart';
 import '../features/sessions/all_sessions_page.dart';
 import '../features/settings/report_page.dart';
 import '../features/settings/settings_page.dart';
+import '../features/settings/timetable_import_page.dart';
 import '../features/stats/stats_page.dart';
 import '../features/today/today_page.dart';
 import '../features/week/week_page.dart';
@@ -56,6 +57,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/choose-semester',
         parentNavigatorKey: _rootKey,
         builder: (_, _) => const SemesterChoicePage(),
+      ),
+      GoRoute(
+        path: '/timetable-import',
+        parentNavigatorKey: _rootKey,
+        builder: (_, _) => const TimetableImportPage(),
       ),
       GoRoute(
         path: '/semester',

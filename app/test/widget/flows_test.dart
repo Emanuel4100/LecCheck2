@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'dart:convert';
 
@@ -18,6 +19,8 @@ import 'package:leccheck/app/router.dart';
 import 'package:leccheck/app/sync_providers.dart';
 import 'package:leccheck/app/update_controller.dart';
 import 'package:leccheck/core/db/app_database.dart';
+import 'package:leccheck/core/backup/snapshot_service.dart';
+import 'package:leccheck/core/backup/timetable_import.dart';
 import 'package:leccheck/core/db/schedule_repository.dart';
 import 'package:leccheck/features/session/session_sheet.dart';
 import 'package:leccheck/features/today/today_page.dart';
@@ -84,6 +87,12 @@ Future<(ProviderContainer, AppDatabase)> _start(
     overrides: [
       sharedPrefsProvider.overrideWithValue(prefs),
       databaseProvider.overrideWithValue(db),
+      snapshotServiceProvider.overrideWithValue(
+        SnapshotService(
+          repo,
+          () async => Directory.systemTemp.createTemp('flows_snapshots'),
+        ),
+      ),
       minuteClockProvider.overrideWith((ref) => Stream.value(_now)),
     ],
   );
@@ -349,6 +358,115 @@ void main() {
       container.read(sessionProvider(session.id))?.recordingUrl,
       'https://example.com/new',
     );
+  });
+
+  group('reception hours', () {
+    Future<(ProviderContainer, ScheduleRepository)> withHours(
+      WidgetTester tester,
+    ) async {
+      final (container, db) = await _start(tester);
+      final repo = ScheduleRepository(db);
+      final course = container.read(coursesProvider).items.first;
+      await tester.runAsync(
+        () => repo.addMeeting(
+          MeetingRule(
+            id: 'hours',
+            courseId: course.id,
+            type: SessionType.reception,
+            kind: MeetingKind.weekly,
+            weekday: DateTime.wednesday,
+            startMin: 13 * 60,
+            endMin: 14 * 60,
+          ),
+        ),
+      );
+      await _settle(tester);
+      return (container, repo);
+    }
+
+    testWidgets('are never sessions', (tester) async {
+      final (container, _) = await withHours(tester);
+      expect(
+        container
+            .read(occurrenceIndexProvider)
+            .all
+            .where((o) => o.type == SessionType.reception),
+        isEmpty,
+      );
+    });
+
+    testWidgets('show on Week only with the option on', (tester) async {
+      final (container, _) = await withHours(tester);
+      container.read(routerProvider).go('/week');
+      await _settle(tester);
+      Finder box() => find.byWidgetPredicate(
+        (w) => w.runtimeType.toString() == '_ReceptionBox',
+      );
+      expect(box(), findsNothing);
+      container.read(receptionHoursProvider.notifier).set(true);
+      await _settle(tester);
+      expect(box(), findsOneWidget);
+    });
+  });
+
+  group('timetable import', () {
+    testWidgets('the reply is previewed, then adds a new semester', (
+      tester,
+    ) async {
+      final (container, db) = await _start(tester);
+      final before = container.read(semesterDataProvider).value!.semester.id;
+      final existing = await tester.runAsync(
+        () => ScheduleRepository(db).exportRows(includeDeleted: false),
+      );
+      container.read(routerProvider).push('/timetable-import');
+      await _settle(tester);
+      await tester.enterText(
+        find.byType(TextField),
+        'Here it is:\n```json\n$timetableExample\n```',
+      );
+      await _settle(tester);
+      final page = find.byType(Scrollable).first;
+      await tester.scrollUntilVisible(
+        find.text('Add semester'),
+        200,
+        scrollable: page,
+      );
+      expect(find.text('Calculus 1: 4 meetings'), findsOneWidget);
+      await tester.ensureVisible(find.text('Add semester'));
+      await _settle(tester);
+      await tester.tap(find.text('Add semester'));
+      // A real snapshot is written first.
+      for (var i = 0; i < 40; i++) {
+        await _settle(tester);
+        if (container.read(semesterDataProvider).value?.semester.id != before) {
+          break;
+        }
+      }
+      final after = container.read(semesterDataProvider).value!;
+      expect(after.semester.name, 'Semester A 2026/27');
+      expect(after.semester.id, isNot(before));
+
+      // Everything from before is still there, unchanged.
+      final rows = await tester.runAsync(
+        () => ScheduleRepository(db).exportRows(includeDeleted: false),
+      );
+      for (final table in existing!.keys) {
+        expect(
+          rows![table]!.map(jsonEncode),
+          containsAll(existing[table]!.map(jsonEncode)),
+        );
+      }
+    });
+
+    testWidgets('says what is wrong and offers no Add button', (tester) async {
+      final (container, _) = await _start(tester);
+      container.read(routerProvider).push('/timetable-import');
+      await _settle(tester);
+      await tester.enterText(find.byType(TextField), '{"format": "other"}');
+      await _settle(tester);
+      expect(find.textContaining("can't be imported"), findsOneWidget);
+      expect(find.text('Add semester'), findsNothing);
+    });
   });
 
   testWidgets('empty semester shows the add-course call to action', (

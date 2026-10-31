@@ -21,6 +21,7 @@ abstract final class OccurrenceEngine {
     final sessions = <Occurrence>[];
 
     for (final meeting in meetings) {
+      if (meeting.type == SessionType.reception) continue;
       for (final originalDate in datesFor(meeting, semester)) {
         final id = sessionId(meeting.id, originalDate);
         final override = overrideById[id];

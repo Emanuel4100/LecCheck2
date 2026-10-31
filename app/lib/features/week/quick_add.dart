@@ -394,7 +394,7 @@ class _QuickAddState extends ConsumerState<_QuickAdd> {
                 MenuChipButton<SessionType>(
                   icon: _type.icon,
                   label: _type.label(l),
-                  values: SessionType.values,
+                  values: SessionType.attendable,
                   itemIcon: (t) => t.icon,
                   itemLabel: (t) => t.label(l),
                   onSelected: (t) => setState(() {

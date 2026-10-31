@@ -25,6 +25,7 @@ import 'package:leccheck/core/update/update_service.dart';
 import 'package:leccheck/domain/local_date.dart';
 import 'package:leccheck/domain/occurrence_engine.dart';
 import 'package:leccheck/domain/schedule_types.dart';
+import 'package:leccheck/core/backup/timetable_import.dart';
 import 'package:leccheck/features/settings/move_dialog.dart';
 import 'package:leccheck/features/settings/update_dialog.dart';
 import 'package:leccheck/features/week/week_page.dart';
@@ -370,6 +371,31 @@ void main() {
     await _shot(tester, 'en_light_today_marked');
   });
 
+  testWidgets('reception hours and the timetable import', (tester) async {
+    final c = await _pumpApp(tester, locale: 'en', mode: ThemeMode.light);
+    final repo = c.read(repositoryProvider);
+    await tester.runAsync(
+      () => repo.addMeeting(
+        const MeetingRule(
+          id: 'hours',
+          courseId: 'calc',
+          type: SessionType.reception,
+          kind: MeetingKind.weekly,
+          weekday: DateTime.wednesday,
+          startMin: 13 * 60,
+          endMin: 14 * 60 + 30,
+        ),
+      ),
+    );
+    c.read(receptionHoursProvider.notifier).set(true);
+    await _go(tester, c, '/week');
+    await _shot(tester, 'en_light_week_reception');
+    await _go(tester, c, '/timetable-import');
+    await tester.enterText(find.byType(TextField), timetableExample);
+    await _settle(tester);
+    await _shot(tester, 'en_light_timetable_import');
+  });
+
   testWidgets('English · light', (tester) async {
     final c = await _pumpApp(tester, locale: 'en', mode: ThemeMode.light);
     await _shot(tester, 'en_light_today');
@@ -438,6 +464,11 @@ void main() {
       preset: ThemePreset.grape,
     );
     await _shot(tester, 'he_dark_today');
+    await tester.tap(find.text('מבני נתונים').first);
+    await _settle(tester);
+    await _shot(tester, 'he_dark_session');
+    await tester.tapAt(const Offset(200, 40));
+    await _settle(tester);
     await _go(tester, c, '/week');
     await _shot(tester, 'he_dark_week');
     c.read(weekCommandsProvider).step(1);

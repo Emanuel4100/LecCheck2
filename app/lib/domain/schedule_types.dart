@@ -13,10 +13,17 @@ enum SessionType {
   lecture('lecture'),
   practice('practice'),
   lab('lab'),
-  other('other');
+  other('other'),
+
+  /// Office hours: on Week if the option is on, and otherwise not a session
+  /// at all (never marked, counted or reminded about).
+  reception('reception');
 
   const SessionType(this.key);
   final String key;
+
+  /// The types of real sessions, for pickers and filters.
+  static const attendable = [lecture, practice, lab, other];
 
   static SessionType fromKey(String? key) => SessionType.values.firstWhere(
     (t) => t.key == key,

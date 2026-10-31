@@ -11,6 +11,12 @@
 - **Days off stand out on Week**: the whole day is tinted with its name at the top, and a
   new icon replaces the umbrella. The date stays visible.
 - **A saved recording is one tap away**: "Recording link" opens it, and Edit changes it.
+- **Reception hours**: turn them on in Settings → Courses, add them to a course like a
+  meeting, and they show on Week as an outline. They never count toward attendance.
+- **Import a timetable with a chatbot**: copy LecCheck's prompt, give it to your own chatbot
+  with a screenshot or file of your schedule, and bring back what it writes. It's checked
+  and previewed, and only adds a new semester.
+- **Clearer Hebrew**: statuses read as nouns, like נוכחות and היעדרות, and other awkward wording is fixed.
 
 ## 2.0.0-beta.16 — 2026-10-31
 

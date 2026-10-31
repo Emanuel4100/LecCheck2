@@ -52,6 +52,14 @@ final hourRangeProvider = Provider<(int, int)>((ref) {
     minStart = math.min(minStart, o.startMin);
     maxEnd = math.max(maxEnd, o.endMin);
   }
+  if (ref.watch(receptionHoursProvider)) {
+    final meetings = ref.watch(semesterDataProvider).value?.meetings;
+    for (final m in meetings ?? const <MeetingRule>[]) {
+      if (m.type != SessionType.reception) continue;
+      minStart = math.min(minStart, m.startMin);
+      maxEnd = math.max(maxEnd, m.endMin);
+    }
+  }
   final start = (minStart ~/ 60).clamp(0, 23);
   final end = ((maxEnd + 59) ~/ 60).clamp(start + 1, 24);
   return (start, end);
@@ -1094,6 +1102,7 @@ class _DayColumnState extends ConsumerState<_DayColumn> {
     final grid = _GridScope.of(context);
     final desktop = AppIdiom.isDesktop;
     final noClassLabel = ref.watch(noClassLabelProvider(date));
+    final reception = ref.watch(receptionOnDayProvider(date)).items;
     double y(int minutes) =>
         (minutes - widget.startHour * 60) / 60 * widget.hourHeight;
 
@@ -1151,6 +1160,15 @@ class _DayColumnState extends ConsumerState<_DayColumn> {
                     ),
                   ),
                 ),
+                for (final m in reception)
+                  PositionedDirectional(
+                    key: ValueKey('reception-${m.id}'),
+                    top: y(m.startMin).clamp(0, height - 20),
+                    height: math.max(22, y(m.endMin) - y(m.startMin) - 2),
+                    start: 2,
+                    end: 2,
+                    child: _ReceptionBox(m),
+                  ),
                 for (final p in placed)
                   PositionedDirectional(
                     key: ValueKey(p.session.id),
@@ -1194,6 +1212,68 @@ class _DayColumnState extends ConsumerState<_DayColumn> {
             ),
           );
         },
+      ),
+    );
+  }
+}
+
+/// Reception hours: an outline in the course's color, so they don't look like
+/// a class to attend. Under the sessions when they overlap.
+class _ReceptionBox extends ConsumerWidget {
+  const _ReceptionBox(this.meeting);
+
+  final MeetingRule meeting;
+
+  Future<void> _details(BuildContext context, CourseInfo? course) async {
+    final l = AppLocalizations.of(context);
+    final fmt = Fmt.of(context);
+    final edit = await showChoiceDialog<bool>(
+      context,
+      title: '${l.typeReception} · ${course?.name ?? ''}',
+      body: joinDetails([
+        fmt.timeRange(meeting.startMin, meeting.endMin),
+        meeting.location,
+      ]),
+      choices: [
+        DialogChoice(l.edit, true),
+        DialogChoice(l.done, false, primary: true),
+      ],
+    );
+    if (edit == true && context.mounted) {
+      await context.push('/course-editor?id=${meeting.courseId}');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final l = AppLocalizations.of(context);
+    final course = ref.watch(courseProvider(meeting.courseId));
+    final tone = CourseColors.of(context).tone(course?.colorKey ?? 'ocean');
+    final shape = RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(10),
+      side: BorderSide(color: tone.accent, width: 1.5),
+    );
+    final name = course?.shortName.isNotEmpty == true
+        ? course!.shortName
+        : course?.name ?? '';
+    return Material(
+      type: MaterialType.transparency,
+      shape: shape,
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () => _details(context, course),
+        child: Padding(
+          padding: const EdgeInsets.all(4),
+          child: Text(
+            '$name\n${l.typeReception}',
+            overflow: TextOverflow.fade,
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: theme.colorScheme.onSurface,
+              height: 1.15,
+            ),
+          ),
+        ),
       ),
     );
   }
