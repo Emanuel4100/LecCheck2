@@ -43,9 +43,10 @@ final routerProvider = Provider<GoRouter>((ref) {
           location == '/welcome' || location.startsWith('/semester');
       final hasSemester = semesters.value!.isNotEmpty;
       if (!hasSemester && !onboarding) return '/welcome';
-      if (hasSemester && (location == '/' || location == '/welcome')) {
-        return '/today';
+      if (hasSemester && location == '/') {
+        return tabPaths[ref.read(startTabProvider)];
       }
+      if (hasSemester && location == '/welcome') return '/today';
       return null;
     },
     routes: [

@@ -1341,6 +1341,18 @@ class AppLocalizationsHe extends AppLocalizations {
   String get shortcutBack => 'סגירה / חזרה';
 
   @override
+  String get undone => 'הפעולה בוטלה';
+
+  @override
+  String get shortcutUndo => 'ביטול השינוי האחרון';
+
+  @override
+  String get startTab => 'פתיחה במסך';
+
+  @override
+  String get startTabSubtitle => 'המסך שבו LecCheck נפתח במכשיר הזה';
+
+  @override
   String get shortcutHelp => 'הצגת הרשימה הזו';
 
   @override

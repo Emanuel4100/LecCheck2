@@ -45,6 +45,27 @@ final sharedPrefsProvider = Provider<SharedPreferencesWithCache>(
   (ref) => throw UnimplementedError('sharedPrefsProvider not overridden'),
 );
 
+/// The tab LecCheck opens on, on this device (0 is Today).
+class StartTabController extends Notifier<int> {
+  static const _key = 'startup.tab';
+  static const _tabs = 4;
+
+  @override
+  int build() {
+    final tab = ref.read(sharedPrefsProvider).getInt(_key) ?? 0;
+    return tab >= 0 && tab < _tabs ? tab : 0;
+  }
+
+  void set(int tab) {
+    ref.read(sharedPrefsProvider).setInt(_key, tab);
+    state = tab;
+  }
+}
+
+final startTabProvider = NotifierProvider<StartTabController, int>(
+  StartTabController.new,
+);
+
 final databaseProvider = Provider<AppDatabase>((ref) {
   final db = AppDatabase();
   ref.onDispose(db.close);

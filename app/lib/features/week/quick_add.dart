@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 
+import '../../app/last_undo.dart';
 import '../../app/adaptive.dart';
 import '../../app/format.dart';
 import '../../app/labels.dart';
@@ -267,6 +268,7 @@ class _QuickAddState extends ConsumerState<_QuickAdd> {
       message = l.addedToCourse(_course!.name);
       undo = () => repo.deleteMeeting(meeting.id);
     }
+    final undoOnce = ref.read(lastUndoProvider).remember(undo);
     HapticFeedback.lightImpact();
     navigator.pop();
     messenger
@@ -275,7 +277,7 @@ class _QuickAddState extends ConsumerState<_QuickAdd> {
         SnackBar(
           content: Text(message),
           duration: const Duration(seconds: 4),
-          action: SnackBarAction(label: l.undo, onPressed: undo),
+          action: SnackBarAction(label: l.undo, onPressed: undoOnce),
         ),
       );
   }

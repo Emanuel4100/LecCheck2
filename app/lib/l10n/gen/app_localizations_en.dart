@@ -1347,6 +1347,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get shortcutBack => 'Close / go back';
 
   @override
+  String get undone => 'Undone';
+
+  @override
+  String get shortcutUndo => 'Undo the last change';
+
+  @override
+  String get startTab => 'Open on';
+
+  @override
+  String get startTabSubtitle => 'The tab LecCheck starts on, on this device';
+
+  @override
   String get shortcutHelp => 'Show this list';
 
   @override

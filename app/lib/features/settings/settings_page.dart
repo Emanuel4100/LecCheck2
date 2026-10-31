@@ -396,6 +396,27 @@ class _DeviceSection extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        ListTile(
+          leading: const Icon(LecIcons.today),
+          title: Text(l.startTab),
+          subtitle: Text(l.startTabSubtitle),
+          trailing: DropdownButton<int>(
+            value: ref.watch(startTabProvider),
+            underline: const SizedBox.shrink(),
+            items: [
+              for (final (i, label) in [
+                l.navToday,
+                l.navWeek,
+                l.navCourses,
+                l.navStats,
+              ].indexed)
+                DropdownMenuItem(value: i, child: Text(label)),
+            ],
+            onChanged: (tab) {
+              if (tab != null) ref.read(startTabProvider.notifier).set(tab);
+            },
+          ),
+        ),
         if (AppIdiom.isDesktop)
           ListTile(
             leading: const Icon(LecIcons.keyboard),

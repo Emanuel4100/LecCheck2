@@ -2306,6 +2306,30 @@ abstract class AppLocalizations {
   /// **'Close / go back'**
   String get shortcutBack;
 
+  /// No description provided for @undone.
+  ///
+  /// In en, this message translates to:
+  /// **'Undone'**
+  String get undone;
+
+  /// No description provided for @shortcutUndo.
+  ///
+  /// In en, this message translates to:
+  /// **'Undo the last change'**
+  String get shortcutUndo;
+
+  /// No description provided for @startTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Open on'**
+  String get startTab;
+
+  /// No description provided for @startTabSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'The tab LecCheck starts on, on this device'**
+  String get startTabSubtitle;
+
   /// No description provided for @shortcutHelp.
   ///
   /// In en, this message translates to:

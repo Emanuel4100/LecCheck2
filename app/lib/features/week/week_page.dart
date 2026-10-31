@@ -139,6 +139,7 @@ class _WeekPageState extends ConsumerState<WeekPage> {
   PageController? _controller;
   late final _commands = ref.read(weekCommandsProvider);
   int _page = 0;
+  DateTime? _lastWheelStep;
 
   /// The week shown, for the app bar: swiping changes only it, not the grid
   /// (a rebuild of both visible weeks halfway through each swipe).
@@ -198,6 +199,18 @@ class _WeekPageState extends ConsumerState<WeekPage> {
       duration: const Duration(milliseconds: 450),
       curve: Curves.easeOutCubic,
     );
+  }
+
+  /// A step from the mouse wheel: one notch can send several events.
+  void _wheelStep(int weeks) {
+    final now = DateTime.now();
+    final last = _lastWheelStep;
+    if (last != null &&
+        now.difference(last) < const Duration(milliseconds: 300)) {
+      return;
+    }
+    _lastWheelStep = now;
+    _step(weeks);
   }
 
   void _step(int weeks) =>
@@ -322,6 +335,7 @@ class _WeekPageState extends ConsumerState<WeekPage> {
                 weekStart: calendar.weekStartOf(i + 1),
                 hourHeight: hourHeight,
                 onZoom: _zoomBy,
+                onStep: _wheelStep,
               ),
             ),
           ),
@@ -607,11 +621,13 @@ class _WeekGrid extends ConsumerStatefulWidget {
     required this.weekStart,
     required this.hourHeight,
     required this.onZoom,
+    required this.onStep,
   });
 
   final LocalDate weekStart;
   final double hourHeight;
   final ValueChanged<double> onZoom;
+  final ValueChanged<int> onStep;
 
   @override
   ConsumerState<_WeekGrid> createState() => _WeekGridState();
@@ -729,14 +745,39 @@ class _WeekGridState extends ConsumerState<_WeekGrid> {
   /// scroll view, so it claims the signal before the scroll view does.
   void _onSignal(PointerSignalEvent event) {
     final keys = HardwareKeyboard.instance;
-    if (event is! PointerScrollEvent ||
-        !(keys.isControlPressed || keys.isMetaPressed)) {
+    if (event is! PointerScrollEvent) return;
+    if (!keys.isControlPressed && !keys.isMetaPressed) {
+      // Shift+wheel or a sideways scroll changes the week. Sideways follows
+      // the screen, like the arrow keys: in Hebrew, left is "next".
+      final delta = event.scrollDelta;
+      final rtl = Directionality.of(context) == TextDirection.rtl;
+      if (delta.dx != 0) {
+        _stepByWheel(event, (rtl ? -delta.dx : delta.dx).sign.toInt());
+      } else if (keys.isShiftPressed) {
+        _stepByWheel(event, delta.dy.sign.toInt());
+      }
       return;
     }
     GestureBinding.instance.pointerSignalResolver.register(event, (e) {
       final dy = (e as PointerScrollEvent).scrollDelta.dy;
       widget.onZoom(math.exp(-dy / 240));
     });
+  }
+
+  /// The wheel over the day names changes the week; there are no hours to
+  /// scroll there.
+  void _onHeaderSignal(PointerSignalEvent event) {
+    if (event is PointerScrollEvent) {
+      _stepByWheel(event, event.scrollDelta.dy.sign.toInt());
+    }
+  }
+
+  void _stepByWheel(PointerScrollEvent event, int weeks) {
+    if (weeks == 0) return;
+    GestureBinding.instance.pointerSignalResolver.register(
+      event,
+      (_) => widget.onStep(weeks),
+    );
   }
 
   @override
@@ -754,16 +795,19 @@ class _WeekGridState extends ConsumerState<_WeekGrid> {
 
     return Column(
       children: [
-        SizedBox(
-          height: _headerHeight,
-          child: Row(
-            children: [
-              const SizedBox(width: _timeColumnWidth),
-              for (final date in dates)
-                Expanded(
-                  child: _DayHeader(date: date, isToday: date == today),
-                ),
-            ],
+        Listener(
+          onPointerSignal: _onHeaderSignal,
+          child: SizedBox(
+            height: _headerHeight,
+            child: Row(
+              children: [
+                const SizedBox(width: _timeColumnWidth),
+                for (final date in dates)
+                  Expanded(
+                    child: _DayHeader(date: date, isToday: date == today),
+                  ),
+              ],
+            ),
           ),
         ),
         Divider(height: 1, color: theme.colorScheme.outlineVariant),

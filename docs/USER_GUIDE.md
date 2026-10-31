@@ -326,7 +326,9 @@ Ctrl on Linux and Windows (⌘ on a Mac). **F1** shows this list in the app.
 | Ctrl+R or F5 | Sync now |
 | Ctrl+, | Settings |
 | ← → or PgUp PgDn | Previous / next week (Week tab) |
+| Shift+wheel, or the wheel over the day names | Previous / next week (Week tab) |
 | T or Home | This week |
+| Ctrl+Z | Undo the last change (Week tab) |
 | Ctrl+= / Ctrl+− / Ctrl+0 | Zoom the week in / out / reset |
 | 1 … 5 | Mark the open session |
 | Ctrl+S | Save (course and semester editors) |

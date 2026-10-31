@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
+import '../../app/last_undo.dart';
 import '../../app/adaptive.dart';
 import '../../app/format.dart';
 import '../../app/labels.dart';
@@ -345,13 +346,13 @@ class _SessionSheetState extends ConsumerState<SessionSheet> {
                   final close = widget.onClose ?? () => Navigator.pop(context);
                   close();
                   final receipt = await repo.deleteMeeting(session.meetingId);
+                  final undo = ref
+                      .read(lastUndoProvider)
+                      .remember(() => repo.undoDeletion(receipt));
                   messenger.showSnackBar(
                     SnackBar(
                       content: Text(l.removeOneTime),
-                      action: SnackBarAction(
-                        label: l.undo,
-                        onPressed: () => repo.undoDeletion(receipt),
-                      ),
+                      action: SnackBarAction(label: l.undo, onPressed: undo),
                     ),
                   );
                 },

@@ -2,6 +2,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
+import '../../app/last_undo.dart';
 import '../../app/format.dart';
 import '../../app/providers.dart';
 import '../../domain/local_date.dart';
@@ -110,7 +111,10 @@ Future<void> moveSessionTo(
       SnackBar(
         content: Text(everyWeek ? l.movedEveryWeek : l.movedThisWeek),
         duration: const Duration(seconds: 4),
-        action: SnackBarAction(label: l.undo, onPressed: undo),
+        action: SnackBarAction(
+          label: l.undo,
+          onPressed: ref.read(lastUndoProvider).remember(undo),
+        ),
       ),
     );
 }

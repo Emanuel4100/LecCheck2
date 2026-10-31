@@ -3,12 +3,14 @@ import 'dart:convert';
 import 'package:cryptography/cryptography.dart';
 import 'package:drift/drift.dart' show driftRuntimeOptions;
 import 'package:drift/native.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:leccheck/app/app.dart';
+import 'package:leccheck/app/last_undo.dart';
 import 'package:leccheck/app/providers.dart';
 import 'package:leccheck/app/router.dart';
 import 'package:leccheck/app/sync_providers.dart';
@@ -30,6 +32,7 @@ final _now = DateTime(2026, 10, 20, 13, 0); // Tuesday, after the 10:00 lecture
 Future<(ProviderContainer, AppDatabase)> _start(
   WidgetTester tester, {
   bool withCourse = true,
+  int? startTab,
 }) async {
   tester.view.physicalSize = const Size(1080, 2340);
   tester.view.devicePixelRatio = 2.6;
@@ -41,6 +44,7 @@ Future<(ProviderContainer, AppDatabase)> _start(
     cacheOptions: const SharedPreferencesWithCacheOptions(),
   );
   await prefs.setString('appearance.locale', 'en');
+  if (startTab != null) await prefs.setInt('startup.tab', startTab);
   final db = AppDatabase(NativeDatabase.memory());
   addTearDown(db.close);
   final repo = ScheduleRepository(db);
@@ -140,6 +144,73 @@ void main() {
 
     final handled = await tester.sendKeyEvent(LogicalKeyboardKey.keyT);
     expect(handled, isFalse, reason: 'the "this week" shortcut took the key');
+  });
+
+  testWidgets('opens on the chosen tab', (tester) async {
+    await _start(tester, startTab: 1);
+    expect(find.textContaining(RegExp(r'^Week \d+$')), findsOneWidget);
+  });
+
+  testWidgets('a tab that no longer exists opens Today', (tester) async {
+    final (container, _) = await _start(tester, startTab: 9);
+    expect(container.read(startTabProvider), 0);
+  });
+
+  testWidgets('Ctrl+Z on Week undoes the last change', (tester) async {
+    final (container, _) = await _start(tester, startTab: 1);
+    var undone = 0;
+    container.read(lastUndoProvider).remember(() => undone++);
+
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
+    await tester.sendKeyEvent(LogicalKeyboardKey.keyZ);
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
+    await _settle(tester);
+
+    expect(undone, 1);
+    expect(find.text('Undone'), findsOneWidget);
+  });
+
+  group('the wheel on Week', () {
+    // The week LecCheck opens on follows the real date.
+    int shownWeek(WidgetTester tester) {
+      final title = tester.widget<Text>(
+        find.textContaining(RegExp(r'^Week \d+$')),
+      );
+      return int.parse(title.data!.split(' ').last);
+    }
+
+    Future<void> wheel(WidgetTester tester, Offset at, Offset delta) async {
+      final mouse = TestPointer(1, PointerDeviceKind.mouse);
+      mouse.hover(at);
+      await tester.sendEventToBinding(mouse.scroll(delta));
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('Shift+wheel changes the week', (tester) async {
+      await _start(tester, startTab: 1);
+      final week = shownWeek(tester);
+      final grid = tester.getCenter(find.byType(PageView));
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.shiftLeft);
+      await wheel(tester, grid, const Offset(0, 100));
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.shiftLeft);
+      expect(shownWeek(tester), week + 1);
+    });
+
+    testWidgets('a plain wheel stays on the week', (tester) async {
+      await _start(tester, startTab: 1);
+      final week = shownWeek(tester);
+      final grid = tester.getCenter(find.byType(PageView));
+      await wheel(tester, grid, const Offset(0, 100));
+      expect(shownWeek(tester), week);
+    });
+
+    testWidgets('a wheel over the day names changes the week', (tester) async {
+      await _start(tester, startTab: 1);
+      final week = shownWeek(tester);
+      final header = tester.getCenter(find.text('Tue').first);
+      await wheel(tester, header, const Offset(0, 100));
+      expect(shownWeek(tester), week + 1);
+    });
   });
 
   testWidgets('course editor requires a name', (tester) async {

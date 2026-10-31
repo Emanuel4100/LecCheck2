@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../app/last_undo.dart';
 import '../../app/labels.dart';
 import '../../app/providers.dart';
 import '../../domain/occurrence.dart';
@@ -23,19 +24,17 @@ Future<void> markSession(
   final l = AppLocalizations.of(context);
   HapticFeedback.mediumImpact();
   await repo.setStatus(session, status);
+  final undo = ref.read(lastUndoProvider).remember(() async {
+    onUndo?.call();
+    await repo.setStatus(session, previous);
+  });
   messenger
     ?..hideCurrentSnackBar()
     ..showSnackBar(
       SnackBar(
         content: Text(l.markedAs(status.label(l))),
         duration: const Duration(seconds: 4),
-        action: SnackBarAction(
-          label: l.undo,
-          onPressed: () {
-            onUndo?.call();
-            repo.setStatus(session, previous);
-          },
-        ),
+        action: SnackBarAction(label: l.undo, onPressed: undo),
       ),
     );
 }
@@ -54,19 +53,17 @@ Future<void> markSessions(
   final l = AppLocalizations.of(context);
   HapticFeedback.heavyImpact();
   await repo.setStatuses(sessions, status);
+  final undo = ref.read(lastUndoProvider).remember(() async {
+    for (final e in previous.entries) {
+      await repo.setStatus(e.key, e.value);
+    }
+  });
   messenger
     ?..hideCurrentSnackBar()
     ..showSnackBar(
       SnackBar(
         content: Text(l.markedManyAs(sessions.length, status.label(l))),
-        action: SnackBarAction(
-          label: l.undo,
-          onPressed: () async {
-            for (final e in previous.entries) {
-              await repo.setStatus(e.key, e.value);
-            }
-          },
-        ),
+        action: SnackBarAction(label: l.undo, onPressed: undo),
       ),
     );
 }

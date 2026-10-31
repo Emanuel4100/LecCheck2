@@ -11,6 +11,7 @@ import '../features/tour/tour_overlay.dart';
 import '../features/week/mini_calendar.dart';
 import '../features/week/week_page.dart';
 import '../l10n/gen/app_localizations.dart';
+import 'last_undo.dart';
 import 'adaptive.dart';
 import 'shortcuts.dart';
 import 'sync_providers.dart';
@@ -41,6 +42,14 @@ class AppShell extends ConsumerWidget {
       if (shell.currentIndex == 1 && !isTyping) action();
     }
 
+    void undo() => onWeek(() async {
+      final messenger = ScaffoldMessenger.maybeOf(context);
+      final undone = AppLocalizations.of(context).undone;
+      if (!await ref.read(lastUndoProvider).undo()) return;
+      messenger
+        ?..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(content: Text(undone)));
+    });
     void sync() => ref.read(manualSyncProvider.notifier).run();
     void help() => showShortcutsHelp(context);
     void zoomIn() => onWeek(() => week.zoom(1.15));
@@ -59,6 +68,7 @@ class AppShell extends ConsumerWidget {
       primaryKey(LogicalKeyboardKey.keyN, shift: true): () =>
           addOneTimeSession(context, ref),
       primaryKey(LogicalKeyboardKey.keyF): () => context.go('/today/sessions'),
+      UnlessTyping(primaryKey(LogicalKeyboardKey.keyZ)): undo,
       primaryKey(LogicalKeyboardKey.keyR): sync,
       const SingleActivator(LogicalKeyboardKey.f5): sync,
       const SingleActivator(LogicalKeyboardKey.f1): help,

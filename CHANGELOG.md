@@ -9,6 +9,10 @@
 - **The countdown on Today shows days** from 24 hours on, like "2d 3h".
 - **Delete cloud data asks you to type DELETE** first.
 - **A Today button on Week**, in words, takes you back to this week. The icon was easy to miss.
+- **Ctrl+Z on Week** undoes your last change: a move, a quick add or a mark.
+- **The mouse wheel changes the week**: Shift+wheel, a sideways scroll, or the wheel over
+  the day names. The plain wheel still scrolls the hours and Ctrl+wheel still zooms.
+- **Choose the tab LecCheck opens on**, for each device, in Settings.
 - A keyring that doesn't answer can't stop a sign-out halfway.
 - Linux releases are only the Flatpak now: the tarball and `install.sh` are gone. Installs
   from 2.0.0-beta.15 move from inside the app.
