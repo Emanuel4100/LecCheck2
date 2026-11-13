@@ -68,6 +68,36 @@ Future<void> markSessions(
     );
 }
 
+/// Clears the status of [sessions] (e.g. a day whose classes were all
+/// canceled), with an undo snackbar.
+Future<void> restoreSessions(
+  BuildContext context,
+  WidgetRef ref,
+  List<Occurrence> sessions,
+) async {
+  if (sessions.isEmpty) return;
+  final repo = ref.read(repositoryProvider);
+  final previous = {for (final s in sessions) s: s.explicitStatus};
+  final messenger = ScaffoldMessenger.maybeOf(context);
+  final l = AppLocalizations.of(context);
+  for (final s in sessions) {
+    await repo.setStatus(s, null);
+  }
+  final undo = ref.read(lastUndoProvider).remember(() async {
+    for (final e in previous.entries) {
+      await repo.setStatus(e.key, e.value);
+    }
+  });
+  messenger
+    ?..hideCurrentSnackBar()
+    ..showSnackBar(
+      SnackBar(
+        content: Text(l.restoreDay),
+        action: SnackBarAction(label: l.undo, onPressed: undo),
+      ),
+    );
+}
+
 /// Schemes links may open. Links can come from imported backups, so
 /// anything that could open local files or other apps' screens (`file:`,
 /// `content:`, `intent:`) is refused.

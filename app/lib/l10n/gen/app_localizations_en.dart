@@ -376,6 +376,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get restoreDay => 'Restore classes';
 
   @override
+  String get cancelAllClasses => 'Cancel all classes';
+
+  @override
+  String get cancelAllClassesSubtitle =>
+      'Or mark only this day\'s classes canceled, without making it a day off. Classes added to it later aren\'t canceled.';
+
+  @override
+  String get allClassesCanceled => 'All classes canceled';
+
+  @override
   String get noClassReason => 'Reason (optional)';
 
   @override

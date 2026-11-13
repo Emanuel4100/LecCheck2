@@ -710,6 +710,24 @@ abstract class AppLocalizations {
   /// **'Restore classes'**
   String get restoreDay;
 
+  /// No description provided for @cancelAllClasses.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel all classes'**
+  String get cancelAllClasses;
+
+  /// No description provided for @cancelAllClassesSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Or mark only this day\'s classes canceled, without making it a day off. Classes added to it later aren\'t canceled.'**
+  String get cancelAllClassesSubtitle;
+
+  /// No description provided for @allClassesCanceled.
+  ///
+  /// In en, this message translates to:
+  /// **'All classes canceled'**
+  String get allClassesCanceled;
+
   /// No description provided for @noClassReason.
   ///
   /// In en, this message translates to:

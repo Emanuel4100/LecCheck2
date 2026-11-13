@@ -293,6 +293,13 @@ final noClassLabelProvider = Provider.family<String?, LocalDate>(
   ),
 );
 
+/// Every class of [date] was canceled by hand, without making it a day off.
+final dayCanceledProvider = Provider.family<bool, LocalDate>((ref, date) {
+  final day = ref.watch(occurrenceIndexProvider).onDay(date);
+  return day.isNotEmpty &&
+      day.every((o) => o.explicitStatus == AttendanceStatus.canceled);
+});
+
 final occurrenceIndexProvider = Provider<OccurrenceIndex>((ref) {
   final data = ref.watch(semesterDataProvider).value;
   if (data == null) return OccurrenceIndex.empty;

@@ -33,6 +33,7 @@ import '../../domain/semester_calendar.dart';
 import '../../domain/short_name.dart';
 import '../../domain/time_slots.dart';
 import '../../l10n/gen/app_localizations.dart';
+import '../session/session_actions.dart';
 import '../session/session_menu.dart';
 import '../session/session_sheet.dart';
 import '../settings/account_section.dart';
@@ -917,7 +918,17 @@ class _DayHeader extends ConsumerWidget {
     final theme = Theme.of(context);
     final fmt = Fmt.of(context);
     final noClassLabel = ref.watch(noClassLabelProvider(date));
+    final canceled =
+        noClassLabel == null && ref.watch(dayCanceledProvider(date));
     final scheme = theme.colorScheme;
+    final l = AppLocalizations.of(context);
+    final weekday = Text(
+      fmt.weekdayShort(date),
+      maxLines: 1,
+      style: theme.textTheme.labelSmall?.copyWith(
+        color: isToday ? scheme.primary : scheme.onSurfaceVariant,
+      ),
+    );
     final header = InkWell(
       borderRadius: BorderRadius.circular(16),
       onTap: () => showDayOptions(context, ref, date),
@@ -925,13 +936,18 @@ class _DayHeader extends ConsumerWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Text(
-            fmt.weekdayShort(date),
-            maxLines: 1,
-            style: theme.textTheme.labelSmall?.copyWith(
-              color: isToday ? scheme.primary : scheme.onSurfaceVariant,
-            ),
-          ),
+          // A day off is tinted like its column, with its icon by the name.
+          if (noClassLabel != null)
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(LecIcons.holiday, size: 12, color: scheme.tertiary),
+                const SizedBox(width: 3),
+                Flexible(child: weekday),
+              ],
+            )
+          else
+            weekday,
           const SizedBox(height: 2),
           Container(
             width: 30,
@@ -951,10 +967,30 @@ class _DayHeader extends ConsumerWidget {
         ],
       ),
     );
-    // The holiday's name, on hover or a long press.
-    return noClassLabel == null || noClassLabel.isEmpty
-        ? header
-        : Tooltip(message: noClassLabel, child: header);
+    final Widget marked = noClassLabel != null
+        ? DecoratedBox(
+            decoration: BoxDecoration(
+              color: scheme.tertiaryContainer.withValues(alpha: 0.4),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: header,
+          )
+        : canceled
+        ? ClipRRect(
+            borderRadius: BorderRadius.circular(16),
+            child: CustomPaint(
+              painter: CanceledStripes(scheme.outline.withValues(alpha: 0.2)),
+              child: header,
+            ),
+          )
+        : header;
+    // The day's name, on hover or a long press.
+    final tooltip = noClassLabel?.isNotEmpty ?? false
+        ? noClassLabel!
+        : canceled
+        ? l.allClassesCanceled
+        : null;
+    return tooltip == null ? marked : Tooltip(message: tooltip, child: marked);
   }
 }
 
@@ -1111,6 +1147,8 @@ class _DayColumnState extends ConsumerState<_DayColumn> {
     final grid = _GridScope.of(context);
     final desktop = AppIdiom.isDesktop;
     final noClassLabel = ref.watch(noClassLabelProvider(date));
+    final canceledDay =
+        noClassLabel == null && ref.watch(dayCanceledProvider(date));
     final reception = ref.watch(receptionOnDayProvider(date)).items;
     bool overlaps(MeetingRule m, Occurrence o) =>
         m.startMin < o.endMin && o.startMin < m.endMin;
@@ -1148,7 +1186,16 @@ class _DayColumnState extends ConsumerState<_DayColumn> {
               clipBehavior: Clip.none,
               children: [
                 if (noClassLabel != null)
-                  Positioned.fill(child: _NoClassBackdrop(noClassLabel)),
+                  Positioned.fill(child: _NoClassBackdrop(noClassLabel))
+                else if (canceledDay)
+                  Positioned.fill(
+                    child: CustomPaint(
+                      painter: CanceledStripes(
+                        Theme.of(context).colorScheme.outline
+                            .withValues(alpha: 0.12),
+                      ),
+                    ),
+                  ),
                 // Behind the tiles: only presses on empty space reach it.
                 // A tap adds an hour there; a long press (phones) or a
                 // mouse drag (desktop) drags out the time.
@@ -2040,6 +2087,12 @@ Future<void> showDayOptions(
   final data = ref.read(semesterDataProvider).value;
   if (data == null) return Future.value();
   final ranges = data.noClassRanges.where((r) => r.contains(date)).toList();
+  final sessions = ref.read(occurrenceIndexProvider).onDay(date);
+  final canceledDay = ref.read(dayCanceledProvider(date));
+  final toCancel = [
+    for (final s in sessions)
+      if (s.explicitStatus != AttendanceStatus.canceled) s,
+  ];
   final reason = TextEditingController();
   final repo = ref.read(repositoryProvider);
   final messenger = ScaffoldMessenger.of(context);
@@ -2119,6 +2172,44 @@ Future<void> showDayOptions(
               icon: const Icon(LecIcons.holiday),
               label: Text(l.markNoClassDay),
             ),
+            if (canceledDay) ...[
+              const SizedBox(height: 16),
+              Card(
+                child: ListTile(
+                  leading: const Icon(LecIcons.canceled),
+                  title: Text(l.allClassesCanceled),
+                  trailing: FilledButton.tonal(
+                    onPressed: () {
+                      Navigator.pop(sheet);
+                      unawaited(restoreSessions(context, ref, sessions));
+                    },
+                    child: Text(l.restoreDay),
+                  ),
+                ),
+              ),
+            ] else if (toCancel.isNotEmpty) ...[
+              const SizedBox(height: 24),
+              Text(
+                l.cancelAllClassesSubtitle,
+                style: Theme.of(sheet).textTheme.bodyMedium,
+              ),
+              const SizedBox(height: 12),
+              OutlinedButton.icon(
+                onPressed: () {
+                  Navigator.pop(sheet);
+                  unawaited(
+                    markSessions(
+                      context,
+                      ref,
+                      toCancel,
+                      AttendanceStatus.canceled,
+                    ),
+                  );
+                },
+                icon: const Icon(LecIcons.canceled),
+                label: Text(l.cancelAllClasses),
+              ),
+            ],
           ],
         ],
       ),

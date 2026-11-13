@@ -13,6 +13,11 @@
   It counts like a watched recording: present in your stats, and toward a requirement when
   recordings count. On phones the status buttons now take two rows. Keys 1 to 6 mark a session
   on desktop. Older versions of the app show these sessions as unmarked until they update.
+- **Days off are easier to spot.** The day's name at the top of Week is tinted with the day-off
+  icon, and the month calendar on desktop gives a day off its own tinted circle instead of
+  fading it like a day outside the semester.
+- **Cancel all classes on one day** without making it a day off: tap the day's name on Week.
+  The day gets the canceled stripes, and Undo or Restore classes brings them back.
 
 ## 2.0.0-beta.17 — 2026-10-31
 

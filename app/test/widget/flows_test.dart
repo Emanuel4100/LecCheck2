@@ -321,6 +321,41 @@ void main() {
     expect(find.text('By type'), findsOneWidget);
   });
 
+  testWidgets('a day\'s classes can all be canceled and restored', (
+    tester,
+  ) async {
+    final (container, db) = await _start(tester);
+    final day = LocalDate.parse('2026-10-20'); // today, with the lecture
+    container.read(routerProvider).go('/week');
+    await _settle(tester);
+    Future<void> openDay() async {
+      await tester.tap(
+        find.descendant(
+          of: find.byWidgetPredicate(
+            (w) => w.runtimeType.toString() == '_DayHeader',
+          ),
+          matching: find.text('20'),
+        ),
+      );
+      await _settle(tester);
+    }
+
+    await openDay();
+    await tester.ensureVisible(find.text('Cancel all classes'));
+    await tester.tap(find.text('Cancel all classes'));
+    await _settle(tester);
+    expect(await _statusOf(tester, db), 'canceled');
+    expect(container.read(dayCanceledProvider(day)), isTrue);
+    expect(find.byTooltip('All classes canceled'), findsWidgets);
+
+    await openDay();
+    await tester.ensureVisible(find.text('Restore classes'));
+    await tester.tap(find.text('Restore classes'));
+    await _settle(tester);
+    expect(await _statusOf(tester, db), isNull);
+    expect(container.read(dayCanceledProvider(day)), isFalse);
+  });
+
   testWidgets('All sessions filters and sorts by recording', (tester) async {
     final (container, db) = await _start(tester);
     final upcoming = container

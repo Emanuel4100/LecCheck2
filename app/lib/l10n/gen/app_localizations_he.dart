@@ -376,6 +376,16 @@ class AppLocalizationsHe extends AppLocalizations {
   String get restoreDay => 'החזרת השיעורים';
 
   @override
+  String get cancelAllClasses => 'ביטול כל השיעורים';
+
+  @override
+  String get cancelAllClassesSubtitle =>
+      'או לסמן רק את השיעורים של היום הזה כמבוטלים, בלי להגדיר אותו כיום ללא שיעורים. שיעורים שיתווספו אליו אחר כך לא יבוטלו.';
+
+  @override
+  String get allClassesCanceled => 'כל השיעורים בוטלו';
+
+  @override
   String get noClassReason => 'סיבה (אופציונלי)';
 
   @override

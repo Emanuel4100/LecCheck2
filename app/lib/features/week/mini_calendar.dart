@@ -63,11 +63,18 @@ class _MiniCalendarState extends ConsumerState<MiniCalendar> {
       final isToday = date == today;
       final inSemester = date.isWithin(semester.start, semester.end);
       final noClass = ref.watch(noClassLabelProvider(date));
+      final canceled = noClass == null && ref.watch(dayCanceledProvider(date));
       final hasClasses = index.onDay(date).any((s) => !s.isCanceled);
+      // A day off has its own tint, so it doesn't look like a day outside
+      // the semester; a day whose classes were all canceled is outlined.
       final color = isToday
           ? scheme.onPrimary
-          : !inMonth || !inSemester || noClass != null
+          : !inMonth || !inSemester
           ? scheme.onSurfaceVariant.withValues(alpha: inMonth ? 0.6 : 0.35)
+          : noClass != null
+          ? scheme.onTertiaryContainer
+          : canceled
+          ? scheme.onSurfaceVariant
           : scheme.onSurface;
       Widget cell = InkResponse(
         radius: MiniCalendar._cell / 2,
@@ -77,12 +84,25 @@ class _MiniCalendarState extends ConsumerState<MiniCalendar> {
           child: Stack(
             alignment: Alignment.center,
             children: [
-              if (isToday)
+              if (isToday || noClass != null || canceled)
                 Container(
                   width: 26,
                   height: 26,
                   decoration: BoxDecoration(
-                    color: scheme.primary,
+                    color: isToday
+                        ? scheme.primary
+                        : noClass != null
+                        ? scheme.tertiaryContainer.withValues(
+                            alpha: inMonth ? 1 : 0.5,
+                          )
+                        : null,
+                    border: isToday || noClass != null
+                        ? null
+                        : Border.all(
+                            color: scheme.outline.withValues(
+                              alpha: inMonth ? 1 : 0.5,
+                            ),
+                          ),
                     shape: BoxShape.circle,
                   ),
                 ),
@@ -111,6 +131,8 @@ class _MiniCalendarState extends ConsumerState<MiniCalendar> {
       );
       if (noClass != null && noClass.isNotEmpty) {
         cell = Tooltip(message: noClass, child: cell);
+      } else if (canceled) {
+        cell = Tooltip(message: l.allClassesCanceled, child: cell);
       }
       return cell;
     }
