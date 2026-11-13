@@ -1,20 +1,20 @@
 {
   "beta": {
-    "version": "2.0.0-beta.17",
-    "build": 25,
-    "date": "2026-10-31",
-    "notesUrl": "https://github.com/Emanuel4100/LecCheck2/releases/tag/v2.0.0-beta.17",
-    "notes": "- **A calmer way to mark a session.** One Attended button with a menu for the other\n  statuses replaces the green and red buttons; the color only shows once it's marked.\n- **Today is less crowded**: the session in the big card isn't listed again in the schedule.\n- **Stats starts with your courses**: overall attendance, then each course with its\n  requirements under it. On phones the charts fold under More details.\n- **Settings on phones is a short list** of categories, each on its own page.\n- **Days off stand out on Week**: the whole day is tinted with its name at the top, and a\n  new icon replaces the umbrella. The date stays visible.\n- **A saved recording is one tap away**: \"Recording link\" opens it, and Edit changes it.\n- **Reception hours**: turn them on in Settings \u2192 Courses, add them to a course like a\n  meeting, and they show on Week as an outline. They never count toward attendance.\n- **Import a timetable with a chatbot**: copy LecCheck's prompt, give it to your own chatbot\n  with a screenshot or file of your schedule, and bring back what it writes. It's checked\n  and previewed, and only adds a new semester.\n- **Clearer Hebrew**: statuses read as nouns, like \u05e0\u05d5\u05db\u05d7\u05d5\u05ea and \u05d4\u05d9\u05e2\u05d3\u05e8\u05d5\u05ea, and other awkward wording is fixed.",
-    "androidArm64": "https://github.com/Emanuel4100/LecCheck2/releases/download/v2.0.0-beta.17/LecCheck-2.0.0-beta.17-android-arm64.apk",
-    "androidUniversal": "https://github.com/Emanuel4100/LecCheck2/releases/download/v2.0.0-beta.17/LecCheck-2.0.0-beta.17-android.apk",
+    "version": "2.0.0-beta.18",
+    "build": 26,
+    "date": "2026-11-13",
+    "notesUrl": "https://github.com/Emanuel4100/LecCheck2/releases/tag/v2.0.0-beta.18",
+    "notes": "- **Reception hours stay visible next to a class.** A class at the same time used to cover\n  the reception box on Week; now the reception hour becomes a thin strip beside it, named\n  in its tooltip.\n- **See which sessions have a recording or a note.** Small icons show on session cards and,\n  where there's room, on Week. The Today card has a Recording link button when one is saved.\n- **All sessions filters and sorts.** Show only sessions with a recording or a note, and sort\n  newest or oldest first, by course, or with recordings first. Search finds recording links too.\n- **A new status: Read the summary.** Mark a session you caught up on by reading its summary.\n  It counts like a watched recording: present in your stats, and toward a requirement when\n  recordings count. On phones the status buttons now take two rows. Keys 1 to 6 mark a session\n  on desktop. Older versions of the app show these sessions as unmarked until they update.\n- **Days off are easier to spot.** The day's name at the top of Week is tinted with the day-off\n  icon, and the month calendar on desktop gives a day off its own tinted circle instead of\n  fading it like a day outside the semester.\n- **Cancel all classes on one day** without making it a day off: tap the day's name on Week.\n  The day gets the canceled stripes, and Undo or Restore classes brings them back.",
+    "androidArm64": "https://github.com/Emanuel4100/LecCheck2/releases/download/v2.0.0-beta.18/LecCheck-2.0.0-beta.18-android-arm64.apk",
+    "androidUniversal": "https://github.com/Emanuel4100/LecCheck2/releases/download/v2.0.0-beta.18/LecCheck-2.0.0-beta.18-android.apk",
     "flatpakref": "https://emanuel4100.github.io/LecCheck2/leccheck.flatpakref",
     "sha256": {
-      "androidArm64": "8f978d70c2b7c8eb4fd6ec0f0cf3ce283418fed2fe821c06992a0571758c06df",
-      "androidUniversal": "f6812e24e2aaeef1a6c0a129aa9fe9b60ef7f7724c20acbb3087a00d64f41350"
+      "androidArm64": "191958d8192ecaaae68e995c26e2b7e82c88265b276247b691086ef0b76726d7",
+      "androidUniversal": "f7b5fe3be272e39085e4339b06162a16b237861611c7f67dbacde0dff4947046"
     },
     "size": {
-      "androidArm64": 28307227,
-      "androidUniversal": 78846178
+      "androidArm64": 28372863,
+      "androidUniversal": 78944586
     }
   }
 }
