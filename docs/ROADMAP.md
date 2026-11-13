@@ -109,7 +109,22 @@ These are built and compile, but have only been exercised in tests so far:
 - Google sign-in end-to-end (needs the Cloudflare + Google setup in [SETUP.md](SETUP.md));
   sync itself is verified end-to-end with the dev sign-in against a local Worker.
 
-## Next: 2.0.0-beta.15 — Linux as a Flatpak, a better update window
+## Next: 2.0.0-beta.18
+
+Open items from the owner's plan (2026-11-08). Ask about the design of each before building.
+
+- **Bug:** reception hours get overridden on the Week view.
+- An icon on a session that has a recording link, and another for one with a note.
+- Sorting or filtering sessions by whether they have a recording link.
+- A "Read the summary" attendance status, beside Skipped, Watched and the others.
+- Upload a syllabus and build the course from it.
+- A clearer visual cue on Week for a day that's off or canceled.
+
+On hold: Panopto recording matching, Linux above 60 Hz, crash reporting. Later: a
+translation platform, the way open source apps do it; a backup server; a more desktop-like
+Linux layout beyond the sidebar (ask what feels mobile).
+
+## How Linux ships: a Flatpak (since 2.0.0-beta.15)
 
 Released 2026-10-26. The repository's key (fingerprint 379AB289…AA444FF9) is in the
 password manager and the FLATPAK_GPG_KEY secret; GitHub Pages serves the repository.
@@ -137,9 +152,9 @@ password manager and the FLATPAK_GPG_KEY secret; GitHub Pages serves the reposit
 
 **2.0.0-beta.16**: no tarball in the release (`update.json` lists no `linux` file, and
 beta.15's tarball installs only see Move); `scripts/linux-install.sh` is gone. `TarballInstall`
-goes once nobody is left on the tarball. Also the quick fixes in the changelog's Unreleased.
+goes once nobody is left on the tarball.
 
-**The to-do list, by release**
+**Done, by release**
 - Done in 2.0.0-beta.11: course emails (contacts), canceled sessions not gray, a session
   that doesn't count toward attendance, Linux updates logging out, the widget's
   "no routes" error.
@@ -154,10 +169,6 @@ goes once nobody is left on the tarball. Also the quick fixes in the changelog's
 - Done in 2.0.0-beta.17: the redesign (Today, Stats, mobile settings, recording link, off
   days), reception hours, the timetable import through a chatbot, a first Hebrew wording
   pass.
-- Later: a translation platform, the way open source apps do it. On hold: crash reporting, Panopto, Linux above 60 Hz.
-- Still open after that: Linux at more than 60 Hz (waiting on a measurement), and a more
-  desktop-like Linux layout beyond the sidebar (ask what
-  feels mobile).
 
 ## Later (M4)
 
