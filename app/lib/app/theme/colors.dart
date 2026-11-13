@@ -63,6 +63,7 @@ class StatusColors extends ThemeExtension<StatusColors> {
     return StatusColors({
       AttendanceStatus.attended: t(0xFF2E9D4F),
       AttendanceStatus.watched: t(0xFF1E88B8),
+      AttendanceStatus.summary: t(0xFFB4457E),
       AttendanceStatus.missed: t(0xFFD3363A),
       AttendanceStatus.skipped: t(0xFFC98A12),
       AttendanceStatus.canceled: t(0xFF7E6BB0),

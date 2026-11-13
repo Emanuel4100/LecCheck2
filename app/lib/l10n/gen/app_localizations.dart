@@ -284,6 +284,12 @@ abstract class AppLocalizations {
   /// **'Watched recording'**
   String get statusWatched;
 
+  /// No description provided for @statusSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'Read the summary'**
+  String get statusSummary;
+
   /// No description provided for @statusMissed.
   ///
   /// In en, this message translates to:
@@ -325,6 +331,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Watched'**
   String get markWatched;
+
+  /// No description provided for @markSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'Read summary'**
+  String get markSummary;
 
   /// No description provided for @markSkipped.
   ///
@@ -1235,7 +1247,7 @@ abstract class AppLocalizations {
   /// No description provided for @recordingsCount.
   ///
   /// In en, this message translates to:
-  /// **'Watched recordings count as attended'**
+  /// **'Watched recordings and read summaries count as attended'**
   String get recordingsCount;
 
   /// No description provided for @discardChangesTitle.
@@ -1457,7 +1469,7 @@ abstract class AppLocalizations {
   /// No description provided for @attendanceSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Attended or watched, out of sessions you attended, watched or missed.'**
+  /// **'Attended, watched or read the summary, out of sessions you attended, caught up on or missed.'**
   String get attendanceSubtitle;
 
   /// No description provided for @attendanceHow.
@@ -1469,7 +1481,7 @@ abstract class AppLocalizations {
   /// No description provided for @attendanceExplained.
   ///
   /// In en, this message translates to:
-  /// **'Sessions you attended or watched, out of those you attended, watched or missed. Skipped and canceled sessions, and ones you haven\'t marked yet, don\'t count.'**
+  /// **'Sessions you attended, watched as a recording or read the summary of, out of those and the ones you missed. Skipped and canceled sessions, and ones you haven\'t marked yet, don\'t count.'**
   String get attendanceExplained;
 
   /// No description provided for @streak.
@@ -2333,7 +2345,7 @@ abstract class AppLocalizations {
   /// No description provided for @shortcutMark.
   ///
   /// In en, this message translates to:
-  /// **'Mark the open session: attended, missed, watched, skipped, canceled'**
+  /// **'Mark the open session: attended, missed, watched, read summary, skipped, canceled'**
   String get shortcutMark;
 
   /// No description provided for @shortcutBack.

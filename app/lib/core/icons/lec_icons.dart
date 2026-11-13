@@ -28,6 +28,7 @@ abstract final class LecIcons {
   static const pending = LecIconFont.pending;
   static const attended = LecIconFont.attended;
   static const watched = LecIconFont.watched;
+  static const summary = LecIconFont.summary;
   static const missed = LecIconFont.missed;
   static const skipped = LecIconFont.skipped;
   static const canceled = LecIconFont.canceled;

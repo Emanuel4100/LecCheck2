@@ -36,6 +36,7 @@ enum AttendanceStatus {
   pending('pending'),
   attended('attended'),
   watched('watched'),
+  summary('summary'),
   missed('missed'),
   skipped('skipped'),
   canceled('canceled');
@@ -52,7 +53,11 @@ enum AttendanceStatus {
   }
 
   /// Counts as "was there" for the progress percentage.
-  bool get isPresent => this == attended || this == watched;
+  bool get isPresent => this == attended || this == watched || isCaughtUp;
+
+  /// Caught up later instead of being there: a recording or the summary.
+  /// Toward a requirement these count only when it lets recordings count.
+  bool get isCaughtUp => this == watched || this == summary;
 
   /// A final decision that progress/streak math can use.
   bool get isDecided => this != pending && this != canceled;
@@ -401,7 +406,8 @@ class AttendanceRequirement {
   final SessionType? type;
   final int minPercent;
 
-  /// Whether "watched recording" counts as attendance for this requirement.
+  /// Whether a watched recording or a read summary counts as attendance for
+  /// this requirement.
   final bool recordingsCount;
 
   @override

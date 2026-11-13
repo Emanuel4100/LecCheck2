@@ -103,6 +103,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get statusWatched => 'Watched recording';
 
   @override
+  String get statusSummary => 'Read the summary';
+
+  @override
   String get statusMissed => 'Missed';
 
   @override
@@ -122,6 +125,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get markWatched => 'Watched';
+
+  @override
+  String get markSummary => 'Read summary';
 
   @override
   String get markSkipped => 'Skipped';
@@ -685,7 +691,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get allTypes => 'All sessions';
 
   @override
-  String get recordingsCount => 'Watched recordings count as attended';
+  String get recordingsCount =>
+      'Watched recordings and read summaries count as attended';
 
   @override
   String get discardChangesTitle => 'Discard changes?';
@@ -802,14 +809,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get attendanceSubtitle =>
-      'Attended or watched, out of sessions you attended, watched or missed.';
+      'Attended, watched or read the summary, out of sessions you attended, caught up on or missed.';
 
   @override
   String get attendanceHow => 'How it\'s counted';
 
   @override
   String get attendanceExplained =>
-      'Sessions you attended or watched, out of those you attended, watched or missed. Skipped and canceled sessions, and ones you haven\'t marked yet, don\'t count.';
+      'Sessions you attended, watched as a recording or read the summary of, out of those and the ones you missed. Skipped and canceled sessions, and ones you haven\'t marked yet, don\'t count.';
 
   @override
   String get streak => 'Streak';
@@ -1359,7 +1366,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get shortcutMark =>
-      'Mark the open session: attended, missed, watched, skipped, canceled';
+      'Mark the open session: attended, missed, watched, read summary, skipped, canceled';
 
   @override
   String get shortcutBack => 'Close / go back';

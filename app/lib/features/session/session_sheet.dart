@@ -231,7 +231,7 @@ class _SessionSheetState extends ConsumerState<SessionSheet> {
       ],
     );
 
-    // Keys 1–5 mark the session (while not typing in the notes).
+    // Keys 1–6 mark the session (while not typing in the notes).
     return CallbackShortcuts(
       bindings: {
         for (final (i, status) in markableStatuses.indexed)
@@ -412,6 +412,7 @@ const _digitKeys = [
   LogicalKeyboardKey.digit3,
   LogicalKeyboardKey.digit4,
   LogicalKeyboardKey.digit5,
+  LogicalKeyboardKey.digit6,
 ];
 
 class _InfoRow extends StatelessWidget {

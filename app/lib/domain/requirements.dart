@@ -71,7 +71,8 @@ class RequirementProgress {
 
 /// Evaluates [requirement] against the sessions of its course.
 ///
-/// Absences are missed + skipped sessions, plus watched recordings unless the
+/// Absences are missed + skipped sessions, plus watched recordings and read
+/// summaries unless the
 /// requirement says recordings count. Canceled and excluded sessions aren't
 /// counted at all.
 RequirementProgress evaluateRequirement(
@@ -92,6 +93,7 @@ RequirementProgress evaluateRequirement(
       case AttendanceStatus.attended:
         attended++;
       case AttendanceStatus.watched:
+      case AttendanceStatus.summary:
         if (requirement.recordingsCount) {
           attended++;
         } else {

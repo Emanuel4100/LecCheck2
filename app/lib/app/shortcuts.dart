@@ -85,7 +85,7 @@ Future<void> showShortcutsHelp(BuildContext context) {
     ('T  ·  Home', l.goToToday),
     ('$mod+Z', l.shortcutUndo),
     ('$mod+=  $mod+−  $mod+0', l.shortcutZoom),
-    ('1 … 5', l.shortcutMark),
+    ('1 … 6', l.shortcutMark),
     ('$mod+S', l.save),
     ('Esc', l.shortcutBack),
     ('F1  ·  $mod+/', l.shortcutHelp),

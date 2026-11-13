@@ -103,6 +103,9 @@ class AppLocalizationsHe extends AppLocalizations {
   String get statusWatched => 'נצפה בהקלטה';
 
   @override
+  String get statusSummary => 'נקרא סיכום';
+
+  @override
   String get statusMissed => 'היעדרות';
 
   @override
@@ -122,6 +125,9 @@ class AppLocalizationsHe extends AppLocalizations {
 
   @override
   String get markWatched => 'צפייה בהקלטה';
+
+  @override
+  String get markSummary => 'קריאת סיכום';
 
   @override
   String get markSkipped => 'דילוג';
@@ -683,7 +689,7 @@ class AppLocalizationsHe extends AppLocalizations {
   String get allTypes => 'כל המפגשים';
 
   @override
-  String get recordingsCount => 'צפייה בהקלטה נחשבת כנוכחות';
+  String get recordingsCount => 'צפייה בהקלטה או קריאת סיכום נחשבות כנוכחות';
 
   @override
   String get discardChangesTitle => 'לבטל את השינויים?';
@@ -799,14 +805,14 @@ class AppLocalizationsHe extends AppLocalizations {
 
   @override
   String get attendanceSubtitle =>
-      'נוכחות או צפייה, מתוך המפגשים שנכחתם, צפיתם או החסרתם.';
+      'נוכחות, צפייה או קריאת סיכום, מתוך המפגשים שנכחתם, השלמתם או החסרתם.';
 
   @override
   String get attendanceHow => 'איך זה מחושב';
 
   @override
   String get attendanceExplained =>
-      'מפגשים שנכחתם בהם או צפיתם בהקלטה, מתוך אלה שנכחתם, צפיתם או החסרתם. מפגשים שדילגתם עליהם, שבוטלו או שעוד לא סימנתם לא נספרים.';
+      'מפגשים שנכחתם בהם, צפיתם בהקלטה שלהם או קראתם את הסיכום שלהם, מתוך אלה ומהמפגשים שהחסרתם. מפגשים שדילגתם עליהם, שבוטלו או שעוד לא סימנתם לא נספרים.';
 
   @override
   String get streak => 'רצף';
@@ -1354,7 +1360,7 @@ class AppLocalizationsHe extends AppLocalizations {
 
   @override
   String get shortcutMark =>
-      'סימון המפגש הפתוח: נוכחות, היעדרות, צפייה בהקלטה, דילוג, מבוטל';
+      'סימון המפגש הפתוח: נוכחות, היעדרות, צפייה בהקלטה, קריאת סיכום, דילוג, מבוטל';
 
   @override
   String get shortcutBack => 'סגירה / חזרה';

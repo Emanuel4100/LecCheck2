@@ -36,7 +36,8 @@ const home = page(
   `<h1>LecCheck</h1>
 <p class="muted">Lecture and class attendance tracker for students</p>
 <p>LecCheck shows your weekly class schedule, lets you mark each lecture, practice or lab as
-attended, missed or watched as a recording, and tracks attendance requirements per course.
+attended, missed, watched as a recording or caught up on by reading the summary, and
+tracks attendance requirements per course.
 It works fully offline; signing in with Google is optional and only used to sync your
 schedule between your own devices.</p>
 <p>This address hosts the LecCheck sync server. The apps for Android, iPhone and Linux are

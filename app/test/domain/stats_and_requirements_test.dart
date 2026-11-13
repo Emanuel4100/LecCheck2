@@ -9,6 +9,7 @@ import 'helpers.dart';
 
 const _a = AttendanceStatus.attended;
 const _w = AttendanceStatus.watched;
+const _r = AttendanceStatus.summary;
 const _m = AttendanceStatus.missed;
 const _s = AttendanceStatus.skipped;
 const _c = AttendanceStatus.canceled;
@@ -32,6 +33,15 @@ void main() {
       expect(counts.progress, closeTo(2 / 3, 1e-9));
       expect(counts.total, 6);
       expect(StatusCounts().progress, isNull);
+    });
+
+    test('a read summary is present, like a watched recording', () {
+      final counts = StatusCounts.of([
+        occ(date: '2026-10-18', status: _r),
+        occ(date: '2026-10-19', status: _m),
+      ]);
+      expect((counts.present, counts.decided), (1, 2));
+      expect(AttendanceStatus.fromKey('summary'), _r);
     });
 
     test('sessions that don\'t count are left out, whatever their status', () {
@@ -176,6 +186,14 @@ void main() {
         expect((lenient.absences, lenient.attended), (0, 3));
       },
     );
+
+    test('a read summary counts only when recordings count', () {
+      final sessions = sessionsWith([_r, _a, _p]);
+      final strict = evaluateRequirement(req(pct: 50), sessions);
+      expect((strict.absences, strict.attended), (1, 1));
+      final lenient = evaluateRequirement(req(pct: 50, rec: true), sessions);
+      expect((lenient.absences, lenient.attended), (0, 2));
+    });
 
     test('a session that doesn\'t count is out of scope (first lecture)', () {
       // 10 lectures at 80%, the first one doesn't count: 9 in scope, so 8

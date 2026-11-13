@@ -9,6 +9,10 @@
   where there's room, on Week. The Today card has a Recording link button when one is saved.
 - **All sessions filters and sorts.** Show only sessions with a recording or a note, and sort
   newest or oldest first, by course, or with recordings first. Search finds recording links too.
+- **A new status: Read the summary.** Mark a session you caught up on by reading its summary.
+  It counts like a watched recording: present in your stats, and toward a requirement when
+  recordings count. On phones the status buttons now take two rows. Keys 1 to 6 mark a session
+  on desktop. Older versions of the app show these sessions as unmarked until they update.
 
 ## 2.0.0-beta.17 — 2026-10-31
 

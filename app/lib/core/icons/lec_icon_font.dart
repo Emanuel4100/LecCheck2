@@ -24,10 +24,11 @@ abstract final class LecIconFont {
   static const stats = IconData(0xe00f, fontFamily: _family);
   static const statsFilled = IconData(0xe010, fontFamily: _family);
   static const streak = IconData(0xe011, fontFamily: _family);
-  static const target = IconData(0xe012, fontFamily: _family);
-  static const today = IconData(0xe013, fontFamily: _family);
-  static const todayFilled = IconData(0xe014, fontFamily: _family);
-  static const watched = IconData(0xe015, fontFamily: _family);
-  static const week = IconData(0xe016, fontFamily: _family);
-  static const weekFilled = IconData(0xe017, fontFamily: _family);
+  static const summary = IconData(0xe012, fontFamily: _family);
+  static const target = IconData(0xe013, fontFamily: _family);
+  static const today = IconData(0xe014, fontFamily: _family);
+  static const todayFilled = IconData(0xe015, fontFamily: _family);
+  static const watched = IconData(0xe016, fontFamily: _family);
+  static const week = IconData(0xe017, fontFamily: _family);
+  static const weekFilled = IconData(0xe018, fontFamily: _family);
 }

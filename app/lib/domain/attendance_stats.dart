@@ -21,7 +21,9 @@ class StatusCounts {
   int operator [](AttendanceStatus status) => _counts[status] ?? 0;
 
   int get present =>
-      this[AttendanceStatus.attended] + this[AttendanceStatus.watched];
+      this[AttendanceStatus.attended] +
+      this[AttendanceStatus.watched] +
+      this[AttendanceStatus.summary];
 
   /// Denominator of the progress percentage (same formula as v1):
   /// skipped and canceled sessions don't count either way.
@@ -58,7 +60,7 @@ abstract final class AttendanceStats {
       .reversed
       .toList();
 
-  /// Consecutive attended/watched sessions ending at the most recent decided
+  /// Consecutive attended/watched/summary sessions ending at the most recent decided
   /// one; missed and skipped break the run, pending, canceled and excluded
   /// sessions are ignored.
   static Streak streak(Iterable<Occurrence> chronological, DateTime now) {

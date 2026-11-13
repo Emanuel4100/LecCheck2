@@ -13,6 +13,7 @@ const markableStatuses = [
   AttendanceStatus.attended,
   AttendanceStatus.missed,
   AttendanceStatus.watched,
+  AttendanceStatus.summary,
   AttendanceStatus.skipped,
   AttendanceStatus.canceled,
 ];
@@ -36,10 +37,13 @@ class StatusButtonGroup extends StatelessWidget {
   /// cards). Defaults to the surface container color.
   final Color? unselectedColor;
 
+  /// Narrower buttons than this split the group into two rows.
+  static const _minButtonWidth = 72.0;
+
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
-    return Row(
+    Widget row(List<AttendanceStatus> statuses) => Row(
       children: [
         for (var i = 0; i < statuses.length; i++) ...[
           if (i > 0) const SizedBox(width: 3),
@@ -59,6 +63,23 @@ class StatusButtonGroup extends StatelessWidget {
           ),
         ],
       ],
+    );
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final oneRow =
+            statuses.length < 4 ||
+            constraints.maxWidth / statuses.length >= _minButtonWidth;
+        if (oneRow) return row(statuses);
+        final half = (statuses.length + 1) ~/ 2;
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          spacing: 3,
+          children: [
+            row(statuses.sublist(0, half)),
+            row(statuses.sublist(half)),
+          ],
+        );
+      },
     );
   }
 }
