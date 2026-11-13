@@ -28,6 +28,7 @@ import 'package:leccheck/core/update/update_service.dart';
 import 'package:leccheck/core/icons/lec_icons.dart';
 import 'package:leccheck/domain/local_date.dart';
 import 'package:leccheck/domain/schedule_types.dart';
+import 'package:leccheck/features/session/session_tile.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -318,6 +319,42 @@ void main() {
     await tester.tap(find.text('More details'));
     await _settle(tester);
     expect(find.text('By type'), findsOneWidget);
+  });
+
+  testWidgets('All sessions filters and sorts by recording', (tester) async {
+    final (container, db) = await _start(tester);
+    final upcoming = container
+        .read(occurrenceIndexProvider)
+        .all
+        .where((o) => !o.hasStarted(_now))
+        .toList();
+    final withRecording = upcoming[2];
+    await tester.runAsync(
+      () =>
+          ScheduleRepository(db)
+              .setRecordingUrl(withRecording, 'https://example.com/rec'),
+    );
+    container.read(routerProvider).go('/today/sessions');
+    await _settle(tester);
+    await tester.tap(find.text('Coming up'));
+    await _settle(tester);
+    String firstTile() =>
+        tester.widget<SessionTile>(find.byType(SessionTile).first).sessionId;
+    expect(firstTile(), upcoming.first.id);
+
+    await tester.ensureVisible(find.text('Oldest first'));
+    await _settle(tester);
+    await tester.tap(find.text('Oldest first'));
+    await _settle(tester);
+    await tester.tap(find.text('Recordings first').last);
+    await _settle(tester);
+    expect(firstTile(), withRecording.id);
+
+    await tester.ensureVisible(find.text('Has recording'));
+    await _settle(tester);
+    await tester.tap(find.text('Has recording'));
+    await _settle(tester);
+    expect(find.byType(SessionTile), findsOneWidget);
   });
 
   testWidgets('a saved recording is a link with an edit button', (

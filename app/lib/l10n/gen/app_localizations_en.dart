@@ -766,6 +766,24 @@ class AppLocalizationsEn extends AppLocalizations {
   String get hasNote => 'Has a note';
 
   @override
+  String get filterHasRecording => 'Has recording';
+
+  @override
+  String get filterHasNote => 'Has note';
+
+  @override
+  String get sortNewest => 'Newest first';
+
+  @override
+  String get sortOldest => 'Oldest first';
+
+  @override
+  String get sortCourse => 'By course';
+
+  @override
+  String get sortRecordingsFirst => 'Recordings first';
+
+  @override
   String get canceledByHolidayHint => 'Canceled because of a no-class day';
 
   @override

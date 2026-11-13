@@ -7,6 +7,8 @@
   in its tooltip.
 - **See which sessions have a recording or a note.** Small icons show on session cards and,
   where there's room, on Week. The Today card has a Recording link button when one is saved.
+- **All sessions filters and sorts.** Show only sessions with a recording or a note, and sort
+  newest or oldest first, by course, or with recordings first. Search finds recording links too.
 
 ## 2.0.0-beta.17 — 2026-10-31
 

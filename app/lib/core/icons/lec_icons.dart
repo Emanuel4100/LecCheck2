@@ -58,6 +58,7 @@ abstract final class LecIcons {
   static const target = LecIconFont.target;
   static const streak = LecIconFont.streak;
   static const search = Icons.search_rounded;
+  static const sort = Icons.sort_rounded;
   static const sync = Icons.cloud_done_outlined;
   static const syncOff = Icons.cloud_off_outlined;
   static const syncing = Icons.sync_rounded;

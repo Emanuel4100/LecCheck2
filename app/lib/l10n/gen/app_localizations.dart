@@ -1388,6 +1388,42 @@ abstract class AppLocalizations {
   /// **'Has a note'**
   String get hasNote;
 
+  /// No description provided for @filterHasRecording.
+  ///
+  /// In en, this message translates to:
+  /// **'Has recording'**
+  String get filterHasRecording;
+
+  /// No description provided for @filterHasNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Has note'**
+  String get filterHasNote;
+
+  /// No description provided for @sortNewest.
+  ///
+  /// In en, this message translates to:
+  /// **'Newest first'**
+  String get sortNewest;
+
+  /// No description provided for @sortOldest.
+  ///
+  /// In en, this message translates to:
+  /// **'Oldest first'**
+  String get sortOldest;
+
+  /// No description provided for @sortCourse.
+  ///
+  /// In en, this message translates to:
+  /// **'By course'**
+  String get sortCourse;
+
+  /// No description provided for @sortRecordingsFirst.
+  ///
+  /// In en, this message translates to:
+  /// **'Recordings first'**
+  String get sortRecordingsFirst;
+
   /// No description provided for @canceledByHolidayHint.
   ///
   /// In en, this message translates to:

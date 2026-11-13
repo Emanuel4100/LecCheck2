@@ -12,8 +12,8 @@ import '../../domain/schedule_types.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../session/session_tile.dart';
 
-/// Every session of the semester with search and filters. "Past" shows the
-/// newest first; "Upcoming" the soonest first.
+/// Every session of the semester with search, filters and a sort. By
+/// default "Past" shows the newest first and "Upcoming" the soonest first.
 class AllSessionsPage extends ConsumerStatefulWidget {
   const AllSessionsPage({super.key});
 
@@ -21,12 +21,21 @@ class AllSessionsPage extends ConsumerStatefulWidget {
   ConsumerState<AllSessionsPage> createState() => _AllSessionsPageState();
 }
 
+enum _Sort { newest, oldest, course, recordingsFirst }
+
+bool _hasRecording(Occurrence o) => o.recordingUrl?.trim().isNotEmpty ?? false;
+
 class _AllSessionsPageState extends ConsumerState<AllSessionsPage> {
   bool _upcoming = false;
   String _query = '';
   String? _courseId;
   SessionType? _type;
   AttendanceStatus? _status;
+  bool _withRecording = false;
+  bool _withNote = false;
+
+  /// Null: the tab's own order.
+  _Sort? _sort;
 
   @override
   Widget build(BuildContext context) {
@@ -41,6 +50,8 @@ class _AllSessionsPageState extends ConsumerState<AllSessionsPage> {
       if (_courseId != null && o.courseId != _courseId) return false;
       if (_type != null && o.type != _type) return false;
       if (_status != null && o.status != _status) return false;
+      if (_withRecording && !_hasRecording(o)) return false;
+      if (_withNote && o.notes.trim().isEmpty) return false;
       if (query.isEmpty) return true;
       final c = courseById[o.courseId];
       return [
@@ -49,6 +60,7 @@ class _AllSessionsPageState extends ConsumerState<AllSessionsPage> {
         c?.lecturer,
         o.location,
         o.notes,
+        o.recordingUrl,
       ].any((s) => s != null && s.toLowerCase().contains(query));
     }
 
@@ -56,7 +68,28 @@ class _AllSessionsPageState extends ConsumerState<AllSessionsPage> {
       for (final o in index.all)
         if (o.hasStarted(now) != _upcoming && matches(o)) o,
     ];
-    final ordered = _upcoming ? sessions : sessions.reversed.toList();
+    final sort = _sort ?? (_upcoming ? _Sort.oldest : _Sort.newest);
+    // Sessions come oldest first; the other orders keep the tab's own
+    // order within a course or among the sessions with a recording.
+    final byDate = _upcoming ? sessions : sessions.reversed.toList();
+    final ordered = switch (sort) {
+      _Sort.oldest => sessions,
+      _Sort.newest => sessions.reversed.toList(),
+      _Sort.course => [
+        for (final c in courses) ...byDate.where((o) => o.courseId == c.id),
+        ...byDate.where((o) => !courseById.containsKey(o.courseId)),
+      ],
+      _Sort.recordingsFirst => [
+        ...byDate.where(_hasRecording),
+        ...byDate.where((o) => !_hasRecording(o)),
+      ],
+    };
+    String sortLabel(_Sort s) => switch (s) {
+      _Sort.newest => l.sortNewest,
+      _Sort.oldest => l.sortOldest,
+      _Sort.course => l.sortCourse,
+      _Sort.recordingsFirst => l.sortRecordingsFirst,
+    };
 
     return PageShortcuts(
       autofocus: !AppIdiom.isDesktop,
@@ -143,6 +176,42 @@ class _AllSessionsPageState extends ConsumerState<AllSessionsPage> {
                             },
                             onSelected: (v) => setState(() => _status = v),
                           ),
+                          const SizedBox(width: 8),
+                          FilterChip(
+                            label: Text(l.filterHasRecording),
+                            avatar: _withRecording
+                                ? null
+                                : const Icon(LecIcons.recording),
+                            selected: _withRecording,
+                            onSelected: (v) =>
+                                setState(() => _withRecording = v),
+                          ),
+                          const SizedBox(width: 8),
+                          FilterChip(
+                            label: Text(l.filterHasNote),
+                            avatar: _withNote
+                                ? null
+                                : const Icon(LecIcons.notes),
+                            selected: _withNote,
+                            onSelected: (v) => setState(() => _withNote = v),
+                          ),
+                          const SizedBox(width: 8),
+                          _FilterMenu<_Sort>(
+                            label: sortLabel(sort),
+                            avatar: const Icon(LecIcons.sort),
+                            active: _sort != null,
+                            options: {
+                              for (final s in _Sort.values) s: sortLabel(s),
+                            },
+                            onSelected: (v) => setState(
+                              // The tab's own order goes back to following
+                              // the tab.
+                              () => _sort =
+                                  v == (_upcoming ? _Sort.oldest : _Sort.newest)
+                                  ? null
+                                  : v,
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -183,9 +252,11 @@ class _FilterMenu<T> extends StatelessWidget {
     required this.active,
     required this.options,
     required this.onSelected,
+    this.avatar,
   });
 
   final String label;
+  final Widget? avatar;
   final bool active;
   final Map<T, String> options;
   final ValueChanged<T> onSelected;
@@ -201,6 +272,7 @@ class _FilterMenu<T> extends StatelessWidget {
     ],
     builder: (context, controller, _) => FilterChip(
       label: Text(label),
+      avatar: avatar,
       selected: active,
       onSelected: (_) =>
           controller.isOpen ? controller.close() : controller.open(),

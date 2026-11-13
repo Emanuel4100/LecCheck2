@@ -763,6 +763,24 @@ class AppLocalizationsHe extends AppLocalizations {
   String get hasNote => 'יש הערה';
 
   @override
+  String get filterHasRecording => 'עם הקלטה';
+
+  @override
+  String get filterHasNote => 'עם הערה';
+
+  @override
+  String get sortNewest => 'מהחדש לישן';
+
+  @override
+  String get sortOldest => 'מהישן לחדש';
+
+  @override
+  String get sortCourse => 'לפי קורס';
+
+  @override
+  String get sortRecordingsFirst => 'הקלטות קודם';
+
+  @override
   String get canceledByHolidayHint => 'בוטל בגלל יום ללא שיעורים';
 
   @override

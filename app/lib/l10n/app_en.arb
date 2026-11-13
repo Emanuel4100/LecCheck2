@@ -419,6 +419,12 @@
   "notCountedLabel": "Doesn't count toward attendance",
   "hasRecordingLink": "Has a recording link",
   "hasNote": "Has a note",
+  "filterHasRecording": "Has recording",
+  "filterHasNote": "Has note",
+  "sortNewest": "Newest first",
+  "sortOldest": "Oldest first",
+  "sortCourse": "By course",
+  "sortRecordingsFirst": "Recordings first",
   "canceledByHolidayHint": "Canceled because of a no-class day",
   "canceledForHoliday": "No class: {name}",
   "@canceledForHoliday": {
