@@ -113,12 +113,17 @@ These are built and compile, but have only been exercised in tests so far:
 
 Open items from the owner's plan (2026-11-08). Ask about the design of each before building.
 
-- **Bug:** reception hours get overridden on the Week view.
-- An icon on a session that has a recording link, and another for one with a note.
-- Sorting or filtering sessions by whether they have a recording link.
-- A "Read the summary" attendance status, beside Skipped, Watched and the others.
+Built on the `beta-18` branch (see the changelog's Unreleased):
+- Reception hours beside a class become a thin strip instead of hiding under it.
+- Icons for a session's recording link and note (cards, Week tiles with room, the tooltip).
+- All sessions: "Has recording" and "Has note" filters and a sort menu.
+- A "Read the summary" status (key `summary`) that counts like Watched; older apps read it as
+  unmarked.
+- Days off: a tinted Week header and their own circle in the month; "Cancel all classes" for
+  one day (per-session statuses, no new table).
+
+Still open:
 - Upload a syllabus and build the course from it.
-- A clearer visual cue on Week for a day that's off or canceled.
 
 On hold: Panopto recording matching, Linux above 60 Hz, crash reporting. Later: a
 translation platform, the way open source apps do it; a backup server; a more desktop-like
