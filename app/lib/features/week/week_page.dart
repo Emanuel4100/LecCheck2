@@ -963,7 +963,14 @@ class _Placed {
   final Occurrence session;
   int lane = 0;
   int lanes = 1;
+
+  /// Sessions that overlap, directly or through others, share a cluster.
+  int cluster = 0;
 }
+
+/// Reception hours next to a class shrink to a strip this wide at the
+/// column's end, and the class's cluster makes room for it.
+const _receptionStrip = 6.0;
 
 /// Greedy interval layout: overlapping sessions share the column side by side.
 List<_Placed> _layoutDay(List<Occurrence> sessions) {
@@ -976,8 +983,10 @@ List<_Placed> _layoutDay(List<Occurrence> sessions) {
   var cluster = <_Placed>[];
   var laneEnds = <int>[];
   var clusterEnd = -1;
+  var clusterId = 0;
 
   void closeCluster() {
+    clusterId++;
     for (final p in cluster) {
       p.lanes = laneEnds.length;
     }
@@ -992,7 +1001,7 @@ List<_Placed> _layoutDay(List<Occurrence> sessions) {
     } else {
       clusterEnd = math.max(clusterEnd, s.endMin);
     }
-    final p = _Placed(s);
+    final p = _Placed(s)..cluster = clusterId;
     final free = laneEnds.indexWhere((end) => end <= s.startMin);
     if (free == -1) {
       p.lane = laneEnds.length;
@@ -1103,6 +1112,21 @@ class _DayColumnState extends ConsumerState<_DayColumn> {
     final desktop = AppIdiom.isDesktop;
     final noClassLabel = ref.watch(noClassLabelProvider(date));
     final reception = ref.watch(receptionOnDayProvider(date)).items;
+    bool overlaps(MeetingRule m, Occurrence o) =>
+        m.startMin < o.endMin && o.startMin < m.endMin;
+    // A class at the same time would cover the reception box: those
+    // reception hours become a strip, and their classes make room for it.
+    final besideClass = {
+      for (final m in reception)
+        if (placed.any((p) => overlaps(m, p.session))) m.id,
+    };
+    final narrowed = {
+      for (final p in placed)
+        if (reception.any(
+          (m) => besideClass.contains(m.id) && overlaps(m, p.session),
+        ))
+          p.cluster,
+    };
     double y(int minutes) =>
         (minutes - widget.startHour * 60) / 60 * widget.hourHeight;
 
@@ -1112,6 +1136,12 @@ class _DayColumnState extends ConsumerState<_DayColumn> {
       child: LayoutBuilder(
         builder: (context, constraints) {
           final width = constraints.maxWidth;
+          double usable(_Placed p) =>
+              width -
+              4 -
+              (narrowed.contains(p.cluster) ? _receptionStrip + 2 : 0);
+          double receptionHeight(MeetingRule m) =>
+              math.max(22, y(m.endMin) - y(m.startMin).clamp(0, height) - 2);
           return SizedBox(
             height: height,
             child: Stack(
@@ -1161,14 +1191,15 @@ class _DayColumnState extends ConsumerState<_DayColumn> {
                   ),
                 ),
                 for (final m in reception)
-                  PositionedDirectional(
-                    key: ValueKey('reception-${m.id}'),
-                    top: y(m.startMin).clamp(0, height - 20),
-                    height: math.max(22, y(m.endMin) - y(m.startMin) - 2),
-                    start: 2,
-                    end: 2,
-                    child: _ReceptionBox(m),
-                  ),
+                  if (!besideClass.contains(m.id))
+                    PositionedDirectional(
+                      key: ValueKey('reception-${m.id}'),
+                      top: y(m.startMin).clamp(0, height - 20),
+                      height: receptionHeight(m),
+                      start: 2,
+                      end: 2,
+                      child: _ReceptionBox(m),
+                    ),
                 for (final p in placed)
                   PositionedDirectional(
                     key: ValueKey(p.session.id),
@@ -1179,8 +1210,8 @@ class _DayColumnState extends ConsumerState<_DayColumn> {
                           y(p.session.startMin).clamp(0, height) -
                           2,
                     ),
-                    start: 2 + p.lane * (width - 4) / p.lanes,
-                    width: (width - 4) / p.lanes - 2,
+                    start: 2 + p.lane * usable(p) / p.lanes,
+                    width: usable(p) / p.lanes - 2,
                     child: desktop
                         ? _Movable(
                             session: p.session,
@@ -1188,6 +1219,16 @@ class _DayColumnState extends ConsumerState<_DayColumn> {
                           )
                         : _GridTile(sessionId: p.session.id),
                   ),
+                for (final m in reception)
+                  if (besideClass.contains(m.id))
+                    PositionedDirectional(
+                      key: ValueKey('reception-${m.id}'),
+                      top: y(m.startMin).clamp(0, height - 20),
+                      height: receptionHeight(m),
+                      end: 2,
+                      width: _receptionStrip,
+                      child: _ReceptionBox(m, strip: true),
+                    ),
                 if (date == today)
                   _NowLine(
                     startHour: widget.startHour,
@@ -1218,11 +1259,13 @@ class _DayColumnState extends ConsumerState<_DayColumn> {
 }
 
 /// Reception hours: an outline in the course's color, so they don't look like
-/// a class to attend. Under the sessions when they overlap.
+/// a class to attend. Beside a class it's a thin [strip] at the column's
+/// end, named in its tooltip, so neither covers the other.
 class _ReceptionBox extends ConsumerWidget {
-  const _ReceptionBox(this.meeting);
+  const _ReceptionBox(this.meeting, {this.strip = false});
 
   final MeetingRule meeting;
+  final bool strip;
 
   Future<void> _details(BuildContext context, CourseInfo? course) async {
     final l = AppLocalizations.of(context);
@@ -1257,6 +1300,24 @@ class _ReceptionBox extends ConsumerWidget {
     final name = course?.shortName.isNotEmpty == true
         ? course!.shortName
         : course?.name ?? '';
+    if (strip) {
+      return Tooltip(
+        message: joinDetails([
+          name,
+          l.typeReception,
+          Fmt.of(context).timeRange(meeting.startMin, meeting.endMin),
+        ]),
+        child: Material(
+          color: tone.accent.withValues(alpha: 0.35),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(3),
+            side: BorderSide(color: tone.accent, width: 1.5),
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: InkWell(onTap: () => _details(context, course)),
+        ),
+      );
+    }
     return Material(
       type: MaterialType.transparency,
       shape: shape,

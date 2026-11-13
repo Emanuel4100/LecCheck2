@@ -407,6 +407,44 @@ void main() {
       await _settle(tester);
       expect(box(), findsOneWidget);
     });
+
+    testWidgets('beside a class are a strip it leaves room for', (
+      tester,
+    ) async {
+      final (container, repo) = await withHours(tester);
+      // Tuesday 11:00-13:00, over the 10:00-12:00 lecture.
+      await tester.runAsync(
+        () => repo.addMeeting(
+          const MeetingRule(
+            id: 'hours2',
+            courseId: 'c1',
+            type: SessionType.reception,
+            kind: MeetingKind.weekly,
+            weekday: DateTime.tuesday,
+            startMin: 11 * 60,
+            endMin: 13 * 60,
+          ),
+        ),
+      );
+      container.read(receptionHoursProvider.notifier).set(true);
+      container.read(routerProvider).go('/week');
+      await _settle(tester);
+      final strip = find.byKey(const ValueKey('reception-hours2'));
+      final lecture = find.byWidgetPredicate(
+        (w) => w.runtimeType.toString() == '_GridTile',
+      );
+      expect(strip, findsOneWidget);
+      expect(lecture, findsOneWidget);
+      final s = tester.getRect(strip);
+      final t = tester.getRect(lecture);
+      expect(s.width, lessThan(10));
+      expect(s.overlaps(t), isFalse);
+      // Wednesday's hour has no class beside it: still a full box.
+      expect(
+        tester.getRect(find.byKey(const ValueKey('reception-hours'))).width,
+        greaterThan(20),
+      );
+    });
   });
 
   group('timetable import', () {

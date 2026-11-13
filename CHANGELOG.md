@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- **Reception hours stay visible next to a class.** A class at the same time used to cover
+  the reception box on Week; now the reception hour becomes a thin strip beside it, named
+  in its tooltip.
+
 ## 2.0.0-beta.17 — 2026-10-31
 
 - **A calmer way to mark a session.** One Attended button with a menu for the other
