@@ -93,6 +93,10 @@
   button with a menu; Today, Stats and phone Settings simplified; days off tinted on Week
   with a new icon; a recording link with Edit; optional reception hours per course;
   importing a timetable through your own chatbot; a first Hebrew wording pass.
+- **Reception hours beside classes, a Read the summary status** (2.0.0-beta.18): reception
+  hours next to a class are a strip instead of hidden under it; icons for a recording link
+  or a note; filters and a sort on All sessions; a "Read the summary" status that counts like
+  Watched; days off tinted in Week's header and the month calendar; cancel all classes on a day.
 
 ## Not yet verified on real hardware
 
@@ -109,21 +113,9 @@ These are built and compile, but have only been exercised in tests so far:
 - Google sign-in end-to-end (needs the Cloudflare + Google setup in [SETUP.md](SETUP.md));
   sync itself is verified end-to-end with the dev sign-in against a local Worker.
 
-## Next: 2.0.0-beta.18
+## Next: 2.0.0-beta.19
 
-Open items from the owner's plan (2026-11-08). Ask about the design of each before building.
-
-Built on the `beta-18` branch (see the changelog's Unreleased):
-- Reception hours beside a class become a thin strip instead of hiding under it.
-- Icons for a session's recording link and note (cards, Week tiles with room, the tooltip).
-- All sessions: "Has recording" and "Has note" filters and a sort menu.
-- A "Read the summary" status (key `summary`) that counts like Watched; older apps read it as
-  unmarked.
-- Days off: a tinted Week header and their own circle in the month; "Cancel all classes" for
-  one day (per-session statuses, no new table).
-
-Still open:
-- Upload a syllabus and build the course from it.
+- Upload a syllabus and build the course from it (ask about the design first).
 
 On hold: Panopto recording matching, Linux above 60 Hz, crash reporting. Later: a
 translation platform, the way open source apps do it; a backup server; a more desktop-like
@@ -174,6 +166,9 @@ goes once nobody is left on the tarball.
 - Done in 2.0.0-beta.17: the redesign (Today, Stats, mobile settings, recording link, off
   days), reception hours, the timetable import through a chatbot, a first Hebrew wording
   pass.
+- Done in 2.0.0-beta.18: reception hours hidden by classes, recording and note icons,
+  filters and a sort on All sessions, a Read the summary status, a clearer look for days off,
+  and canceling all classes on a day.
 
 ## Later (M4)
 

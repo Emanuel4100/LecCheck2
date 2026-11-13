@@ -55,6 +55,18 @@
   </supports>
   <content_rating type="oars-1.1" />
   <releases>
+    <release version="2.0.0-beta.18" date="2026-11-13" type="development">
+      <description>
+        <ul>
+          <li><em>Reception hours stay visible next to a class.</em> A class at the same time used to cover the reception box on Week; now the reception hour becomes a thin strip beside it, named in its tooltip.</li>
+          <li><em>See which sessions have a recording or a note.</em> Small icons show on session cards and, where there's room, on Week. The Today card has a Recording link button when one is saved.</li>
+          <li><em>All sessions filters and sorts.</em> Show only sessions with a recording or a note, and sort newest or oldest first, by course, or with recordings first. Search finds recording links too.</li>
+          <li><em>A new status: Read the summary.</em> Mark a session you caught up on by reading its summary. It counts like a watched recording: present in your stats, and toward a requirement when recordings count. On phones the status buttons now take two rows. Keys 1 to 6 mark a session on desktop. Older versions of the app show these sessions as unmarked until they update.</li>
+          <li><em>Days off are easier to spot.</em> The day's name at the top of Week is tinted with the day-off icon, and the month calendar on desktop gives a day off its own tinted circle instead of fading it like a day outside the semester.</li>
+          <li><em>Cancel all classes on one day</em> without making it a day off: tap the day's name on Week. The day gets the canceled stripes, and Undo or Restore classes brings them back.</li>
+        </ul>
+      </description>
+    </release>
     <release version="2.0.0-beta.17" date="2026-10-31" type="development">
       <description>
         <ul>
@@ -154,18 +166,6 @@
           <li><em>Sessions that don't count</em>: turn off <em>Counts toward attendance</em> on a session (in its details, or right-click) when the course doesn't take attendance in it, like a first lecture. It keeps its status but is left out of the percentage, the streak and the requirement, so 80% of 10 lectures becomes 80% of 9.</li>
           <li><em>Canceled sessions</em> keep their course color with diagonal stripes, instead of turning gray, and have their own color in status icons.</li>
           <li><em>Desktop</em>: a denser layout with smaller corners, one-line title bars and a regular <em>Add</em> button; <em>Settings</em> keeps the sidebar, so the tabs are one click away. On Linux the window reopens at the size you left it, maximized if it was.</li>
-        </ul>
-      </description>
-    </release>
-    <release version="2.0.0-beta.10" date="2026-10-13" type="development">
-      <description>
-        <ul>
-          <li><em>A roomier course editor</em>. Meetings are one line each ("Lecture · Sunday, 10:00–12:00 · 201") and open in a sheet (a dialog on wide screens) where the type and how it repeats are menus, and the length shows under the end time. A new meeting can be on several days at once. Short name, code and lecturer wait behind <em>+</em> chips, the color is a dot in the name field, and the attendance requirement, notes and links fold into rows. Wide windows get two columns.</li>
-          <li><em>Add from Week</em>: tap an empty spot to add a new course, a meeting of a course, or a one-time session there, with the day and time filled in. The grid always shows at least 8:00–18:00 so there's room to tap.</li>
-          <li><em>Course page</em>: sessions are listed by type ("Lecture #3") instead of repeating the course name, and on phones <em>Add one-time session</em> moved to the app bar instead of covering the list. Meetings that start mid-semester or every other week from week 2 now say so.</li>
-          <li><em>Today</em>: the class in progress is marked from the Now card only, not listed again under Needs marking. Session rows no longer break mid-detail: the type and day (and the time when it fits) come first, then the room after a pin. The swipe hint goes away once you've swiped, and classes that haven't started yet don't show the "to mark" circle.</li>
-          <li><em>Stats</em>: the weekly chart shows each week's percentage and labels its lines (0%, 50%, 100%); the attendance card says it briefly, with the full rule behind an ⓘ button.</li>
-          <li><em>Welcome</em>: the language switch moved to the top corner.</li>
         </ul>
       </description>
     </release>

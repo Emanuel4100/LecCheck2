@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 2.0.0-beta.18 — 2026-11-13
 
 - **Reception hours stay visible next to a class.** A class at the same time used to cover
   the reception box on Week; now the reception hour becomes a thin strip beside it, named
