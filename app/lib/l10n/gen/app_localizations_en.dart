@@ -760,6 +760,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get notCountedLabel => 'Doesn\'t count toward attendance';
 
   @override
+  String get hasRecordingLink => 'Has a recording link';
+
+  @override
+  String get hasNote => 'Has a note';
+
+  @override
   String get canceledByHolidayHint => 'Canceled because of a no-class day';
 
   @override

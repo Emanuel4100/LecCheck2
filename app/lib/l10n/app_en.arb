@@ -417,6 +417,8 @@
   "countsTowardAttendance": "Counts toward attendance",
   "countsTowardAttendanceOff": "Left out of your percentage, streak and requirements",
   "notCountedLabel": "Doesn't count toward attendance",
+  "hasRecordingLink": "Has a recording link",
+  "hasNote": "Has a note",
   "canceledByHolidayHint": "Canceled because of a no-class day",
   "canceledForHoliday": "No class: {name}",
   "@canceledForHoliday": {

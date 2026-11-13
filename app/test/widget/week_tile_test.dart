@@ -13,9 +13,11 @@ void main() {
     String shortName = '',
     String room = 'Taub 2',
     bool badge = false,
+    int extras = 0,
     required double width,
     required double height,
   }) => layoutTile(
+    extras: extras,
     name: course,
     shortName: shortName,
     time: '10:00',
@@ -103,5 +105,15 @@ void main() {
     expect(tile.showRoom, isTrue);
     expect(tile.showTime, isFalse);
     expect(layout('Calc', room: '', width: 100, height: 26).showTime, isTrue);
+  });
+
+  test('recording and note icons take a free bottom row only', () {
+    // Name, room and time take 36 px: a 60 px tile has room, a 40 px one not.
+    expect(
+      layout('Calc', extras: 2, width: 100, height: 60).extrasTop,
+      60 - tileExtraSize,
+    );
+    expect(layout('Calc', extras: 2, width: 100, height: 40).extrasTop, isNull);
+    expect(layout('Calc', width: 100, height: 60).extrasTop, isNull);
   });
 }

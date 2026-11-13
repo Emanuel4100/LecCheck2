@@ -757,6 +757,12 @@ class AppLocalizationsHe extends AppLocalizations {
   String get notCountedLabel => 'לא נספר בנוכחות';
 
   @override
+  String get hasRecordingLink => 'יש קישור להקלטה';
+
+  @override
+  String get hasNote => 'יש הערה';
+
+  @override
   String get canceledByHolidayHint => 'בוטל בגלל יום ללא שיעורים';
 
   @override

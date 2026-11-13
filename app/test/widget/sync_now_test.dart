@@ -79,9 +79,8 @@ void main() {
           ],
           supportedLocales: AppLocalizations.supportedLocales,
           builder: (context, child) => MediaQuery(
-            data: MediaQuery.of(
-              context,
-            ).copyWith(disableAnimations: reduceMotion),
+            data: MediaQuery.of(context)
+                .copyWith(disableAnimations: reduceMotion),
             child: FmtScope(fmt: Fmt('en', use24h: true), child: child!),
           ),
           home: const Scaffold(

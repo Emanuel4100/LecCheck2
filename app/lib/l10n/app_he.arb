@@ -344,6 +344,8 @@
   "countsTowardAttendance": "נספר בנוכחות",
   "countsTowardAttendanceOff": "לא נכלל באחוז הנוכחות, ברצף ובדרישות",
   "notCountedLabel": "לא נספר בנוכחות",
+  "hasRecordingLink": "יש קישור להקלטה",
+  "hasNote": "יש הערה",
   "canceledByHolidayHint": "בוטל בגלל יום ללא שיעורים",
   "canceledForHoliday": "אין שיעור: {name}",
   "removeOneTime": "הסרת המפגש החד-פעמי",

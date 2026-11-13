@@ -140,6 +140,28 @@ class SessionTile extends ConsumerWidget {
                               color: theme.colorScheme.tertiary,
                             ),
                           ],
+                          if (session.recordingUrl?.isNotEmpty ?? false) ...[
+                            const SizedBox(width: 6),
+                            Tooltip(
+                              message: l.hasRecordingLink,
+                              child: Icon(
+                                LecIcons.recording,
+                                size: 16,
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                          ],
+                          if (session.notes.trim().isNotEmpty) ...[
+                            const SizedBox(width: 6),
+                            Tooltip(
+                              message: l.hasNote,
+                              child: Icon(
+                                LecIcons.notes,
+                                size: 16,
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                          ],
                           if (session.excluded && !canceled) ...[
                             const SizedBox(width: 6),
                             Tooltip(

@@ -35,10 +35,7 @@ app-commit = 1a2b3c
       expect(progress.status, FlatpakStatus.running);
       expect(progress.fraction, closeTo(0.7, 1e-9));
       // Before the portal knows how many operations: no fraction.
-      expect(
-        parse({'status': const DBusUint32(0)}).fraction,
-        isNull,
-      );
+      expect(parse({'status': const DBusUint32(0)}).fraction, isNull);
     });
 
     test('the end: done, nothing to install, or failed with why', () {

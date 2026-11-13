@@ -277,6 +277,9 @@ class _HeroSession extends ConsumerWidget {
         : l.startsIn(formatCountdown(session.start.difference(now), l));
     final link =
         meeting?.links.firstOrNull?.url ?? course?.links.firstOrNull?.url;
+    final recording = (session.recordingUrl?.trim().isEmpty ?? true)
+        ? null
+        : session.recordingUrl!.trim();
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
@@ -343,7 +346,7 @@ class _HeroSession extends ConsumerWidget {
                     color: tone.onContainer,
                   ),
                 ),
-                if (inProgress || link != null) ...[
+                if (inProgress || link != null || recording != null) ...[
                   const SizedBox(height: 12),
                   if (inProgress)
                     MarkButton(
@@ -354,13 +357,27 @@ class _HeroSession extends ConsumerWidget {
                       onClear: () =>
                           ref.read(repositoryProvider).setStatus(session, null),
                     ),
-                  if (link != null)
+                  if (link != null || recording != null)
                     Padding(
                       padding: EdgeInsets.only(top: inProgress ? 8 : 0),
-                      child: FilledButton.tonalIcon(
-                        onPressed: () => openUrl(link, context: context),
-                        icon: const Icon(LecIcons.openLink),
-                        label: Text(l.openLink),
+                      child: Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          if (link != null)
+                            FilledButton.tonalIcon(
+                              onPressed: () => openUrl(link, context: context),
+                              icon: const Icon(LecIcons.openLink),
+                              label: Text(l.openLink),
+                            ),
+                          if (recording != null)
+                            FilledButton.tonalIcon(
+                              onPressed: () =>
+                                  openUrl(recording, context: context),
+                              icon: const Icon(LecIcons.recording),
+                              label: Text(l.recordingLink),
+                            ),
+                        ],
                       ),
                     ),
                 ],

@@ -1596,7 +1596,10 @@ class _GridTile extends ConsumerWidget {
                 final time = fmt.time(session.startMin);
                 // Canceled shows its badge too: with the stripes it says why.
                 final badge = decided;
+                final hasRecording = session.recordingUrl?.isNotEmpty ?? false;
+                final hasNote = session.notes.trim().isNotEmpty;
                 final layout = layoutTile(
+                  extras: (hasRecording ? 1 : 0) + (hasNote ? 1 : 0),
                   name: course?.name ?? '',
                   shortName: course?.shortName ?? '',
                   time: time,
@@ -1650,6 +1653,26 @@ class _GridTile extends ConsumerWidget {
                         ),
                       ),
                     ),
+                    if (layout.extrasTop case final top?)
+                      PositionedDirectional(
+                        top: top,
+                        start: 0,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          spacing: 2,
+                          children: [
+                            for (final icon in [
+                              if (hasRecording) LecIcons.recording,
+                              if (hasNote) LecIcons.notes,
+                            ])
+                              Icon(
+                                icon,
+                                size: tileExtraSize,
+                                color: tone.onContainer.withValues(alpha: 0.75),
+                              ),
+                          ],
+                        ),
+                      ),
                     if (layout.badgeTop case final top?)
                       PositionedDirectional(
                         top: top,
@@ -1679,6 +1702,8 @@ class _GridTile extends ConsumerWidget {
         if (session.location.isNotEmpty) session.location,
         statusLabel(session, l),
         if (session.excluded && !session.isCanceled) l.notCountedLabel,
+        if (session.recordingUrl?.isNotEmpty ?? false) l.hasRecordingLink,
+        if (session.notes.trim().isNotEmpty) l.hasNote,
       ].join('\n'),
       child: tile,
     );
@@ -1687,6 +1712,9 @@ class _GridTile extends ConsumerWidget {
 
 /// Size of the status icon in a week tile.
 const tileBadgeSize = 14.0;
+
+/// Size of the recording and note icons in a week tile.
+const tileExtraSize = 12.0;
 
 /// What a week tile shows ([layoutTile]).
 @immutable
@@ -1699,6 +1727,7 @@ class TileLayout {
     required this.showRoom,
     this.nameInset = 0,
     this.badgeTop,
+    this.extrasTop,
   });
 
   /// The course name, or its short name when the full one doesn't fit.
@@ -1714,6 +1743,10 @@ class TileLayout {
 
   /// Where the status icon goes, from the top; null for none.
   final double? badgeTop;
+
+  /// Where the recording and note icons go, at the bottom's start; null when
+  /// there are none or no room.
+  final double? extrasTop;
 }
 
 /// Widest word of a name per style. It doesn't depend on the tile's size,
@@ -1744,8 +1777,10 @@ TileLayout layoutTile({
   required Size size,
   required TextScaler scaler,
   required TextDirection direction,
+  int extras = 0,
 }) {
   final key = (
+    extras,
     name,
     shortName,
     time,
@@ -1772,6 +1807,7 @@ TileLayout layoutTile({
     size: size,
     scaler: scaler,
     direction: direction,
+    extras: extras,
   );
 }
 
@@ -1786,6 +1822,7 @@ TileLayout _measureTile({
   required Size size,
   required TextScaler scaler,
   required TextDirection direction,
+  required int extras,
 }) {
   final width = size.width;
   final height = size.height;
@@ -1876,6 +1913,22 @@ TileLayout _measureTile({
   var showTime = free >= detailHeight;
   if (showTime) free -= detailHeight;
 
+  // The recording and note icons take a row at the bottom, if one is left
+  // after the text and doesn't run into the status icon.
+  double? extrasTop(double? badgeTop) {
+    if (extras == 0) return null;
+    final textHeight =
+        nameHeight +
+        (showRoom ? detailHeight : 0) +
+        (showTime ? detailHeight : 0);
+    final row = extras * tileExtraSize + (extras - 1) * 2;
+    final top = height - tileExtraSize;
+    if (textHeight > top || row > width) return null;
+    final badgeInRow = badgeTop != null && badgeTop + tileBadgeSize > top;
+    if (badgeInRow && row + 4 + tileBadgeSize > width) return null;
+    return top;
+  }
+
   TileLayout result({double? badgeTop, double nameInset = 0}) => TileLayout(
     name: chosen.text,
     nameStyle: chosen.style,
@@ -1884,6 +1937,7 @@ TileLayout _measureTile({
     showRoom: showRoom,
     nameInset: nameInset,
     badgeTop: badgeTop,
+    extrasTop: extrasTop(badgeTop),
   );
 
   if (!badge) return result();

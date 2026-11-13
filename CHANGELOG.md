@@ -5,6 +5,8 @@
 - **Reception hours stay visible next to a class.** A class at the same time used to cover
   the reception box on Week; now the reception hour becomes a thin strip beside it, named
   in its tooltip.
+- **See which sessions have a recording or a note.** Small icons show on session cards and,
+  where there's room, on Week. The Today card has a Recording link button when one is saved.
 
 ## 2.0.0-beta.17 — 2026-10-31
 

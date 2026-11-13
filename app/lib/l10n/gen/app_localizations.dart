@@ -1376,6 +1376,18 @@ abstract class AppLocalizations {
   /// **'Doesn\'t count toward attendance'**
   String get notCountedLabel;
 
+  /// No description provided for @hasRecordingLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Has a recording link'**
+  String get hasRecordingLink;
+
+  /// No description provided for @hasNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Has a note'**
+  String get hasNote;
+
   /// No description provided for @canceledByHolidayHint.
   ///
   /// In en, this message translates to:
