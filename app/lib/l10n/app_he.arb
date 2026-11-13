@@ -31,7 +31,7 @@
   "statusPending": "טרם סומן",
   "statusAttended": "נוכחות",
   "statusWatched": "נצפה בהקלטה",
-  "statusSummary": "נקרא סיכום",
+  "statusSummary": "נקרא הסיכום",
   "statusMissed": "היעדרות",
   "statusSkipped": "דילוג",
   "statusCanceled": "מבוטל",

@@ -103,7 +103,7 @@ class AppLocalizationsHe extends AppLocalizations {
   String get statusWatched => 'נצפה בהקלטה';
 
   @override
-  String get statusSummary => 'נקרא סיכום';
+  String get statusSummary => 'נקרא הסיכום';
 
   @override
   String get statusMissed => 'היעדרות';
