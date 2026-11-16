@@ -125,8 +125,10 @@ These are built and compile, but have only been exercised in tests so far:
 - The semester-dates warning still says "outside the new dates" when it counts
   every-other-week sessions: new wording in English and Hebrew.
 - Check on a phone that Today is current right after unlocking it in the morning.
+- Panopto recordings linked automatically: designed in [PANOPTO.md](PANOPTO.md), not built.
+  Starts with its Step 0 (checking the API with the owner's own API client).
 
-On hold: Panopto recording matching, Linux above 60 Hz, crash reporting. Later: a
+On hold: Linux above 60 Hz, crash reporting. Later: a
 translation platform, the way open source apps do it; a backup server; a more desktop-like
 Linux layout beyond the sidebar (ask what feels mobile).
 
