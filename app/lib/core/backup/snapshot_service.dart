@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:isolate';
 
 import '../db/schedule_repository.dart';
 import 'backup_service.dart';
@@ -73,13 +74,17 @@ class SnapshotService {
     final file = File(
       '${dir.path}/snapshot-${_stamp(at)}-${reason.key}.json.gz',
     );
-    final json = await BackupService(repo).exportJson(includeDeleted: true);
+    // Encoded and compressed on another isolate: years of data take long
+    // enough to drop frames, and the daily one comes right after startup.
+    final bytes = await Isolate.run(
+      () => _encode(BackupService.document(tables)),
+    );
     // Write then rename, so a crash never leaves a half-written snapshot.
     // (Unique, in case another process writes one in the same second.)
     final partial = File(
       '${file.path}.${DateTime.now().microsecondsSinceEpoch}.part',
     );
-    await partial.writeAsBytes(gzip.encode(utf8.encode(json)), flush: true);
+    await partial.writeAsBytes(bytes, flush: true);
     await partial.rename(file.path);
     await _prune();
     return Snapshot(file, at, reason);
@@ -148,6 +153,11 @@ class SnapshotService {
       }
     }
   }
+
+  /// A snapshot file's bytes: compact JSON (it's only read back by the
+  /// app), gzipped. Static, so the isolate gets only the data.
+  static List<int> _encode(Map<String, Object?> document) =>
+      gzip.encode(utf8.encode(jsonEncode(document)));
 
   static String _two(int n) => n.toString().padLeft(2, '0');
 

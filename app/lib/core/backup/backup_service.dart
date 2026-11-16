@@ -36,13 +36,18 @@ class BackupService {
   /// too, so a restore can bring back exactly this state.
   Future<String> exportJson({bool includeDeleted = false}) async {
     final tables = await repo.exportRows(includeDeleted: includeDeleted);
-    return const JsonEncoder.withIndent('  ').convert({
-      'format': format,
-      'version': version,
-      'exportedAt': DateTime.now().toUtc().toIso8601String(),
-      'tables': tables,
-    });
+    return const JsonEncoder.withIndent('  ').convert(document(tables));
   }
+
+  /// A v3 backup of [tables] (rows keyed by table name), before encoding.
+  static Map<String, Object?> document(
+    Map<String, List<Map<String, Object?>>> tables,
+  ) => {
+    'format': format,
+    'version': version,
+    'exportedAt': DateTime.now().toUtc().toIso8601String(),
+    'tables': tables,
+  };
 
   /// Imports a backup and returns how many semesters it contained.
   /// Throws [FormatException] for anything that isn't a LecCheck backup.
