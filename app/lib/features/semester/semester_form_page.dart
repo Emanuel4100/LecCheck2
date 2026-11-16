@@ -13,9 +13,9 @@ import '../../core/db/schedule_repository.dart';
 import '../../core/icons/lec_icons.dart';
 import '../../domain/holidays/jewish_holidays.dart';
 import '../../domain/local_date.dart';
-import '../../domain/occurrence_engine.dart';
 import '../../domain/schedule_types.dart';
 import '../../domain/semester_calendar.dart';
+import '../../domain/semester_changes.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../settings/holidays_sheet.dart';
 import '../tour/tour_controller.dart';
@@ -113,7 +113,9 @@ class _SemesterFormPageState extends ConsumerState<SemesterFormPage> {
     final loaded = _loaded;
     final datesChanged =
         loaded != null && (loaded.start != _start || loaded.end != _end);
-    if (datesChanged && !await _confirmHiddenSessions(repo, loaded)) return;
+    final weeksChanged =
+        datesChanged || (loaded != null && loaded.weekStart != _weekStart);
+    if (weeksChanged && !await _confirmHiddenSessions(repo, loaded)) return;
     setState(() => _saving = true);
     // The first semester on this device: the app tour follows.
     final first = widget.semesterId == null && (await repo.semesters()).isEmpty;
@@ -168,29 +170,27 @@ class _SemesterFormPageState extends ConsumerState<SemesterFormPage> {
     }
   }
 
-  /// Weekly sessions only exist between the semester's dates: when marked
-  /// ones would fall outside the new dates, asks first (they're kept, and
-  /// show again if the dates change back).
+  /// Weekly sessions only exist between the semester's dates (and
+  /// every-other-week ones follow its first week): when marked ones would
+  /// no longer be there, asks first (they're kept, and show again if the
+  /// change is undone).
   Future<bool> _confirmHiddenSessions(
     ScheduleRepository repo,
     SemesterInfo loaded,
   ) async {
     final data = await repo.loadSemesterData(loaded.id);
     if (data == null || !mounted) return mounted;
-    final hidden =
-        OccurrenceEngine.expand(
-              semester: data.semester,
-              meetings: data.meetings,
-              overrides: data.overrides,
-              noClassRanges: data.noClassRanges,
-            ).all
-            .where(
-              (o) =>
-                  !o.isOneOff &&
-                  (o.explicitStatus?.isDecided ?? false) &&
-                  !o.originalDate.isWithin(_start, _end),
-            )
-            .length;
+    final hidden = markedSessionsLost(
+      data,
+      SemesterInfo(
+        id: loaded.id,
+        name: loaded.name,
+        start: _start,
+        end: _end,
+        weekStart: _weekStart,
+        visibleDays: _days,
+      ),
+    );
     if (hidden == 0) return true;
     final l = AppLocalizations.of(context);
     return confirmDialog(
