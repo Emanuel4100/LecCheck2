@@ -171,4 +171,23 @@ void main() {
     expect(capped, hasLength(5));
     expect(capped.map((r) => r.id).toSet(), hasLength(5));
   });
+
+  test('a late class still gets "how was class?" after midnight', () {
+    // Sunday 22:30–23:55; asked 10 minutes after, at 00:05 on Monday.
+    final late = weekly(
+      id: 'late',
+      startMin: 22 * 60 + 30,
+      endMin: 23 * 60 + 55,
+    );
+    final reminders = planReminders(
+      index: OccurrenceEngine.expand(semester: semester(), meetings: [late]),
+      courses: {'c1': course},
+      meetings: {'late': late},
+      settings: const ReminderSettings(after: true, afterMinutes: 10),
+      texts: _Texts(),
+      now: DateTime(2026, 10, 19, 0, 1),
+    );
+    expect(reminders.first.kind, ReminderKind.after);
+    expect(reminders.first.at, DateTime(2026, 10, 19, 0, 5));
+  });
 }

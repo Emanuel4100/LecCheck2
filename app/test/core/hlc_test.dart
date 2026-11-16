@@ -51,4 +51,17 @@ void main() {
     wall += 60 * 60 * 1000;
     expect(clock.tick().millis, serverNow + 60 * 60 * 1000);
   });
+
+  test('a full counter moves on to the next millisecond', () {
+    final clock = HlcClock(
+      node: 'n1',
+      last: const Hlc(1000, 0xffff, 'n1'),
+      wallClock: () => 0,
+    );
+    final next = clock.tick();
+    expect((next.millis, next.counter), (1001, 0));
+    expect(next.pack().length, const Hlc(1000, 0, 'n1').pack().length);
+    clock.receive(const Hlc(5000, 0xffff, 'n2'));
+    expect((clock.last.millis, clock.last.counter), (5001, 0));
+  });
 }

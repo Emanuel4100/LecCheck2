@@ -111,7 +111,9 @@ List<PlannedReminder> planReminders({
   if (!settings.any) return const [];
   final today = LocalDate.fromDateTime(now);
   final plan = <PlannedReminder>[];
-  for (final session in index.between(today, today.addDays(horizonDays))) {
+  // From yesterday: a late class's "how was class?" can be due after midnight.
+  final from = today.addDays(-1);
+  for (final session in index.between(from, today.addDays(horizonDays))) {
     if (session.isCanceled || settings.isMuted(session.courseId)) continue;
     final course = courses[session.courseId];
     if (course == null) continue;

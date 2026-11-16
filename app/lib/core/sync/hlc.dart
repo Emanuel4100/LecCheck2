@@ -79,12 +79,21 @@ class HlcClock {
     }
   }
 
+  /// The counter packs into four hex digits (the server checks the width).
+  static const _maxCounter = 0xffff;
+
+  /// [millis] and [counter], moving on to the next millisecond when the
+  /// counter is full, so the packed clock keeps its fixed width.
+  Hlc _at(int millis, int counter) => counter > _maxCounter
+      ? Hlc(millis + 1, 0, node)
+      : Hlc(millis, counter, node);
+
   /// Timestamp for a local change.
   Hlc tick() {
     final wall = _wall();
     _last = wall > _last.millis
         ? Hlc(wall, 0, node)
-        : Hlc(_last.millis, _last.counter + 1, node);
+        : _at(_last.millis, _last.counter + 1);
     return _last;
   }
 
@@ -103,6 +112,6 @@ class HlcClock {
     } else {
       counter = 0;
     }
-    _last = Hlc(millis, counter, node);
+    _last = _at(millis, counter);
   }
 }
