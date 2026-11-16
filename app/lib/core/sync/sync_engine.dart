@@ -110,6 +110,11 @@ class SyncEngine {
   static const _cursorKey = 'lastVersion';
   static const _datasetKey = 'dataset';
 
+  /// Set (with the new dataset id) when the server's data was reset or
+  /// restored, until this device's rows are offered to it: kept in the
+  /// database, so an app closed before catch-up ends still offers them.
+  static const _reofferKey = 'reoffer';
+
   final _states = StreamController<SyncState>.broadcast();
   SyncState _state = const SyncState(SyncPhase.connecting);
   DateTime? _lastSyncedAt;
@@ -140,9 +145,6 @@ class SyncEngine {
   bool _disposed = false;
   String? _inflight;
   List<int> _inflightSeqs = const [];
-
-  /// The server's data was reset or restored: offer ours once caught up.
-  bool _reoffer = false;
 
   /// See [SyncState.heldUntil]; [_holds] counts holds in a row.
   DateTime? _heldUntil;
@@ -508,9 +510,7 @@ class SyncEngine {
         final catchUp = message['catchUp'] == true;
         final more = message['more'] == true;
         final upto = (message['upto'] as num?)?.toInt() ?? 0;
-        if (catchUp && await _datasetChanged(db, message['dataset'])) {
-          _reoffer = true;
-        }
+        if (catchUp) await _datasetChanged(db, message['dataset']);
         // Broadcasts may arrive before our catch-up finished; only trust
         // their cursor once we're caught up, so no versions are skipped.
         await _applyRows(
@@ -521,10 +521,7 @@ class SyncEngine {
           _caughtUp = true;
           _upgradeRequired = false;
           if (_pending == 0) _holds = 0;
-          if (_reoffer) {
-            _reoffer = false;
-            await recorder.enqueueAll(repo);
-          }
+          await _reofferIfPending(db, repo, recorder);
           _schedulePush(immediate: true);
         }
         _markSyncedIfIdle();
@@ -695,20 +692,43 @@ class SyncEngine {
     }
   }
 
-  /// Saves the server's dataset id and says whether it differs from the
-  /// one this device synced with before (the server's data was reset or
-  /// restored).
-  static Future<bool> _datasetChanged(AppDatabase db, Object? dataset) async {
-    if (dataset is! String) return false;
-    final known = await _meta(db, _datasetKey);
-    if (known == dataset) return false;
-    await db
-        .into(db.syncMeta)
-        .insertOnConflictUpdate(
-          SyncMetaCompanion.insert(key: _datasetKey, value: dataset),
-        );
-    return known != null;
+  /// Saves the server's dataset id. When it differs from the one this
+  /// device synced with before (the server's data was reset or restored),
+  /// also notes that this device's rows must be offered again
+  /// ([_reofferIfPending], once caught up).
+  static Future<void> _datasetChanged(AppDatabase db, Object? dataset) async {
+    if (dataset is! String) return;
+    await db.transaction(() async {
+      final known = await _meta(db, _datasetKey);
+      if (known == dataset) return;
+      await db
+          .into(db.syncMeta)
+          .insertOnConflictUpdate(
+            SyncMetaCompanion.insert(key: _datasetKey, value: dataset),
+          );
+      if (known != null) {
+        await db
+            .into(db.syncMeta)
+            .insertOnConflictUpdate(
+              SyncMetaCompanion.insert(key: _reofferKey, value: dataset),
+            );
+      }
+    });
   }
+
+  /// Offers every row of this device to the server ("add only") if a reset
+  /// asked for it, in the same transaction that clears the request.
+  static Future<void> _reofferIfPending(
+    AppDatabase db,
+    ScheduleRepository repo,
+    SyncRecorder recorder,
+  ) => db.transaction(() async {
+    if (await _meta(db, _reofferKey) == null) return;
+    await recorder.enqueueAll(repo);
+    await (db.delete(
+      db.syncMeta,
+    )..where((m) => m.key.equals(_reofferKey))).go();
+  });
 
   static Future<String?> _meta(AppDatabase db, String key) async =>
       (await (db.select(
@@ -747,7 +767,7 @@ class SyncEngine {
   /// leaving the account).
   static Future<void> resetCursor(AppDatabase db) => (db.delete(
     db.syncMeta,
-  )..where((m) => m.key.isIn([_cursorKey, _datasetKey]))).go();
+  )..where((m) => m.key.isIn([_cursorKey, _datasetKey, _reofferKey]))).go();
 
   // ---------------------------------------------------------- utilities --
 
@@ -825,7 +845,7 @@ class SyncEngine {
       seqs: [for (final e in entries) e.seq],
       reply: body,
     );
-    final reoffer = await _datasetChanged(db, body['dataset']);
+    await _datasetChanged(db, body['dataset']);
     await applyServerRows(
       db,
       repo,
@@ -833,6 +853,6 @@ class SyncEngine {
       cursor: (body['upto'] as num?)?.toInt() ?? since,
     );
     // Pushed on the next sync.
-    if (reoffer) await recorder.enqueueAll(repo);
+    await _reofferIfPending(db, repo, recorder);
   }
 }

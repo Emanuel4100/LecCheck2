@@ -539,6 +539,63 @@ void main() {
       await server.close(force: true);
     });
 
+    test('a reset server gets the rows of this device even if catch-up was cut '
+        'short', () async {
+      await db
+          .into(db.syncMeta)
+          .insert(SyncMetaCompanion.insert(key: 'dataset', value: 'old'));
+      server.listen((request) async {
+        connections++;
+        final first = connections == 1;
+        final socket = await WebSocketTransformer.upgrade(request);
+        socket.listen((data) async {
+          final message = jsonDecode(data as String) as Map<String, Object?>;
+          if (message['t'] != 'hello') return; // Pushes stay unanswered.
+          socket.add(
+            jsonEncode({
+              't': 'changes',
+              'rows': const [],
+              'upto': 0,
+              // The first catch-up has more pages: the app closes before.
+              'more': first,
+              'clock': null,
+              'catchUp': true,
+              'dataset': 'new',
+            }),
+          );
+        });
+      });
+      Future<String?> dataset() async => (await (db.select(
+        db.syncMeta,
+      )..where((m) => m.key.equals('dataset'))).getSingleOrNull())?.value;
+
+      final first = start();
+      for (var i = 0; i < 50 && await dataset() != 'new'; i++) {
+        await Future<void>.delayed(const Duration(milliseconds: 50));
+      }
+      expect(await dataset(), 'new');
+      expect(await outbox(), isEmpty);
+      await first.dispose();
+
+      // The next start says it has the new dataset already: the server
+      // doesn't ask again, so the device must remember.
+      start();
+      for (var i = 0; i < 50 && (await outbox()).isEmpty; i++) {
+        await Future<void>.delayed(const Duration(milliseconds: 50));
+      }
+      final offered = await outbox();
+      expect(
+        offered.map((e) => (e.tbl, e.rowId)),
+        containsAll([
+          ('semesters', 'sem'),
+          ('courses', 'c1'),
+          ('meetings', 'm1'),
+        ]),
+      );
+      expect(offered.every((e) => e.ifAbsent), isTrue);
+      expect(connections, 2);
+    });
+
     test('a refused connection checks the session right away', () async {
       final asked = <String>[];
       server.listen((request) async {
