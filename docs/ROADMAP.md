@@ -103,6 +103,12 @@
   after a server reset even if the app closed, caps pushes in bytes and notices a revoked
   sign-in at once; one reminder re-plan at a time; a faster first sync and backups off the UI
   thread.
+- **Panopto recordings, experimental** (2.0.0-beta.20): with an API client the user
+  creates once, the connected device fills in each finished class's recording link from
+  the course's Panopto folder, and the other devices get them through sync. Found links
+  are marked and never replace a link the user pasted; parallel groups are asked once or
+  learned from pasted links; removing a link asks; Matching details in Developer mode; a
+  tour step. Database schema v6; the server's `/v1/panopto/done` page.
 
 ## Not yet verified on real hardware
 
@@ -118,18 +124,20 @@ These are built and compile, but have only been exercised in tests so far:
   [DEVELOPMENT.md](DEVELOPMENT.md) "Update notice").
 - Google sign-in end-to-end (needs the Cloudflare + Google setup in [SETUP.md](SETUP.md));
   sync itself is verified end-to-end with the dev sign-in against a local Worker.
+- Panopto recordings on a phone: the sign-in coming back through `leccheck://panopto`
+  (Android, iPhone) and Android's daily background look. Tried on Linux only (a separate
+  test copy, 2026-11-16).
 
-## Next: 2.0.0-beta.20
+## Next: 2.0.0-beta.21
 
 - Upload a syllabus and build the course from it (ask about the design first).
 - The semester-dates warning still says "outside the new dates" when it counts
   every-other-week sessions: new wording in English and Hebrew.
 - Check on a phone that Today is current right after unlocking it in the morning.
-- **Panopto recordings, experimental**: built and tried on the owner's Linux test copy
-  (2026-11-16); the server page is deployed. What it does, its limits and the ideas are in
-  [PANOPTO.md](PANOPTO.md). Before release: the owner approves the Hebrew strings (the
-  `panopto*`, `tourPanopto*` and `tourLater` keys) and tries it on the phone; pictures for
-  the setup guide (from the owner) when ready.
+- **Panopto recordings** (experimental since beta.20, see [PANOPTO.md](PANOPTO.md)): the
+  owner tries it on the phone and approves the Hebrew strings (the `panopto*`,
+  `tourPanopto*` and `tourLater` keys); pictures for the setup guide when ready; then
+  pick from "after the experimental release" below.
 
 On hold: Linux above 60 Hz, crash reporting. Later: a
 translation platform, the way open source apps do it; a backup server; a more desktop-like
@@ -185,6 +193,8 @@ goes once nobody is left on the tarball.
   and canceling all classes on a day.
 - Done in 2.0.0-beta.19: the code review's logic fixes and two speedups (first sync,
   automatic backups).
+- Done in 2.0.0-beta.20: Panopto recordings found by themselves (experimental), with
+  Matching details and a tour step.
 
 ## Panopto recordings: after the experimental release
 

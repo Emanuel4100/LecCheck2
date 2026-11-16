@@ -55,6 +55,14 @@
   </supports>
   <content_rating type="oars-1.1" />
   <releases>
+    <release version="2.0.0-beta.20" date="2026-11-16" type="development">
+      <description>
+        <ul>
+          <li><em>Panopto recordings, found by themselves (experimental).</em> Settings → Panopto recordings connects LecCheck to your university's Panopto with an API client you create there once. It finds each course's folder by the course number and fills in each finished class's recording link, so missed classes show under Catch up on recordings by themselves. When several groups are recorded at the same time, the course page asks once which group is yours, with a suggestion. Found links are marked "Found in Panopto", and your own links always win. One connected device is enough: the links reach your other devices through sync. Android also looks once a day in the background. A meeting learns its group by itself when the links you pasted into it all point to one group. Removing a link asks whether Panopto may fill it (or, for a link Panopto found, whether it was wrong). In Developer mode, <em>Matching details</em> shows why each session got a link or not, and why each recording wasn't used. The tour offers to set it up.</li>
+          <li><em>Removing a recording link</em> now keeps it removed (stored as an empty link) unless you let Panopto fill it, so a link found in Panopto doesn't take its place.</li>
+        </ul>
+      </description>
+    </release>
     <release version="2.0.0-beta.19" date="2026-11-16" type="development">
       <description>
         <ul>
@@ -156,15 +164,6 @@
           <li>Settings → Developer's log notes each start's sign-in and why a sign-in was ever removed, and <em>Copy diagnostics</em> includes the sign-in state.</li>
           <li>Settings → Developer → <em>Sync now</em> says whether the server answered.</li>
           <li>Builds pointed at a local test server keep their own sign-in, so testing can't sign out the installed app.</li>
-        </ul>
-      </description>
-    </release>
-    <release version="2.0.0-beta.12" date="2026-10-15" type="development">
-      <description>
-        <ul>
-          <li><em>Moving a meeting to another day</em> kept the session's mark and notes but dropped <em>Counts toward attendance</em> when the new day already had a record, so a session left out quietly counted again.</li>
-          <li>A failed update no longer draws its steps as if everything had finished.</li>
-          <li>Contact cards in the course editor line up in Hebrew.</li>
         </ul>
       </description>
     </release>
