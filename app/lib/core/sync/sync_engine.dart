@@ -339,7 +339,9 @@ class SyncEngine {
       }
       _emit(SyncPhase.offline);
       _scheduleReconnect();
-      if (_attempt == 3) unawaited(_checkSession());
+      // Refused outright: ask now whether the session is still good, rather
+      // than after a few retries (and a dead token's minute of "offline").
+      if (status == 401 || _attempt == 3) unawaited(_checkSession());
     } finally {
       _connecting = false;
     }
@@ -407,12 +409,23 @@ class SyncEngine {
     );
   }
 
-  /// After repeated failures, distinguishes "offline" from "revoked".
+  /// [path] on the sync server: the configured one, or the test server.
+  Uri _api(String path) {
+    final socket = _socketUri;
+    if (socket == null) return SyncConfig.api(path);
+    return socket.replace(
+      scheme: socket.scheme == 'wss' ? 'https' : 'http',
+      path: path,
+    );
+  }
+
+  /// After repeated failures, or when the server refused the connection,
+  /// distinguishes "offline" from "revoked".
   Future<void> _checkSession() async {
     try {
       final response = await http
           .post(
-            SyncConfig.api('/v1/auth/renew'),
+            _api('/v1/auth/renew'),
             headers: {'Authorization': 'Bearer ${_session.token}'},
           )
           .timeout(const Duration(seconds: 10));

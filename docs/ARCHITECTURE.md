@@ -235,7 +235,7 @@ semester?". The semester list is re-read from the database there, not from the
 
 ## Notifications and widget
 
-- `NotificationController` re-plans reminders (debounced 2 s) when any schedule data
+- `NotificationController` re-plans reminders (debounced 500 ms) when any schedule data
   (`ScheduleRepository.watchAnyChange`), settings or language change, hourly, and when the
   app comes back. It plans from the database, not the screens' providers:
   `ScheduleRepository.loadWindow` merges every semester running in the reminder window,

@@ -1,3 +1,4 @@
+import 'dart:async';
 // Guards against data being overwritten, dropped or lost: editor saves,
 // backup imports, restores, the trash, snapshots, the sync outbox, rows from
 // older app versions and notification buttons.
@@ -536,6 +537,31 @@ void main() {
       await engine?.dispose();
       engine = null;
       await server.close(force: true);
+    });
+
+    test('a refused connection checks the session right away', () async {
+      final asked = <String>[];
+      server.listen((request) async {
+        asked.add(request.uri.path);
+        request.response.statusCode = HttpStatus.unauthorized;
+        await request.response.close();
+      });
+      final revoked = Completer<String>();
+      engine = SyncEngine(
+        db: db,
+        repo: repo,
+        recorder: recorder,
+        session: const Session(token: 'token', userId: 'dev:test'),
+        watchLifecycle: false,
+        socketUri: Uri.parse('ws://127.0.0.1:${server.port}/v1/sync'),
+        onSessionRevoked: revoked.complete,
+      )..start();
+      // Before, only the third failed attempt asked (after about 3 s).
+      expect(
+        await revoked.future.timeout(const Duration(seconds: 2)),
+        'session check answered 401',
+      );
+      expect(asked, ['/v1/sync', '/v1/auth/renew']);
     });
 
     test('changes stay queued until the time the server gives', () async {
