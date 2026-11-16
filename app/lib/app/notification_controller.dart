@@ -240,10 +240,33 @@ class NotificationController {
     return _apply(force: true);
   }
 
+  /// The re-plan running now, and the one waiting to run after it.
+  Future<void> _running = Future.value();
+  Future<int>? _waiting;
+  bool _waitingForce = false;
+
+  /// Re-plans one at a time: two at once could schedule an older plan over
+  /// a newer one. Requests that come while one runs are merged into a single
+  /// run after it, which reads the data as it is then.
+  Future<int> _apply({bool force = false}) {
+    _waitingForce |= force;
+    final waiting = _waiting;
+    if (waiting != null) return waiting;
+    final run = _running.then((_) {
+      _waiting = null;
+      final force = _waitingForce;
+      _waitingForce = false;
+      return _plan(force: force);
+    });
+    _waiting = run;
+    _running = run.then((_) {}, onError: (Object _) {});
+    return run;
+  }
+
   /// Plans from the database: every semester running in the next
   /// [reminderWindow] days, whichever one the app shows (looking at last
   /// semester's stats mustn't stop this semester's reminders).
-  Future<int> _apply({bool force = false}) async {
+  Future<int> _plan({bool force = false}) async {
     final settings = container.read(reminderSettingsProvider);
     if (!settings.any) {
       await service.cancelReminders();

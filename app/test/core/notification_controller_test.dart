@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:drift/native.dart';
@@ -107,6 +108,25 @@ void main() {
     expect(await controller.rescheduleNow(), greaterThan(0));
     expect(os.cancelled, [42]);
     expect(os.scheduled, isNotEmpty);
+  });
+
+  test('one re-plan at a time; requests meanwhile run once after', () async {
+    await addSemester();
+    final controller = NotificationController(container(), service: service);
+    os.gate = Completer<void>();
+    final first = controller.rescheduleNow();
+    while (os.reads == 0) {
+      await Future<void>.delayed(const Duration(milliseconds: 5));
+    }
+    // A change and a flush arrive while the first plan is being applied.
+    final second = controller.rescheduleNow();
+    final third = controller.rescheduleNow();
+    await Future<void>.delayed(const Duration(milliseconds: 50));
+    expect(os.reads, 1);
+    os.gate!.complete();
+    await (first, second, third).wait;
+    expect(os.reads, 2);
+    expect(os.mostAtOnce, 1);
   });
 
   test('follows the semester running now, not the one shown', () async {

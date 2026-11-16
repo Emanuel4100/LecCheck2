@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:leccheck/core/notifications/notification_service.dart';
 import 'package:leccheck/domain/reminder_plan.dart';
 
@@ -15,13 +17,29 @@ class FakeReminderOs implements ReminderOs {
   bool unreadable = false;
   bool cleared = false;
 
+  /// While set, reading the list waits for it (a slow scheduler).
+  Completer<void>? gate;
+
+  /// How many times the list was read, and how many reads overlapped.
+  int reads = 0;
+  int _reading = 0;
+  int mostAtOnce = 0;
+
   /// Like a force stop on Android: the alarms go, the plugin's list stays.
   void forceStop() => alarms = {};
 
   @override
   Future<Map<int, String?>> pending() async {
-    if (unreadable) throw StateError('corrupt list');
-    return Map.of(listed);
+    reads++;
+    _reading++;
+    if (_reading > mostAtOnce) mostAtOnce = _reading;
+    try {
+      await gate?.future;
+      if (unreadable) throw StateError('corrupt list');
+      return Map.of(listed);
+    } finally {
+      _reading--;
+    }
   }
 
   @override
