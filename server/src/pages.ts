@@ -47,7 +47,7 @@ available from the <a href="${REPO}/releases">releases page</a>.</p>`,
 const privacy = page(
   "LecCheck privacy policy",
   `<h1>Privacy policy</h1>
-<p class="muted">Last updated: October 9, 2026</p>
+<p class="muted">Last updated: November 16, 2026</p>
 
 <h2>Summary</h2>
 <p>LecCheck works without an account, and then everything stays on your device. If you sign
@@ -79,6 +79,17 @@ restored for 30 days; after that it is erased permanently. Signing out lets you 
 the copy on the device.
 Uninstalling the app removes local data.</p>
 
+<h2>Panopto recordings (experimental)</h2>
+<p>If you connect Panopto in <b>Settings → Panopto recordings</b>, the app signs in to your
+university's Panopto with an API client you created there, and reads your courses' folders
+and recordings to fill in recording links. It only reads; it never changes anything in
+Panopto. Your Panopto Client ID, secret and sign-in stay on that device, in its secure
+storage, and are never sent to our server. The links it finds are saved like links you
+paste, and sync like the rest of your schedule. Signing in passes your browser through a
+page on our server (<code>/v1/panopto/done</code>) that only sends it back to the app: it
+sees a one-time code that is useless without your secret, and stores nothing.
+<b>Disconnect</b> removes the sign-in from the device and asks Panopto to revoke it.</p>
+
 <h2>Update checks</h2>
 <p>On Android and Linux, the app checks for a new version at most once a day by downloading
 a small file from GitHub (raw.githubusercontent.com). GitHub sees your IP address, as with
@@ -94,9 +105,9 @@ developer can read. Your email is sent only if you type it in. To limit abuse, t
 counts reports per sender using a one-way hash of the IP address, kept for a day.</p>
 
 <h2>Third parties</h2>
-<p>Google (sign-in), Cloudflare (hosting) and GitHub (update checks and bug reports)
-process data as needed to provide those services, under their own privacy policies. No
-other parties receive your data.</p>
+<p>Google (sign-in), Cloudflare (hosting), GitHub (update checks and bug reports) and, if
+you connect it, your university's Panopto process data as needed to provide those services,
+under their own privacy policies. No other parties receive your data.</p>
 
 <h2>Children</h2>
 <p>LecCheck is meant for students and isn't directed at children under 13.</p>

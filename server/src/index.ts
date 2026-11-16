@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import { activeSession, auth, issueSession, sessionFromRequest } from "./auth";
 import { pages } from "./pages";
+import { panopto } from "./panopto";
 import { reports, reportsHealth } from "./reports";
 import { appTooOld, PROTOCOL_VERSION, unavailable, unavailableResponse } from "./protocol";
 import { UserStore, type Env } from "./user-store";
@@ -12,6 +13,8 @@ const app = new Hono<{ Bindings: Env }>();
 app.route("/", pages);
 
 app.route("/v1/auth", auth);
+
+app.route("/v1/panopto", panopto);
 
 app.route("/v1/reports", reports);
 
