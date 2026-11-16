@@ -144,6 +144,59 @@ void main() {
     },
   );
 
+  test('a one-week change keeps only what differs from the meeting', () async {
+    final first = OccurrenceEngine.expand(
+      semester: semester,
+      meetings: [lecture],
+    ).all.first;
+    // Only the room changes this week.
+    await repo.moveSession(
+      first,
+      date: first.date,
+      startMin: lecture.startMin,
+      endMin: lecture.endMin,
+      location: 'Zoom',
+    );
+    var row = (await db.select(db.sessionOverrides).get()).single;
+    expect(row.movedDate, isNull);
+    expect(row.movedStartMin, isNull);
+    expect(row.movedEndMin, isNull);
+    expect(row.movedLocation, 'Zoom');
+
+    // The meeting moves to 12:00 for every week: this week follows it.
+    const later = MeetingRule(
+      id: 'm1',
+      courseId: 'c1',
+      type: SessionType.lecture,
+      kind: MeetingKind.weekly,
+      weekday: DateTime.sunday,
+      startMin: 720,
+      endMin: 840,
+      location: 'Room 101',
+    );
+    await repo.moveMeeting(lecture, later, weekStart: semester.weekStart);
+    final d = await data();
+    final session = OccurrenceEngine.expand(
+      semester: d.semester,
+      meetings: d.meetings,
+      overrides: d.overrides,
+    ).byId[first.id]!;
+    expect((session.startMin, session.endMin), (720, 840));
+    expect(session.location, 'Zoom');
+
+    // Only the end changes: the time is kept as a pair.
+    await repo.moveSession(
+      session,
+      date: session.date,
+      startMin: 720,
+      endMin: 900,
+      location: 'Room 101',
+    );
+    row = (await db.select(db.sessionOverrides).get()).single;
+    expect((row.movedStartMin, row.movedEndMin), (720, 900));
+    expect(row.movedLocation, isNull);
+  });
+
   test('editing the meeting time keeps marked sessions', () async {
     final first = OccurrenceEngine.expand(
       semester: semester,

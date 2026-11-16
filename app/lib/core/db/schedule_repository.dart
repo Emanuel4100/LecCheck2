@@ -623,21 +623,29 @@ class ScheduleRepository {
     );
   }
 
-  /// "This week only" change of date, time or room.
+  /// "This week only" change of date, time or room. Only what differs from
+  /// the meeting is kept (the time as a pair), so the rest still follows
+  /// the meeting when it changes later.
   Future<void> moveSession(
     Occurrence session, {
     required LocalDate date,
     required int startMin,
     required int endMin,
     required String location,
-  }) => db.transaction(
-    () => _patchOverride(session, {
+  }) => db.transaction(() async {
+    final meeting = await _find(_meetings, session.meetingId);
+    final sameTime =
+        meeting != null &&
+        meeting.startMin == startMin &&
+        meeting.endMin == endMin;
+    final sameRoom = meeting != null && meeting.location == location;
+    await _patchOverride(session, {
       'movedDate': date == session.originalDate ? null : date.toIso(),
-      'movedStartMin': startMin,
-      'movedEndMin': endMin,
-      'movedLocation': location,
-    }),
-  );
+      'movedStartMin': sameTime ? null : startMin,
+      'movedEndMin': sameTime ? null : endMin,
+      'movedLocation': sameRoom ? null : location,
+    });
+  });
 
   Future<void> resetSessionMove(Occurrence session) => db.transaction(
     () => _patchOverride(session, {
