@@ -1,20 +1,20 @@
 {
   "beta": {
-    "version": "2.0.0-beta.19",
-    "build": 27,
+    "version": "2.0.0-beta.20",
+    "build": 28,
     "date": "2026-11-16",
-    "notesUrl": "https://github.com/Emanuel4100/LecCheck2/releases/tag/v2.0.0-beta.19",
-    "notes": "- **A change for one week only keeps following the meeting.** Changing only the room for a\n  week used to fix that week's time too, so moving the class later for every week left that\n  week behind. Now only what you changed is kept.\n- **Today is up to date as soon as you open it**, instead of showing the time (or yesterday)\n  from before the phone went to sleep for up to a minute.\n- **\"How was class?\" for a late class** is no longer skipped when it's due just after midnight.\n- **Changing the semester's dates warns about every marked session it hides**, including\n  every-other-week classes whose weeks move when the start date does.\n- **Sync is sturdier**: after the server's data was reset, this device's data is offered again\n  even if the app closed halfway; long Hebrew notes no longer make a sync too big for the\n  server; a sign-in that was revoked is noticed right away; and a first sync applies its\n  rows faster.\n- **Reminders and backups**: reminders are re-planned one at a time, so an older plan can't\n  replace a newer one, and the daily automatic backup is written in the background without\n  slowing the app.",
-    "androidArm64": "https://github.com/Emanuel4100/LecCheck2/releases/download/v2.0.0-beta.19/LecCheck-2.0.0-beta.19-android-arm64.apk",
-    "androidUniversal": "https://github.com/Emanuel4100/LecCheck2/releases/download/v2.0.0-beta.19/LecCheck-2.0.0-beta.19-android.apk",
+    "notesUrl": "https://github.com/Emanuel4100/LecCheck2/releases/tag/v2.0.0-beta.20",
+    "notes": "- **Panopto recordings, found by themselves (experimental).** Settings \u2192 Panopto recordings\n  connects LecCheck to your university's Panopto with an API client you create there once.\n  It finds each course's folder by the course number and fills in each finished class's\n  recording link, so missed classes show under Catch up on recordings by themselves. When\n  several groups are recorded at the same time, the course page asks once which group is\n  yours, with a suggestion. Found links are marked \"Found in Panopto\", and your own links always\n  win. One connected device is enough: the links reach\n  your other devices through sync. Android also looks once a day in the background.\n  A meeting learns its group by itself when the links you pasted into it all point to one\n  group. Removing a link asks whether Panopto may fill it (or, for a link Panopto found,\n  whether it was wrong). In Developer mode, **Matching details** shows why each session\n  got a link or not, and why each recording wasn't used. The tour offers to set it up.\n- **Removing a recording link** now keeps it removed (stored as an empty link) unless you let\n  Panopto fill it, so a link found in Panopto doesn't take its place.",
+    "androidArm64": "https://github.com/Emanuel4100/LecCheck2/releases/download/v2.0.0-beta.20/LecCheck-2.0.0-beta.20-android-arm64.apk",
+    "androidUniversal": "https://github.com/Emanuel4100/LecCheck2/releases/download/v2.0.0-beta.20/LecCheck-2.0.0-beta.20-android.apk",
     "flatpakref": "https://emanuel4100.github.io/LecCheck2/leccheck.flatpakref",
     "sha256": {
-      "androidArm64": "22e7bb235a81a36787c9a39d2d9477a1defe8d3ee7f885f8c4ed8d2b6e1bedaf",
-      "androidUniversal": "38c3904194d655aba8d8f959d5d90ae1e7b708b14b4aaada03bed6fe224e6fd6"
+      "androidArm64": "ff594c9b802de0f58387a80c35e005084efbc1294366eeb0c7e086a79839cc30",
+      "androidUniversal": "c5c3b82e3733c1d811e80076e5c72d563d8430ff464ac8217c8d8ee2ae0eeb5e"
     },
     "size": {
-      "androidArm64": 28372863,
-      "androidUniversal": 78960966
+      "androidArm64": 28569471,
+      "androidUniversal": 79714630
     }
   }
 }
