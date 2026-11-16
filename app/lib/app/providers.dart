@@ -340,22 +340,31 @@ final userPrefsProvider = StreamProvider<UserPrefs>(
 
 // ------------------------------------------------------------------ clock --
 
-/// Wall clock truncated to the minute; ticks on every minute boundary.
+/// The wall clock; replaced in tests.
+final wallClockProvider = Provider<DateTime Function()>((ref) => DateTime.now);
+
+/// Wall clock truncated to the minute; ticks on every minute boundary, and
+/// when the app comes back: Dart timers don't count time asleep, so after a
+/// night with the phone locked Today showed yesterday for up to a minute.
 final minuteClockProvider = StreamProvider<DateTime>((ref) {
+  final clock = ref.watch(wallClockProvider);
   DateTime truncate(DateTime t) =>
       DateTime(t.year, t.month, t.day, t.hour, t.minute);
   final controller = StreamController<DateTime>();
   Timer? timer;
   void schedule() {
-    final now = DateTime.now();
+    timer?.cancel();
+    final now = clock();
     controller.add(truncate(now));
     final next = truncate(now).add(const Duration(minutes: 1));
     timer = Timer(next.difference(now), schedule);
   }
 
+  final lifecycle = AppLifecycleListener(onResume: schedule, onShow: schedule);
   schedule();
   ref.onDispose(() {
     timer?.cancel();
+    lifecycle.dispose();
     controller.close();
   });
   return controller.stream;
