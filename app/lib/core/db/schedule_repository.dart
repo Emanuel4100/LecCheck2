@@ -933,28 +933,65 @@ class ScheduleRepository {
   /// this device sees a row change: a row that was already deleted keeps
   /// its time, and one that arrives deleted (a fresh device catching up)
   /// gets 0, so years of old deletes don't show up as deleted just now.
-  Future<void> applyRemoteRow(String table, Map<String, Object?> row) async {
-    final adapter = _byName[table];
-    final id = row['id'];
-    if (adapter == null || id is! String) return;
-    final existing = await _find(adapter, id);
-    final current = existing?.toJson();
-    final merged = {...?current, ...row}..remove('updatedAt');
-    final deleted = merged['deleted'] == true;
-    final updatedAt = !deleted
-        ? _now()
-        : current == null
-        ? 0
-        : current['deleted'] == true
-        ? current['updatedAt']
-        : _now();
-    try {
-      await adapter.upsert(db, {...merged, 'updatedAt': updatedAt});
-    } on Object catch (e) {
-      // A row from a newer app version may miss columns this version needs.
-      debugPrint('Skipping remote $table/$id: $e');
+  Future<void> applyRemoteRow(String table, Map<String, Object?> row) =>
+      applyRemoteRows([(table, row)]);
+
+  /// [applyRemoteRow] for a page of rows, in order: the rows already here
+  /// are read with one query per table, not one per row (a first sync
+  /// brings thousands).
+  Future<void> applyRemoteRows(
+    List<(String table, Map<String, Object?> row)> rows,
+  ) async {
+    final idsByTable = <String, Set<String>>{};
+    for (final (table, row) in rows) {
+      final id = row['id'];
+      if (_byName.containsKey(table) && id is String) {
+        (idsByTable[table] ??= {}).add(id);
+      }
+    }
+    final current = <String, Map<String, Object?>>{};
+    for (final MapEntry(key: table, value: ids) in idsByTable.entries) {
+      final adapter = _byName[table]!;
+      final list = ids.toList();
+      for (var i = 0; i < list.length; i += _idsPerQuery) {
+        final chunk = list.sublist(i, (i + _idsPerQuery).clamp(0, list.length));
+        for (final existing in await (db.select(
+          adapter.table,
+        )..where((t) => (t as SyncedRow).id.isIn(chunk))).get()) {
+          final json = existing.toJson();
+          current['$table/${json['id']}'] = json;
+        }
+      }
+    }
+    for (final (table, row) in rows) {
+      final adapter = _byName[table];
+      final id = row['id'];
+      if (adapter == null || id is! String) continue;
+      final key = '$table/$id';
+      final known = current[key];
+      final merged = {...?known, ...row}..remove('updatedAt');
+      final deleted = merged['deleted'] == true;
+      final updatedAt = !deleted
+          ? _now()
+          : known == null
+          ? 0
+          : known['deleted'] == true
+          ? known['updatedAt']
+          : _now();
+      final written = {...merged, 'updatedAt': updatedAt};
+      try {
+        await adapter.upsert(db, written);
+        // The same row again later in the page builds on this.
+        current[key] = adapter.parse(written).toJson();
+      } on Object catch (e) {
+        // A row from a newer app version may miss columns this version needs.
+        debugPrint('Skipping remote $table/$id: $e');
+      }
     }
   }
+
+  /// SQLite's limit on query parameters is far above this.
+  static const _idsPerQuery = 500;
 
   /// Deletes all local data (used when switching to a different account).
   Future<void> wipeAll() => db.transaction(() async {

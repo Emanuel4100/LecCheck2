@@ -784,28 +784,38 @@ class SyncEngine {
     List<Map<String, Object?>> rows, {
     required int? cursor,
   }) => db.transaction(() async {
+    // Pending local patches of these rows, in one query (usually none).
+    final pendingByRow = <String, List<OutboxEntry>>{};
+    final ids = {for (final row in rows) row['id']! as String}.toList();
+    for (var i = 0; i < ids.length; i += 500) {
+      final chunk = ids.sublist(i, min(i + 500, ids.length));
+      for (final p
+          in await (db.select(db.outbox)
+                ..where((o) => o.rowId.isIn(chunk))
+                ..orderBy([(o) => OrderingTerm.asc(o.seq)]))
+              .get()) {
+        (pendingByRow['${p.tbl}/${p.rowId}'] ??= []).add(p);
+      }
+    }
+    final merged = <(String, Map<String, Object?>)>[];
     for (final row in rows) {
       final table = row['tbl']! as String;
       final id = row['id']! as String;
-      final merged = Map<String, Object?>.from(row['data']! as Map);
-      final pending =
-          await (db.select(db.outbox)
-                ..where((o) => o.tbl.equals(table) & o.rowId.equals(id))
-                ..orderBy([(o) => OrderingTerm.asc(o.seq)]))
-              .get();
-      for (final p in pending) {
+      final data = Map<String, Object?>.from(row['data']! as Map);
+      for (final p in pendingByRow['$table/$id'] ?? const <OutboxEntry>[]) {
         final patch = Map<String, Object?>.from(jsonDecode(p.patch) as Map);
         if (p.ifAbsent) {
           // The server keeps what it has; only missing fields come from us.
           for (final e in patch.entries) {
-            merged.putIfAbsent(e.key, () => e.value);
+            data.putIfAbsent(e.key, () => e.value);
           }
         } else {
-          merged.addAll(patch);
+          data.addAll(patch);
         }
       }
-      await repo.applyRemoteRow(table, merged);
+      merged.add((table, data));
     }
+    await repo.applyRemoteRows(merged);
     if (cursor != null) {
       await db
           .into(db.syncMeta)

@@ -91,6 +91,53 @@ void main() {
 
   tearDown(() => db.close());
 
+  test('a page of server rows keeps pending local edits on top', () async {
+    await repo.saveCourse(
+      course,
+      meetings: const [lecture],
+      requirements: const [],
+      base: CourseBase(
+        course: course,
+        meetings: const [lecture],
+        requirements: const [],
+      ),
+    );
+    // A local edit not pushed yet.
+    await recorder.record('courses', 'c1', {'notes': 'mine'});
+    final server = _row(course.toRow());
+    await SyncEngine.applyServerRows(db, repo, [
+      {
+        'tbl': 'courses',
+        'id': 'c1',
+        'data': {...server, 'name': 'First', 'notes': 'theirs'},
+      },
+      {'tbl': 'meetings', 'id': 'm2', 'data': _row(practice.toRow())},
+      // Already deleted elsewhere, and new here: no recent delete time.
+      {
+        'tbl': 'meetings',
+        'id': 'm3',
+        'data': {..._row(practice.toRow()), 'id': 'm3', 'deleted': true},
+      },
+      // The same course again, later in the page.
+      {
+        'tbl': 'courses',
+        'id': 'c1',
+        'data': {...server, 'name': 'Second', 'notes': 'theirs'},
+      },
+      {
+        'tbl': 'meetings',
+        'id': 'm3',
+        'data': {..._row(practice.toRow()), 'id': 'm3', 'deleted': true},
+      },
+    ], cursor: 7);
+
+    final c1 = await courseRow('c1');
+    expect((c1.name, c1.notes), ('Second', 'mine'));
+    expect((await meetingRow('m2')).deleted, isFalse);
+    final m3 = await meetingRow('m3');
+    expect((m3.deleted, m3.updatedAt), (true, 0));
+  });
+
   group('editor saves', () {
     test('only write what the user changed; synced edits survive', () async {
       final base = CourseBase(
