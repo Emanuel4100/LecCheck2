@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 2.0.0-beta.19 — 2026-11-16
 
 - **A change for one week only keeps following the meeting.** Changing only the room for a
   week used to fix that week's time too, so moving the class later for every week left that

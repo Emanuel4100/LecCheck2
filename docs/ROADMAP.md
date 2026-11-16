@@ -97,6 +97,12 @@
   hours next to a class are a strip instead of hidden under it; icons for a recording link
   or a note; filters and a sort on All sessions; a "Read the summary" status that counts like
   Watched; days off tinted in Week's header and the month calendar; cancel all classes on a day.
+- **Fixes from a code review** (2.0.0-beta.19): a one-week change keeps following the
+  meeting; Today catches up after the phone sleeps; "How was class?" after midnight; the
+  semester-dates warning counts every-other-week classes; sync re-offers this device's data
+  after a server reset even if the app closed, caps pushes in bytes and notices a revoked
+  sign-in at once; one reminder re-plan at a time; a faster first sync and backups off the UI
+  thread.
 
 ## Not yet verified on real hardware
 
@@ -113,14 +119,12 @@ These are built and compile, but have only been exercised in tests so far:
 - Google sign-in end-to-end (needs the Cloudflare + Google setup in [SETUP.md](SETUP.md));
   sync itself is verified end-to-end with the dev sign-in against a local Worker.
 
-## Next: 2.0.0-beta.19
+## Next: 2.0.0-beta.20
 
 - Upload a syllabus and build the course from it (ask about the design first).
-- Done so far: fixes and speedups from a code review (one-week changes follow the meeting,
-  the clock after a wake, reminders after midnight, re-offering rows after a server reset,
-  push size in bytes, one reminder re-plan at a time, faster first sync, backups off the UI
-  thread). Open: the semester-dates warning still says "outside the new dates" when it
-  counts every-other-week sessions (wording for both languages).
+- The semester-dates warning still says "outside the new dates" when it counts
+  every-other-week sessions: new wording in English and Hebrew.
+- Check on a phone that Today is current right after unlocking it in the morning.
 
 On hold: Panopto recording matching, Linux above 60 Hz, crash reporting. Later: a
 translation platform, the way open source apps do it; a backup server; a more desktop-like
@@ -174,6 +178,8 @@ goes once nobody is left on the tarball.
 - Done in 2.0.0-beta.18: reception hours hidden by classes, recording and note icons,
   filters and a sort on All sessions, a Read the summary status, a clearer look for days off,
   and canceling all classes on a day.
+- Done in 2.0.0-beta.19: the code review's logic fixes and two speedups (first sync,
+  automatic backups).
 
 ## Later (M4)
 

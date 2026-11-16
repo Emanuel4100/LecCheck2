@@ -55,6 +55,18 @@
   </supports>
   <content_rating type="oars-1.1" />
   <releases>
+    <release version="2.0.0-beta.19" date="2026-11-16" type="development">
+      <description>
+        <ul>
+          <li><em>A change for one week only keeps following the meeting.</em> Changing only the room for a week used to fix that week's time too, so moving the class later for every week left that week behind. Now only what you changed is kept.</li>
+          <li><em>Today is up to date as soon as you open it</em>, instead of showing the time (or yesterday) from before the phone went to sleep for up to a minute.</li>
+          <li><em>"How was class?" for a late class</em> is no longer skipped when it's due just after midnight.</li>
+          <li><em>Changing the semester's dates warns about every marked session it hides</em>, including every-other-week classes whose weeks move when the start date does.</li>
+          <li><em>Sync is sturdier</em>: after the server's data was reset, this device's data is offered again even if the app closed halfway; long Hebrew notes no longer make a sync too big for the server; a sign-in that was revoked is noticed right away; and a first sync applies its rows faster.</li>
+          <li><em>Reminders and backups</em>: reminders are re-planned one at a time, so an older plan can't replace a newer one, and the daily automatic backup is written in the background without slowing the app.</li>
+        </ul>
+      </description>
+    </release>
     <release version="2.0.0-beta.18" date="2026-11-13" type="development">
       <description>
         <ul>
@@ -153,19 +165,6 @@
           <li><em>Moving a meeting to another day</em> kept the session's mark and notes but dropped <em>Counts toward attendance</em> when the new day already had a record, so a session left out quietly counted again.</li>
           <li>A failed update no longer draws its steps as if everything had finished.</li>
           <li>Contact cards in the course editor line up in Hebrew.</li>
-        </ul>
-      </description>
-    </release>
-    <release version="2.0.0-beta.11" date="2026-10-15" type="development">
-      <description>
-        <ul>
-          <li><em>Linux: updates no longer erase your data.</em> LecCheck kept its database and settings in the folder <code>install.sh</code> installs it to, so every update deleted them and you came back signed out with an empty schedule. Data now lives in <code>~/.local/share/com.leccheck.app</code>, and the next update moves it there first.</li>
-          <li><em>Android: opening LecCheck from the home-screen widget</em> no longer shows an error ("no routes for location").</li>
-          <li><em>Update window</em>: when a new version is out, a window opens at launch with what's new, and <em>Update</em> shows each step there: the download with its size and speed, the check that the file is exactly the released one, then the install and <em>Restart</em>. <em>Later</em> asks again next time; <em>Skip this version</em> waits for the next one. Updates are now signed: LecCheck only installs releases from a list signed by the release build.</li>
-          <li><em>Contacts</em>: a course has its lecturer and teaching assistants, each with a name, role and email, edited in a <em>Contacts</em> row of the course editor. The course page lists them with buttons to send an email or copy the address. A course's lecturer becomes its first contact.</li>
-          <li><em>Sessions that don't count</em>: turn off <em>Counts toward attendance</em> on a session (in its details, or right-click) when the course doesn't take attendance in it, like a first lecture. It keeps its status but is left out of the percentage, the streak and the requirement, so 80% of 10 lectures becomes 80% of 9.</li>
-          <li><em>Canceled sessions</em> keep their course color with diagonal stripes, instead of turning gray, and have their own color in status icons.</li>
-          <li><em>Desktop</em>: a denser layout with smaller corners, one-line title bars and a regular <em>Add</em> button; <em>Settings</em> keeps the sidebar, so the tabs are one click away. On Linux the window reopens at the size you left it, maximized if it was.</li>
         </ul>
       </description>
     </release>
