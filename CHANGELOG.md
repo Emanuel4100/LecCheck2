@@ -1,5 +1,23 @@
 # Changelog
 
+## Unreleased
+
+- **A change for one week only keeps following the meeting.** Changing only the room for a
+  week used to fix that week's time too, so moving the class later for every week left that
+  week behind. Now only what you changed is kept.
+- **Today is up to date as soon as you open it**, instead of showing the time (or yesterday)
+  from before the phone went to sleep for up to a minute.
+- **"How was class?" for a late class** is no longer skipped when it's due just after midnight.
+- **Changing the semester's dates warns about every marked session it hides**, including
+  every-other-week classes whose weeks move when the start date does.
+- **Sync is sturdier**: after the server's data was reset, this device's data is offered again
+  even if the app closed halfway; long Hebrew notes no longer make a sync too big for the
+  server; a sign-in that was revoked is noticed right away; and a first sync applies its
+  rows faster.
+- **Reminders and backups**: reminders are re-planned one at a time, so an older plan can't
+  replace a newer one, and the daily automatic backup is written in the background without
+  slowing the app.
+
 ## 2.0.0-beta.18 — 2026-11-13
 
 - **Reception hours stay visible next to a class.** A class at the same time used to cover

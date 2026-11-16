@@ -116,6 +116,11 @@ These are built and compile, but have only been exercised in tests so far:
 ## Next: 2.0.0-beta.19
 
 - Upload a syllabus and build the course from it (ask about the design first).
+- Done so far: fixes and speedups from a code review (one-week changes follow the meeting,
+  the clock after a wake, reminders after midnight, re-offering rows after a server reset,
+  push size in bytes, one reminder re-plan at a time, faster first sync, backups off the UI
+  thread). Open: the semester-dates warning still says "outside the new dates" when it
+  counts every-other-week sessions (wording for both languages).
 
 On hold: Panopto recording matching, Linux above 60 Hz, crash reporting. Later: a
 translation platform, the way open source apps do it; a backup server; a more desktop-like
