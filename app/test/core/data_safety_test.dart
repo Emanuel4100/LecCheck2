@@ -488,11 +488,25 @@ void main() {
             'hlc': e.hlc,
           },
       ]).length;
-      expect(size, lessThan(SyncEngine.maxBatchChars));
+      expect(size, lessThan(SyncEngine.maxBatchBytes));
       // One huge change still goes on its own.
       await db.delete(db.outbox).go();
       await recorder.record('courses', 'big', {'notes': 'y' * 600000});
       expect(await SyncEngine.nextBatch(db), hasLength(1));
+    });
+
+    test('a batch of Hebrew notes stays under it in bytes', () async {
+      // Two bytes a letter in UTF-8, which is what the socket carries.
+      final note = 'ש' * 15000;
+      for (var i = 0; i < 60; i++) {
+        await recorder.record('courses', 'c$i', {'notes': note});
+      }
+      final batch = await SyncEngine.nextBatch(db);
+      final bytes = utf8
+          .encode(jsonEncode([for (final e in batch) jsonDecode(e.patch)]))
+          .length;
+      expect(bytes, lessThan(SyncEngine.maxBatchBytes));
+      expect(batch.length, inInclusiveRange(15, 17));
     });
 
     test('server rows beat pending add-only offers', () async {

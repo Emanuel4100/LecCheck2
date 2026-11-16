@@ -612,10 +612,10 @@ class SyncEngine {
   /// Pushes stay well under the server's 1 MB message limit (a bigger one
   /// would be refused, and sent again, forever).
   @visibleForTesting
-  static const maxBatchChars = 512 * 1024;
+  static const maxBatchBytes = 512 * 1024;
 
   /// The oldest changes not refused by the server: at most 500, and at most
-  /// [maxBatchChars] of JSON (always at least one).
+  /// [maxBatchBytes] of JSON (always at least one).
   @visibleForTesting
   static Future<List<OutboxEntry>> nextBatch(AppDatabase db) async {
     final entries =
@@ -627,10 +627,15 @@ class SyncEngine {
     final batch = <OutboxEntry>[];
     var size = 0;
     for (final e in entries) {
-      // The patch, plus the keys and quotes around it.
+      // The patch in UTF-8 (what the socket carries: Hebrew is two bytes a
+      // letter), plus the keys and quotes around it.
       size +=
-          e.patch.length + e.tbl.length + e.rowId.length + e.hlc.length + 64;
-      if (batch.isNotEmpty && size > maxBatchChars) break;
+          utf8.encode(e.patch).length +
+          e.tbl.length +
+          e.rowId.length +
+          e.hlc.length +
+          64;
+      if (batch.isNotEmpty && size > maxBatchBytes) break;
       batch.add(e);
     }
     return batch;
