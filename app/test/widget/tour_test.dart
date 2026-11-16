@@ -2,6 +2,9 @@ import 'package:drift/drift.dart' show driftRuntimeOptions;
 import 'package:drift/native.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_riverpod/misc.dart' show Override;
+import 'package:leccheck/app/recordings_controller.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:leccheck/app/app.dart';
 import 'package:leccheck/app/providers.dart';
 import 'package:leccheck/app/router.dart';
@@ -28,6 +31,7 @@ Future<ProviderContainer> _start(
   double ratio = 2.6,
   String locale = 'en',
   bool withSemester = true,
+  List<Override> overrides = const [],
 }) async {
   tester.view.physicalSize = size;
   tester.view.devicePixelRatio = ratio;
@@ -57,6 +61,7 @@ Future<ProviderContainer> _start(
       sharedPrefsProvider.overrideWithValue(prefs),
       databaseProvider.overrideWithValue(db),
       minuteClockProvider.overrideWith((ref) => Stream.value(_now)),
+      ...overrides,
     ],
   );
   addTearDown(container.dispose);
@@ -219,5 +224,54 @@ void main() {
     await _settle(tester);
     expect(c.read(tourProvider), TourStep.welcome);
     expect(find.text('Take a quick tour?'), findsOneWidget);
+  });
+
+  group('Panopto recordings', () {
+    const redirect = 'https://sync.example/v1/panopto/done';
+
+    testWidgets('a step before the last one offers its setup', (tester) async {
+      FlutterSecureStorage.setMockInitialValues({});
+      final c = await _start(
+        tester,
+        overrides: [panoptoRedirectProvider.overrideWithValue(redirect)],
+      );
+      final tour = c.read(tourProvider.notifier);
+      expect(tour.steps, [
+        TourStep.welcome,
+        TourStep.today,
+        TourStep.week,
+        TourStep.courses,
+        TourStep.stats,
+        TourStep.settings,
+        TourStep.panopto,
+        TourStep.add,
+      ]);
+      tour.start();
+      for (var i = 0; i < 6; i++) {
+        tour.next();
+      }
+      await _settle(tester);
+      expect(find.text('Recordings from Panopto'), findsOneWidget);
+      expect(find.textContaining("It's experimental"), findsOneWidget);
+      // Experimental: "Next" leads, setting up is the other choice.
+      expect(find.widgetWithText(FilledButton, 'Next'), findsOneWidget);
+      await tester.tap(find.widgetWithText(OutlinedButton, 'Set it up'));
+      await _settle(tester);
+      expect(c.read(tourProvider), isNull);
+      expect(c.read(routerProvider).state.matchedLocation, '/panopto-setup');
+      // Back from the setup: Today again, without the tour.
+      c.read(routerProvider).pop();
+      await _settle(tester);
+      expect(c.read(routerProvider).state.matchedLocation, '/today');
+      expect(find.text('Recordings from Panopto'), findsNothing);
+    });
+
+    testWidgets('no step without a server', (tester) async {
+      final c = await _start(tester);
+      expect(
+        c.read(tourProvider.notifier).steps,
+        isNot(contains(TourStep.panopto)),
+      );
+    });
   });
 }

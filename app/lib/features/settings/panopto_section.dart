@@ -81,8 +81,10 @@ class PanoptoSection extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const ExperimentalBadge(),
-              const SizedBox(height: 8),
+              if (PanoptoFeature.experimental) ...[
+                const ExperimentalBadge(),
+                const SizedBox(height: 8),
+              ],
               Text(l.panoptoIntro, style: muted),
             ],
           ),
@@ -249,7 +251,7 @@ Future<bool> connectPanopto(
   final l = AppLocalizations.of(context);
   final messenger = ScaffoldMessenger.of(context);
   final controller = ref.read(panoptoProvider.notifier);
-  if (!controller.warned) {
+  if (PanoptoFeature.experimental && !controller.warned) {
     final ok = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -370,12 +372,14 @@ class _PanoptoSetupPageState extends ConsumerState<PanoptoSetupPage> {
           child: ListView(
             padding: const EdgeInsets.fromLTRB(20, 8, 20, 40),
             children: [
-              const Align(
-                alignment: AlignmentDirectional.centerStart,
-                child: ExperimentalBadge(),
-              ),
-              const SizedBox(height: 8),
-              Text(l.panoptoWarning),
+              if (PanoptoFeature.experimental) ...[
+                const Align(
+                  alignment: AlignmentDirectional.centerStart,
+                  child: ExperimentalBadge(),
+                ),
+                const SizedBox(height: 8),
+                Text(l.panoptoWarning),
+              ],
               step(1, l.panoptoStepOpen, l.panoptoStepOpenBody),
               TextField(
                 controller: _site,
@@ -463,9 +467,11 @@ class PanoptoHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) => SectionHeader(
     title: AppLocalizations.of(context).panopto,
-    trailing: const Padding(
-      padding: EdgeInsetsDirectional.only(end: 8),
-      child: ExperimentalBadge(),
-    ),
+    trailing: PanoptoFeature.experimental
+        ? const Padding(
+            padding: EdgeInsetsDirectional.only(end: 8),
+            child: ExperimentalBadge(),
+          )
+        : null,
   );
 }

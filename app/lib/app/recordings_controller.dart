@@ -54,6 +54,14 @@ class PanoptoView {
   ];
 }
 
+/// Panopto recordings as a whole.
+abstract final class PanoptoFeature {
+  /// While true: the "Experimental" badges, the warning before connecting,
+  /// and the tour offering Panopto as an option ("Next" first). Set to
+  /// false once it has proved itself: the tour then leads with "Set it up".
+  static const experimental = true;
+}
+
 /// The address users put in their Panopto API client (null: this build has
 /// no server). A provider so screenshots can show it.
 final panoptoRedirectProvider = Provider<String?>(

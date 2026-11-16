@@ -2436,4 +2436,21 @@ class AppLocalizationsHe extends AppLocalizations {
 
   @override
   String get panoptoPutBack => 'להחזיר אותו';
+
+  @override
+  String get tourPanoptoTitle => 'הקלטות מ־Panopto';
+
+  @override
+  String get tourPanoptoBody =>
+      'האוניברסיטה שלכם מקליטה שיעורים ב־Panopto? LecCheck יכולה למלא לבד את הקישור להקלטה של כל שיעור. אפשר להגדיר את זה עכשיו (כ־3 דקות), או אחר כך בהגדרות, תחת הקלטות Panopto.';
+
+  @override
+  String get tourPanoptoBodyExperimental =>
+      'האוניברסיטה שלכם מקליטה שיעורים ב־Panopto? LecCheck יכולה למלא לבד את הקישור להקלטה של כל שיעור. זו תכונה ניסיונית: אפשר לנסות אותה עכשיו, או אחר כך בהגדרות, תחת הקלטות Panopto.';
+
+  @override
+  String get tourPanoptoSetUp => 'להגדרה';
+
+  @override
+  String get tourLater => 'אחר כך';
 }

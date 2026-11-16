@@ -1157,5 +1157,10 @@
   "panoptoAskFoundTitle": "Was it the wrong recording?",
   "panoptoAskFoundBody": "You removed the link Panopto found. If it was wrong, LecCheck won't fill this class again; you can still paste a link.",
   "panoptoRemoveIt": "Yes, remove it",
-  "panoptoPutBack": "Put it back"
+  "panoptoPutBack": "Put it back",
+  "tourPanoptoTitle": "Recordings from Panopto",
+  "tourPanoptoBody": "Does your university record classes in Panopto? LecCheck can fill in each class's recording link by itself. Set it up now (about 3 minutes), or later in Settings, under Panopto recordings.",
+  "tourPanoptoBodyExperimental": "Does your university record classes in Panopto? LecCheck can fill in each class's recording link by itself. It's experimental: try it now if you like, or later in Settings, under Panopto recordings.",
+  "tourPanoptoSetUp": "Set it up",
+  "tourLater": "Later"
 }

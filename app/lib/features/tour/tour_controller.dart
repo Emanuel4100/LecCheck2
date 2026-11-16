@@ -2,9 +2,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../app/providers.dart';
+import '../../app/recordings_controller.dart';
+import '../../core/recordings/panopto_connection.dart';
 
 /// The steps of the app tour (issue #1), in order.
-enum TourStep { welcome, today, week, courses, stats, settings, add }
+enum TourStep { welcome, today, week, courses, stats, settings, panopto, add }
 
 /// What the tour points at. Each key sits on one widget at a time: the
 /// navigation items exist either in the bottom bar or in the rail, Settings
@@ -37,7 +39,19 @@ class TourController extends Notifier<TourStep?> {
   @override
   TourStep? build() => null;
 
-  void start() => state = TourStep.values.first;
+  /// The steps this tour shows: Panopto only where it can be set up (a
+  /// build with a server) and isn't connected yet.
+  List<TourStep> get steps {
+    final panopto =
+        ref.read(panoptoRedirectProvider) != null &&
+        ref.read(panoptoProvider).status != PanoptoStatus.connected;
+    return [
+      for (final s in TourStep.values)
+        if (s != TourStep.panopto || panopto) s,
+    ];
+  }
+
+  void start() => state = steps.first;
 
   /// After setting up the first semester: once per device.
   void startFirstTime() {
@@ -47,14 +61,19 @@ class TourController extends Notifier<TourStep?> {
   void next() {
     final step = state;
     if (step == null) return;
-    if (step == TourStep.values.last) return finish();
-    state = TourStep.values[step.index + 1];
+    final all = steps;
+    final at = all.indexOf(step);
+    if (at == -1 || at == all.length - 1) return finish();
+    state = all[at + 1];
   }
 
   void back() {
     final step = state;
-    if (step == null || step.index == 0) return;
-    state = TourStep.values[step.index - 1];
+    if (step == null) return;
+    final all = steps;
+    final at = all.indexOf(step);
+    if (at <= 0) return;
+    state = all[at - 1];
   }
 
   /// Done or Skip: it doesn't start by itself again.

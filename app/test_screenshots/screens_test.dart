@@ -414,6 +414,14 @@ void main() {
       mode: ThemeMode.light,
       overrides: [panoptoRedirectProvider.overrideWithValue(redirect)],
     );
+    final tour = off.read(tourProvider.notifier)..start();
+    while (off.read(tourProvider) != TourStep.panopto) {
+      tour.next();
+    }
+    await _settle(tester);
+    await _shot(tester, 'en_light_tour_panopto');
+    tour.finish();
+    await _settle(tester);
     await _go(tester, off, '/panopto-setup');
     await _shot(tester, 'en_light_panopto_setup');
 

@@ -2443,4 +2443,21 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get panoptoPutBack => 'Put it back';
+
+  @override
+  String get tourPanoptoTitle => 'Recordings from Panopto';
+
+  @override
+  String get tourPanoptoBody =>
+      'Does your university record classes in Panopto? LecCheck can fill in each class\'s recording link by itself. Set it up now (about 3 minutes), or later in Settings, under Panopto recordings.';
+
+  @override
+  String get tourPanoptoBodyExperimental =>
+      'Does your university record classes in Panopto? LecCheck can fill in each class\'s recording link by itself. It\'s experimental: try it now if you like, or later in Settings, under Panopto recordings.';
+
+  @override
+  String get tourPanoptoSetUp => 'Set it up';
+
+  @override
+  String get tourLater => 'Later';
 }

@@ -868,5 +868,10 @@
   "panoptoAskFoundTitle": "זו הייתה ההקלטה הלא נכונה?",
   "panoptoAskFoundBody": "מחקתם קישור ש־Panopto מצאה. אם הוא היה שגוי, LecCheck לא תמלא את השיעור הזה שוב; עדיין אפשר להדביק קישור.",
   "panoptoRemoveIt": "כן, למחוק",
-  "panoptoPutBack": "להחזיר אותו"
+  "panoptoPutBack": "להחזיר אותו",
+  "tourPanoptoTitle": "הקלטות מ־Panopto",
+  "tourPanoptoBody": "האוניברסיטה שלכם מקליטה שיעורים ב־Panopto? LecCheck יכולה למלא לבד את הקישור להקלטה של כל שיעור. אפשר להגדיר את זה עכשיו (כ־3 דקות), או אחר כך בהגדרות, תחת הקלטות Panopto.",
+  "tourPanoptoBodyExperimental": "האוניברסיטה שלכם מקליטה שיעורים ב־Panopto? LecCheck יכולה למלא לבד את הקישור להקלטה של כל שיעור. זו תכונה ניסיונית: אפשר לנסות אותה עכשיו, או אחר כך בהגדרות, תחת הקלטות Panopto.",
+  "tourPanoptoSetUp": "להגדרה",
+  "tourLater": "אחר כך"
 }

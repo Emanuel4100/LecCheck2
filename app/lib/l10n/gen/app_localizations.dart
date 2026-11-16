@@ -4111,6 +4111,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Put it back'**
   String get panoptoPutBack;
+
+  /// No description provided for @tourPanoptoTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Recordings from Panopto'**
+  String get tourPanoptoTitle;
+
+  /// No description provided for @tourPanoptoBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Does your university record classes in Panopto? LecCheck can fill in each class\'s recording link by itself. Set it up now (about 3 minutes), or later in Settings, under Panopto recordings.'**
+  String get tourPanoptoBody;
+
+  /// No description provided for @tourPanoptoBodyExperimental.
+  ///
+  /// In en, this message translates to:
+  /// **'Does your university record classes in Panopto? LecCheck can fill in each class\'s recording link by itself. It\'s experimental: try it now if you like, or later in Settings, under Panopto recordings.'**
+  String get tourPanoptoBodyExperimental;
+
+  /// No description provided for @tourPanoptoSetUp.
+  ///
+  /// In en, this message translates to:
+  /// **'Set it up'**
+  String get tourPanoptoSetUp;
+
+  /// No description provided for @tourLater.
+  ///
+  /// In en, this message translates to:
+  /// **'Later'**
+  String get tourLater;
 }
 
 class _AppLocalizationsDelegate

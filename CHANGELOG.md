@@ -13,7 +13,7 @@
   A meeting learns its group by itself when the links you pasted into it all point to one
   group. Removing a link asks whether Panopto may fill it (or, for a link Panopto found,
   whether it was wrong). In Developer mode, **Matching details** shows why each session
-  got a link or not, and why each recording wasn't used.
+  got a link or not, and why each recording wasn't used. The tour offers to set it up.
 - **Removing a recording link** now keeps it removed (stored as an empty link), so a link
   found in Panopto doesn't take its place.
 

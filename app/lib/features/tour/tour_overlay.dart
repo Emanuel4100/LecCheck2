@@ -6,6 +6,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../app/providers.dart';
+import '../../app/recordings_controller.dart';
+import '../../app/router.dart';
 import '../../app/theme/motion.dart';
 import '../../app/widgets/common.dart';
 import '../../core/icons/lec_icons.dart';
@@ -104,6 +106,15 @@ class _TourOverlayState extends ConsumerState<TourOverlay>
         title: l.settings,
         body: l.tourSettingsBody,
       ),
+      // Panopto recordings: no target, offered as a choice.
+      TourStep.panopto => (
+        branch: null,
+        target: null,
+        title: l.tourPanoptoTitle,
+        body: PanoptoFeature.experimental
+            ? l.tourPanoptoBodyExperimental
+            : l.tourPanoptoBody,
+      ),
       TourStep.add when !courses => (
         branch: 0,
         target: TourTargets.addFirst,
@@ -146,7 +157,9 @@ class _TourOverlayState extends ConsumerState<TourOverlay>
 
     final controller = ref.read(tourProvider.notifier);
     final rtl = Directionality.of(context) == TextDirection.rtl;
-    final last = step == TourStep.values.last;
+    final steps = controller.steps;
+    final position = steps.indexOf(step);
+    final last = step == steps.last;
     return CallbackShortcuts(
       bindings: {
         const SingleActivator(LogicalKeyboardKey.escape): controller.finish,
@@ -166,12 +179,22 @@ class _TourOverlayState extends ConsumerState<TourOverlay>
             hole: _hole,
             size: constraints.biggest,
             card: _TourCard(
-              step: step,
+              first: position == 0,
+              last: last,
+              position: position,
+              // The welcome card isn't counted: "1 of 6" is Today.
+              total: steps.length - 1,
               title: spec.title,
               body: spec.body,
               onSkip: controller.finish,
-              onBack: step.index > 1 ? controller.back : null,
+              onBack: position > 1 ? controller.back : null,
               onNext: controller.next,
+              onSetUp: step == TourStep.panopto
+                  ? () {
+                      controller.finish();
+                      ref.read(routerProvider).push('/panopto-setup');
+                    }
+                  : null,
               // The first course: straight to the editor.
               onAdd: last && !courses
                   ? () {
@@ -315,16 +338,26 @@ class _SpotlightPainter extends CustomPainter {
 
 class _TourCard extends StatelessWidget {
   const _TourCard({
-    required this.step,
+    required this.first,
+    required this.last,
+    required this.position,
+    required this.total,
     required this.title,
     required this.body,
     required this.onSkip,
     required this.onNext,
     this.onBack,
     this.onAdd,
+    this.onSetUp,
   });
 
-  final TourStep step;
+  final bool first;
+  final bool last;
+
+  /// The step's place among the shown steps (0 = the welcome card), and
+  /// how many there are after the welcome card.
+  final int position;
+  final int total;
   final String title;
   final String body;
   final VoidCallback onSkip;
@@ -334,15 +367,16 @@ class _TourCard extends StatelessWidget {
   /// "Add course" on the last step, while there are none.
   final VoidCallback? onAdd;
 
+  /// Panopto's step: opens its setup. While Panopto is experimental "Next"
+  /// leads and this is the other choice; afterwards it leads, with "Later".
+  final VoidCallback? onSetUp;
+
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
-    final first = step == TourStep.values.first;
-    final last = step == TourStep.values.last;
-    // The welcome card isn't counted: "1 of 6" is Today.
-    final total = TourStep.values.length - 1;
+    final setUpLeads = onSetUp != null && !PanoptoFeature.experimental;
 
     return Semantics(
       container: true,
@@ -385,9 +419,9 @@ class _TourCard extends StatelessWidget {
                 children: [
                   if (!first)
                     Semantics(
-                      label: l.tourStepOf(step.index, total),
+                      label: l.tourStepOf(position, total),
                       child: ExcludeSemantics(
-                        child: _Dots(index: step.index - 1, count: total),
+                        child: _Dots(index: position - 1, count: total),
                       ),
                     ),
                   const SizedBox(width: 8),
@@ -403,7 +437,21 @@ class _TourCard extends StatelessWidget {
                           TextButton(onPressed: onSkip, child: Text(l.skip)),
                         if (onBack != null)
                           TextButton(onPressed: onBack, child: Text(l.back)),
-                        if (onAdd != null)
+                        if (onSetUp != null && !setUpLeads)
+                          OutlinedButton(
+                            onPressed: onSetUp,
+                            child: Text(l.tourPanoptoSetUp),
+                          ),
+                        if (setUpLeads) ...[
+                          TextButton(
+                            onPressed: onNext,
+                            child: Text(l.tourLater),
+                          ),
+                          FilledButton(
+                            onPressed: onSetUp,
+                            child: Text(l.tourPanoptoSetUp),
+                          ),
+                        ] else if (onAdd != null)
                           FilledButton(
                             onPressed: onAdd,
                             child: Text(l.addCourse),
