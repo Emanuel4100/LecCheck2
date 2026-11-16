@@ -1,6 +1,7 @@
 # Panopto recordings, linked automatically
 
-Status: **designed, not built.** Start with Step 0. Decided with the owner on 2026-11-16.
+Status: **designed, not built.** Step 0 done on 2026-11-16: it works (results below).
+Decided with the owner on 2026-11-16.
 
 ## Goal
 
@@ -31,7 +32,63 @@ Requirements from the owner:
 - A course folder's address carries its id:
   `…/Sessions/List.aspx#folderID="ab040e1e-9c68-410e-b8b6-b4650147c6f8"`.
 
-From Panopto's documentation and community (not yet tried against HUJI):
+### Step 0 results (owner's client, course 80430, 2026-11-16)
+
+Public, no sign-in: the OAuth settings at `/Panopto/oauth2/.well-known/openid-configuration`
+(IdentityServer: PKCE `S256`, scopes `openid profile email api offline_access`, secret as
+Basic auth or in the body) and the API description at `/Panopto/api/v1/panoptoApi.json`.
+
+Signing in:
+- The "Mobile or Desktop Application" client **has a secret** (44 characters, base64 with
+  `/` and `=`), and the token endpoint requires it: the client id alone gets
+  `invalid_client`. So the vault and pairing are needed.
+- **Send the id and secret in Basic auth as they are.** Panopto doesn't URL-decode them
+  (RFC 6749 says to encode them, and most OAuth libraries do): the encoded secret gets
+  `invalid_client`. Putting them in the body (`client_secret_post`) also works.
+- PKCE works. The browser comes back with `code`, `state` and `session_state`.
+- **One redirect address per client** (a single field), matched exactly: `127.0.0.1`
+  instead of `localhost`, another port or another path are refused. So the Worker
+  redirect page stays. (Not yet tried: whether the form accepts several addresses
+  separated somehow, or a `leccheck://` one.)
+- Access token: a JWT, **1 hour**. Refresh token: opaque, 32 characters, **a new one with
+  every refresh, and a used one is refused** (`invalid_grant`). How long an unused one
+  lasts is still unknown.
+
+Reading recordings:
+- `GET /api/v1/folders/search?searchQuery=80430` finds exactly the course folder,
+  `2026-27 -&gt; 80430_1-מבוא להסתברות ולסטטיסטיקה`. Names come **HTML-escaped**
+  (`&gt;`), and some contain Moodle language tags
+  (`{mlang he}…{mlang}{mlang en}…{mlang}`). `sessions/search` is a loose text search
+  across all courses (not useful).
+- `GET /api/v1/folders/{id}/sessions?sortField=CreatedDate&sortOrder=Desc&pageNumber=N`:
+  **50 per page**, an empty page at the end. 58 recordings by week 6: two pages. No future
+  (scheduled) recordings were listed for a student, and the list came out in start order.
+  0.3–1.1 s per request. No rate-limit headers.
+- Fields as in the spec: `Id, Name, Description, StartTime, Duration (seconds), Status,
+  IsWebcast, PercentCompleted, MostRecentViewPosition, CreatedBy, Folder, FolderDetails,
+  Urls{ViewerUrl, EmbedUrl, DownloadUrl, ThumbnailUrl, …}`.
+  `ViewerUrl` = `https://<site>/Panopto/Pages/Viewer.aspx?id=<Id>`.
+- **`StartTime` is the local wall-clock time marked as UTC**: the class "יום ב 12:00 - 13:45"
+  comes back as `2026-11-16T12:00:01.13Z`, and as `12:00:01Z` in October too (UTC+3
+  then). Read its clock digits as local time. (Unknown: whether it follows the site's
+  time zone or the user's Panopto time zone setting.)
+- `Status` comes as a number, the enum's index: 0 Created, 1 Scheduled, 2 Recording,
+  3 Processing, **4 Complete**, 5 Live, 6 Archived. All 58 were 4.
+- Automatic recordings run 110 minutes from the full hour (`Duration` ≈ 6599). Their
+  description ends with the slot (`יום ב 12:00 - 13:45`).
+- What the matcher has to handle:
+  - **Parallel groups:** practice groups ד and ו are both recorded Thursday 12:00–13:50.
+    Time alone can't pick one, and meetings don't store a group letter.
+  - **One class, two recordings:** lecture group א on Tuesday is recorded as 9:00–9:50
+    and 10:00–11:50.
+  - **Hand-named recordings** with no description: `80430 9.11 12-14`,
+    `80430 13-14 on 11/11/2026 (יום ד)`, `80430 02/11 12-14`. Start times are still right.
+  - A cut-short recording (13 minutes), and one with `IsWebcast: true`.
+- `PercentCompleted` is the signed-in user's progress (e.g. 89%), and
+  `GET /api/v1/users/me/sessions/viewed` lists what they watched across courses. This could
+  mark "Watched the recording" by itself (not decided).
+
+From Panopto's documentation and community (before Step 0):
 - "Mobile or Desktop Application" uses the authorization-code flow like a server-side
   client: the client id and secret go as Basic auth to
   `https://<site>/Panopto/oauth2/connect/token`; the redirect address must match one of the
@@ -84,8 +141,8 @@ Devices or server, compared:
   and sends the browser on to the app: `leccheck://panopto?code=…&state=…` on phones, or
   `http://localhost:43823/panopto?…` on desktop. It forwards the browser only: it sees the
   one-time code, which is useless without the client secret. One request per sign-in.
-  Dropped if Step 0 shows Panopto accepts `leccheck://` plus a localhost address on one
-  client.
+  Step 0 showed a client has a single redirect field, matched exactly, so this page is
+  needed.
 - The app opens the browser with `flutter_web_auth_2` (as Google sign-in does), scopes
   `openid api offline_access`, and exchanges the code at the token endpoint.
 - The refresh token goes to secure storage (`flutter_secure_storage`, as `AuthService`
@@ -108,8 +165,7 @@ Devices or server, compared:
   token.
 - A lost phone loses nothing: redo the setup on any device (Panopto's Generate button
   makes a new secret).
-- If Step 0 shows this client type has **no secret**, the client id isn't secret either:
-  it syncs as is, and the vault and pairing aren't needed.
+- Step 0 showed this client type has a secret, so the vault and pairing are needed.
 
 ### Pairing a new device
 
@@ -183,7 +239,9 @@ a test in `test/drift`, defaults in `_Adapter.added`.
 
 ## Steps
 
-0. **Check the API with your client (no app code).**
+0. **Check the API with your client (no app code).** Done 2026-11-16: see "Step 0
+   results". The redirect address with several entries or `leccheck://`, and the refresh
+   token's lifetime, are still open.
    - You create a "Mobile or Desktop Application" client with the redirect
      `http://localhost:8765/panopto` and save its id and secret to a file yourself.
    - A throwaway script outside the repo signs in through that address. It prints only
@@ -237,11 +295,25 @@ a test in `test/drift`, defaults in `_Adapter.added`.
 
 ## Risks and open questions
 
+From Step 0, to decide before building:
+- **Parallel groups**: how a course's meeting knows its group letter (ask once when two
+  recordings tie and remember it per meeting, or a field in the meeting editor).
+- **Two recordings for one class**: link the first, the longest, or keep both
+  (`recordingUrl` holds one).
+- **Wall-clock `StartTime`**: read it as local time, or have the matcher try both readings
+  and keep the one that lines up with the meetings (safe if Panopto fixes it, or at
+  other universities).
+- **Rotating refresh tokens**: save the new one before anything else, and refresh in only
+  one place per device: the app and Android's background task refreshing at the same
+  time would leave one of them with a used token and "Connect again".
+- Refresh token lifetime: measure by refreshing after some days.
+- Watched percentage: offer "Watched the recording" from `PercentCompleted`?
+
 - HUJI could turn off user-created API clients. The fallback is pasting links by hand, as
   today.
 - Refresh token lifetime is unknown; if it's short, "Connect again" will show often.
-- Panopto API rate limits are unknown. The 3-hour throttle and newest-first paging keep
-  requests few.
+- Panopto API rate limits are unknown (no rate-limit headers seen). The 3-hour throttle
+  and newest-first paging keep requests few: about 2–3 per course folder a run.
 - A folder that also holds other courses' recordings: the course number in the name
   filters them.
 - Other universities: the site address is a setting, and nothing above is HUJI-specific
