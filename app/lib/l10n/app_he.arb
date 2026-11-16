@@ -860,5 +860,13 @@
   "panoptoGroupChosen": "{meeting}: קבוצה {group}",
   "panoptoGroupAskAgain": "לשאול שוב",
   "panoptoLookCourse": "חיפוש עכשיו",
-  "panoptoFoundMark": "נמצא ב־Panopto"
+  "panoptoFoundMark": "נמצא ב־Panopto",
+  "panoptoAskFindTitle": "לתת ל־Panopto למצוא אותה?",
+  "panoptoAskFindBody": "מחקתם את הקישור. LecCheck יכולה למלא את ההקלטה של השיעור הזה מ־Panopto, או להשאיר אותו ריק.",
+  "panoptoLeaveEmpty": "להשאיר ריק",
+  "panoptoFindIt": "למצוא ב־Panopto",
+  "panoptoAskFoundTitle": "זו הייתה ההקלטה הלא נכונה?",
+  "panoptoAskFoundBody": "מחקתם קישור ש־Panopto מצאה. אם הוא היה שגוי, LecCheck לא תמלא את השיעור הזה שוב; עדיין אפשר להדביק קישור.",
+  "panoptoRemoveIt": "כן, למחוק",
+  "panoptoPutBack": "להחזיר אותו"
 }

@@ -4063,6 +4063,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Found in Panopto'**
   String get panoptoFoundMark;
+
+  /// No description provided for @panoptoAskFindTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Let Panopto find it?'**
+  String get panoptoAskFindTitle;
+
+  /// No description provided for @panoptoAskFindBody.
+  ///
+  /// In en, this message translates to:
+  /// **'You removed the link. LecCheck can fill in this class\'s recording from Panopto, or leave it empty.'**
+  String get panoptoAskFindBody;
+
+  /// No description provided for @panoptoLeaveEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave empty'**
+  String get panoptoLeaveEmpty;
+
+  /// No description provided for @panoptoFindIt.
+  ///
+  /// In en, this message translates to:
+  /// **'Let Panopto find it'**
+  String get panoptoFindIt;
+
+  /// No description provided for @panoptoAskFoundTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Was it the wrong recording?'**
+  String get panoptoAskFoundTitle;
+
+  /// No description provided for @panoptoAskFoundBody.
+  ///
+  /// In en, this message translates to:
+  /// **'You removed the link Panopto found. If it was wrong, LecCheck won\'t fill this class again; you can still paste a link.'**
+  String get panoptoAskFoundBody;
+
+  /// No description provided for @panoptoRemoveIt.
+  ///
+  /// In en, this message translates to:
+  /// **'Yes, remove it'**
+  String get panoptoRemoveIt;
+
+  /// No description provided for @panoptoPutBack.
+  ///
+  /// In en, this message translates to:
+  /// **'Put it back'**
+  String get panoptoPutBack;
 }
 
 class _AppLocalizationsDelegate

@@ -11,6 +11,7 @@ import '../features/onboarding/welcome_page.dart';
 import '../features/semester/semester_choice_page.dart';
 import '../features/semester/semester_form_page.dart';
 import '../features/sessions/all_sessions_page.dart';
+import '../features/developer/panopto_debug_page.dart';
 import '../features/settings/panopto_section.dart';
 import '../features/settings/report_page.dart';
 import '../features/settings/settings_page.dart';
@@ -68,6 +69,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/panopto-setup',
         parentNavigatorKey: _rootKey,
         builder: (_, _) => const PanoptoSetupPage(),
+      ),
+      GoRoute(
+        path: '/panopto-debug',
+        parentNavigatorKey: _rootKey,
+        builder: (_, _) => const PanoptoDebugPage(),
       ),
       GoRoute(
         path: '/semester',

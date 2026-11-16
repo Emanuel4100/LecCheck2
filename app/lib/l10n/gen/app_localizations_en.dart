@@ -2417,4 +2417,30 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get panoptoFoundMark => 'Found in Panopto';
+
+  @override
+  String get panoptoAskFindTitle => 'Let Panopto find it?';
+
+  @override
+  String get panoptoAskFindBody =>
+      'You removed the link. LecCheck can fill in this class\'s recording from Panopto, or leave it empty.';
+
+  @override
+  String get panoptoLeaveEmpty => 'Leave empty';
+
+  @override
+  String get panoptoFindIt => 'Let Panopto find it';
+
+  @override
+  String get panoptoAskFoundTitle => 'Was it the wrong recording?';
+
+  @override
+  String get panoptoAskFoundBody =>
+      'You removed the link Panopto found. If it was wrong, LecCheck won\'t fill this class again; you can still paste a link.';
+
+  @override
+  String get panoptoRemoveIt => 'Yes, remove it';
+
+  @override
+  String get panoptoPutBack => 'Put it back';
 }

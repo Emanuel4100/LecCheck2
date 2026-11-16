@@ -2410,4 +2410,30 @@ class AppLocalizationsHe extends AppLocalizations {
 
   @override
   String get panoptoFoundMark => 'נמצא ב־Panopto';
+
+  @override
+  String get panoptoAskFindTitle => 'לתת ל־Panopto למצוא אותה?';
+
+  @override
+  String get panoptoAskFindBody =>
+      'מחקתם את הקישור. LecCheck יכולה למלא את ההקלטה של השיעור הזה מ־Panopto, או להשאיר אותו ריק.';
+
+  @override
+  String get panoptoLeaveEmpty => 'להשאיר ריק';
+
+  @override
+  String get panoptoFindIt => 'למצוא ב־Panopto';
+
+  @override
+  String get panoptoAskFoundTitle => 'זו הייתה ההקלטה הלא נכונה?';
+
+  @override
+  String get panoptoAskFoundBody =>
+      'מחקתם קישור ש־Panopto מצאה. אם הוא היה שגוי, LecCheck לא תמלא את השיעור הזה שוב; עדיין אפשר להדביק קישור.';
+
+  @override
+  String get panoptoRemoveIt => 'כן, למחוק';
+
+  @override
+  String get panoptoPutBack => 'להחזיר אותו';
 }

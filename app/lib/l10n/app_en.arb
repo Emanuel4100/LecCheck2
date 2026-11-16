@@ -1149,5 +1149,13 @@
   "@panoptoGroupChosen": {"placeholders": {"meeting": {"type": "String"}, "group": {"type": "String"}}},
   "panoptoGroupAskAgain": "Ask again",
   "panoptoLookCourse": "Look now",
-  "panoptoFoundMark": "Found in Panopto"
+  "panoptoFoundMark": "Found in Panopto",
+  "panoptoAskFindTitle": "Let Panopto find it?",
+  "panoptoAskFindBody": "You removed the link. LecCheck can fill in this class's recording from Panopto, or leave it empty.",
+  "panoptoLeaveEmpty": "Leave empty",
+  "panoptoFindIt": "Let Panopto find it",
+  "panoptoAskFoundTitle": "Was it the wrong recording?",
+  "panoptoAskFoundBody": "You removed the link Panopto found. If it was wrong, LecCheck won't fill this class again; you can still paste a link.",
+  "panoptoRemoveIt": "Yes, remove it",
+  "panoptoPutBack": "Put it back"
 }

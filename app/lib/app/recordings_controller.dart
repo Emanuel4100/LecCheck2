@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/dev/dev_log.dart';
+import '../core/recordings/match_report.dart';
 import '../core/recordings/panopto_api.dart';
 import '../core/recordings/panopto_connection.dart';
 import '../core/recordings/recording_linker.dart';
@@ -16,6 +17,7 @@ class PanoptoView {
     this.site,
     this.busy = false,
     this.report = const LinkerReport(),
+    this.looks = const [],
   });
 
   final PanoptoStatus status;
@@ -27,16 +29,22 @@ class PanoptoView {
   final bool busy;
   final LinkerReport report;
 
+  /// Each course's matching details from the latest looks in this run of
+  /// the app (Developer mode).
+  final List<CourseLook> looks;
+
   PanoptoView copyWith({
     PanoptoStatus? status,
     String? site,
     bool? busy,
     LinkerReport? report,
+    List<CourseLook>? looks,
   }) => PanoptoView(
     status: status ?? this.status,
     site: site ?? this.site,
     busy: busy ?? this.busy,
     report: report ?? this.report,
+    looks: looks ?? this.looks,
   );
 
   /// The open group questions of [courseId].
@@ -167,7 +175,17 @@ class PanoptoController extends Notifier<PanoptoView> {
     if (state.busy) return;
     state = state.copyWith(busy: true);
     try {
-      await _linker.run(force: force, courseId: courseId);
+      final report = await _linker.run(force: force, courseId: courseId);
+      if (report != null) {
+        final fresh = {for (final c in report.courses) c.courseId};
+        state = state.copyWith(
+          looks: [
+            for (final c in state.looks)
+              if (!fresh.contains(c.courseId)) c,
+            ...report.courses,
+          ],
+        );
+      }
     } on Object catch (e) {
       debugPrint('Panopto look failed: $e');
     } finally {

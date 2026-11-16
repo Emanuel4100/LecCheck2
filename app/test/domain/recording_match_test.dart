@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:leccheck/core/recordings/match_report.dart';
 import 'package:leccheck/core/recordings/panopto_api.dart';
 import 'package:leccheck/domain/occurrence.dart';
 import 'package:leccheck/domain/occurrence_engine.dart';
@@ -156,6 +157,56 @@ void main() {
       );
       final q = result.questions.single;
       expect((q.suggested, q.hint), ('ו', GroupHint.links));
+    });
+
+    test('two pasted links of one group teach the meeting its group', () {
+      List<SessionOverride> pasted(List<(String, String)> picks) => [
+        for (final (date, group) in picks)
+          SessionOverride(
+            meetingId: 'thuPractice',
+            originalDate: d(date),
+            recordingUrl: named(
+              '80430 $date תרגיל $group',
+              group: group,
+            ).viewerUrl,
+          ),
+      ];
+      final learned = match(
+        on: sessions(
+          overrides: pasted([('2026-10-29', 'ו'), ('2026-11-05', 'ו')]),
+        ),
+      );
+      expect(learned.learnedGroups, {'thuPractice': 'ו'});
+      expect(learned.questions, isEmpty);
+      expect(
+        [
+          for (final f in learned.links)
+            if (f.session.meetingId == 'thuPractice')
+              '${f.session.date} ${f.recording.group}',
+        ],
+        ['2026-10-15 ו', '2026-10-22 ו', '2026-11-12 ו'],
+      );
+
+      // One link, or links that disagree: still a question.
+      final one = match(on: sessions(overrides: pasted([('2026-10-29', 'ו')])));
+      expect(one.learnedGroups, isEmpty);
+      expect(one.questions.single.suggested, 'ו');
+      final mixed = match(
+        on: sessions(
+          overrides: pasted([('2026-10-29', 'ו'), ('2026-11-05', 'ד')]),
+        ),
+      );
+      expect(mixed.learnedGroups, isEmpty);
+      expect(mixed.questions, hasLength(1));
+
+      // A group the user chose stays.
+      final chosen = match(
+        groups: {'thuPractice': 'ד'},
+        on: sessions(
+          overrides: pasted([('2026-10-29', 'ו'), ('2026-11-05', 'ו')]),
+        ),
+      );
+      expect(chosen.learnedGroups, isEmpty);
     });
 
     test('a chosen group gets that group\'s recordings', () {
@@ -316,6 +367,31 @@ void main() {
     });
   });
 
+  test('overlapping meetings: each recording goes to the closest one', () {
+    // A long first meeting (9:00–10:45) overlaps the 10:00 lecture; on
+    // 2026-10-13 only the 10:00 lecture was recorded.
+    final long = weekly(
+      id: 'tue9',
+      type: SessionType.other,
+      weekday: DateTime.tuesday,
+      startMin: 9 * 60,
+      endMin: 10 * 60 + 45,
+      location: 'אודיטוריום הנדסה',
+    );
+    final meetings = [long, _meetings[1]];
+    final result = match(meetings: meetings);
+    final oct13 = [
+      for (final f in result.links)
+        if (f.session.date == d('2026-10-13'))
+          '${f.session.meetingId} ← ${f.recording.room}',
+    ];
+    expect(oct13, ['tue10 ← קפלן']);
+    final early = result.details.sessions.firstWhere(
+      (s) => s.session.meetingId == 'tue9' && s.session.date == d('2026-10-13'),
+    );
+    expect(early.outcome, SessionOutcome.usedElsewhere);
+  });
+
   group('times', () {
     PanoptoRecording at(String id, String startTime) =>
         PanoptoApi.recordingFromJson({
@@ -367,6 +443,122 @@ void main() {
         ),
       );
       expect(describe(result), ['thu12 2026-11-11 ← 80430 x / null']);
+    });
+  });
+
+  group('matching details', () {
+    test('every session up to now gets an outcome, and why', () {
+      final pasted = named('80430 2026-11-05 תרגיל ו');
+      final result = match(
+        on: sessions(
+          overrides: [
+            SessionOverride(
+              meetingId: 'thu12',
+              originalDate: d('2026-10-15'),
+              status: AttendanceStatus.canceled,
+            ),
+            SessionOverride(
+              meetingId: 'thu12',
+              originalDate: d('2026-10-22'),
+              recordingUrl: '',
+            ),
+            SessionOverride(
+              meetingId: 'thuPractice',
+              originalDate: d('2026-11-05'),
+              recordingUrl: pasted.viewerUrl,
+            ),
+          ],
+        ),
+      );
+      final outcomes = {
+        for (final s in result.details.sessions)
+          '${s.session.meetingId} ${s.session.date}': s.outcome,
+      };
+      expect(outcomes['thu12 2026-10-15'], SessionOutcome.canceled);
+      expect(outcomes['thu12 2026-10-22'], SessionOutcome.removed);
+      expect(outcomes['thu12 2026-10-29'], SessionOutcome.found);
+      expect(outcomes['thuPractice 2026-11-05'], SessionOutcome.ownLink);
+      expect(outcomes['thuPractice 2026-11-12'], SessionOutcome.askGroup);
+      // Tuesday 2026-10-27: no class recorded.
+      expect(outcomes['tue10 2026-10-27'], SessionOutcome.noRecording);
+      expect(outcomes['tue9 2026-11-17'], isNull, reason: 'not yet');
+      expect(result.details.readUtc, isFalse);
+      expect(result.details.fitWall, greaterThan(result.details.fitUtc));
+    });
+
+    test('every recording gets an outcome, and why', () {
+      final pasted = named('80430 2026-11-05 תרגיל ו');
+      final result = match(
+        on: sessions(
+          overrides: [
+            SessionOverride(
+              meetingId: 'thu12',
+              originalDate: d('2026-10-15'),
+              status: AttendanceStatus.canceled,
+            ),
+            SessionOverride(
+              meetingId: 'thuPractice',
+              originalDate: d('2026-11-05'),
+              recordingUrl: pasted.viewerUrl,
+            ),
+          ],
+        ),
+      );
+      RecordingDetail of(String name, {String? group}) =>
+          result.details.recordings.firstWhere(
+            (r) =>
+                r.recording.name == name &&
+                (group == null || r.recording.group == group),
+          );
+      expect(of('80430 2026-10-29 שעור א').outcome, RecordingOutcome.linked);
+      expect(
+        of('80430 2026-11-05 תרגיל ו').outcome,
+        RecordingOutcome.inYourLink,
+      );
+      final closed = of('80430 2026-10-15 שעור א');
+      expect(closed.outcome, RecordingOutcome.sessionClosed);
+      expect(closed.closedAs, SessionOutcome.canceled);
+      expect(of('80430 2026-11-12 תרגיל ד').outcome, RecordingOutcome.askGroup);
+      // Monday's lectures are another lecture group's: no class then.
+      final monday = of('80430 2026-11-09 שעור ב');
+      expect(monday.outcome, RecordingOutcome.noSession);
+      expect(monday.nearest, isNull);
+      // Tuesday 14:00 practice ב: the owner's Tuesday is 9:00 and 10:00.
+      final tuesday = of('80430 2026-11-10 תרגיל ב');
+      expect(tuesday.nearest?.meetingId, 'tue10');
+      expect(result.details.recordings, hasLength(58));
+    });
+
+    test('a chosen group drops the other group, which says so', () {
+      final result = match(groups: {'thuPractice': 'ו'});
+      final other = result.details.recordings.firstWhere(
+        (r) => r.recording.name == '80430 2026-11-12 תרגיל ד',
+      );
+      expect(other.outcome, RecordingOutcome.otherGroup);
+    });
+
+    test('the report as text', () {
+      final result = match();
+      final text = lookReportText([
+        CourseLook(
+          courseId: 'c',
+          courseName: 'Probability',
+          code: '80430',
+          recordingsRead: 58,
+          details: result.details,
+          written: result.links.length,
+        ),
+        const CourseLook(
+          courseId: 'x',
+          courseName: 'Other',
+          code: '',
+          skipped: 'no course number to find its folder by',
+        ),
+      ]);
+      expect(text, contains('== 80430 Probability'));
+      expect(text, contains('read as wall clock'));
+      expect(text, contains('waiting for the group question'));
+      expect(text, contains('Not looked at: no course number'));
     });
   });
 

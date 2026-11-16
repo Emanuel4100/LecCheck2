@@ -131,6 +131,8 @@ For the experimental release (owner, after Step 0):
 | Other devices | One connected device; the others get the links through sync. Vault and pairing later |
 | Parallel groups | Suggest a group (from links pasted before, then the room), ask once on the course page, remember the letter per meeting (synced) |
 | Found links | Marked "Found in Panopto", in their own column, with "remove every link it found" on Disconnect |
+| Removing a link | Ask each time (when Panopto is in use): a pasted link may be filled from Panopto, a found one may be put back |
+| Groups from pasted links | At least two links pasted into a meeting's sessions, all of one group, set the meeting's group without asking |
 | Setup guide | In the app, numbered steps with Copy for the redirect address; pictures from the owner later |
 
 Devices or server, compared:
@@ -231,13 +233,16 @@ only reads. The code comparison stops a server that tries to swap in its own key
   - A session takes recordings starting from 30 minutes before it to its end, on its
     effective date and time (moved sessions included). Lectures don't take recordings
     marked as practices and vice versa; "other" sessions take any.
-  - A remembered group letter drops other groups' recordings. Without one, two groups at
-    the same time make a question for the meeting instead of a guess. The suggestion: the
-    group most links pasted into the meeting's sessions point to, else the one in the
-    meeting's room. (The owner follows group ו while the timetable's room is ד's: rooms
-    alone would have been wrong.)
-  - Ties: closest start, then the meeting's room, then an automatic recording (with the
-    timetable slot in its description), then the longest.
+  - A remembered group letter drops other groups' recordings. A meeting without one
+    learns it when at least two links pasted into its sessions all point to one group's
+    recordings (`learnFrom`), and the runner saves it. Otherwise two groups at the same
+    time make a question for the meeting instead of a guess. The suggestion: the group
+    most pasted links point to, else the one in the meeting's room. (The owner follows
+    group ו while the timetable's room is ד's: rooms alone would have been wrong.)
+  - Assignment: every session–recording pair that fits, closest start first, then the
+    meeting's room, an automatic recording (with the timetable slot in its
+    description), the longest. A recording goes to the session it fits best, so a long
+    meeting that overlaps the next class doesn't take its recording.
   - Never canceled sessions, never ones not over yet, never one with the user's own link
     or a removed one. Each recording is used once; recordings in links the user pasted
     aren't used again.
@@ -247,6 +252,24 @@ only reads. The code comparison stops a server that tries to swap in its own key
   sync, even when the paste was made offline and arrives later. Removing a link stores
   `''`; typing into an empty field and erasing it again leaves null. "Remove every link
   it found" empties `recordingFound` only. Older app versions don't show found links.
+- **Removing a link asks** (owner's choice), when Panopto is in use (connected here, or
+  found links exist): leaving the session sheet's link field empty after it had a link
+  saves `''` first, then asks. A pasted link: "Let Panopto find it?" (yes → null, and a
+  look at the course when this device is connected). A found link: "Was it the wrong
+  recording?" ("Put it back" → null, so the found link shows again). Closing the sheet
+  mid-edit keeps `''`.
+- **Developer mode → Panopto recordings → Matching details**: per course, from the
+  looks in this run of the app: the folder, how `StartTime` was read, every session up
+  to now with its outcome (found, your link, removed, canceled, not over, nothing
+  recorded, processing, other group or type, used elsewhere, waiting for the group),
+  every recording with why it wasn't used (no session at its time with the closest
+  one, its session closed, other group…), pasted links pointing to another date, and
+  "Allow finding again" for removed links. "Copy as text" gives the whole report
+  (`core/recordings/match_report.dart`). English only, like the other developer tools.
+- **First real test (owner, 2026-11-16)**: all four courses got their folders. Few links
+  were found because most sessions already had a pasted link, were marked canceled, or
+  had their links removed during the test; every unused recording was another group's
+  class at a time the owner has none.
 - Editing a course or meeting leaves `panoptoFolders` and `panoptoGroup` alone
   (`_Adapter.own`): the domain types don't carry them. Backups and snapshots restore them.
 - The viewer link needs a Panopto sign-in to play, so it isn't a secret in the synced

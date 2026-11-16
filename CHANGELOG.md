@@ -10,6 +10,10 @@
   yours, with a suggestion. Found links are marked "Found in Panopto"; your own links always
   win, and links you remove stay removed. One connected device is enough: the links reach
   your other devices through sync. Android also looks once a day in the background.
+  A meeting learns its group by itself when the links you pasted into it all point to one
+  group. Removing a link asks whether Panopto may fill it (or, for a link Panopto found,
+  whether it was wrong). In Developer mode, **Matching details** shows why each session
+  got a link or not, and why each recording wasn't used.
 - **Removing a recording link** now keeps it removed (stored as an empty link), so a link
   found in Panopto doesn't take its place.
 

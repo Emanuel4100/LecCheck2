@@ -225,16 +225,158 @@ class GroupQuestion {
   String toString() => 'GroupQuestion($meetingId, $options, $suggested)';
 }
 
+/// What happened to one session, for the developer's matching details.
+enum SessionOutcome {
+  /// Gets (or keeps) a link found in Panopto.
+  found,
+
+  /// Has a link the user pasted.
+  ownLink,
+
+  /// The user removed its link (`''`).
+  removed,
+  canceled,
+
+  /// Not over yet.
+  notOver,
+
+  /// Nothing of this course was recorded at its time.
+  noRecording,
+
+  /// Only recordings still being recorded or processed.
+  processing,
+
+  /// Only recordings of another group (the one chosen is missing).
+  otherGroup,
+
+  /// Only recordings of another type (a practice at a lecture's time).
+  otherType,
+
+  /// The recordings at its time went to other sessions.
+  usedElsewhere,
+
+  /// Several groups at its time: waiting for the user's answer.
+  askGroup,
+}
+
+/// What happened to one recording, for the developer's matching details.
+enum RecordingOutcome {
+  /// Linked to a session.
+  linked,
+
+  /// A link the user pasted points to it.
+  inYourLink,
+
+  /// Still recording or processing.
+  processing,
+
+  /// Its name starts with another course number.
+  otherCourse,
+
+  /// No session of the course at its time.
+  noSession,
+
+  /// Fits only sessions that take no found link (canceled, the user's own
+  /// or removed link, not over).
+  sessionClosed,
+
+  /// Another group's.
+  otherGroup,
+
+  /// Another type's (a practice at a lecture's time).
+  otherType,
+
+  /// Its session waits for the group question.
+  askGroup,
+
+  /// Another recording at the same time won the session.
+  lostToAnother,
+}
+
+class SessionDetail {
+  const SessionDetail(this.session, this.outcome, {this.recordingId});
+  final Occurrence session;
+  final SessionOutcome outcome;
+
+  /// The recording linked ([SessionOutcome.found]).
+  final String? recordingId;
+}
+
+class RecordingDetail {
+  const RecordingDetail(
+    this.recording,
+    this.start,
+    this.outcome, {
+    this.session,
+    this.closedAs,
+    this.nearest,
+  });
+  final PanoptoRecording recording;
+
+  /// Its start as the matcher read it.
+  final RecordingTime start;
+  final RecordingOutcome outcome;
+
+  /// The session it went to, or the one it fits.
+  final Occurrence? session;
+
+  /// Why [session] takes no found link ([RecordingOutcome.sessionClosed]).
+  final SessionOutcome? closedAs;
+
+  /// [RecordingOutcome.noSession]: the course's session closest in start
+  /// time on that date, if any.
+  final Occurrence? nearest;
+}
+
+/// Why each session and recording ended up as it did.
+class MatchDetails {
+  const MatchDetails({
+    required this.readUtc,
+    required this.fitWall,
+    required this.fitUtc,
+    required this.sessions,
+    required this.recordings,
+  });
+
+  /// `StartTime` was read as real UTC (otherwise as wall-clock digits).
+  final bool readUtc;
+
+  /// How many recordings fit some session with each reading.
+  final int fitWall;
+  final int fitUtc;
+
+  /// The course's sessions up to now, newest first.
+  final List<SessionDetail> sessions;
+
+  /// Every recording read, newest first.
+  final List<RecordingDetail> recordings;
+
+  static const empty = MatchDetails(
+    readUtc: false,
+    fitWall: 0,
+    fitUtc: 0,
+    sessions: [],
+    recordings: [],
+  );
+}
+
 class RecordingMatchResult {
   const RecordingMatchResult({
     this.links = const [],
     this.questions = const [],
+    this.learnedGroups = const {},
+    this.details = MatchDetails.empty,
   });
 
   /// Links to write: each session's current link is empty or was found
   /// automatically, and differs from this one.
   final List<FoundRecording> links;
   final List<GroupQuestion> questions;
+
+  /// Groups to remember per meeting id, learned from the links the user
+  /// pasted (see [RecordingMatcher.learnFrom]).
+  final Map<String, String> learnedGroups;
+  final MatchDetails details;
 }
 
 /// Puts a course's Panopto recordings on its sessions.
@@ -243,6 +385,11 @@ class RecordingMatchResult {
 abstract final class RecordingMatcher {
   /// How early a recording may start before its session.
   static const earlyMinutes = 30;
+
+  /// A meeting without a chosen group takes the group of the recordings in
+  /// links the user pasted into its sessions, when at least this many all
+  /// point to the same group.
+  static const learnFrom = 2;
 
   /// [sessions] are the course's sessions (any status), [meetings] its
   /// meetings (for their rooms), and [groups] the group letters chosen per
@@ -256,11 +403,15 @@ abstract final class RecordingMatcher {
     String courseCode = '',
   }) {
     final meetingById = {for (final m in meetings) m.id: m};
-    final ours = [
+    final sameCourse = [
       for (final r in recordings)
-        if (r.complete && _sameCourse(r, courseCode)) r,
+        if (_sameCourse(r, courseCode)) r,
     ];
-    final readUtc = _utcFitsBetter(ours, sessions);
+    final ours = [
+      for (final r in sameCourse)
+        if (r.complete) r,
+    ];
+    final (:readUtc, :wall, :utc) = _reading(ours, sessions);
     RecordingTime startOf(PanoptoRecording r) =>
         readUtc ? r.utcStart! : r.wallStart;
 
@@ -268,6 +419,7 @@ abstract final class RecordingMatcher {
     // found automatically are found again (and may move to a better match).
     final byId = {for (final r in ours) r.id: r};
     final used = <String>{};
+    final pasted = <String>{};
     final pastedGroups = <String, Map<String, int>>{};
     for (final s in sessions) {
       final url = s.recordingUrl;
@@ -275,6 +427,7 @@ abstract final class RecordingMatcher {
       final id = recordingIdOf(url);
       if (id == null) continue;
       used.add(id);
+      pasted.add(id);
       final group = byId[id]?.group;
       if (group != null) {
         final counts = pastedGroups.putIfAbsent(s.meetingId, () => {});
@@ -282,25 +435,72 @@ abstract final class RecordingMatcher {
       }
     }
 
+    // The user follows the group their own links point to (the owner's
+    // practice links are all group ו while the timetable says ד).
+    final learned = <String, String>{
+      for (final MapEntry(key: meetingId, value: counts)
+          in pastedGroups.entries)
+        if ((groups[meetingId] ?? '').isEmpty &&
+            counts.length == 1 &&
+            counts.values.single >= learnFrom)
+          meetingId: counts.keys.single,
+    };
+    final chosenGroups = {...groups, ...learned};
+
     final links = <FoundRecording>[];
     final ties = <String, Map<String, GroupOption>>{};
+    final outcomes = <String, SessionOutcome>{};
+    final linkedTo = <String, String>{}; // session id → recording id
+    final candidatesFor = <String, List<PanoptoRecording>>{};
+    final dropped = <String, RecordingOutcome>{}; // recording id → why
     final open = [
       for (final s in sessions)
         if (_mayFill(s, now)) s,
     ]..sort((a, b) => a.start.compareTo(b.start));
 
     for (final s in open) {
-      var candidates = [
+      final fitting = [
         for (final r in ours)
-          if (!used.contains(r.id) && _fits(startOf(r), s)) r,
+          if (_fits(startOf(r), s)) r,
       ];
-      candidates = _sameType(candidates, s.type);
-      final chosen = groups[s.meetingId] ?? '';
+      var candidates = [
+        for (final r in fitting)
+          if (!used.contains(r.id)) r,
+      ];
+      if (candidates.isEmpty) {
+        final busy = sameCourse.any(
+          (r) => !r.complete && _fits(r.wallStart, s),
+        );
+        outcomes[s.id] = fitting.isNotEmpty
+            ? SessionOutcome.usedElsewhere
+            : busy
+            ? SessionOutcome.processing
+            : SessionOutcome.noRecording;
+        continue;
+      }
+      final typed = _sameType(candidates, s.type);
+      for (final r in candidates) {
+        if (!typed.contains(r)) dropped[r.id] ??= RecordingOutcome.otherType;
+      }
+      if (typed.isEmpty) {
+        outcomes[s.id] = SessionOutcome.otherType;
+        continue;
+      }
+      candidates = typed;
+      final chosen = chosenGroups[s.meetingId] ?? '';
       if (chosen.isNotEmpty) {
-        candidates = [
+        final mine = [
           for (final r in candidates)
             if (r.group == null || r.group == chosen) r,
         ];
+        for (final r in candidates) {
+          if (!mine.contains(r)) dropped[r.id] ??= RecordingOutcome.otherGroup;
+        }
+        if (mine.isEmpty) {
+          outcomes[s.id] = SessionOutcome.otherGroup;
+          continue;
+        }
+        candidates = mine;
       } else {
         final groups = {
           for (final r in candidates)
@@ -309,6 +509,7 @@ abstract final class RecordingMatcher {
         if (groups.length > 1) {
           final options = ties.putIfAbsent(s.meetingId, () => {});
           for (final r in candidates) {
+            dropped[r.id] ??= RecordingOutcome.askGroup;
             if (r.group == null) continue;
             options[r.group!] = GroupOption(
               group: r.group!,
@@ -316,30 +517,62 @@ abstract final class RecordingMatcher {
               type: r.type,
             );
           }
+          outcomes[s.id] = SessionOutcome.askGroup;
           continue;
         }
       }
-      if (candidates.isEmpty) continue;
-      final room = s.location.trim();
-      int distance(PanoptoRecording r) =>
-          (startOf(r).minute - s.startMin).abs();
-      candidates.sort((a, b) {
-        final byTime = distance(a).compareTo(distance(b));
-        if (byTime != 0) return byTime;
-        final byRoom = _rank(a.room == room).compareTo(_rank(b.room == room));
-        if (byRoom != 0) return byRoom;
-        final byKind = _rank(a.scheduled).compareTo(_rank(b.scheduled));
-        if (byKind != 0) return byKind;
-        final byLength = b.durationSec.compareTo(a.durationSec);
-        if (byLength != 0) return byLength;
-        return a.id.compareTo(b.id);
-      });
-      final best = candidates.first;
-      used.add(best.id);
-      if (recordingIdOf(s.recordingUrl ?? '') != best.id) {
-        links.add(FoundRecording(s, best));
+      candidatesFor[s.id] = candidates;
+    }
+
+    // The closest pairs first, across sessions: a recording goes to the
+    // session it fits best, not to whichever session came first.
+    final pairs = [
+      for (final s in open)
+        for (final r in candidatesFor[s.id] ?? const <PanoptoRecording>[])
+          (s, r),
+    ];
+    int rank((Occurrence, PanoptoRecording) pair) {
+      final (s, r) = pair;
+      return (startOf(r).minute - s.startMin).abs();
+    }
+
+    pairs.sort((a, b) {
+      final byTime = rank(a).compareTo(rank(b));
+      if (byTime != 0) return byTime;
+      final (sa, ra) = a;
+      final (sb, rb) = b;
+      final byRoom = _rank(ra.room == sa.location.trim())
+          .compareTo(_rank(rb.room == sb.location.trim()));
+      if (byRoom != 0) return byRoom;
+      final byKind = _rank(ra.scheduled).compareTo(_rank(rb.scheduled));
+      if (byKind != 0) return byKind;
+      final byLength = rb.durationSec.compareTo(ra.durationSec);
+      if (byLength != 0) return byLength;
+      final bySession = sa.start.compareTo(sb.start);
+      if (bySession != 0) return bySession;
+      return ra.id.compareTo(rb.id);
+    });
+    final taken = <String>{};
+    for (final (s, r) in pairs) {
+      if (linkedTo.containsKey(s.id) || taken.contains(r.id)) continue;
+      taken.add(r.id);
+      linkedTo[s.id] = r.id;
+      outcomes[s.id] = SessionOutcome.found;
+      if (recordingIdOf(s.recordingUrl ?? '') != r.id) {
+        links.add(FoundRecording(s, r));
       }
     }
+    for (final s in open) {
+      if (candidatesFor.containsKey(s.id) && !linkedTo.containsKey(s.id)) {
+        outcomes[s.id] = SessionOutcome.usedElsewhere;
+      }
+    }
+    for (final (_, r) in pairs) {
+      if (!taken.contains(r.id)) {
+        dropped[r.id] ??= RecordingOutcome.lostToAnother;
+      }
+    }
+    links.sort((a, b) => a.session.start.compareTo(b.session.start));
 
     final questions = <GroupQuestion>[];
     for (final MapEntry(key: meetingId, value: options) in ties.entries) {
@@ -371,7 +604,127 @@ abstract final class RecordingMatcher {
         ),
       );
     }
-    return RecordingMatchResult(links: links, questions: questions);
+    return RecordingMatchResult(
+      links: links,
+      questions: questions,
+      learnedGroups: learned,
+      details: _details(
+        recordings: recordings,
+        sessions: sessions,
+        now: now,
+        courseCode: courseCode,
+        readUtc: readUtc,
+        fitWall: wall,
+        fitUtc: utc,
+        outcomes: outcomes,
+        linkedTo: linkedTo,
+        pasted: pasted,
+        dropped: dropped,
+      ),
+    );
+  }
+
+  /// Why each session and recording ended up as it did.
+  static MatchDetails _details({
+    required List<PanoptoRecording> recordings,
+    required List<Occurrence> sessions,
+    required DateTime now,
+    required String courseCode,
+    required bool readUtc,
+    required int fitWall,
+    required int fitUtc,
+    required Map<String, SessionOutcome> outcomes,
+    required Map<String, String> linkedTo,
+    required Set<String> pasted,
+    required Map<String, RecordingOutcome> dropped,
+  }) {
+    SessionOutcome outcomeOf(Occurrence s) {
+      final known = outcomes[s.id];
+      if (known != null) return known;
+      if (!s.hasEnded(now)) return SessionOutcome.notOver;
+      if (s.isCanceled) return SessionOutcome.canceled;
+      if (s.recordingUrl == '') return SessionOutcome.removed;
+      return SessionOutcome.ownLink;
+    }
+
+    final past = [
+      for (final s in sessions)
+        if (s.start.isBefore(now)) s,
+    ]..sort((a, b) => b.start.compareTo(a.start));
+    final sessionDetails = [
+      for (final s in past)
+        SessionDetail(s, outcomeOf(s), recordingId: linkedTo[s.id]),
+    ];
+    final sessionOf = {for (final e in linkedTo.entries) e.value: e.key};
+    final byId = {for (final s in sessions) s.id: s};
+
+    RecordingDetail detail(PanoptoRecording r) {
+      final start = readUtc && r.utcStart != null ? r.utcStart! : r.wallStart;
+      if (!_sameCourse(r, courseCode)) {
+        return RecordingDetail(r, start, RecordingOutcome.otherCourse);
+      }
+      if (!r.complete) {
+        return RecordingDetail(r, start, RecordingOutcome.processing);
+      }
+      final linked = sessionOf[r.id];
+      if (linked != null) {
+        return RecordingDetail(
+          r,
+          start,
+          RecordingOutcome.linked,
+          session: byId[linked],
+        );
+      }
+      if (pasted.contains(r.id)) {
+        return RecordingDetail(r, start, RecordingOutcome.inYourLink);
+      }
+      final fitting = [
+        for (final s in sessions)
+          if (_fits(start, s)) s,
+      ];
+      if (fitting.isEmpty) {
+        Occurrence? nearest;
+        for (final s in sessions) {
+          if (s.date != start.date) continue;
+          if (nearest == null ||
+              (s.startMin - start.minute).abs() <
+                  (nearest.startMin - start.minute).abs()) {
+            nearest = s;
+          }
+        }
+        return RecordingDetail(
+          r,
+          start,
+          RecordingOutcome.noSession,
+          nearest: nearest,
+        );
+      }
+      final why = dropped[r.id];
+      if (why != null) {
+        return RecordingDetail(r, start, why, session: fitting.first);
+      }
+      final first = fitting.first;
+      return RecordingDetail(
+        r,
+        start,
+        RecordingOutcome.sessionClosed,
+        session: first,
+        closedAs: outcomeOf(first),
+      );
+    }
+
+    final recordingDetails = [for (final r in recordings) detail(r)]
+      ..sort((a, b) {
+        final byDate = b.start.date.compareTo(a.start.date);
+        return byDate != 0 ? byDate : b.start.minute.compareTo(a.start.minute);
+      });
+    return MatchDetails(
+      readUtc: readUtc,
+      fitWall: fitWall,
+      fitUtc: fitUtc,
+      sessions: sessionDetails,
+      recordings: recordingDetails,
+    );
   }
 
   /// The Panopto session id in a viewer or embed link (`…?id=<guid>`).
@@ -433,19 +786,19 @@ abstract final class RecordingMatcher {
   static String _digits(String s) =>
       s.replaceAll(RegExp(r'\D'), '').replaceFirst(RegExp('^0+'), '');
 
-  /// Whether reading `StartTime` as real UTC puts more recordings on
+  /// Reads `StartTime` as real UTC when that puts more recordings on
   /// sessions than reading its digits as local time.
-  static bool _utcFitsBetter(
+  static ({bool readUtc, int wall, int utc}) _reading(
     List<PanoptoRecording> recordings,
     List<Occurrence> sessions,
   ) {
-    if (recordings.any((r) => r.utcStart == null)) return false;
     var wall = 0;
     var utc = 0;
+    final allUtc = recordings.every((r) => r.utcStart != null);
     for (final r in recordings) {
       if (sessions.any((s) => _fits(r.wallStart, s))) wall++;
-      if (sessions.any((s) => _fits(r.utcStart!, s))) utc++;
+      if (allUtc && sessions.any((s) => _fits(r.utcStart!, s))) utc++;
     }
-    return utc > wall;
+    return (readUtc: allUtc && utc > wall, wall: wall, utc: utc);
   }
 }

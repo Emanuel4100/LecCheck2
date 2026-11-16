@@ -7,6 +7,7 @@ import '../../domain/recording_match.dart';
 import '../../domain/schedule_types.dart';
 import '../db/schedule_repository.dart';
 import '../dev/dev_log.dart';
+import 'match_report.dart';
 import 'panopto_api.dart';
 import 'panopto_connection.dart';
 
@@ -62,6 +63,7 @@ class LinkerReport {
     this.error,
     this.questions = const [],
     this.chooseFolder = const [],
+    this.courses = const [],
   });
 
   factory LinkerReport.fromJson(Map<String, Object?> json) => LinkerReport(
@@ -93,6 +95,10 @@ class LinkerReport {
 
   /// Courses whose number found several folders: the user picks.
   final List<String> chooseFolder;
+
+  /// What happened in each course, for Developer mode. Only from a look in
+  /// this run of the app: never saved.
+  final List<CourseLook> courses;
 
   Map<String, Object?> toJson() => {
     'at': at?.millisecondsSinceEpoch,
@@ -175,6 +181,7 @@ class RecordingLinker {
           if (id != courseId) id,
     ];
     String? error;
+    final looks = <CourseLook>[];
     try {
       final today = LocalDate.today(now);
       final window = await repo.loadWindow(
@@ -186,24 +193,44 @@ class RecordingLinker {
       for (final data in window.semesters) {
         for (final course in data.courses) {
           if (courseId != null && course.id != courseId) continue;
+          CourseLook skip(String why) => CourseLook(
+            courseId: course.id,
+            courseName: course.name,
+            code: course.code,
+            skipped: why,
+          );
           var refs = folders[course.id];
           if (refs == null) {
             refs = await _findFolders(api, course, data.semester);
             if (refs == null) {
-              if (course.code.trim().isNotEmpty) chooseFolder.add(course.id);
+              final hasCode = course.code.trim().isNotEmpty;
+              if (hasCode) chooseFolder.add(course.id);
+              looks.add(
+                skip(
+                  hasCode
+                      ? 'no single folder found by the course number'
+                      : 'no course number to find its folder by',
+                ),
+              );
               continue;
             }
             await repo.setPanoptoFolders(course.id, refs);
           }
-          if (refs.isEmpty) continue;
-          final recordings = <PanoptoRecording>[
-            for (final folder in refs)
-              ...await _recordingsOf(
-                api,
-                folder,
-                since: data.semester.start.addDays(-7),
-              ),
-          ];
+          if (refs.isEmpty) {
+            looks.add(skip('folder set to none'));
+            continue;
+          }
+          final recordings = <PanoptoRecording>[];
+          final folderErrors = <String>[];
+          for (final folder in refs) {
+            final (found, problem) = await _recordingsOf(
+              api,
+              folder,
+              since: data.semester.start.addDays(-7),
+            );
+            recordings.addAll(found);
+            if (problem != null) folderErrors.add('${folder.name}: $problem');
+          }
           final result = RecordingMatcher.match(
             recordings: recordings,
             sessions: window.index.forCourse(course.id),
@@ -212,10 +239,28 @@ class RecordingLinker {
             now: now,
             courseCode: course.code,
           );
-          written += await repo.setFoundRecordings(result.links);
+          for (final MapEntry(key: meetingId, value: group)
+              in result.learnedGroups.entries) {
+            await repo.setPanoptoGroup(meetingId, group);
+            DevLog.add('Panopto: group $group learned from pasted links');
+          }
+          final wrote = await repo.setFoundRecordings(result.links);
+          written += wrote;
           questions.addAll([
             for (final q in result.questions) OpenGroupQuestion(course.id, q),
           ]);
+          looks.add(
+            CourseLook(
+              courseId: course.id,
+              courseName: course.name,
+              code: course.code,
+              folders: refs,
+              recordingsRead: recordings.length,
+              error: folderErrors.isEmpty ? null : folderErrors.join('; '),
+              details: result.details,
+              written: wrote,
+            ),
+          );
         }
       }
     } on PanoptoException catch (e) {
@@ -228,6 +273,7 @@ class RecordingLinker {
       error: error,
       questions: questions,
       chooseFolder: chooseFolder,
+      courses: looks,
     );
     await prefs.setString(_reportKey, jsonEncode(next.toJson()));
     DevLog.add(
@@ -237,17 +283,19 @@ class RecordingLinker {
     return next;
   }
 
-  /// A folder that's gone or no longer visible gives no recordings; other
-  /// errors stop the look.
-  Future<List<PanoptoRecording>> _recordingsOf(
+  /// A folder that's gone or no longer visible gives no recordings (and
+  /// its error code); other errors stop the look.
+  Future<(List<PanoptoRecording>, String?)> _recordingsOf(
     PanoptoApi api,
     PanoptoFolderRef folder, {
     required LocalDate since,
   }) async {
     try {
-      return await api.folderRecordings(folder.id, since: since);
+      return (await api.folderRecordings(folder.id, since: since), null);
     } on PanoptoException catch (e) {
-      if (e.code == 'not_found' || e.code == 'forbidden') return const [];
+      if (e.code == 'not_found' || e.code == 'forbidden') {
+        return (const <PanoptoRecording>[], e.code);
+      }
       rethrow;
     }
   }

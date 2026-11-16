@@ -130,8 +130,14 @@ Then:
 - When several groups are recorded at your class's time (two practice groups, say), the
   course page asks **which group's recordings are yours**, with a suggestion from links you
   pasted before or from the room. The answer is remembered, and **Ask again** changes it.
-- Found links are marked **Found in Panopto** in the session. A link you paste always wins,
-  and a link you remove stays removed.
+  If at least two links you pasted into that class all point to one group, LecCheck takes
+  that group without asking.
+- Found links are marked **Found in Panopto** in the session. A link you paste always wins.
+- Removing a link asks what to do next: for a link you pasted, whether Panopto may fill in
+  the recording; for one Panopto found, whether it was the wrong recording (**Put it back**
+  if not). A link you remove stays removed unless you say otherwise.
+- With Developer mode on, **Matching details** (in Settings → Panopto recordings) shows why
+  each session got a link or not, and can copy it all as text for a bug report.
 - It looks when the app starts or comes back (at most every 3 hours), on Android once a day
   in the background, and when you tap **Look for recordings now**.
 - Only the connected device looks; your other devices get the links through sync.

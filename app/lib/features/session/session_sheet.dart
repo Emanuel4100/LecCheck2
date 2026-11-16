@@ -9,10 +9,12 @@ import '../../app/adaptive.dart';
 import '../../app/format.dart';
 import '../../app/labels.dart';
 import '../../app/providers.dart';
+import '../../app/recordings_controller.dart';
 import '../../app/shortcuts.dart';
 import '../../app/theme/colors.dart';
 import '../../app/widgets/common.dart';
 import '../../core/icons/lec_icons.dart';
+import '../../core/recordings/panopto_connection.dart';
 import '../../domain/local_date.dart';
 import '../../domain/occurrence.dart';
 import '../../domain/schedule_types.dart';
@@ -82,6 +84,11 @@ class _SessionSheetState extends ConsumerState<SessionSheet> {
   /// The saved recording link is open for editing.
   bool _editingRecording = false;
 
+  /// The session had a link when the field got focus: [found] says whether
+  /// Panopto had found it. Leaving the field empty then asks what Panopto
+  /// may do (Panopto recordings).
+  ({bool found})? _linkBeforeEditing;
+
   /// Captured up front: pending edits are flushed in dispose(), where `ref`
   /// may no longer be used.
   late final _repo = ref.read(repositoryProvider);
@@ -95,13 +102,69 @@ class _SessionSheetState extends ConsumerState<SessionSheet> {
 
   /// Leaving the field saves what's there and shows it as a link.
   void _onRecordingFocus() {
-    if (_recordingFocus.hasFocus) return;
+    final session = _last;
+    if (_recordingFocus.hasFocus) {
+      final had = session?.recordingUrl?.trim().isNotEmpty ?? false;
+      _linkBeforeEditing = had ? (found: session!.recordingAuto) : null;
+      return;
+    }
+    Future<void>? saving;
     if (_recordingTimer?.isActive ?? false) {
       _recordingTimer!.cancel();
-      final session = _last;
-      if (session != null) _repo.setRecordingUrl(session, _recording.text);
+      if (session != null) {
+        saving = _repo.setRecordingUrl(session, _recording.text);
+      }
     }
-    if (mounted) setState(() => _editingRecording = false);
+    final before = _linkBeforeEditing;
+    _linkBeforeEditing = null;
+    if (!mounted) return;
+    setState(() => _editingRecording = false);
+    if (session != null && before != null && _recording.text.trim().isEmpty) {
+      _askAfterRemoving(session, found: before.found, saving: saving);
+    }
+  }
+
+  /// Panopto recordings: a link was removed. A link the user had pasted may
+  /// be filled from Panopto; one Panopto found may have been removed by
+  /// mistake. Either way the removal is saved first (`''`), and only a
+  /// "yes" here opens the session to found links again.
+  Future<void> _askAfterRemoving(
+    Occurrence session, {
+    required bool found,
+    Future<void>? saving,
+  }) async {
+    final panopto = ref.read(panoptoProvider);
+    final inUse =
+        found ||
+        panopto.status != PanoptoStatus.off ||
+        (ref.read(foundRecordingCountProvider).value ?? 0) > 0;
+    if (!inUse) return;
+    final l = AppLocalizations.of(context);
+    final allow = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(found ? l.panoptoAskFoundTitle : l.panoptoAskFindTitle),
+        content: Text(found ? l.panoptoAskFoundBody : l.panoptoAskFindBody),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(found ? l.panoptoRemoveIt : l.panoptoLeaveEmpty),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(found ? l.panoptoPutBack : l.panoptoFindIt),
+          ),
+        ],
+      ),
+    );
+    if (allow != true) return;
+    await saving;
+    await _repo.allowFoundRecording(session);
+    if (!found && panopto.status == PanoptoStatus.connected) {
+      unawaited(
+        ref.read(panoptoProvider.notifier).lookNow(courseId: session.courseId),
+      );
+    }
   }
 
   @override
@@ -144,6 +207,8 @@ class _SessionSheetState extends ConsumerState<SessionSheet> {
     final session = ref.watch(sessionProvider(widget.sessionId));
     if (session == null) return const SizedBox.shrink();
     _last = session;
+    // Kept up to date for the question after removing a link.
+    ref.watch(foundRecordingCountProvider);
     _syncControllers(session);
 
     final l = AppLocalizations.of(context);

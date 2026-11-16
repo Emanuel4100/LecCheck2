@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:drift/native.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -168,6 +171,46 @@ void main() {
       (k) => k.startsWith('thuPractice'),
     );
     expect(practice, hasLength(5));
+  });
+
+  test('links pasted into a meeting teach it its group', () async {
+    await connection.connect(FakePanopto.setup);
+    final all = await sessions();
+    Occurrence on(String date) => all.firstWhere(
+      (s) => s.meetingId == 'thuPractice' && s.date == LocalDate.parse(date),
+    );
+    // The fixture's ids: group ו's recordings of 2026-10-29 and 2026-11-05.
+    String viewer(String name, String group) {
+      final json = [
+        for (final page in [0, 1])
+          ...(jsonDecode(
+                    File('test/fixtures/panopto/folder_sessions_p$page.json')
+                        .readAsStringSync(),
+                  )['Results']
+                  as List)
+              .cast<Map<String, Object?>>(),
+      ];
+      final hit = json.firstWhere(
+        (j) =>
+            j['Name'] == name &&
+            (j['Description'] as String? ?? '').endsWith('תרגיל $group'),
+      );
+      return (hit['Urls']! as Map)['ViewerUrl'] as String;
+    }
+
+    await repo.setRecordingUrl(
+      on('2026-10-29'),
+      viewer('80430 2026-10-29 תרגיל ו', 'ו'),
+    );
+    await repo.setRecordingUrl(
+      on('2026-11-05'),
+      viewer('80430 2026-11-05 תרגיל ו', 'ו'),
+    );
+    final report = (await linker.run())!;
+    expect(report.questions, isEmpty);
+    expect(await repo.panoptoGroups(), {'thuPractice': 'ו'});
+    // Tuesday 4 + Thursday lectures 5 + the other three practices.
+    expect(report.written, 12);
   });
 
   test('at most every 3 hours unless asked', () async {

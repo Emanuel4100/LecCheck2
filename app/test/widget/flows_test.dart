@@ -10,6 +10,8 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:leccheck/domain/recording_match.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:leccheck/app/app.dart';
@@ -430,6 +432,99 @@ void main() {
       container.read(sessionProvider(session.id))?.recordingUrl,
       'https://example.com/new',
     );
+  });
+
+  group('removing a recording link with Panopto in use', () {
+    PanoptoRecording found(String id) => PanoptoRecording(
+      id: id,
+      name: 'Calculus',
+      wallStart: (date: LocalDate.parse('2026-10-20'), minute: 600),
+      durationSec: 6000,
+      complete: true,
+      viewerUrl: 'https://example.panopto.eu/Panopto/Pages/Viewer.aspx?id=$id',
+    );
+
+    Future<void> clearLink(WidgetTester tester, String shown) async {
+      // The sheet's (Today's card behind it may have one too).
+      await tester.ensureVisible(find.text('Recording link').last);
+      await _settle(tester);
+      await tester.tap(find.byTooltip('Edit').last);
+      await _settle(tester);
+      await tester.enterText(find.widgetWithText(TextField, shown), '');
+      FocusManager.instance.primaryFocus!.unfocus();
+      await _settle(tester);
+    }
+
+    testWidgets('a found link: Put it back shows it again', (tester) async {
+      FlutterSecureStorage.setMockInitialValues({});
+      final (container, db) = await _start(tester);
+      final session = container.read(occurrenceIndexProvider).all.first;
+      final rec = found('f1');
+      await tester.runAsync(
+        () =>
+            ScheduleRepository(db)
+                .setFoundRecordings([FoundRecording(session, rec)]),
+      );
+      await _settle(tester);
+      unawaited(
+        showSessionSheet(tester.element(find.byType(TodayPage)), session.id),
+      );
+      await _settle(tester);
+      expect(find.text('Found in Panopto'), findsOneWidget);
+      await clearLink(tester, rec.viewerUrl);
+
+      expect(find.text('Was it the wrong recording?'), findsOneWidget);
+      await tester.tap(find.text('Put it back'));
+      await _settle(tester);
+      final now = container.read(sessionProvider(session.id))!;
+      expect((now.recordingUrl, now.recordingAuto), (rec.viewerUrl, true));
+    });
+
+    testWidgets('a pasted link: Leave empty keeps it removed', (tester) async {
+      FlutterSecureStorage.setMockInitialValues({});
+      final (container, db) = await _start(tester);
+      final all = container.read(occurrenceIndexProvider).all;
+      final repo = ScheduleRepository(db);
+      // Panopto found a link elsewhere: it's in use. (One write per
+      // runAsync: the app's queries wake up in between.)
+      await tester.runAsync(
+        () => repo.setFoundRecordings([FoundRecording(all[1], found('f2'))]),
+      );
+      await _settle(tester);
+      await tester.runAsync(
+        () => repo.setRecordingUrl(all.first, 'https://example.com/mine'),
+      );
+      await _settle(tester);
+      unawaited(
+        showSessionSheet(tester.element(find.byType(TodayPage)), all.first.id),
+      );
+      await _settle(tester);
+      await clearLink(tester, 'https://example.com/mine');
+
+      expect(find.text('Let Panopto find it?'), findsOneWidget);
+      await tester.tap(find.text('Leave empty'));
+      await _settle(tester);
+      expect(container.read(sessionProvider(all.first.id))?.recordingUrl, '');
+    });
+
+    testWidgets('without Panopto nothing is asked', (tester) async {
+      FlutterSecureStorage.setMockInitialValues({});
+      final (container, db) = await _start(tester);
+      final session = container.read(occurrenceIndexProvider).all.first;
+      await tester.runAsync(
+        () =>
+            ScheduleRepository(db)
+                .setRecordingUrl(session, 'https://example.com/mine'),
+      );
+      await _settle(tester);
+      unawaited(
+        showSessionSheet(tester.element(find.byType(TodayPage)), session.id),
+      );
+      await _settle(tester);
+      await clearLink(tester, 'https://example.com/mine');
+      expect(find.byType(AlertDialog), findsNothing);
+      expect(container.read(sessionProvider(session.id))?.recordingUrl, '');
+    });
   });
 
   group('reception hours', () {

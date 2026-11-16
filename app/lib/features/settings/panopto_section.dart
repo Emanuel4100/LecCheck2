@@ -12,6 +12,7 @@ import '../../core/recordings/panopto_api.dart';
 import '../../core/recordings/panopto_connection.dart';
 import '../../domain/local_date.dart';
 import '../../l10n/gen/app_localizations.dart';
+import '../developer/developer_page.dart';
 import '../session/session_actions.dart';
 
 /// What a [PanoptoException] code means for the user.
@@ -143,6 +144,15 @@ class PanoptoSection extends ConsumerWidget {
             onTap: controller.lookNow,
           ),
         ],
+        // Developer mode: how each course matched (English only).
+        if (view.status != PanoptoStatus.off && ref.watch(devModeProvider))
+          ListTile(
+            leading: const Icon(LecIcons.developer),
+            title: const Text('Matching details'),
+            subtitle: const Text('Developer: why sessions got a link or not'),
+            trailing: const Icon(LecIcons.chevronEnd),
+            onTap: () => context.push('/panopto-debug'),
+          ),
         if (view.status != PanoptoStatus.off)
           ListTile(
             leading: const Icon(LecIcons.close),
