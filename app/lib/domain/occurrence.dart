@@ -23,6 +23,7 @@ class Occurrence {
     required this.notes,
     required this.recordingUrl,
     this.excluded = false,
+    this.recordingAuto = false,
   });
 
   final String id;
@@ -54,6 +55,9 @@ class Occurrence {
   final int? number;
   final String notes;
   final String? recordingUrl;
+
+  /// [recordingUrl] was found in Panopto: the user has none of their own.
+  final bool recordingAuto;
 
   /// Doesn't count toward attendance, whatever its status: a class the
   /// course doesn't take attendance in (e.g. the first lecture).
@@ -89,6 +93,7 @@ class Occurrence {
       other.number == number &&
       other.notes == notes &&
       other.recordingUrl == recordingUrl &&
+      other.recordingAuto == recordingAuto &&
       other.excluded == excluded;
 
   @override
@@ -104,6 +109,7 @@ class Occurrence {
     number,
     notes,
     recordingUrl,
+    recordingAuto,
     excluded,
   );
 

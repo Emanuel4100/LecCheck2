@@ -1,0 +1,108 @@
+{
+ "Results": [
+  {
+   "Id": "00000000-0000-4000-8000-000000000051",
+   "Name": "80430 13-14 on 14/10/2026 (יום ד)",
+   "Description": "",
+   "StartTime": "2026-10-14T13:00:01.882776Z",
+   "Duration": 2999.028,
+   "Status": 4,
+   "IsWebcast": false,
+   "Folder": "11111111-2222-4333-8444-555555555555",
+   "Urls": {
+    "ViewerUrl": "https://example.cloud.panopto.eu/Panopto/Pages/Viewer.aspx?id=00000000-0000-4000-8000-000000000051"
+   }
+  },
+  {
+   "Id": "00000000-0000-4000-8000-000000000052",
+   "Name": "80430 2026-10-14 תרגיל ג",
+   "Description": "80430\nIntroduction to Probability for Computer Science and Engineering\nמבוא להסתברות למדעי המחשב והנדסה\nיום ד 13:00 - 14:45\nלוי 06\nתרגיל ג",
+   "StartTime": "2026-10-14T13:00:01.2158592Z",
+   "Duration": 6599.973,
+   "Status": 4,
+   "IsWebcast": false,
+   "Folder": "11111111-2222-4333-8444-555555555555",
+   "Urls": {
+    "ViewerUrl": "https://example.cloud.panopto.eu/Panopto/Pages/Viewer.aspx?id=00000000-0000-4000-8000-000000000052"
+   }
+  },
+  {
+   "Id": "00000000-0000-4000-8000-000000000053",
+   "Name": "80430 2026-10-13 תרגיל ב",
+   "Description": "80430\nIntroduction to Probability for Computer Science and Engineering\nמבוא להסתברות למדעי המחשב והנדסה\nיום ג 14:00 - 15:45\nשפרינצק 116\nתרגיל ב",
+   "StartTime": "2026-10-13T14:00:01.9038608Z",
+   "Duration": 6598.795999999999,
+   "Status": 4,
+   "IsWebcast": false,
+   "Folder": "11111111-2222-4333-8444-555555555555",
+   "Urls": {
+    "ViewerUrl": "https://example.cloud.panopto.eu/Panopto/Pages/Viewer.aspx?id=00000000-0000-4000-8000-000000000053"
+   }
+  },
+  {
+   "Id": "00000000-0000-4000-8000-000000000054",
+   "Name": "80430 2026-10-13 שעור א",
+   "Description": "80430\nIntroduction to Probability for Computer Science and Engineering\nמבוא להסתברות למדעי המחשב והנדסה\nיום ג 10:00 - 11:45\nקפלן\nשעור א",
+   "StartTime": "2026-10-13T10:00:01.082576Z",
+   "Duration": 6599.040999999999,
+   "Status": 4,
+   "IsWebcast": false,
+   "Folder": "11111111-2222-4333-8444-555555555555",
+   "Urls": {
+    "ViewerUrl": "https://example.cloud.panopto.eu/Panopto/Pages/Viewer.aspx?id=00000000-0000-4000-8000-000000000054"
+   }
+  },
+  {
+   "Id": "00000000-0000-4000-8000-000000000055",
+   "Name": "80430 2026-10-12 תרגיל ה",
+   "Description": "80430\nIntroduction to Probability for Computer Science and Engineering\nמבוא להסתברות למדעי המחשב והנדסה\nיום ב 16:00 - 17:45\nC220\nתרגיל ה",
+   "StartTime": "2026-10-12T16:00:01.6410592Z",
+   "Duration": 6599.623,
+   "Status": 4,
+   "IsWebcast": false,
+   "Folder": "11111111-2222-4333-8444-555555555555",
+   "Urls": {
+    "ViewerUrl": "https://example.cloud.panopto.eu/Panopto/Pages/Viewer.aspx?id=00000000-0000-4000-8000-000000000055"
+   }
+  },
+  {
+   "Id": "00000000-0000-4000-8000-000000000056",
+   "Name": "80430 2026-10-12 שעור ב",
+   "Description": "80430\nIntroduction to Probability for Computer Science and Engineering\nמבוא להסתברות למדעי המחשב והנדסה\nיום ב 14:00 - 15:45\nכימיה 7\nשעור ב",
+   "StartTime": "2026-10-12T14:00:02.2895152Z",
+   "Duration": 6599.083,
+   "Status": 4,
+   "IsWebcast": false,
+   "Folder": "11111111-2222-4333-8444-555555555555",
+   "Urls": {
+    "ViewerUrl": "https://example.cloud.panopto.eu/Panopto/Pages/Viewer.aspx?id=00000000-0000-4000-8000-000000000056"
+   }
+  },
+  {
+   "Id": "00000000-0000-4000-8000-000000000057",
+   "Name": "80430 2026-10-12 תרגיל א",
+   "Description": "80430\nIntroduction to Probability for Computer Science and Engineering\nמבוא להסתברות למדעי המחשב והנדסה\nיום ב 12:00 - 13:45\nלוי 07\nתרגיל א",
+   "StartTime": "2026-10-12T12:00:01.8332112Z",
+   "Duration": 6599.1179999999995,
+   "Status": 4,
+   "IsWebcast": false,
+   "Folder": "11111111-2222-4333-8444-555555555555",
+   "Urls": {
+    "ViewerUrl": "https://example.cloud.panopto.eu/Panopto/Pages/Viewer.aspx?id=00000000-0000-4000-8000-000000000057"
+   }
+  },
+  {
+   "Id": "00000000-0000-4000-8000-000000000058",
+   "Name": "80430 11/10 12-14",
+   "Description": "",
+   "StartTime": "2026-10-11T12:00:02.1973856Z",
+   "Duration": 6599.0599999999995,
+   "Status": 4,
+   "IsWebcast": false,
+   "Folder": "11111111-2222-4333-8444-555555555555",
+   "Urls": {
+    "ViewerUrl": "https://example.cloud.panopto.eu/Panopto/Pages/Viewer.aspx?id=00000000-0000-4000-8000-000000000058"
+   }
+  }
+ ]
+}

@@ -10,22 +10,28 @@ import 'package:drift/native.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:leccheck/app/app.dart';
 import 'package:leccheck/app/providers.dart';
 import 'package:leccheck/app/router.dart';
 import 'package:leccheck/app/theme/colors.dart';
 import 'package:leccheck/app/move_controller.dart';
+import 'package:leccheck/app/recordings_controller.dart';
 import 'package:leccheck/app/update_controller.dart';
 import 'package:leccheck/core/db/app_database.dart';
 import 'package:leccheck/core/db/schedule_repository.dart';
 import 'package:leccheck/core/icons/lec_icons.dart';
+import 'package:leccheck/core/recordings/panopto_connection.dart';
+import 'package:leccheck/core/recordings/recording_linker.dart';
 import 'package:leccheck/core/update/update_download.dart';
 import 'package:leccheck/core/update/update_service.dart';
 import 'package:leccheck/domain/local_date.dart';
 import 'package:leccheck/domain/occurrence_engine.dart';
+import 'package:leccheck/domain/recording_match.dart';
 import 'package:leccheck/domain/schedule_types.dart';
 import 'package:leccheck/core/backup/timetable_import.dart';
+import 'package:leccheck/features/courses/panopto_course_section.dart';
 import 'package:leccheck/features/settings/move_dialog.dart';
 import 'package:leccheck/features/settings/update_dialog.dart';
 import 'package:leccheck/features/week/week_page.dart';
@@ -394,6 +400,77 @@ void main() {
     await tester.enterText(find.byType(TextField), timetableExample);
     await _settle(tester);
     await _shot(tester, 'en_light_timetable_import');
+  });
+
+  testWidgets('Panopto recordings', (tester) async {
+    // test_screenshots isn't under test/, where this is allowed.
+    // ignore: invalid_use_of_visible_for_testing_member
+    FlutterSecureStorage.setMockInitialValues({});
+    const redirect =
+        'https://leccheck-sync.leccheck.workers.dev/v1/panopto/done';
+    final off = await _pumpApp(
+      tester,
+      locale: 'en',
+      mode: ThemeMode.light,
+      overrides: [panoptoRedirectProvider.overrideWithValue(redirect)],
+    );
+    await _go(tester, off, '/panopto-setup');
+    await _shot(tester, 'en_light_panopto_setup');
+
+    // Connected, with the practice's group to choose.
+    final connected = PanoptoView(
+      status: PanoptoStatus.connected,
+      site: 'huji.cloud.panopto.eu',
+      report: LinkerReport(
+        at: _now.subtract(const Duration(hours: 1)),
+        written: 9,
+        questions: const [
+          OpenGroupQuestion(
+            'calc',
+            GroupQuestion(
+              meetingId: 'calc-p',
+              options: [
+                GroupOption(group: 'א', room: '7', type: SessionType.practice),
+                GroupOption(group: 'ב', room: '12', type: SessionType.practice),
+              ],
+              suggested: 'א',
+              hint: GroupHint.room,
+            ),
+          ),
+        ],
+      ),
+    );
+    final c = await _pumpApp(
+      tester,
+      locale: 'he',
+      mode: ThemeMode.dark,
+      overrides: [
+        panoptoRedirectProvider.overrideWithValue(redirect),
+        panoptoProvider.overrideWith(() => _FixedPanopto(connected)),
+        foundRecordingCountProvider.overrideWith((ref) => Stream.value(9)),
+        panoptoFoldersProvider.overrideWith(
+          (ref) => Stream.value({
+            'calc': const [
+              PanoptoFolderRef(
+                id: '11111111-2222-4333-8444-555555555555',
+                name: '2026-27 -> 104031_1-חשבון אינפיניטסימלי 1',
+              ),
+            ],
+          }),
+        ),
+        panoptoGroupsProvider.overrideWith(
+          (ref) => Stream.value(const {'calc-l': 'א'}),
+        ),
+      ],
+    );
+    await _go(tester, c, '/settings');
+    await tester.tap(find.text('הקלטות Panopto'));
+    await _settle(tester);
+    await _shot(tester, 'he_dark_panopto');
+    await _go(tester, c, '/courses/calc');
+    await tester.ensureVisible(find.byType(PanoptoCourseSection));
+    await _settle(tester);
+    await _shot(tester, 'he_dark_course_panopto');
   });
 
   testWidgets('English · light', (tester) async {
@@ -781,6 +858,18 @@ class _FixedMove extends MoveController {
 }
 
 /// A fixed update state instead of checking GitHub.
+class _FixedPanopto extends PanoptoController {
+  _FixedPanopto(this.fixed);
+
+  final PanoptoView fixed;
+
+  @override
+  PanoptoView build() => fixed;
+
+  @override
+  Future<void> reload() async {}
+}
+
 class _FixedUpdate extends UpdateController {
   _FixedUpdate(this.fixed);
 

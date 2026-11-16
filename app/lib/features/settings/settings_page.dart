@@ -37,6 +37,7 @@ import 'move_dialog.dart';
 import 'update_card.dart';
 import 'update_dialog.dart';
 import 'notifications_section.dart';
+import 'panopto_section.dart';
 
 final _versionProvider = FutureProvider<String>((ref) async {
   final info = await PackageInfo.fromPlatform();
@@ -121,6 +122,9 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       ]),
       _Section(LecIcons.courses, l.navCourses, l.coursesSummary, const [
         _CourseOptions(),
+      ]),
+      _Section(LecIcons.recording, l.panopto, l.panoptoSummary, const [
+        PanoptoSection(),
       ]),
       _Section(LecIcons.exportData, l.data, l.dataSummary, const [
         _DataSection(),

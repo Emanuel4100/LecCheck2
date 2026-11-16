@@ -682,6 +682,18 @@ class $CoursesTable extends Courses with TableInfo<$CoursesTable, CourseRow> {
     requiredDuringInsert: false,
     defaultValue: const Constant('[]'),
   );
+  static const VerificationMeta _panoptoFoldersMeta = const VerificationMeta(
+    'panoptoFolders',
+  );
+  @override
+  late final GeneratedColumn<String> panoptoFolders = GeneratedColumn<String>(
+    'panopto_folders',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -698,6 +710,7 @@ class $CoursesTable extends Courses with TableInfo<$CoursesTable, CourseRow> {
     sortOrder,
     shortName,
     contacts,
+    panoptoFolders,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -798,6 +811,15 @@ class $CoursesTable extends Courses with TableInfo<$CoursesTable, CourseRow> {
         contacts.isAcceptableOrUnknown(data['contacts']!, _contactsMeta),
       );
     }
+    if (data.containsKey('panopto_folders')) {
+      context.handle(
+        _panoptoFoldersMeta,
+        panoptoFolders.isAcceptableOrUnknown(
+          data['panopto_folders']!,
+          _panoptoFoldersMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -863,6 +885,10 @@ class $CoursesTable extends Courses with TableInfo<$CoursesTable, CourseRow> {
         DriftSqlType.string,
         data['${effectivePrefix}contacts'],
       )!,
+      panoptoFolders: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}panopto_folders'],
+      )!,
     );
   }
 
@@ -899,6 +925,12 @@ class CourseRow extends DataClass implements Insertable<CourseRow> {
   /// JSON list of `{name, role, email}` (schema v5). [lecturer] holds the
   /// lecturers' names from it, for lists and older app versions.
   final String contacts;
+
+  /// Panopto folders with this course's recordings (schema v6): `''` = not
+  /// chosen yet (found by the course number), or a JSON list of
+  /// `{id, name}` (`[]` = none). Only [ScheduleRepository.setPanoptoFolders]
+  /// changes it: course edits leave it alone.
+  final String panoptoFolders;
   const CourseRow({
     required this.id,
     required this.deleted,
@@ -914,6 +946,7 @@ class CourseRow extends DataClass implements Insertable<CourseRow> {
     required this.sortOrder,
     required this.shortName,
     required this.contacts,
+    required this.panoptoFolders,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -932,6 +965,7 @@ class CourseRow extends DataClass implements Insertable<CourseRow> {
     map['sort_order'] = Variable<int>(sortOrder);
     map['short_name'] = Variable<String>(shortName);
     map['contacts'] = Variable<String>(contacts);
+    map['panopto_folders'] = Variable<String>(panoptoFolders);
     return map;
   }
 
@@ -951,6 +985,7 @@ class CourseRow extends DataClass implements Insertable<CourseRow> {
       sortOrder: Value(sortOrder),
       shortName: Value(shortName),
       contacts: Value(contacts),
+      panoptoFolders: Value(panoptoFolders),
     );
   }
 
@@ -974,6 +1009,7 @@ class CourseRow extends DataClass implements Insertable<CourseRow> {
       sortOrder: serializer.fromJson<int>(json['sortOrder']),
       shortName: serializer.fromJson<String>(json['shortName']),
       contacts: serializer.fromJson<String>(json['contacts']),
+      panoptoFolders: serializer.fromJson<String>(json['panoptoFolders']),
     );
   }
   @override
@@ -994,6 +1030,7 @@ class CourseRow extends DataClass implements Insertable<CourseRow> {
       'sortOrder': serializer.toJson<int>(sortOrder),
       'shortName': serializer.toJson<String>(shortName),
       'contacts': serializer.toJson<String>(contacts),
+      'panoptoFolders': serializer.toJson<String>(panoptoFolders),
     };
   }
 
@@ -1012,6 +1049,7 @@ class CourseRow extends DataClass implements Insertable<CourseRow> {
     int? sortOrder,
     String? shortName,
     String? contacts,
+    String? panoptoFolders,
   }) => CourseRow(
     id: id ?? this.id,
     deleted: deleted ?? this.deleted,
@@ -1027,6 +1065,7 @@ class CourseRow extends DataClass implements Insertable<CourseRow> {
     sortOrder: sortOrder ?? this.sortOrder,
     shortName: shortName ?? this.shortName,
     contacts: contacts ?? this.contacts,
+    panoptoFolders: panoptoFolders ?? this.panoptoFolders,
   );
   CourseRow copyWithCompanion(CoursesCompanion data) {
     return CourseRow(
@@ -1046,6 +1085,9 @@ class CourseRow extends DataClass implements Insertable<CourseRow> {
       sortOrder: data.sortOrder.present ? data.sortOrder.value : this.sortOrder,
       shortName: data.shortName.present ? data.shortName.value : this.shortName,
       contacts: data.contacts.present ? data.contacts.value : this.contacts,
+      panoptoFolders: data.panoptoFolders.present
+          ? data.panoptoFolders.value
+          : this.panoptoFolders,
     );
   }
 
@@ -1065,7 +1107,8 @@ class CourseRow extends DataClass implements Insertable<CourseRow> {
           ..write('links: $links, ')
           ..write('sortOrder: $sortOrder, ')
           ..write('shortName: $shortName, ')
-          ..write('contacts: $contacts')
+          ..write('contacts: $contacts, ')
+          ..write('panoptoFolders: $panoptoFolders')
           ..write(')'))
         .toString();
   }
@@ -1086,6 +1129,7 @@ class CourseRow extends DataClass implements Insertable<CourseRow> {
     sortOrder,
     shortName,
     contacts,
+    panoptoFolders,
   );
   @override
   bool operator ==(Object other) =>
@@ -1104,7 +1148,8 @@ class CourseRow extends DataClass implements Insertable<CourseRow> {
           other.links == this.links &&
           other.sortOrder == this.sortOrder &&
           other.shortName == this.shortName &&
-          other.contacts == this.contacts);
+          other.contacts == this.contacts &&
+          other.panoptoFolders == this.panoptoFolders);
 }
 
 class CoursesCompanion extends UpdateCompanion<CourseRow> {
@@ -1122,6 +1167,7 @@ class CoursesCompanion extends UpdateCompanion<CourseRow> {
   final Value<int> sortOrder;
   final Value<String> shortName;
   final Value<String> contacts;
+  final Value<String> panoptoFolders;
   final Value<int> rowid;
   const CoursesCompanion({
     this.id = const Value.absent(),
@@ -1138,6 +1184,7 @@ class CoursesCompanion extends UpdateCompanion<CourseRow> {
     this.sortOrder = const Value.absent(),
     this.shortName = const Value.absent(),
     this.contacts = const Value.absent(),
+    this.panoptoFolders = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   CoursesCompanion.insert({
@@ -1155,6 +1202,7 @@ class CoursesCompanion extends UpdateCompanion<CourseRow> {
     this.sortOrder = const Value.absent(),
     this.shortName = const Value.absent(),
     this.contacts = const Value.absent(),
+    this.panoptoFolders = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        semesterId = Value(semesterId),
@@ -1174,6 +1222,7 @@ class CoursesCompanion extends UpdateCompanion<CourseRow> {
     Expression<int>? sortOrder,
     Expression<String>? shortName,
     Expression<String>? contacts,
+    Expression<String>? panoptoFolders,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -1191,6 +1240,7 @@ class CoursesCompanion extends UpdateCompanion<CourseRow> {
       if (sortOrder != null) 'sort_order': sortOrder,
       if (shortName != null) 'short_name': shortName,
       if (contacts != null) 'contacts': contacts,
+      if (panoptoFolders != null) 'panopto_folders': panoptoFolders,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -1210,6 +1260,7 @@ class CoursesCompanion extends UpdateCompanion<CourseRow> {
     Value<int>? sortOrder,
     Value<String>? shortName,
     Value<String>? contacts,
+    Value<String>? panoptoFolders,
     Value<int>? rowid,
   }) {
     return CoursesCompanion(
@@ -1227,6 +1278,7 @@ class CoursesCompanion extends UpdateCompanion<CourseRow> {
       sortOrder: sortOrder ?? this.sortOrder,
       shortName: shortName ?? this.shortName,
       contacts: contacts ?? this.contacts,
+      panoptoFolders: panoptoFolders ?? this.panoptoFolders,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -1276,6 +1328,9 @@ class CoursesCompanion extends UpdateCompanion<CourseRow> {
     if (contacts.present) {
       map['contacts'] = Variable<String>(contacts.value);
     }
+    if (panoptoFolders.present) {
+      map['panopto_folders'] = Variable<String>(panoptoFolders.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -1299,6 +1354,7 @@ class CoursesCompanion extends UpdateCompanion<CourseRow> {
           ..write('sortOrder: $sortOrder, ')
           ..write('shortName: $shortName, ')
           ..write('contacts: $contacts, ')
+          ..write('panoptoFolders: $panoptoFolders, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -1474,6 +1530,18 @@ class $MeetingsTable extends Meetings
     requiredDuringInsert: false,
     defaultValue: const Constant('[]'),
   );
+  static const VerificationMeta _panoptoGroupMeta = const VerificationMeta(
+    'panoptoGroup',
+  );
+  @override
+  late final GeneratedColumn<String> panoptoGroup = GeneratedColumn<String>(
+    'panopto_group',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -1491,6 +1559,7 @@ class $MeetingsTable extends Meetings
     validFrom,
     validUntil,
     links,
+    panoptoGroup,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -1602,6 +1671,15 @@ class $MeetingsTable extends Meetings
         links.isAcceptableOrUnknown(data['links']!, _linksMeta),
       );
     }
+    if (data.containsKey('panopto_group')) {
+      context.handle(
+        _panoptoGroupMeta,
+        panoptoGroup.isAcceptableOrUnknown(
+          data['panopto_group']!,
+          _panoptoGroupMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -1671,6 +1749,10 @@ class $MeetingsTable extends Meetings
         DriftSqlType.string,
         data['${effectivePrefix}links'],
       )!,
+      panoptoGroup: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}panopto_group'],
+      )!,
     );
   }
 
@@ -1700,6 +1782,11 @@ class MeetingRow extends DataClass implements Insertable<MeetingRow> {
   final String? validFrom;
   final String? validUntil;
   final String links;
+
+  /// The Panopto group whose recordings are this meeting's, e.g. `ו`, when
+  /// several groups are recorded at its time (schema v6); `''` = not asked.
+  /// Only [ScheduleRepository.setPanoptoGroup] changes it.
+  final String panoptoGroup;
   const MeetingRow({
     required this.id,
     required this.deleted,
@@ -1716,6 +1803,7 @@ class MeetingRow extends DataClass implements Insertable<MeetingRow> {
     this.validFrom,
     this.validUntil,
     required this.links,
+    required this.panoptoGroup,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -1743,6 +1831,7 @@ class MeetingRow extends DataClass implements Insertable<MeetingRow> {
       map['valid_until'] = Variable<String>(validUntil);
     }
     map['links'] = Variable<String>(links);
+    map['panopto_group'] = Variable<String>(panoptoGroup);
     return map;
   }
 
@@ -1769,6 +1858,7 @@ class MeetingRow extends DataClass implements Insertable<MeetingRow> {
           ? const Value.absent()
           : Value(validUntil),
       links: Value(links),
+      panoptoGroup: Value(panoptoGroup),
     );
   }
 
@@ -1793,6 +1883,7 @@ class MeetingRow extends DataClass implements Insertable<MeetingRow> {
       validFrom: serializer.fromJson<String?>(json['validFrom']),
       validUntil: serializer.fromJson<String?>(json['validUntil']),
       links: serializer.fromJson<String>(json['links']),
+      panoptoGroup: serializer.fromJson<String>(json['panoptoGroup']),
     );
   }
   @override
@@ -1814,6 +1905,7 @@ class MeetingRow extends DataClass implements Insertable<MeetingRow> {
       'validFrom': serializer.toJson<String?>(validFrom),
       'validUntil': serializer.toJson<String?>(validUntil),
       'links': serializer.toJson<String>(links),
+      'panoptoGroup': serializer.toJson<String>(panoptoGroup),
     };
   }
 
@@ -1833,6 +1925,7 @@ class MeetingRow extends DataClass implements Insertable<MeetingRow> {
     Value<String?> validFrom = const Value.absent(),
     Value<String?> validUntil = const Value.absent(),
     String? links,
+    String? panoptoGroup,
   }) => MeetingRow(
     id: id ?? this.id,
     deleted: deleted ?? this.deleted,
@@ -1849,6 +1942,7 @@ class MeetingRow extends DataClass implements Insertable<MeetingRow> {
     validFrom: validFrom.present ? validFrom.value : this.validFrom,
     validUntil: validUntil.present ? validUntil.value : this.validUntil,
     links: links ?? this.links,
+    panoptoGroup: panoptoGroup ?? this.panoptoGroup,
   );
   MeetingRow copyWithCompanion(MeetingsCompanion data) {
     return MeetingRow(
@@ -1871,6 +1965,9 @@ class MeetingRow extends DataClass implements Insertable<MeetingRow> {
           ? data.validUntil.value
           : this.validUntil,
       links: data.links.present ? data.links.value : this.links,
+      panoptoGroup: data.panoptoGroup.present
+          ? data.panoptoGroup.value
+          : this.panoptoGroup,
     );
   }
 
@@ -1891,7 +1988,8 @@ class MeetingRow extends DataClass implements Insertable<MeetingRow> {
           ..write('intervalWeeks: $intervalWeeks, ')
           ..write('validFrom: $validFrom, ')
           ..write('validUntil: $validUntil, ')
-          ..write('links: $links')
+          ..write('links: $links, ')
+          ..write('panoptoGroup: $panoptoGroup')
           ..write(')'))
         .toString();
   }
@@ -1913,6 +2011,7 @@ class MeetingRow extends DataClass implements Insertable<MeetingRow> {
     validFrom,
     validUntil,
     links,
+    panoptoGroup,
   );
   @override
   bool operator ==(Object other) =>
@@ -1932,7 +2031,8 @@ class MeetingRow extends DataClass implements Insertable<MeetingRow> {
           other.intervalWeeks == this.intervalWeeks &&
           other.validFrom == this.validFrom &&
           other.validUntil == this.validUntil &&
-          other.links == this.links);
+          other.links == this.links &&
+          other.panoptoGroup == this.panoptoGroup);
 }
 
 class MeetingsCompanion extends UpdateCompanion<MeetingRow> {
@@ -1951,6 +2051,7 @@ class MeetingsCompanion extends UpdateCompanion<MeetingRow> {
   final Value<String?> validFrom;
   final Value<String?> validUntil;
   final Value<String> links;
+  final Value<String> panoptoGroup;
   final Value<int> rowid;
   const MeetingsCompanion({
     this.id = const Value.absent(),
@@ -1968,6 +2069,7 @@ class MeetingsCompanion extends UpdateCompanion<MeetingRow> {
     this.validFrom = const Value.absent(),
     this.validUntil = const Value.absent(),
     this.links = const Value.absent(),
+    this.panoptoGroup = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   MeetingsCompanion.insert({
@@ -1986,6 +2088,7 @@ class MeetingsCompanion extends UpdateCompanion<MeetingRow> {
     this.validFrom = const Value.absent(),
     this.validUntil = const Value.absent(),
     this.links = const Value.absent(),
+    this.panoptoGroup = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        courseId = Value(courseId),
@@ -2007,6 +2110,7 @@ class MeetingsCompanion extends UpdateCompanion<MeetingRow> {
     Expression<String>? validFrom,
     Expression<String>? validUntil,
     Expression<String>? links,
+    Expression<String>? panoptoGroup,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -2025,6 +2129,7 @@ class MeetingsCompanion extends UpdateCompanion<MeetingRow> {
       if (validFrom != null) 'valid_from': validFrom,
       if (validUntil != null) 'valid_until': validUntil,
       if (links != null) 'links': links,
+      if (panoptoGroup != null) 'panopto_group': panoptoGroup,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -2045,6 +2150,7 @@ class MeetingsCompanion extends UpdateCompanion<MeetingRow> {
     Value<String?>? validFrom,
     Value<String?>? validUntil,
     Value<String>? links,
+    Value<String>? panoptoGroup,
     Value<int>? rowid,
   }) {
     return MeetingsCompanion(
@@ -2063,6 +2169,7 @@ class MeetingsCompanion extends UpdateCompanion<MeetingRow> {
       validFrom: validFrom ?? this.validFrom,
       validUntil: validUntil ?? this.validUntil,
       links: links ?? this.links,
+      panoptoGroup: panoptoGroup ?? this.panoptoGroup,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -2115,6 +2222,9 @@ class MeetingsCompanion extends UpdateCompanion<MeetingRow> {
     if (links.present) {
       map['links'] = Variable<String>(links.value);
     }
+    if (panoptoGroup.present) {
+      map['panopto_group'] = Variable<String>(panoptoGroup.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -2139,6 +2249,7 @@ class MeetingsCompanion extends UpdateCompanion<MeetingRow> {
           ..write('validFrom: $validFrom, ')
           ..write('validUntil: $validUntil, ')
           ..write('links: $links, ')
+          ..write('panoptoGroup: $panoptoGroup, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -2298,6 +2409,17 @@ class $SessionOverridesTable extends SessionOverrides
     ),
     defaultValue: const Constant(false),
   );
+  static const VerificationMeta _recordingFoundMeta = const VerificationMeta(
+    'recordingFound',
+  );
+  @override
+  late final GeneratedColumn<String> recordingFound = GeneratedColumn<String>(
+    'recording_found',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -2313,6 +2435,7 @@ class $SessionOverridesTable extends SessionOverrides
     movedEndMin,
     movedLocation,
     excluded,
+    recordingFound,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -2422,6 +2545,15 @@ class $SessionOverridesTable extends SessionOverrides
         excluded.isAcceptableOrUnknown(data['excluded']!, _excludedMeta),
       );
     }
+    if (data.containsKey('recording_found')) {
+      context.handle(
+        _recordingFoundMeta,
+        recordingFound.isAcceptableOrUnknown(
+          data['recording_found']!,
+          _recordingFoundMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -2483,6 +2615,10 @@ class $SessionOverridesTable extends SessionOverrides
         DriftSqlType.bool,
         data['${effectivePrefix}excluded'],
       )!,
+      recordingFound: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}recording_found'],
+      ),
     );
   }
 
@@ -2514,6 +2650,13 @@ class SessionOverrideRow extends DataClass
   /// Left out of attendance: percentages, streaks and requirements (schema
   /// v4), whatever its status.
   final bool excluded;
+
+  /// A recording link found in Panopto (schema v6). [recordingUrl] is the
+  /// user's own and wins: the session shows [recordingFound] only while
+  /// [recordingUrl] is null (`''` = the user removed the link). Separate
+  /// columns, so a found link never overwrites a pasted one in sync, even
+  /// when the paste reaches the server later.
+  final String? recordingFound;
   const SessionOverrideRow({
     required this.id,
     required this.deleted,
@@ -2528,6 +2671,7 @@ class SessionOverrideRow extends DataClass
     this.movedEndMin,
     this.movedLocation,
     required this.excluded,
+    this.recordingFound,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -2557,6 +2701,9 @@ class SessionOverrideRow extends DataClass
       map['moved_location'] = Variable<String>(movedLocation);
     }
     map['excluded'] = Variable<bool>(excluded);
+    if (!nullToAbsent || recordingFound != null) {
+      map['recording_found'] = Variable<String>(recordingFound);
+    }
     return map;
   }
 
@@ -2587,6 +2734,9 @@ class SessionOverrideRow extends DataClass
           ? const Value.absent()
           : Value(movedLocation),
       excluded: Value(excluded),
+      recordingFound: recordingFound == null && nullToAbsent
+          ? const Value.absent()
+          : Value(recordingFound),
     );
   }
 
@@ -2609,6 +2759,7 @@ class SessionOverrideRow extends DataClass
       movedEndMin: serializer.fromJson<int?>(json['movedEndMin']),
       movedLocation: serializer.fromJson<String?>(json['movedLocation']),
       excluded: serializer.fromJson<bool>(json['excluded']),
+      recordingFound: serializer.fromJson<String?>(json['recordingFound']),
     );
   }
   @override
@@ -2628,6 +2779,7 @@ class SessionOverrideRow extends DataClass
       'movedEndMin': serializer.toJson<int?>(movedEndMin),
       'movedLocation': serializer.toJson<String?>(movedLocation),
       'excluded': serializer.toJson<bool>(excluded),
+      'recordingFound': serializer.toJson<String?>(recordingFound),
     };
   }
 
@@ -2645,6 +2797,7 @@ class SessionOverrideRow extends DataClass
     Value<int?> movedEndMin = const Value.absent(),
     Value<String?> movedLocation = const Value.absent(),
     bool? excluded,
+    Value<String?> recordingFound = const Value.absent(),
   }) => SessionOverrideRow(
     id: id ?? this.id,
     deleted: deleted ?? this.deleted,
@@ -2663,6 +2816,9 @@ class SessionOverrideRow extends DataClass
         ? movedLocation.value
         : this.movedLocation,
     excluded: excluded ?? this.excluded,
+    recordingFound: recordingFound.present
+        ? recordingFound.value
+        : this.recordingFound,
   );
   SessionOverrideRow copyWithCompanion(SessionOverridesCompanion data) {
     return SessionOverrideRow(
@@ -2689,6 +2845,9 @@ class SessionOverrideRow extends DataClass
           ? data.movedLocation.value
           : this.movedLocation,
       excluded: data.excluded.present ? data.excluded.value : this.excluded,
+      recordingFound: data.recordingFound.present
+          ? data.recordingFound.value
+          : this.recordingFound,
     );
   }
 
@@ -2707,7 +2866,8 @@ class SessionOverrideRow extends DataClass
           ..write('movedStartMin: $movedStartMin, ')
           ..write('movedEndMin: $movedEndMin, ')
           ..write('movedLocation: $movedLocation, ')
-          ..write('excluded: $excluded')
+          ..write('excluded: $excluded, ')
+          ..write('recordingFound: $recordingFound')
           ..write(')'))
         .toString();
   }
@@ -2727,6 +2887,7 @@ class SessionOverrideRow extends DataClass
     movedEndMin,
     movedLocation,
     excluded,
+    recordingFound,
   );
   @override
   bool operator ==(Object other) =>
@@ -2744,7 +2905,8 @@ class SessionOverrideRow extends DataClass
           other.movedStartMin == this.movedStartMin &&
           other.movedEndMin == this.movedEndMin &&
           other.movedLocation == this.movedLocation &&
-          other.excluded == this.excluded);
+          other.excluded == this.excluded &&
+          other.recordingFound == this.recordingFound);
 }
 
 class SessionOverridesCompanion extends UpdateCompanion<SessionOverrideRow> {
@@ -2761,6 +2923,7 @@ class SessionOverridesCompanion extends UpdateCompanion<SessionOverrideRow> {
   final Value<int?> movedEndMin;
   final Value<String?> movedLocation;
   final Value<bool> excluded;
+  final Value<String?> recordingFound;
   final Value<int> rowid;
   const SessionOverridesCompanion({
     this.id = const Value.absent(),
@@ -2776,6 +2939,7 @@ class SessionOverridesCompanion extends UpdateCompanion<SessionOverrideRow> {
     this.movedEndMin = const Value.absent(),
     this.movedLocation = const Value.absent(),
     this.excluded = const Value.absent(),
+    this.recordingFound = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   SessionOverridesCompanion.insert({
@@ -2792,6 +2956,7 @@ class SessionOverridesCompanion extends UpdateCompanion<SessionOverrideRow> {
     this.movedEndMin = const Value.absent(),
     this.movedLocation = const Value.absent(),
     this.excluded = const Value.absent(),
+    this.recordingFound = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        meetingId = Value(meetingId),
@@ -2810,6 +2975,7 @@ class SessionOverridesCompanion extends UpdateCompanion<SessionOverrideRow> {
     Expression<int>? movedEndMin,
     Expression<String>? movedLocation,
     Expression<bool>? excluded,
+    Expression<String>? recordingFound,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -2826,6 +2992,7 @@ class SessionOverridesCompanion extends UpdateCompanion<SessionOverrideRow> {
       if (movedEndMin != null) 'moved_end_min': movedEndMin,
       if (movedLocation != null) 'moved_location': movedLocation,
       if (excluded != null) 'excluded': excluded,
+      if (recordingFound != null) 'recording_found': recordingFound,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -2844,6 +3011,7 @@ class SessionOverridesCompanion extends UpdateCompanion<SessionOverrideRow> {
     Value<int?>? movedEndMin,
     Value<String?>? movedLocation,
     Value<bool>? excluded,
+    Value<String?>? recordingFound,
     Value<int>? rowid,
   }) {
     return SessionOverridesCompanion(
@@ -2860,6 +3028,7 @@ class SessionOverridesCompanion extends UpdateCompanion<SessionOverrideRow> {
       movedEndMin: movedEndMin ?? this.movedEndMin,
       movedLocation: movedLocation ?? this.movedLocation,
       excluded: excluded ?? this.excluded,
+      recordingFound: recordingFound ?? this.recordingFound,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -2906,6 +3075,9 @@ class SessionOverridesCompanion extends UpdateCompanion<SessionOverrideRow> {
     if (excluded.present) {
       map['excluded'] = Variable<bool>(excluded.value);
     }
+    if (recordingFound.present) {
+      map['recording_found'] = Variable<String>(recordingFound.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -2928,6 +3100,7 @@ class SessionOverridesCompanion extends UpdateCompanion<SessionOverrideRow> {
           ..write('movedEndMin: $movedEndMin, ')
           ..write('movedLocation: $movedLocation, ')
           ..write('excluded: $excluded, ')
+          ..write('recordingFound: $recordingFound, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -5248,6 +5421,7 @@ typedef $$CoursesTableCreateCompanionBuilder = CoursesCompanion Function({
   Value<int> sortOrder,
   Value<String> shortName,
   Value<String> contacts,
+  Value<String> panoptoFolders,
   Value<int> rowid,
 });
 typedef $$CoursesTableUpdateCompanionBuilder = CoursesCompanion Function({
@@ -5265,6 +5439,7 @@ typedef $$CoursesTableUpdateCompanionBuilder = CoursesCompanion Function({
   Value<int> sortOrder,
   Value<String> shortName,
   Value<String> contacts,
+  Value<String> panoptoFolders,
   Value<int> rowid,
 });
 
@@ -5344,6 +5519,11 @@ class $$CoursesTableFilterComposer
 
   ColumnFilters<String> get contacts => $composableBuilder(
     column: $table.contacts,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get panoptoFolders => $composableBuilder(
+    column: $table.panoptoFolders,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -5426,6 +5606,11 @@ class $$CoursesTableOrderingComposer
     column: $table.contacts,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get panoptoFolders => $composableBuilder(
+    column: $table.panoptoFolders,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$CoursesTableAnnotationComposer
@@ -5480,6 +5665,11 @@ class $$CoursesTableAnnotationComposer
 
   GeneratedColumn<String> get contacts =>
       $composableBuilder(column: $table.contacts, builder: (column) => column);
+
+  GeneratedColumn<String> get panoptoFolders => $composableBuilder(
+    column: $table.panoptoFolders,
+    builder: (column) => column,
+  );
 }
 
 class $$CoursesTableTableManager
@@ -5524,6 +5714,7 @@ class $$CoursesTableTableManager
                 Value<int> sortOrder = const Value.absent(),
                 Value<String> shortName = const Value.absent(),
                 Value<String> contacts = const Value.absent(),
+                Value<String> panoptoFolders = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => CoursesCompanion(
                 id: id,
@@ -5540,6 +5731,7 @@ class $$CoursesTableTableManager
                 sortOrder: sortOrder,
                 shortName: shortName,
                 contacts: contacts,
+                panoptoFolders: panoptoFolders,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -5558,6 +5750,7 @@ class $$CoursesTableTableManager
                 Value<int> sortOrder = const Value.absent(),
                 Value<String> shortName = const Value.absent(),
                 Value<String> contacts = const Value.absent(),
+                Value<String> panoptoFolders = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => CoursesCompanion.insert(
                 id: id,
@@ -5574,6 +5767,7 @@ class $$CoursesTableTableManager
                 sortOrder: sortOrder,
                 shortName: shortName,
                 contacts: contacts,
+                panoptoFolders: panoptoFolders,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
@@ -5623,6 +5817,7 @@ typedef $$MeetingsTableCreateCompanionBuilder = MeetingsCompanion Function({
   Value<String?> validFrom,
   Value<String?> validUntil,
   Value<String> links,
+  Value<String> panoptoGroup,
   Value<int> rowid,
 });
 typedef $$MeetingsTableUpdateCompanionBuilder = MeetingsCompanion Function({
@@ -5641,6 +5836,7 @@ typedef $$MeetingsTableUpdateCompanionBuilder = MeetingsCompanion Function({
   Value<String?> validFrom,
   Value<String?> validUntil,
   Value<String> links,
+  Value<String> panoptoGroup,
   Value<int> rowid,
 });
 
@@ -5725,6 +5921,11 @@ class $$MeetingsTableFilterComposer
 
   ColumnFilters<String> get links => $composableBuilder(
     column: $table.links,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get panoptoGroup => $composableBuilder(
+    column: $table.panoptoGroup,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -5812,6 +6013,11 @@ class $$MeetingsTableOrderingComposer
     column: $table.links,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get panoptoGroup => $composableBuilder(
+    column: $table.panoptoGroup,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$MeetingsTableAnnotationComposer
@@ -5871,6 +6077,11 @@ class $$MeetingsTableAnnotationComposer
 
   GeneratedColumn<String> get links =>
       $composableBuilder(column: $table.links, builder: (column) => column);
+
+  GeneratedColumn<String> get panoptoGroup => $composableBuilder(
+    column: $table.panoptoGroup,
+    builder: (column) => column,
+  );
 }
 
 class $$MeetingsTableTableManager
@@ -5919,6 +6130,7 @@ class $$MeetingsTableTableManager
                 Value<String?> validFrom = const Value.absent(),
                 Value<String?> validUntil = const Value.absent(),
                 Value<String> links = const Value.absent(),
+                Value<String> panoptoGroup = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => MeetingsCompanion(
                 id: id,
@@ -5936,6 +6148,7 @@ class $$MeetingsTableTableManager
                 validFrom: validFrom,
                 validUntil: validUntil,
                 links: links,
+                panoptoGroup: panoptoGroup,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -5955,6 +6168,7 @@ class $$MeetingsTableTableManager
                 Value<String?> validFrom = const Value.absent(),
                 Value<String?> validUntil = const Value.absent(),
                 Value<String> links = const Value.absent(),
+                Value<String> panoptoGroup = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => MeetingsCompanion.insert(
                 id: id,
@@ -5972,6 +6186,7 @@ class $$MeetingsTableTableManager
                 validFrom: validFrom,
                 validUntil: validUntil,
                 links: links,
+                panoptoGroup: panoptoGroup,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
@@ -6020,6 +6235,7 @@ typedef $$SessionOverridesTableCreateCompanionBuilder =
       Value<int?> movedEndMin,
       Value<String?> movedLocation,
       Value<bool> excluded,
+      Value<String?> recordingFound,
       Value<int> rowid,
     });
 typedef $$SessionOverridesTableUpdateCompanionBuilder =
@@ -6037,6 +6253,7 @@ typedef $$SessionOverridesTableUpdateCompanionBuilder =
       Value<int?> movedEndMin,
       Value<String?> movedLocation,
       Value<bool> excluded,
+      Value<String?> recordingFound,
       Value<int> rowid,
     });
 
@@ -6111,6 +6328,11 @@ class $$SessionOverridesTableFilterComposer
 
   ColumnFilters<bool> get excluded => $composableBuilder(
     column: $table.excluded,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get recordingFound => $composableBuilder(
+    column: $table.recordingFound,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -6188,6 +6410,11 @@ class $$SessionOverridesTableOrderingComposer
     column: $table.excluded,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get recordingFound => $composableBuilder(
+    column: $table.recordingFound,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$SessionOverridesTableAnnotationComposer
@@ -6247,6 +6474,11 @@ class $$SessionOverridesTableAnnotationComposer
 
   GeneratedColumn<bool> get excluded =>
       $composableBuilder(column: $table.excluded, builder: (column) => column);
+
+  GeneratedColumn<String> get recordingFound => $composableBuilder(
+    column: $table.recordingFound,
+    builder: (column) => column,
+  );
 }
 
 class $$SessionOverridesTableTableManager
@@ -6299,6 +6531,7 @@ class $$SessionOverridesTableTableManager
                 Value<int?> movedEndMin = const Value.absent(),
                 Value<String?> movedLocation = const Value.absent(),
                 Value<bool> excluded = const Value.absent(),
+                Value<String?> recordingFound = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => SessionOverridesCompanion(
                 id: id,
@@ -6314,6 +6547,7 @@ class $$SessionOverridesTableTableManager
                 movedEndMin: movedEndMin,
                 movedLocation: movedLocation,
                 excluded: excluded,
+                recordingFound: recordingFound,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -6331,6 +6565,7 @@ class $$SessionOverridesTableTableManager
                 Value<int?> movedEndMin = const Value.absent(),
                 Value<String?> movedLocation = const Value.absent(),
                 Value<bool> excluded = const Value.absent(),
+                Value<String?> recordingFound = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => SessionOverridesCompanion.insert(
                 id: id,
@@ -6346,6 +6581,7 @@ class $$SessionOverridesTableTableManager
                 movedEndMin: movedEndMin,
                 movedLocation: movedLocation,
                 excluded: excluded,
+                recordingFound: recordingFound,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

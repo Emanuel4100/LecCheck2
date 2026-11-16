@@ -6,6 +6,7 @@ import '../../domain/holidays/jewish_holidays.dart';
 import '../../domain/local_date.dart';
 import '../../domain/occurrence.dart';
 import '../../domain/occurrence_engine.dart';
+import '../../domain/recording_match.dart';
 import '../../domain/schedule_types.dart';
 import '../../domain/semester_calendar.dart';
 import '../../domain/semester_data.dart';
@@ -163,6 +164,7 @@ class _Adapter<D extends DataClass> {
     this.table,
     this.fromJson, {
     this.added = const {},
+    this.own = const {},
     this.check,
   });
   final TableInfo<Table, D> table;
@@ -172,6 +174,12 @@ class _Adapter<D extends DataClass> {
   /// older app versions (synced rows, backups, snapshots) don't have them,
   /// and must still load.
   final Map<String, Object?> added;
+
+  /// Columns only their own setters change (the Panopto ones): the app's
+  /// domain types don't carry them, so a course or meeting saved from an
+  /// editor leaves them as they are. Backups and snapshots still restore
+  /// them.
+  final Set<String> own;
 
   /// Throws if the app couldn't use the row (e.g. a date that doesn't
   /// exist), so files with such rows are refused row by row.
@@ -224,9 +232,15 @@ class ScheduleRepository {
   late final _courses = _Adapter<CourseRow>(
     db.courses,
     CourseRow.fromJson,
-    added: const {'shortName': '', 'contacts': '[]'},
+    added: const {'shortName': '', 'contacts': '[]', 'panoptoFolders': ''},
+    own: const {'panoptoFolders'},
   );
-  late final _meetings = _Adapter<MeetingRow>(db.meetings, MeetingRow.fromJson);
+  late final _meetings = _Adapter<MeetingRow>(
+    db.meetings,
+    MeetingRow.fromJson,
+    added: const {'panoptoGroup': ''},
+    own: const {'panoptoGroup'},
+  );
   late final _overrides = _Adapter<SessionOverrideRow>(
     db.sessionOverrides,
     SessionOverrideRow.fromJson,
@@ -549,7 +563,7 @@ class ScheduleRepository {
 
   /// Adds one meeting to a course (Week's quick add).
   Future<void> addMeeting(MeetingRule meeting) =>
-      db.transaction(() => _upsert(_meetings, meeting.toRow()));
+      db.transaction(() => _upsert(_meetings, meeting.toRow(), edited: true));
 
   /// Changes a meeting for every week ([old] to [next], dragged on Week):
   /// only the fields that differ are written. When a weekly meeting changes
@@ -614,14 +628,126 @@ class ScheduleRepository {
   Future<void> setSessionNotes(Occurrence session, String notes) =>
       db.transaction(() => _patchOverride(session, {'notes': notes}));
 
+  /// Sets the link typed or pasted into a session: the user's own, shown
+  /// instead of one found in Panopto. Clearing the field stores `''` (no
+  /// link, and none found shows either); a field that never showed a link
+  /// stays empty (null). Every app version treats `''` as no link.
   Future<void> setRecordingUrl(Occurrence session, String? url) {
-    final trimmed = url?.trim();
-    return db.transaction(
-      () => _patchOverride(session, {
-        'recordingUrl': trimmed == null || trimmed.isEmpty ? null : trimmed,
-      }),
-    );
+    final trimmed = url?.trim() ?? '';
+    return db.transaction(() async {
+      if (trimmed.isEmpty) {
+        final row = await _find(_overrides, session.id);
+        final shown = row == null || row.deleted
+            ? null
+            : row.recordingUrl ?? row.recordingFound;
+        if (shown == null || shown.isEmpty) return;
+      }
+      await _patchOverride(session, {'recordingUrl': trimmed});
+    });
   }
+
+  /// Saves links found in Panopto, in their own column: the user's link
+  /// (pasted or removed) always wins over them, also when it reaches this
+  /// device later through sync. Returns how many changed.
+  Future<int> setFoundRecordings(Iterable<FoundRecording> found) =>
+      db.transaction(() async {
+        var written = 0;
+        for (final f in found) {
+          final row = await _find(_overrides, f.session.id);
+          final live = row != null && !row.deleted;
+          if (live && row.recordingUrl != null) continue;
+          final url = f.recording.viewerUrl;
+          if (live && row.recordingFound == url) continue;
+          await _patchOverride(f.session, {'recordingFound': url});
+          written++;
+        }
+        return written;
+      });
+
+  /// Empties the links found in Panopto (all, or only [courseId]'s or
+  /// [meetingId]'s), so they can be found again. Links the user pasted stay.
+  /// Returns how many were cleared.
+  Future<int> clearFoundRecordings({String? courseId, String? meetingId}) =>
+      db.transaction(() async {
+        var rows =
+            await (db.select(db.sessionOverrides)..where(
+                  (o) => o.recordingFound.isNotNull() & o.deleted.equals(false),
+                ))
+                .get();
+        if (meetingId != null) {
+          rows = [
+            for (final r in rows)
+              if (r.meetingId == meetingId) r,
+          ];
+        }
+        if (courseId != null) {
+          final meetings = await (db.select(
+            db.meetings,
+          )..where((m) => m.courseId.equals(courseId))).get();
+          final ids = {for (final m in meetings) m.id};
+          rows = [
+            for (final r in rows)
+              if (ids.contains(r.meetingId)) r,
+          ];
+        }
+        for (final r in rows) {
+          await _patch(_overrides, r.id, {'recordingFound': null});
+        }
+        return rows.length;
+      });
+
+  /// How many sessions show a link found in Panopto.
+  Stream<int> watchFoundRecordingCount() {
+    final count = db.sessionOverrides.id.count();
+    final query = db.selectOnly(db.sessionOverrides)
+      ..addColumns([count])
+      ..where(
+        db.sessionOverrides.recordingFound.isNotNull() &
+            db.sessionOverrides.recordingUrl.isNull() &
+            db.sessionOverrides.deleted.equals(false),
+      );
+    return query.watchSingle().map((row) => row.read(count) ?? 0);
+  }
+
+  /// Remembers whose recordings are [meetingId]'s when several groups are
+  /// recorded at its time (`''`: ask again).
+  Future<void> setPanoptoGroup(String meetingId, String group) => db
+      .transaction(() => _patch(_meetings, meetingId, {'panoptoGroup': group}));
+
+  /// The Panopto group chosen per meeting id (meetings without one left out).
+  Stream<Map<String, String>> watchPanoptoGroups() =>
+      (db.select(db.meetings)..where(
+            (m) => m.deleted.equals(false) & m.panoptoGroup.equals('').not(),
+          ))
+          .watch()
+          .map((rows) => {for (final r in rows) r.id: r.panoptoGroup});
+
+  Future<Map<String, String>> panoptoGroups() => watchPanoptoGroups().first;
+
+  /// Sets the Panopto folders of [courseId]: null = not chosen (the next
+  /// look finds them by the course number), `[]` = none.
+  Future<void> setPanoptoFolders(
+    String courseId,
+    List<PanoptoFolderRef>? folders,
+  ) => db.transaction(
+    () => _patch(_courses, courseId, {
+      'panoptoFolders': PanoptoFolderRef.encodeList(folders),
+    }),
+  );
+
+  /// The Panopto folders per course id (null: not chosen yet).
+  Stream<Map<String, List<PanoptoFolderRef>?>> watchPanoptoFolders() =>
+      (db.select(
+        db.courses,
+      )..where((c) => c.deleted.equals(false))).watch().map(
+        (rows) => {
+          for (final r in rows)
+            r.id: PanoptoFolderRef.decodeList(r.panoptoFolders),
+        },
+      );
+
+  Future<Map<String, List<PanoptoFolderRef>?>> panoptoFolders() =>
+      watchPanoptoFolders().first;
 
   /// "This week only" change of date, time or room. Only what differs from
   /// the meeting is kept (the time as a pair), so the rest still follows
@@ -1060,23 +1186,36 @@ class ScheduleRepository {
     D next,
     D? base,
   ) async {
-    if (base == null) return _upsert(a, next);
+    if (base == null) return _upsert(a, next, edited: true);
     final nextJson = next.toJson()..remove('updatedAt');
     final id = nextJson['id']! as String;
     if (await _find(a, id) == null) {
       await _write(a, nextJson, nextJson);
       return;
     }
-    await _patch(a, id, _changed(base.toJson()..remove('updatedAt'), nextJson));
+    await _patch(
+      a,
+      id,
+      _changed(base.toJson()..remove('updatedAt'), nextJson)
+        ..removeWhere((k, _) => a.own.contains(k)),
+    );
   }
 
-  Future<void> _upsert<D extends DataClass>(_Adapter<D> a, D row) async {
+  /// Writes [row], or the fields of it that differ from the stored one.
+  /// [edited] rows come from the app's domain types, which don't carry
+  /// [_Adapter.own] columns: those keep their stored values.
+  Future<void> _upsert<D extends DataClass>(
+    _Adapter<D> a,
+    D row, {
+    bool edited = false,
+  }) async {
     final next = row.toJson()..remove('updatedAt');
     final existing = await _find(a, next['id']! as String);
     if (existing == null) {
       await _write(a, next, next);
       return;
     }
+    if (edited) next.removeWhere((k, _) => a.own.contains(k));
     final current = existing.toJson()..remove('updatedAt');
     final changed = _changed(current, next);
     if (changed.isNotEmpty) await _write(a, {...current, ...changed}, changed);

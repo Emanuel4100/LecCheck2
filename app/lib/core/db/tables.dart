@@ -51,6 +51,12 @@ class Courses extends Table with SyncedRow {
   /// JSON list of `{name, role, email}` (schema v5). [lecturer] holds the
   /// lecturers' names from it, for lists and older app versions.
   TextColumn get contacts => text().withDefault(const Constant('[]'))();
+
+  /// Panopto folders with this course's recordings (schema v6): `''` = not
+  /// chosen yet (found by the course number), or a JSON list of
+  /// `{id, name}` (`[]` = none). Only [ScheduleRepository.setPanoptoFolders]
+  /// changes it: course edits leave it alone.
+  TextColumn get panoptoFolders => text().withDefault(const Constant(''))();
 }
 
 @DataClassName('MeetingRow')
@@ -68,6 +74,11 @@ class Meetings extends Table with SyncedRow {
   TextColumn get validFrom => text().nullable()();
   TextColumn get validUntil => text().nullable()();
   TextColumn get links => text().withDefault(const Constant('[]'))();
+
+  /// The Panopto group whose recordings are this meeting's, e.g. `ו`, when
+  /// several groups are recorded at its time (schema v6); `''` = not asked.
+  /// Only [ScheduleRepository.setPanoptoGroup] changes it.
+  TextColumn get panoptoGroup => text().withDefault(const Constant(''))();
 }
 
 /// Per-session state, id = `{meetingId}_{yyyymmdd}` of the original date.
@@ -87,6 +98,13 @@ class SessionOverrides extends Table with SyncedRow {
   /// Left out of attendance: percentages, streaks and requirements (schema
   /// v4), whatever its status.
   BoolColumn get excluded => boolean().withDefault(const Constant(false))();
+
+  /// A recording link found in Panopto (schema v6). [recordingUrl] is the
+  /// user's own and wins: the session shows [recordingFound] only while
+  /// [recordingUrl] is null (`''` = the user removed the link). Separate
+  /// columns, so a found link never overwrites a pasted one in sync, even
+  /// when the paste reaches the server later.
+  TextColumn get recordingFound => text().nullable()();
 }
 
 @DataClassName('NoClassRangeRow')

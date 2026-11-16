@@ -11,6 +11,7 @@ import '../features/onboarding/welcome_page.dart';
 import '../features/semester/semester_choice_page.dart';
 import '../features/semester/semester_form_page.dart';
 import '../features/sessions/all_sessions_page.dart';
+import '../features/settings/panopto_section.dart';
 import '../features/settings/report_page.dart';
 import '../features/settings/settings_page.dart';
 import '../features/settings/timetable_import_page.dart';
@@ -62,6 +63,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/timetable-import',
         parentNavigatorKey: _rootKey,
         builder: (_, _) => const TimetableImportPage(),
+      ),
+      GoRoute(
+        path: '/panopto-setup',
+        parentNavigatorKey: _rootKey,
+        builder: (_, _) => const PanoptoSetupPage(),
       ),
       GoRoute(
         path: '/semester',

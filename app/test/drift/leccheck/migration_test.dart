@@ -11,6 +11,7 @@ import 'generated/schema_v1.dart' as v1;
 import 'generated/schema_v2.dart' as v2;
 import 'generated/schema_v3.dart' as v3;
 import 'generated/schema_v5.dart' as v5;
+import 'generated/schema_v6.dart' as v6;
 
 void main() {
   driftRuntimeOptions.dontWarnAboutMultipleDatabases = true;
@@ -33,10 +34,10 @@ void main() {
   });
 
   // What the upgraded database must hold: everything as before, courses
-  // without a short name or contacts, unsynced changes still waiting.
-  Future<void> expectKept(v5.DatabaseAtV5 db) async {
+  // without a short name, contacts or Panopto folders, unsynced changes still waiting.
+  Future<void> expectKept(v6.DatabaseAtV6 db) async {
     expect(await db.select(db.semesters).get(), [
-      const v5.SemestersData(
+      const v6.SemestersData(
         id: 'sem',
         deleted: 0,
         updatedAt: 1,
@@ -48,7 +49,7 @@ void main() {
       ),
     ]);
     expect(await db.select(db.courses).get(), [
-      const v5.CoursesData(
+      const v6.CoursesData(
         id: 'c1',
         deleted: 0,
         updatedAt: 1,
@@ -63,10 +64,11 @@ void main() {
         sortOrder: 0,
         shortName: '',
         contacts: '[]',
+        panoptoFolders: '',
       ),
     ]);
     expect(await db.select(db.outbox).get(), [
-      const v5.OutboxData(
+      const v6.OutboxData(
         seq: 1,
         tbl: 'courses',
         rowId: 'c1',
@@ -76,16 +78,16 @@ void main() {
       ),
     ]);
     expect(await db.select(db.syncMeta).get(), [
-      const v5.SyncMetaData(key: 'lastVersion', value: '42'),
+      const v6.SyncMetaData(key: 'lastVersion', value: '42'),
     ]);
   }
 
   test('data from v2.0.0-beta.2 (v1) survives the upgrade', () async {
     await verifier.testWithDataIntegrity(
       oldVersion: 1,
-      newVersion: 5,
+      newVersion: 6,
       createOld: v1.DatabaseAtV1.new,
-      createNew: v5.DatabaseAtV5.new,
+      createNew: v6.DatabaseAtV6.new,
       openTestedDatabase: AppDatabase.new,
       createItems: (batch, db) {
         batch
@@ -141,9 +143,9 @@ void main() {
   test('data from v2.0.0-beta.3 (v2) survives the upgrade', () async {
     await verifier.testWithDataIntegrity(
       oldVersion: 2,
-      newVersion: 5,
+      newVersion: 6,
       createOld: v2.DatabaseAtV2.new,
-      createNew: v5.DatabaseAtV5.new,
+      createNew: v6.DatabaseAtV6.new,
       openTestedDatabase: AppDatabase.new,
       createItems: (batch, db) {
         batch
@@ -200,9 +202,9 @@ void main() {
   test('data from v2.0.0-beta.10 (v3) survives the upgrade', () async {
     await verifier.testWithDataIntegrity(
       oldVersion: 3,
-      newVersion: 5,
+      newVersion: 6,
       createOld: v3.DatabaseAtV3.new,
-      createNew: v5.DatabaseAtV5.new,
+      createNew: v6.DatabaseAtV6.new,
       openTestedDatabase: AppDatabase.new,
       createItems: (batch, db) {
         batch
@@ -269,7 +271,7 @@ void main() {
         await expectKept(db);
         // Marked sessions still count.
         expect(await db.select(db.sessionOverrides).get(), [
-          const v5.SessionOverridesData(
+          const v6.SessionOverridesData(
             id: 'm1_20261018',
             deleted: 0,
             updatedAt: 1,
@@ -277,6 +279,86 @@ void main() {
             originalDate: '2026-10-18',
             status: 'attended',
             notes: '',
+            excluded: 0,
+          ),
+        ]);
+      },
+    );
+  });
+
+  test('data from v2.0.0-beta.19 (v5) survives the upgrade', () async {
+    await verifier.testWithDataIntegrity(
+      oldVersion: 5,
+      newVersion: 6,
+      createOld: v5.DatabaseAtV5.new,
+      createNew: v6.DatabaseAtV6.new,
+      openTestedDatabase: AppDatabase.new,
+      createItems: (batch, db) {
+        batch
+          ..insert(
+            db.meetings,
+            const v5.MeetingsData(
+              id: 'm1',
+              deleted: 0,
+              updatedAt: 1,
+              courseId: 'c1',
+              type: 'practice',
+              kind: 'weekly',
+              weekday: 4,
+              startMin: 600,
+              endMin: 705,
+              location: 'Sprinzak 27',
+              intervalWeeks: 1,
+              links: '[]',
+            ),
+          )
+          ..insert(
+            db.sessionOverrides,
+            const v5.SessionOverridesData(
+              id: 'm1_20261105',
+              deleted: 0,
+              updatedAt: 1,
+              meetingId: 'm1',
+              originalDate: '2026-11-05',
+              status: 'watched',
+              notes: '',
+              recordingUrl:
+                  'https://example.panopto.eu/Panopto/Pages/Viewer.aspx?id=1',
+              excluded: 0,
+            ),
+          );
+      },
+      validateItems: (db) async {
+        // Links pasted before stay the user's; nothing found yet, no group
+        // chosen yet.
+        expect(await db.select(db.meetings).get(), [
+          const v6.MeetingsData(
+            id: 'm1',
+            deleted: 0,
+            updatedAt: 1,
+            courseId: 'c1',
+            type: 'practice',
+            kind: 'weekly',
+            weekday: 4,
+            startMin: 600,
+            endMin: 705,
+            location: 'Sprinzak 27',
+            intervalWeeks: 1,
+            links: '[]',
+            panoptoGroup: '',
+          ),
+        ]);
+        expect(await db.select(db.sessionOverrides).get(), [
+          const v6.SessionOverridesData(
+            id: 'm1_20261105',
+            deleted: 0,
+            updatedAt: 1,
+            meetingId: 'm1',
+            originalDate: '2026-11-05',
+            status: 'watched',
+            notes: '',
+            recordingUrl:
+                'https://example.panopto.eu/Panopto/Pages/Viewer.aspx?id=1',
             excluded: 0,
           ),
         ]);

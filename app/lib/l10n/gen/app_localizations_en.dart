@@ -2166,4 +2166,255 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get timetableSaveFailed =>
       'Couldn\'t add it. Your data didn\'t change.';
+
+  @override
+  String get panopto => 'Panopto recordings';
+
+  @override
+  String get panoptoSummary => 'Recording links found by themselves';
+
+  @override
+  String get panoptoExperimental => 'Experimental';
+
+  @override
+  String get panoptoIntro =>
+      'LecCheck can find each class\'s recording in your university\'s Panopto and fill in its link, so missed classes show under Catch up on recordings by themselves.';
+
+  @override
+  String get panoptoWarning =>
+      'Check the links it finds. It only reads Panopto, never changes links you pasted or removed, and can remove every link it found in one tap.';
+
+  @override
+  String get panoptoSetUp => 'Set up';
+
+  @override
+  String get panoptoSetUpSubtitle => 'About 3 minutes, once, on one device';
+
+  @override
+  String get panoptoNoServer =>
+      'This build has no sync server, which Panopto\'s sign-in needs.';
+
+  @override
+  String get panoptoSetupTitle => 'Connect Panopto';
+
+  @override
+  String get panoptoStepOpen => 'Open Panopto';
+
+  @override
+  String get panoptoStepOpenBody =>
+      'Sign in to your university\'s Panopto in the browser. A computer is easiest.';
+
+  @override
+  String get panoptoSite => 'Panopto address';
+
+  @override
+  String get panoptoOpen => 'Open Panopto';
+
+  @override
+  String get panoptoStepCreate => 'Create an API client';
+
+  @override
+  String get panoptoStepCreateBody =>
+      'Open your picture or initials at the top, then User Settings, API Clients, and Create a new API Client.';
+
+  @override
+  String get panoptoStepFill => 'Fill it in';
+
+  @override
+  String get panoptoStepFillBody =>
+      'Client Name: LecCheck. Client Type: Mobile or Desktop Application. Redirect URL: the address below, exactly. Leave the other fields empty, and press Create API Client.';
+
+  @override
+  String get panoptoRedirect => 'Redirect URL';
+
+  @override
+  String get panoptoCopy => 'Copy';
+
+  @override
+  String get panoptoCopied => 'Copied';
+
+  @override
+  String get panoptoStepPaste => 'Paste its Client ID and secret';
+
+  @override
+  String get panoptoStepPasteBody =>
+      'Panopto shows them once the client is created. They stay on this device.';
+
+  @override
+  String get panoptoClientId => 'Client ID';
+
+  @override
+  String get panoptoClientSecret => 'Client secret';
+
+  @override
+  String get panoptoStepConnect => 'Connect';
+
+  @override
+  String get panoptoStepConnectBody =>
+      'Sign in to Panopto once more in the browser. Then LecCheck looks for your recordings.';
+
+  @override
+  String get panoptoConnect => 'Connect';
+
+  @override
+  String get panoptoOneDevice =>
+      'Only one of your devices needs this: the others get the links through sync.';
+
+  @override
+  String get panoptoWarnTitle => 'Try an experimental feature?';
+
+  @override
+  String get panoptoWarnBody =>
+      'LecCheck will read your courses\' Panopto folders with the API client you created, and fill in recording links where a session has none.\n\n• Links it finds are marked “Found in Panopto”. It never changes links you pasted or removed.\n• Check them: a wrong link can be removed or replaced like any other.\n• Your Panopto sign-in stays on this device. Disconnecting removes it, and can remove every link it found.';
+
+  @override
+  String get panoptoWarnContinue => 'Continue';
+
+  @override
+  String get panoptoErrorClient =>
+      'Panopto refused the Client ID or secret. Copy them again from Panopto.';
+
+  @override
+  String get panoptoErrorDenied => 'The Panopto sign-in didn\'t finish.';
+
+  @override
+  String get panoptoErrorReconnect =>
+      'Panopto\'s sign-in expired. Connect again.';
+
+  @override
+  String get panoptoErrorNetwork => 'Couldn\'t reach Panopto.';
+
+  @override
+  String panoptoErrorOther(String code) {
+    return 'Panopto answered with an error ($code).';
+  }
+
+  @override
+  String panoptoConnectedTo(String site) {
+    return 'Connected to $site';
+  }
+
+  @override
+  String panoptoLastLook(String when) {
+    return 'Last look: $when';
+  }
+
+  @override
+  String panoptoFoundCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count links found',
+      one: '1 link found',
+      zero: 'No links found yet',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get panoptoLooking => 'Looking for recordings…';
+
+  @override
+  String get panoptoLookNow => 'Look for recordings now';
+
+  @override
+  String get panoptoReconnect => 'Connect again';
+
+  @override
+  String get panoptoDisconnect => 'Disconnect';
+
+  @override
+  String get panoptoDisconnectTitle => 'Disconnect Panopto?';
+
+  @override
+  String get panoptoDisconnectBody =>
+      'This device stops looking for recordings, and Panopto is asked to cancel its sign-in.';
+
+  @override
+  String panoptoRemoveFound(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Also remove the $count links it found',
+      one: 'Also remove the link it found',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String panoptoRemoved(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Removed $count links',
+      one: 'Removed 1 link',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get panoptoAskGroup => 'Which group\'s recordings are yours?';
+
+  @override
+  String get panoptoAskFolder => 'Choose its Panopto folder';
+
+  @override
+  String get panoptoFolder => 'Panopto folder';
+
+  @override
+  String get panoptoFolderAuto => 'Found by the course number at the next look';
+
+  @override
+  String get panoptoFolderNone => 'None: this course isn\'t looked for';
+
+  @override
+  String get panoptoFolderChange => 'Change';
+
+  @override
+  String get panoptoFolderSearch => 'Course number or name';
+
+  @override
+  String get panoptoFolderLink => 'Or paste the folder\'s link from Panopto';
+
+  @override
+  String get panoptoFolderLinkInvalid => 'That isn\'t a Panopto folder link.';
+
+  @override
+  String get panoptoFolderNotFound => 'No folder found.';
+
+  @override
+  String get panoptoFolderAutoOption => 'Find it by the course number';
+
+  @override
+  String get panoptoFolderNoneOption => 'No folder';
+
+  @override
+  String panoptoGroupQuestion(String meeting) {
+    return '$meeting: several groups are recorded at this time. Whose recordings are yours?';
+  }
+
+  @override
+  String panoptoGroupOption(String group) {
+    return 'Group $group';
+  }
+
+  @override
+  String get panoptoHintLinks => 'Suggested by the links you pasted';
+
+  @override
+  String get panoptoHintRoom => 'Suggested by the room';
+
+  @override
+  String panoptoGroupChosen(String meeting, String group) {
+    return '$meeting: group $group';
+  }
+
+  @override
+  String get panoptoGroupAskAgain => 'Ask again';
+
+  @override
+  String get panoptoLookCourse => 'Look now';
+
+  @override
+  String get panoptoFoundMark => 'Found in Panopto';
 }

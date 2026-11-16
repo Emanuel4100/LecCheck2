@@ -306,6 +306,9 @@ class _SessionSheetState extends ConsumerState<SessionSheet> {
                         l.recordingLink,
                         style: TextStyle(color: theme.colorScheme.primary),
                       ),
+                      subtitle: session.recordingAuto
+                          ? Text(l.panoptoFoundMark)
+                          : null,
                       trailing: Icon(
                         LecIcons.openLink,
                         size: 18,

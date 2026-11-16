@@ -338,6 +338,7 @@ class SessionOverride {
     this.movedEndMin,
     this.movedLocation,
     this.excluded = false,
+    this.recordingFound,
   });
 
   final String meetingId;
@@ -352,6 +353,12 @@ class SessionOverride {
 
   /// Left out of attendance (percentages, streaks, requirements).
   final bool excluded;
+
+  /// A link found in Panopto; [recordingUrl] (the user's) wins over it.
+  final String? recordingFound;
+
+  /// The link the session shows: the user's, or else the one found.
+  String? get recordingLink => recordingUrl ?? recordingFound;
 
   String get id => sessionId(meetingId, originalDate);
 }

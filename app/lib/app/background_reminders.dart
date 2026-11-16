@@ -13,6 +13,8 @@ import '../core/dev/dev_log.dart';
 import '../core/home_widget/today_widget.dart';
 import '../core/notifications/notification_actions.dart';
 import '../core/notifications/notification_service.dart';
+import '../core/recordings/panopto_connection.dart';
+import '../core/recordings/recording_linker.dart';
 import '../core/sync/sync_config.dart';
 import '../core/sync/sync_engine.dart';
 import '../core/sync/sync_recorder.dart';
@@ -155,6 +157,7 @@ void backgroundTaskDispatcher() {
       // The widget holds a week of days: move it along even when the app
       // isn't opened.
       await refreshTodayWidget(repo, prefs);
+      await _lookForRecordings(db, repo, prefs);
       return true;
     } on Object catch (e) {
       debugPrint('Daily top-up failed: $e');
@@ -164,6 +167,46 @@ void backgroundTaskDispatcher() {
       await DevLog.flush();
     }
   });
+}
+
+/// Panopto recordings (experimental): the daily look, then a sync so the
+/// links reach the user's other devices without the app being opened. Never
+/// opens a browser: a sign-in that expired waits for the app.
+Future<void> _lookForRecordings(
+  AppDatabase db,
+  ScheduleRepository repo,
+  SharedPreferencesWithCache prefs,
+) async {
+  try {
+    final connection = PanoptoConnection(lock: DbRefreshLock(db));
+    if (await connection.status() != PanoptoStatus.connected) return;
+    final attached = prefs.getString(SyncRecorder.attachedAccountKey) != null;
+    final recorder = SyncConfig.enabled && attached
+        ? SyncRecorder(db: db, prefs: prefs)
+        : null;
+    // Found links are edits like any other: recorded, so they sync.
+    repo.recorder = recorder;
+    final report = await RecordingLinker(
+      repo: repo,
+      connection: connection,
+      prefs: prefs,
+    ).run();
+    DevLog.add('Daily Panopto look: ${report?.written ?? 'not due'}');
+    if (recorder == null || (report?.written ?? 0) == 0) return;
+    final session = await AuthService().load().onError<SessionUnreadable>(
+      (e, _) => null,
+    );
+    if (session == null) return;
+    await SyncEngine.syncOverHttp(
+      db: db,
+      repo: repo,
+      recorder: recorder,
+      session: session,
+    );
+    DevLog.add('Synced the found links');
+  } on Object catch (e) {
+    DevLog.add('Daily Panopto look failed: $e');
+  }
 }
 
 /// Registers the daily top-up (Android) at each start; WorkManager keeps it

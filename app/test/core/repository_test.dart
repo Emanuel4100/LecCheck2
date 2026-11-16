@@ -117,7 +117,7 @@ void main() {
   });
 
   test(
-    'clearing a field writes null (undo, remove recording, reset move)',
+    'clearing a field writes null (undo, reset move); a removed link is \'\'',
     () async {
       final first = OccurrenceEngine.expand(
         semester: semester,
@@ -138,7 +138,8 @@ void main() {
 
       final row = (await db.select(db.sessionOverrides).get()).single;
       expect(row.status, isNull);
-      expect(row.recordingUrl, isNull);
+      // Removed by hand: '' (no link), so one found in Panopto doesn't show.
+      expect(row.recordingUrl, '');
       expect(row.movedDate, isNull);
       expect(row.movedStartMin, isNull);
     },

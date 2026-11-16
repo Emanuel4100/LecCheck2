@@ -14,6 +14,7 @@ import 'app/background_reminders.dart';
 import 'app/move_controller.dart';
 import 'app/notification_controller.dart';
 import 'app/providers.dart';
+import 'app/recordings_controller.dart';
 import 'app/router.dart';
 import 'app/update_controller.dart';
 import 'app/widget_controller.dart';
@@ -56,7 +57,16 @@ Future<void> main() async {
     WidgetController(container).start();
     _dailySnapshots(container);
     _updateChecks(container);
+    _recordingLinks(container);
   });
+}
+
+/// Panopto recordings (experimental): a look at startup and when the app
+/// comes back, at most every 3 hours (the linker keeps the time).
+void _recordingLinks(ProviderContainer container) {
+  void look() => container.read(panoptoProvider.notifier).lookIfDue();
+  look();
+  AppLifecycleListener(onResume: look);
 }
 
 /// Saves the day's automatic backup at startup, and when the app comes back

@@ -2160,4 +2160,254 @@ class AppLocalizationsHe extends AppLocalizations {
 
   @override
   String get timetableSaveFailed => 'לא ניתן היה להוסיף. הנתונים שלך לא השתנו.';
+
+  @override
+  String get panopto => 'הקלטות Panopto';
+
+  @override
+  String get panoptoSummary => 'קישורים להקלטות שנמצאים לבד';
+
+  @override
+  String get panoptoExperimental => 'ניסיוני';
+
+  @override
+  String get panoptoIntro =>
+      'LecCheck יכולה למצוא את ההקלטה של כל שיעור ב־Panopto של האוניברסיטה ולמלא את הקישור אליה, כך ששיעורים שפספסתם יופיעו בהשלמת הקלטות מעצמם.';
+
+  @override
+  String get panoptoWarning =>
+      'בדקו את הקישורים שהיא מוצאת. היא רק קוראת מ־Panopto, לא משנה קישורים שהדבקתם או מחקתם, ואפשר להסיר בלחיצה אחת את כל הקישורים שמצאה.';
+
+  @override
+  String get panoptoSetUp => 'הגדרה';
+
+  @override
+  String get panoptoSetUpSubtitle => 'כ־3 דקות, פעם אחת, במכשיר אחד';
+
+  @override
+  String get panoptoNoServer =>
+      'בגרסה הזו אין שרת סנכרון, וההתחברות ל־Panopto צריכה אותו.';
+
+  @override
+  String get panoptoSetupTitle => 'חיבור Panopto';
+
+  @override
+  String get panoptoStepOpen => 'פתחו את Panopto';
+
+  @override
+  String get panoptoStepOpenBody =>
+      'התחברו ל־Panopto של האוניברסיטה בדפדפן. הכי נוח במחשב.';
+
+  @override
+  String get panoptoSite => 'כתובת Panopto';
+
+  @override
+  String get panoptoOpen => 'פתיחת Panopto';
+
+  @override
+  String get panoptoStepCreate => 'צרו API client';
+
+  @override
+  String get panoptoStepCreateBody =>
+      'לחצו על התמונה או ראשי התיבות שלכם למעלה, ואחר כך על User Settings,‏ API Clients ו־Create a new API Client.';
+
+  @override
+  String get panoptoStepFill => 'מלאו את הפרטים';
+
+  @override
+  String get panoptoStepFillBody =>
+      'Client Name: ‏LecCheck. ‏Client Type: ‏Mobile or Desktop Application. ‏Redirect URL: הכתובת שלמטה, בדיוק. השאירו את שאר השדות ריקים ולחצו Create API Client.';
+
+  @override
+  String get panoptoRedirect => 'Redirect URL';
+
+  @override
+  String get panoptoCopy => 'העתקה';
+
+  @override
+  String get panoptoCopied => 'הועתק';
+
+  @override
+  String get panoptoStepPaste => 'הדביקו את ה־Client ID וה־secret';
+
+  @override
+  String get panoptoStepPasteBody =>
+      'Panopto מציגה אותם אחרי יצירת ה־client. הם נשמרים רק במכשיר הזה.';
+
+  @override
+  String get panoptoClientId => 'Client ID';
+
+  @override
+  String get panoptoClientSecret => 'Client secret';
+
+  @override
+  String get panoptoStepConnect => 'התחברו';
+
+  @override
+  String get panoptoStepConnectBody =>
+      'התחברו ל־Panopto עוד פעם בדפדפן. אחר כך LecCheck מחפשת את ההקלטות שלכם.';
+
+  @override
+  String get panoptoConnect => 'התחברות';
+
+  @override
+  String get panoptoOneDevice =>
+      'מספיק לעשות את זה במכשיר אחד: המכשירים האחרים מקבלים את הקישורים בסנכרון.';
+
+  @override
+  String get panoptoWarnTitle => 'לנסות תכונה ניסיונית?';
+
+  @override
+  String get panoptoWarnBody =>
+      'LecCheck תקרא את התיקיות של הקורסים שלכם ב־Panopto בעזרת ה־API client שיצרתם, ותמלא קישורים להקלטות בשיעורים שאין להם קישור.\n\n• קישורים שהיא מוצאת מסומנים „נמצא ב־Panopto”. היא לא משנה קישורים שהדבקתם או מחקתם.\n• בדקו אותם: קישור שגוי אפשר למחוק או להחליף כמו כל קישור.\n• ההתחברות ל־Panopto נשמרת רק במכשיר הזה. ניתוק מוחק אותה, ויכול גם להסיר את כל הקישורים שנמצאו.';
+
+  @override
+  String get panoptoWarnContinue => 'המשך';
+
+  @override
+  String get panoptoErrorClient =>
+      'Panopto דחתה את ה־Client ID או ה־secret. העתיקו אותם שוב מ־Panopto.';
+
+  @override
+  String get panoptoErrorDenied => 'ההתחברות ל־Panopto לא הושלמה.';
+
+  @override
+  String get panoptoErrorReconnect => 'ההתחברות ל־Panopto פגה. התחברו שוב.';
+
+  @override
+  String get panoptoErrorNetwork => 'אין חיבור ל־Panopto.';
+
+  @override
+  String panoptoErrorOther(String code) {
+    return 'Panopto החזירה שגיאה ($code).';
+  }
+
+  @override
+  String panoptoConnectedTo(String site) {
+    return 'מחובר ל־$site';
+  }
+
+  @override
+  String panoptoLastLook(String when) {
+    return 'חיפוש אחרון: $when';
+  }
+
+  @override
+  String panoptoFoundCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'נמצאו $count קישורים',
+      one: 'נמצא קישור אחד',
+      zero: 'עדיין לא נמצאו קישורים',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get panoptoLooking => 'מחפשת הקלטות…';
+
+  @override
+  String get panoptoLookNow => 'חיפוש הקלטות עכשיו';
+
+  @override
+  String get panoptoReconnect => 'התחברות מחדש';
+
+  @override
+  String get panoptoDisconnect => 'ניתוק';
+
+  @override
+  String get panoptoDisconnectTitle => 'לנתק את Panopto?';
+
+  @override
+  String get panoptoDisconnectBody =>
+      'המכשיר יפסיק לחפש הקלטות, ו־Panopto תתבקש לבטל את ההתחברות שלו.';
+
+  @override
+  String panoptoRemoveFound(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'להסיר גם את $count הקישורים שנמצאו',
+      one: 'להסיר גם את הקישור שנמצא',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String panoptoRemoved(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'הוסרו $count קישורים',
+      one: 'הוסר קישור אחד',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get panoptoAskGroup => 'ההקלטות של איזו קבוצה הן שלכם?';
+
+  @override
+  String get panoptoAskFolder => 'בחרו את התיקייה שלו ב־Panopto';
+
+  @override
+  String get panoptoFolder => 'תיקייה ב־Panopto';
+
+  @override
+  String get panoptoFolderAuto => 'תימצא לפי מספר הקורס בחיפוש הבא';
+
+  @override
+  String get panoptoFolderNone => 'אין: לא מחפשים הקלטות לקורס הזה';
+
+  @override
+  String get panoptoFolderChange => 'שינוי';
+
+  @override
+  String get panoptoFolderSearch => 'מספר הקורס או שמו';
+
+  @override
+  String get panoptoFolderLink => 'או הדביקו את הקישור לתיקייה מ־Panopto';
+
+  @override
+  String get panoptoFolderLinkInvalid => 'זה לא קישור לתיקייה ב־Panopto.';
+
+  @override
+  String get panoptoFolderNotFound => 'לא נמצאה תיקייה.';
+
+  @override
+  String get panoptoFolderAutoOption => 'חיפוש לפי מספר הקורס';
+
+  @override
+  String get panoptoFolderNoneOption => 'בלי תיקייה';
+
+  @override
+  String panoptoGroupQuestion(String meeting) {
+    return '$meeting: כמה קבוצות מוקלטות בזמן הזה. ההקלטות של איזו קבוצה הן שלכם?';
+  }
+
+  @override
+  String panoptoGroupOption(String group) {
+    return 'קבוצה $group';
+  }
+
+  @override
+  String get panoptoHintLinks => 'הצעה לפי הקישורים שהדבקתם';
+
+  @override
+  String get panoptoHintRoom => 'הצעה לפי החדר';
+
+  @override
+  String panoptoGroupChosen(String meeting, String group) {
+    return '$meeting: קבוצה $group';
+  }
+
+  @override
+  String get panoptoGroupAskAgain => 'לשאול שוב';
+
+  @override
+  String get panoptoLookCourse => 'חיפוש עכשיו';
+
+  @override
+  String get panoptoFoundMark => 'נמצא ב־Panopto';
 }

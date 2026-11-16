@@ -1,0 +1,654 @@
+{
+ "Results": [
+  {
+   "Id": "00000000-0000-4000-8000-000000000001",
+   "Name": "80430 2026-11-16 תרגיל ה",
+   "Description": "80430\nIntroduction to Probability for Computer Science and Engineering\nמבוא להסתברות למדעי המחשב והנדסה\nיום ב 16:00 - 17:45\nC220\nתרגיל ה",
+   "StartTime": "2026-11-16T16:00:01.1017824Z",
+   "Duration": 6599.471,
+   "Status": 4,
+   "IsWebcast": false,
+   "Folder": "11111111-2222-4333-8444-555555555555",
+   "Urls": {
+    "ViewerUrl": "https://example.cloud.panopto.eu/Panopto/Pages/Viewer.aspx?id=00000000-0000-4000-8000-000000000001"
+   }
+  },
+  {
+   "Id": "00000000-0000-4000-8000-000000000002",
+   "Name": "80430 2026-11-16 שעור ב",
+   "Description": "80430\nIntroduction to Probability for Computer Science and Engineering\nמבוא להסתברות למדעי המחשב והנדסה\nיום ב 14:00 - 15:45\nפלדמן ב\nשעור ב",
+   "StartTime": "2026-11-16T14:00:01.7184528Z",
+   "Duration": 6599.168,
+   "Status": 4,
+   "IsWebcast": false,
+   "Folder": "11111111-2222-4333-8444-555555555555",
+   "Urls": {
+    "ViewerUrl": "https://example.cloud.panopto.eu/Panopto/Pages/Viewer.aspx?id=00000000-0000-4000-8000-000000000002"
+   }
+  },
+  {
+   "Id": "00000000-0000-4000-8000-000000000003",
+   "Name": "80430 2026-11-16 תרגיל א",
+   "Description": "80430\nIntroduction to Probability for Computer Science and Engineering\nמבוא להסתברות למדעי המחשב והנדסה\nיום ב 12:00 - 13:45\nספרייה 44\nתרגיל א",
+   "StartTime": "2026-11-16T12:00:01.3779456Z",
+   "Duration": 6599.134,
+   "Status": 4,
+   "IsWebcast": false,
+   "Folder": "11111111-2222-4333-8444-555555555555",
+   "Urls": {
+    "ViewerUrl": "https://example.cloud.panopto.eu/Panopto/Pages/Viewer.aspx?id=00000000-0000-4000-8000-000000000003"
+   }
+  },
+  {
+   "Id": "00000000-0000-4000-8000-000000000004",
+   "Name": "80430 2026-11-15 שעור ב",
+   "Description": "80430\nIntroduction to Probability for Computer Science and Engineering\nמבוא להסתברות למדעי המחשב והנדסה\nיום א 12:00 - 13:45\nפלדמן ב\nשעור ב",
+   "StartTime": "2026-11-15T12:00:01.212176Z",
+   "Duration": 6599.197999999999,
+   "Status": 4,
+   "IsWebcast": true,
+   "Folder": "11111111-2222-4333-8444-555555555555",
+   "Urls": {
+    "ViewerUrl": "https://example.cloud.panopto.eu/Panopto/Pages/Viewer.aspx?id=00000000-0000-4000-8000-000000000004"
+   }
+  },
+  {
+   "Id": "00000000-0000-4000-8000-000000000005",
+   "Name": "80430 2026-11-12 שעור א",
+   "Description": "80430\nIntroduction to Probability for Computer Science and Engineering\nמבוא להסתברות למדעי המחשב והנדסה\nיום ה 12:00 - 13:45\nפלדמן ב\nשעור א",
+   "StartTime": "2026-11-12T12:00:01.9459872Z",
+   "Duration": 6599.047,
+   "Status": 4,
+   "IsWebcast": false,
+   "Folder": "11111111-2222-4333-8444-555555555555",
+   "Urls": {
+    "ViewerUrl": "https://example.cloud.panopto.eu/Panopto/Pages/Viewer.aspx?id=00000000-0000-4000-8000-000000000005"
+   }
+  },
+  {
+   "Id": "00000000-0000-4000-8000-000000000006",
+   "Name": "80430 2026-11-12 תרגיל ד",
+   "Description": "80430\nIntroduction to Probability for Computer Science and Engineering\nמבוא להסתברות למדעי המחשב והנדסה\nיום ה 10:00 - 11:45\nשפרינצק 27\nתרגיל ד",
+   "StartTime": "2026-11-12T10:00:01.7452144Z",
+   "Duration": 6599.663,
+   "Status": 4,
+   "IsWebcast": false,
+   "Folder": "11111111-2222-4333-8444-555555555555",
+   "Urls": {
+    "ViewerUrl": "https://example.cloud.panopto.eu/Panopto/Pages/Viewer.aspx?id=00000000-0000-4000-8000-000000000006"
+   }
+  },
+  {
+   "Id": "00000000-0000-4000-8000-000000000007",
+   "Name": "80430 2026-11-12 תרגיל ו",
+   "Description": "80430\nIntroduction to Probability for Computer Science and Engineering\nמבוא להסתברות למדעי המחשב והנדסה\nיום ה 10:00 - 11:45\nשפרינצק 115\nתרגיל ו",
+   "StartTime": "2026-11-12T10:00:01.726624Z",
+   "Duration": 6599.364,
+   "Status": 4,
+   "IsWebcast": false,
+   "Folder": "11111111-2222-4333-8444-555555555555",
+   "Urls": {
+    "ViewerUrl": "https://example.cloud.panopto.eu/Panopto/Pages/Viewer.aspx?id=00000000-0000-4000-8000-000000000007"
+   }
+  },
+  {
+   "Id": "00000000-0000-4000-8000-000000000008",
+   "Name": "80430 2026-11-11 תרגיל ג",
+   "Description": "80430\nIntroduction to Probability for Computer Science and Engineering\nמבוא להסתברות למדעי המחשב והנדסה\nיום ד 13:00 - 14:45\nמתמטיקה 2\nתרגיל ג",
+   "StartTime": "2026-11-11T13:00:01.4653968Z",
+   "Duration": 6599.5599999999995,
+   "Status": 4,
+   "IsWebcast": false,
+   "Folder": "11111111-2222-4333-8444-555555555555",
+   "Urls": {
+    "ViewerUrl": "https://example.cloud.panopto.eu/Panopto/Pages/Viewer.aspx?id=00000000-0000-4000-8000-000000000008"
+   }
+  },
+  {
+   "Id": "00000000-0000-4000-8000-000000000009",
+   "Name": "80430 13-14 on 11/11/2026 (יום ד)",
+   "Description": null,
+   "StartTime": "2026-11-11T13:00:01.2765776Z",
+   "Duration": 3000.229,
+   "Status": 4,
+   "IsWebcast": false,
+   "Folder": "11111111-2222-4333-8444-555555555555",
+   "Urls": {
+    "ViewerUrl": "https://example.cloud.panopto.eu/Panopto/Pages/Viewer.aspx?id=00000000-0000-4000-8000-000000000009"
+   }
+  },
+  {
+   "Id": "00000000-0000-4000-8000-000000000010",
+   "Name": "80430 2026-11-10 תרגיל ב",
+   "Description": "80430\nIntroduction to Probability for Computer Science and Engineering\nמבוא להסתברות למדעי המחשב והנדסה\nיום ג 14:00 - 15:45\nשפרינצק 116\nתרגיל ב",
+   "StartTime": "2026-11-10T14:00:01.5364368Z",
+   "Duration": 6598.777,
+   "Status": 4,
+   "IsWebcast": false,
+   "Folder": "11111111-2222-4333-8444-555555555555",
+   "Urls": {
+    "ViewerUrl": "https://example.cloud.panopto.eu/Panopto/Pages/Viewer.aspx?id=00000000-0000-4000-8000-000000000010"
+   }
+  },
+  {
+   "Id": "00000000-0000-4000-8000-000000000011",
+   "Name": "80430 2026-11-10 שעור א",
+   "Description": "80430\nIntroduction to Probability for Computer Science and Engineering\nמבוא להסתברות למדעי המחשב והנדסה\nיום ג 10:00 - 11:45\nקפלן\nשעור א",
+   "StartTime": "2026-11-10T10:00:01.0676656Z",
+   "Duration": 6600.317,
+   "Status": 4,
+   "IsWebcast": false,
+   "Folder": "11111111-2222-4333-8444-555555555555",
+   "Urls": {
+    "ViewerUrl": "https://example.cloud.panopto.eu/Panopto/Pages/Viewer.aspx?id=00000000-0000-4000-8000-000000000011"
+   }
+  },
+  {
+   "Id": "00000000-0000-4000-8000-000000000012",
+   "Name": "80430 2026-11-10 שעור א",
+   "Description": "80430\nIntroduction to Probability for Computer Science and Engineering\nמבוא להסתברות למדעי המחשב והנדסה\nיום ג 09:00 - 09:45\nאודיטוריום הנדסה\nשעור א",
+   "StartTime": "2026-11-10T09:00:01.7116064Z",
+   "Duration": 2999.1549999999997,
+   "Status": 4,
+   "IsWebcast": false,
+   "Folder": "11111111-2222-4333-8444-555555555555",
+   "Urls": {
+    "ViewerUrl": "https://example.cloud.panopto.eu/Panopto/Pages/Viewer.aspx?id=00000000-0000-4000-8000-000000000012"
+   }
+  },
+  {
+   "Id": "00000000-0000-4000-8000-000000000013",
+   "Name": "80430 2026-11-09 תרגיל ה",
+   "Description": "80430\nIntroduction to Probability for Computer Science and Engineering\nמבוא להסתברות למדעי המחשב והנדסה\nיום ב 16:00 - 17:45\nC220\nתרגיל ה",
+   "StartTime": "2026-11-09T16:00:01.5185184Z",
+   "Duration": 6599.777,
+   "Status": 4,
+   "IsWebcast": false,
+   "Folder": "11111111-2222-4333-8444-555555555555",
+   "Urls": {
+    "ViewerUrl": "https://example.cloud.panopto.eu/Panopto/Pages/Viewer.aspx?id=00000000-0000-4000-8000-000000000013"
+   }
+  },
+  {
+   "Id": "00000000-0000-4000-8000-000000000014",
+   "Name": "80430 2026-11-09 שעור ב",
+   "Description": "80430\nIntroduction to Probability for Computer Science and Engineering\nמבוא להסתברות למדעי המחשב והנדסה\nיום ב 14:00 - 15:45\nפלדמן ב\nשעור ב",
+   "StartTime": "2026-11-09T14:00:01.7150768Z",
+   "Duration": 6599.478999999999,
+   "Status": 4,
+   "IsWebcast": false,
+   "Folder": "11111111-2222-4333-8444-555555555555",
+   "Urls": {
+    "ViewerUrl": "https://example.cloud.panopto.eu/Panopto/Pages/Viewer.aspx?id=00000000-0000-4000-8000-000000000014"
+   }
+  },
+  {
+   "Id": "00000000-0000-4000-8000-000000000015",
+   "Name": "80430 9.11 12-14",
+   "Description": "",
+   "StartTime": "2026-11-09T12:00:01.4920464Z",
+   "Duration": 6599.32,
+   "Status": 4,
+   "IsWebcast": false,
+   "Folder": "11111111-2222-4333-8444-555555555555",
+   "Urls": {
+    "ViewerUrl": "https://example.cloud.panopto.eu/Panopto/Pages/Viewer.aspx?id=00000000-0000-4000-8000-000000000015"
+   }
+  },
+  {
+   "Id": "00000000-0000-4000-8000-000000000016",
+   "Name": "80430 2026-11-08 שעור ב",
+   "Description": "80430\nIntroduction to Probability for Computer Science and Engineering\nמבוא להסתברות למדעי המחשב והנדסה\nיום א 12:00 - 13:45\nפלדמן ב\nשעור ב",
+   "StartTime": "2026-11-08T12:00:02.16716Z",
+   "Duration": 6598.549,
+   "Status": 4,
+   "IsWebcast": false,
+   "Folder": "11111111-2222-4333-8444-555555555555",
+   "Urls": {
+    "ViewerUrl": "https://example.cloud.panopto.eu/Panopto/Pages/Viewer.aspx?id=00000000-0000-4000-8000-000000000016"
+   }
+  },
+  {
+   "Id": "00000000-0000-4000-8000-000000000017",
+   "Name": "80430 2026-11-05 שעור א",
+   "Description": "80430\nIntroduction to Probability for Computer Science and Engineering\nמבוא להסתברות למדעי המחשב והנדסה\nיום ה 12:00 - 13:45\nפלדמן ב\nשעור א",
+   "StartTime": "2026-11-05T12:00:01.5347088Z",
+   "Duration": 6599.083,
+   "Status": 4,
+   "IsWebcast": false,
+   "Folder": "11111111-2222-4333-8444-555555555555",
+   "Urls": {
+    "ViewerUrl": "https://example.cloud.panopto.eu/Panopto/Pages/Viewer.aspx?id=00000000-0000-4000-8000-000000000017"
+   }
+  },
+  {
+   "Id": "00000000-0000-4000-8000-000000000018",
+   "Name": "80430 2026-11-05 תרגיל ו",
+   "Description": "80430\nIntroduction to Probability for Computer Science and Engineering\nמבוא להסתברות למדעי המחשב והנדסה\nיום ה 10:00 - 11:45\nשפרינצק 115\nתרגיל ו",
+   "StartTime": "2026-11-05T10:00:01.7455536Z",
+   "Duration": 6599.103,
+   "Status": 4,
+   "IsWebcast": false,
+   "Folder": "11111111-2222-4333-8444-555555555555",
+   "Urls": {
+    "ViewerUrl": "https://example.cloud.panopto.eu/Panopto/Pages/Viewer.aspx?id=00000000-0000-4000-8000-000000000018"
+   }
+  },
+  {
+   "Id": "00000000-0000-4000-8000-000000000019",
+   "Name": "80430 2026-11-05 תרגיל ד",
+   "Description": "80430\nIntroduction to Probability for Computer Science and Engineering\nמבוא להסתברות למדעי המחשב והנדסה\nיום ה 10:00 - 11:45\nשפרינצק 27\nתרגיל ד",
+   "StartTime": "2026-11-05T10:00:01.0728736Z",
+   "Duration": 6600.004,
+   "Status": 4,
+   "IsWebcast": false,
+   "Folder": "11111111-2222-4333-8444-555555555555",
+   "Urls": {
+    "ViewerUrl": "https://example.cloud.panopto.eu/Panopto/Pages/Viewer.aspx?id=00000000-0000-4000-8000-000000000019"
+   }
+  },
+  {
+   "Id": "00000000-0000-4000-8000-000000000020",
+   "Name": "80430 2026-11-04 תרגיל ג",
+   "Description": "80430\nIntroduction to Probability for Computer Science and Engineering\nמבוא להסתברות למדעי המחשב והנדסה\nיום ד 13:00 - 14:45\nמתמטיקה 2\nתרגיל ג",
+   "StartTime": "2026-11-04T13:00:01.7046032Z",
+   "Duration": 6599.2789999999995,
+   "Status": 4,
+   "IsWebcast": false,
+   "Folder": "11111111-2222-4333-8444-555555555555",
+   "Urls": {
+    "ViewerUrl": "https://example.cloud.panopto.eu/Panopto/Pages/Viewer.aspx?id=00000000-0000-4000-8000-000000000020"
+   }
+  },
+  {
+   "Id": "00000000-0000-4000-8000-000000000021",
+   "Name": "80430 2026-11-03 תרגיל ב",
+   "Description": "80430\nIntroduction to Probability for Computer Science and Engineering\nמבוא להסתברות למדעי המחשב והנדסה\nיום ג 14:00 - 15:45\nשפרינצק 116\nתרגיל ב",
+   "StartTime": "2026-11-03T14:00:01.535296Z",
+   "Duration": 6600.016,
+   "Status": 4,
+   "IsWebcast": false,
+   "Folder": "11111111-2222-4333-8444-555555555555",
+   "Urls": {
+    "ViewerUrl": "https://example.cloud.panopto.eu/Panopto/Pages/Viewer.aspx?id=00000000-0000-4000-8000-000000000021"
+   }
+  },
+  {
+   "Id": "00000000-0000-4000-8000-000000000022",
+   "Name": "80430 2026-11-03 שעור א",
+   "Description": "80430\nIntroduction to Probability for Computer Science and Engineering\nמבוא להסתברות למדעי המחשב והנדסה\nיום ג 10:00 - 11:45\nקפלן\nשעור א",
+   "StartTime": "2026-11-03T10:00:01.0232736Z",
+   "Duration": 6600.045,
+   "Status": 4,
+   "IsWebcast": false,
+   "Folder": "11111111-2222-4333-8444-555555555555",
+   "Urls": {
+    "ViewerUrl": "https://example.cloud.panopto.eu/Panopto/Pages/Viewer.aspx?id=00000000-0000-4000-8000-000000000022"
+   }
+  },
+  {
+   "Id": "00000000-0000-4000-8000-000000000023",
+   "Name": "80430 2026-11-03 שעור א",
+   "Description": "80430\nIntroduction to Probability for Computer Science and Engineering\nמבוא להסתברות למדעי המחשב והנדסה\nיום ג 09:00 - 09:45\nאודיטוריום הנדסה\nשעור א",
+   "StartTime": "2026-11-03T09:00:01.6024192Z",
+   "Duration": 2999.6879999999996,
+   "Status": 4,
+   "IsWebcast": false,
+   "Folder": "11111111-2222-4333-8444-555555555555",
+   "Urls": {
+    "ViewerUrl": "https://example.cloud.panopto.eu/Panopto/Pages/Viewer.aspx?id=00000000-0000-4000-8000-000000000023"
+   }
+  },
+  {
+   "Id": "00000000-0000-4000-8000-000000000024",
+   "Name": "80430 2026-11-02 תרגיל ה",
+   "Description": "80430\nIntroduction to Probability for Computer Science and Engineering\nמבוא להסתברות למדעי המחשב והנדסה\nיום ב 16:00 - 17:45\nC220\nתרגיל ה",
+   "StartTime": "2026-11-02T16:00:01.6404976Z",
+   "Duration": 6597.732,
+   "Status": 4,
+   "IsWebcast": false,
+   "Folder": "11111111-2222-4333-8444-555555555555",
+   "Urls": {
+    "ViewerUrl": "https://example.cloud.panopto.eu/Panopto/Pages/Viewer.aspx?id=00000000-0000-4000-8000-000000000024"
+   }
+  },
+  {
+   "Id": "00000000-0000-4000-8000-000000000025",
+   "Name": "80430 2026-11-02 שעור ב",
+   "Description": "80430\nIntroduction to Probability for Computer Science and Engineering\nמבוא להסתברות למדעי המחשב והנדסה\nיום ב 14:00 - 15:45\nפלדמן ב\nשעור ב",
+   "StartTime": "2026-11-02T14:00:02.1162Z",
+   "Duration": 6598.581,
+   "Status": 4,
+   "IsWebcast": false,
+   "Folder": "11111111-2222-4333-8444-555555555555",
+   "Urls": {
+    "ViewerUrl": "https://example.cloud.panopto.eu/Panopto/Pages/Viewer.aspx?id=00000000-0000-4000-8000-000000000025"
+   }
+  },
+  {
+   "Id": "00000000-0000-4000-8000-000000000026",
+   "Name": "80430 02/11 12-14",
+   "Description": "",
+   "StartTime": "2026-11-02T12:00:01.4896992Z",
+   "Duration": 6599.148999999999,
+   "Status": 4,
+   "IsWebcast": false,
+   "Folder": "11111111-2222-4333-8444-555555555555",
+   "Urls": {
+    "ViewerUrl": "https://example.cloud.panopto.eu/Panopto/Pages/Viewer.aspx?id=00000000-0000-4000-8000-000000000026"
+   }
+  },
+  {
+   "Id": "00000000-0000-4000-8000-000000000027",
+   "Name": "80430 2026-11-01 שעור ב",
+   "Description": "80430\nIntroduction to Probability for Computer Science and Engineering\nמבוא להסתברות למדעי המחשב והנדסה\nיום א 12:00 - 13:45\nפלדמן ב\nשעור ב",
+   "StartTime": "2026-11-01T12:00:01.2939232Z",
+   "Duration": 6599.799999999999,
+   "Status": 4,
+   "IsWebcast": false,
+   "Folder": "11111111-2222-4333-8444-555555555555",
+   "Urls": {
+    "ViewerUrl": "https://example.cloud.panopto.eu/Panopto/Pages/Viewer.aspx?id=00000000-0000-4000-8000-000000000027"
+   }
+  },
+  {
+   "Id": "00000000-0000-4000-8000-000000000028",
+   "Name": "80430 2026-10-29 שעור א",
+   "Description": "80430\nIntroduction to Probability for Computer Science and Engineering\nמבוא להסתברות למדעי המחשב והנדסה\nיום ה 12:00 - 13:45\nפלדמן ב\nשעור א",
+   "StartTime": "2026-10-29T12:00:01.8591936Z",
+   "Duration": 6599.061,
+   "Status": 4,
+   "IsWebcast": false,
+   "Folder": "11111111-2222-4333-8444-555555555555",
+   "Urls": {
+    "ViewerUrl": "https://example.cloud.panopto.eu/Panopto/Pages/Viewer.aspx?id=00000000-0000-4000-8000-000000000028"
+   }
+  },
+  {
+   "Id": "00000000-0000-4000-8000-000000000029",
+   "Name": "80430 2026-10-29 תרגיל ו",
+   "Description": "80430\nIntroduction to Probability for Computer Science and Engineering\nמבוא להסתברות למדעי המחשב והנדסה\nיום ה 10:00 - 11:45\nשפרינצק 115\nתרגיל ו",
+   "StartTime": "2026-10-29T10:00:01.8236576Z",
+   "Duration": 6599.15,
+   "Status": 4,
+   "IsWebcast": false,
+   "Folder": "11111111-2222-4333-8444-555555555555",
+   "Urls": {
+    "ViewerUrl": "https://example.cloud.panopto.eu/Panopto/Pages/Viewer.aspx?id=00000000-0000-4000-8000-000000000029"
+   }
+  },
+  {
+   "Id": "00000000-0000-4000-8000-000000000030",
+   "Name": "80430 2026-10-29 תרגיל ד",
+   "Description": "80430\nIntroduction to Probability for Computer Science and Engineering\nמבוא להסתברות למדעי המחשב והנדסה\nיום ה 10:00 - 11:45\nשפרינצק 27\nתרגיל ד",
+   "StartTime": "2026-10-29T10:00:01.1922576Z",
+   "Duration": 6599.562,
+   "Status": 4,
+   "IsWebcast": false,
+   "Folder": "11111111-2222-4333-8444-555555555555",
+   "Urls": {
+    "ViewerUrl": "https://example.cloud.panopto.eu/Panopto/Pages/Viewer.aspx?id=00000000-0000-4000-8000-000000000030"
+   }
+  },
+  {
+   "Id": "00000000-0000-4000-8000-000000000031",
+   "Name": "80430 2026-10-28 תרגיל ג",
+   "Description": "80430\nIntroduction to Probability for Computer Science and Engineering\nמבוא להסתברות למדעי המחשב והנדסה\nיום ד 13:00 - 14:45\nמתמטיקה 2\nתרגיל ג",
+   "StartTime": "2026-10-28T13:00:01.4342864Z",
+   "Duration": 6599.329,
+   "Status": 4,
+   "IsWebcast": false,
+   "Folder": "11111111-2222-4333-8444-555555555555",
+   "Urls": {
+    "ViewerUrl": "https://example.cloud.panopto.eu/Panopto/Pages/Viewer.aspx?id=00000000-0000-4000-8000-000000000031"
+   }
+  },
+  {
+   "Id": "00000000-0000-4000-8000-000000000032",
+   "Name": "80430 13-14 on 28/10/2026 (יום ד)",
+   "Description": null,
+   "StartTime": "2026-10-28T13:00:01.1433184Z",
+   "Duration": 2999.816,
+   "Status": 4,
+   "IsWebcast": false,
+   "Folder": "11111111-2222-4333-8444-555555555555",
+   "Urls": {
+    "ViewerUrl": "https://example.cloud.panopto.eu/Panopto/Pages/Viewer.aspx?id=00000000-0000-4000-8000-000000000032"
+   }
+  },
+  {
+   "Id": "00000000-0000-4000-8000-000000000033",
+   "Name": "80430 2026-10-26 תרגיל ה",
+   "Description": "80430\nIntroduction to Probability for Computer Science and Engineering\nמבוא להסתברות למדעי המחשב והנדסה\nיום ב 16:00 - 17:45\nC220\nתרגיל ה",
+   "StartTime": "2026-10-26T16:00:01.7710368Z",
+   "Duration": 6599.101,
+   "Status": 4,
+   "IsWebcast": false,
+   "Folder": "11111111-2222-4333-8444-555555555555",
+   "Urls": {
+    "ViewerUrl": "https://example.cloud.panopto.eu/Panopto/Pages/Viewer.aspx?id=00000000-0000-4000-8000-000000000033"
+   }
+  },
+  {
+   "Id": "00000000-0000-4000-8000-000000000034",
+   "Name": "80430 2026-10-26 שעור ב",
+   "Description": "80430\nIntroduction to Probability for Computer Science and Engineering\nמבוא להסתברות למדעי המחשב והנדסה\nיום ב 14:00 - 15:45\nפלדמן ב\nשעור ב",
+   "StartTime": "2026-10-26T14:00:01.6160992Z",
+   "Duration": 6599.834,
+   "Status": 4,
+   "IsWebcast": false,
+   "Folder": "11111111-2222-4333-8444-555555555555",
+   "Urls": {
+    "ViewerUrl": "https://example.cloud.panopto.eu/Panopto/Pages/Viewer.aspx?id=00000000-0000-4000-8000-000000000034"
+   }
+  },
+  {
+   "Id": "00000000-0000-4000-8000-000000000035",
+   "Name": "80430 2026-10-26 תרגיל א",
+   "Description": "80430\nIntroduction to Probability for Computer Science and Engineering\nמבוא להסתברות למדעי המחשב והנדסה\nיום ב 12:00 - 13:45\nספרייה 44\nתרגיל א",
+   "StartTime": "2026-10-26T12:00:01.312576Z",
+   "Duration": 6599.424,
+   "Status": 4,
+   "IsWebcast": false,
+   "Folder": "11111111-2222-4333-8444-555555555555",
+   "Urls": {
+    "ViewerUrl": "https://example.cloud.panopto.eu/Panopto/Pages/Viewer.aspx?id=00000000-0000-4000-8000-000000000035"
+   }
+  },
+  {
+   "Id": "00000000-0000-4000-8000-000000000036",
+   "Name": "80430 2026-10-25 שעור ב",
+   "Description": "80430\nIntroduction to Probability for Computer Science and Engineering\nמבוא להסתברות למדעי המחשב והנדסה\nיום א 12:00 - 13:45\nפלדמן ב\nשעור ב",
+   "StartTime": "2026-10-25T12:00:01.5147184Z",
+   "Duration": 6599.6179999999995,
+   "Status": 4,
+   "IsWebcast": false,
+   "Folder": "11111111-2222-4333-8444-555555555555",
+   "Urls": {
+    "ViewerUrl": "https://example.cloud.panopto.eu/Panopto/Pages/Viewer.aspx?id=00000000-0000-4000-8000-000000000036"
+   }
+  },
+  {
+   "Id": "00000000-0000-4000-8000-000000000037",
+   "Name": "80430 2026-10-22 שעור א",
+   "Description": "80430\nIntroduction to Probability for Computer Science and Engineering\nמבוא להסתברות למדעי המחשב והנדסה\nיום ה 12:00 - 13:45\nפלדמן ב\nשעור א",
+   "StartTime": "2026-10-22T12:00:01.9572272Z",
+   "Duration": 6598.641,
+   "Status": 4,
+   "IsWebcast": false,
+   "Folder": "11111111-2222-4333-8444-555555555555",
+   "Urls": {
+    "ViewerUrl": "https://example.cloud.panopto.eu/Panopto/Pages/Viewer.aspx?id=00000000-0000-4000-8000-000000000037"
+   }
+  },
+  {
+   "Id": "00000000-0000-4000-8000-000000000038",
+   "Name": "80430 2026-10-22 תרגיל ו",
+   "Description": "80430\nIntroduction to Probability for Computer Science and Engineering\nמבוא להסתברות למדעי המחשב והנדסה\nיום ה 10:00 - 11:45\nשפרינצק 115\nתרגיל ו",
+   "StartTime": "2026-10-22T10:00:01.3125456Z",
+   "Duration": 6599.688999999999,
+   "Status": 4,
+   "IsWebcast": false,
+   "Folder": "11111111-2222-4333-8444-555555555555",
+   "Urls": {
+    "ViewerUrl": "https://example.cloud.panopto.eu/Panopto/Pages/Viewer.aspx?id=00000000-0000-4000-8000-000000000038"
+   }
+  },
+  {
+   "Id": "00000000-0000-4000-8000-000000000039",
+   "Name": "80430 2026-10-22 תרגיל ד",
+   "Description": "80430\nIntroduction to Probability for Computer Science and Engineering\nמבוא להסתברות למדעי המחשב והנדסה\nיום ה 10:00 - 11:45\nשפרינצק 27\nתרגיל ד",
+   "StartTime": "2026-10-22T10:00:01.1963152Z",
+   "Duration": 6599.141,
+   "Status": 4,
+   "IsWebcast": false,
+   "Folder": "11111111-2222-4333-8444-555555555555",
+   "Urls": {
+    "ViewerUrl": "https://example.cloud.panopto.eu/Panopto/Pages/Viewer.aspx?id=00000000-0000-4000-8000-000000000039"
+   }
+  },
+  {
+   "Id": "00000000-0000-4000-8000-000000000040",
+   "Name": "80430 2026-10-21 תרגיל ג",
+   "Description": "80430\nIntroduction to Probability for Computer Science and Engineering\nמבוא להסתברות למדעי המחשב והנדסה\nיום ד 13:00 - 14:45\nמתמטיקה 2\nתרגיל ג",
+   "StartTime": "2026-10-21T13:00:01.78676Z",
+   "Duration": 6598.623,
+   "Status": 4,
+   "IsWebcast": false,
+   "Folder": "11111111-2222-4333-8444-555555555555",
+   "Urls": {
+    "ViewerUrl": "https://example.cloud.panopto.eu/Panopto/Pages/Viewer.aspx?id=00000000-0000-4000-8000-000000000040"
+   }
+  },
+  {
+   "Id": "00000000-0000-4000-8000-000000000041",
+   "Name": "80430 13-14 on 21/10/2026 (יום ד)",
+   "Description": null,
+   "StartTime": "2026-10-21T13:00:01.7706688Z",
+   "Duration": 2999.65,
+   "Status": 4,
+   "IsWebcast": false,
+   "Folder": "11111111-2222-4333-8444-555555555555",
+   "Urls": {
+    "ViewerUrl": "https://example.cloud.panopto.eu/Panopto/Pages/Viewer.aspx?id=00000000-0000-4000-8000-000000000041"
+   }
+  },
+  {
+   "Id": "00000000-0000-4000-8000-000000000042",
+   "Name": "80430 2026-10-20 תרגיל ב",
+   "Description": "80430\nIntroduction to Probability for Computer Science and Engineering\nמבוא להסתברות למדעי המחשב והנדסה\nיום ג 14:00 - 15:45\nשפרינצק 116\nתרגיל ב",
+   "StartTime": "2026-10-20T14:00:01.4286912Z",
+   "Duration": 6599.335,
+   "Status": 4,
+   "IsWebcast": false,
+   "Folder": "11111111-2222-4333-8444-555555555555",
+   "Urls": {
+    "ViewerUrl": "https://example.cloud.panopto.eu/Panopto/Pages/Viewer.aspx?id=00000000-0000-4000-8000-000000000042"
+   }
+  },
+  {
+   "Id": "00000000-0000-4000-8000-000000000043",
+   "Name": "80430 2026-10-20 שעור א",
+   "Description": "80430\nIntroduction to Probability for Computer Science and Engineering\nמבוא להסתברות למדעי המחשב והנדסה\nיום ג 10:00 - 11:45\nקפלן\nשעור א",
+   "StartTime": "2026-10-20T10:00:01.8369248Z",
+   "Duration": 6599.040999999999,
+   "Status": 4,
+   "IsWebcast": false,
+   "Folder": "11111111-2222-4333-8444-555555555555",
+   "Urls": {
+    "ViewerUrl": "https://example.cloud.panopto.eu/Panopto/Pages/Viewer.aspx?id=00000000-0000-4000-8000-000000000043"
+   }
+  },
+  {
+   "Id": "00000000-0000-4000-8000-000000000044",
+   "Name": "80430 2026-10-20 שעור א",
+   "Description": "80430\nIntroduction to Probability for Computer Science and Engineering\nמבוא להסתברות למדעי המחשב והנדסה\nיום ג 09:00 - 09:45\nאודיטוריום הנדסה\nשעור א",
+   "StartTime": "2026-10-20T09:00:01.7691856Z",
+   "Duration": 2999.144,
+   "Status": 4,
+   "IsWebcast": false,
+   "Folder": "11111111-2222-4333-8444-555555555555",
+   "Urls": {
+    "ViewerUrl": "https://example.cloud.panopto.eu/Panopto/Pages/Viewer.aspx?id=00000000-0000-4000-8000-000000000044"
+   }
+  },
+  {
+   "Id": "00000000-0000-4000-8000-000000000045",
+   "Name": "80430 2026-10-19 תרגיל ה",
+   "Description": "80430\nIntroduction to Probability for Computer Science and Engineering\nמבוא להסתברות למדעי המחשב והנדסה\nיום ב 16:00 - 17:45\nC220\nתרגיל ה",
+   "StartTime": "2026-10-19T16:00:01.4295824Z",
+   "Duration": 781.702,
+   "Status": 4,
+   "IsWebcast": false,
+   "Folder": "11111111-2222-4333-8444-555555555555",
+   "Urls": {
+    "ViewerUrl": "https://example.cloud.panopto.eu/Panopto/Pages/Viewer.aspx?id=00000000-0000-4000-8000-000000000045"
+   }
+  },
+  {
+   "Id": "00000000-0000-4000-8000-000000000046",
+   "Name": "80430 2026-10-19 שעור ב",
+   "Description": "80430\nIntroduction to Probability for Computer Science and Engineering\nמבוא להסתברות למדעי המחשב והנדסה\nיום ב 14:00 - 15:45\nפלדמן ב\nשעור ב",
+   "StartTime": "2026-10-19T14:00:01.4697776Z",
+   "Duration": 6599.914,
+   "Status": 4,
+   "IsWebcast": false,
+   "Folder": "11111111-2222-4333-8444-555555555555",
+   "Urls": {
+    "ViewerUrl": "https://example.cloud.panopto.eu/Panopto/Pages/Viewer.aspx?id=00000000-0000-4000-8000-000000000046"
+   }
+  },
+  {
+   "Id": "00000000-0000-4000-8000-000000000047",
+   "Name": "80430 2026-10-18 שעור ב",
+   "Description": "80430\nIntroduction to Probability for Computer Science and Engineering\nמבוא להסתברות למדעי המחשב והנדסה\nיום א 12:00 - 13:45\nפלדמן ב\nשעור ב",
+   "StartTime": "2026-10-18T12:00:01.7086112Z",
+   "Duration": 6599.489,
+   "Status": 4,
+   "IsWebcast": false,
+   "Folder": "11111111-2222-4333-8444-555555555555",
+   "Urls": {
+    "ViewerUrl": "https://example.cloud.panopto.eu/Panopto/Pages/Viewer.aspx?id=00000000-0000-4000-8000-000000000047"
+   }
+  },
+  {
+   "Id": "00000000-0000-4000-8000-000000000048",
+   "Name": "80430 2026-10-15 שעור א",
+   "Description": "80430\nIntroduction to Probability for Computer Science and Engineering\nמבוא להסתברות למדעי המחשב והנדסה\nיום ה 12:00 - 13:45\nפלדמן ב\nשעור א",
+   "StartTime": "2026-10-15T12:00:01.7711984Z",
+   "Duration": 6599.107,
+   "Status": 4,
+   "IsWebcast": false,
+   "Folder": "11111111-2222-4333-8444-555555555555",
+   "Urls": {
+    "ViewerUrl": "https://example.cloud.panopto.eu/Panopto/Pages/Viewer.aspx?id=00000000-0000-4000-8000-000000000048"
+   }
+  },
+  {
+   "Id": "00000000-0000-4000-8000-000000000049",
+   "Name": "80430 2026-10-15 תרגיל ו",
+   "Description": "80430\nIntroduction to Probability for Computer Science and Engineering\nמבוא להסתברות למדעי המחשב והנדסה\nיום ה 10:00 - 11:45\nשפרינצק 115\nתרגיל ו",
+   "StartTime": "2026-10-15T10:00:01.7166752Z",
+   "Duration": 6598.5779999999995,
+   "Status": 4,
+   "IsWebcast": false,
+   "Folder": "11111111-2222-4333-8444-555555555555",
+   "Urls": {
+    "ViewerUrl": "https://example.cloud.panopto.eu/Panopto/Pages/Viewer.aspx?id=00000000-0000-4000-8000-000000000049"
+   }
+  },
+  {
+   "Id": "00000000-0000-4000-8000-000000000050",
+   "Name": "80430 2026-10-15 תרגיל ד",
+   "Description": "80430\nIntroduction to Probability for Computer Science and Engineering\nמבוא להסתברות למדעי המחשב והנדסה\nיום ה 10:00 - 11:45\nשפרינצק 27\nתרגיל ד",
+   "StartTime": "2026-10-15T10:00:01.2911184Z",
+   "Duration": 6599.651,
+   "Status": 4,
+   "IsWebcast": false,
+   "Folder": "11111111-2222-4333-8444-555555555555",
+   "Urls": {
+    "ViewerUrl": "https://example.cloud.panopto.eu/Panopto/Pages/Viewer.aspx?id=00000000-0000-4000-8000-000000000050"
+   }
+  }
+ ]
+}

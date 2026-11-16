@@ -104,6 +104,8 @@ extension CourseInfoMapping on CourseInfo {
     sortOrder: sortOrder,
     shortName: shortName,
     contacts: encodeContacts(contacts),
+    // Not part of [CourseInfo]: whole-row saves skip it (see _Adapter.own).
+    panoptoFolders: '',
   );
 }
 
@@ -142,6 +144,8 @@ extension MeetingRuleMapping on MeetingRule {
     validFrom: validFrom?.toIso(),
     validUntil: validUntil?.toIso(),
     links: encodeLinks(links),
+    // Not part of [MeetingRule]: whole-row saves skip it (see _Adapter.own).
+    panoptoGroup: '',
   );
 }
 
@@ -157,6 +161,7 @@ extension SessionOverrideRowMapping on SessionOverrideRow {
     movedEndMin: movedEndMin,
     movedLocation: movedLocation,
     excluded: excluded,
+    recordingFound: recordingFound,
   );
 }
 

@@ -59,7 +59,10 @@ abstract final class OccurrenceEngine {
             isOneOff: meeting.kind == MeetingKind.once,
             number: null,
             notes: override?.notes ?? '',
-            recordingUrl: override?.recordingUrl,
+            recordingUrl: override?.recordingLink,
+            recordingAuto:
+                override?.recordingUrl == null &&
+                override?.recordingFound != null,
             excluded: override?.excluded ?? false,
           ),
         );
@@ -183,6 +186,7 @@ abstract final class OccurrenceEngine {
     number: number,
     notes: o.notes,
     recordingUrl: o.recordingUrl,
+    recordingAuto: o.recordingAuto,
     excluded: o.excluded,
   );
 }

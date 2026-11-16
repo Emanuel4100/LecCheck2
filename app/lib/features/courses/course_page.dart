@@ -20,6 +20,7 @@ import '../../l10n/gen/app_localizations.dart';
 import '../session/session_actions.dart';
 import '../session/session_tile.dart';
 import 'meeting_summary.dart';
+import 'panopto_course_section.dart';
 import 'requirement_chip.dart';
 
 /// A course on its own page (phones, or opened directly).
@@ -279,6 +280,9 @@ class CourseDetailView extends ConsumerWidget {
           ),
         ),
       ],
+      SliverToBoxAdapter(
+        child: PanoptoCourseSection(course: course, meetings: meetings.items),
+      ),
     ];
     final history = <Widget>[
       SliverToBoxAdapter(child: SectionHeader(title: l.sessionsHistory)),

@@ -3661,6 +3661,408 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Couldn\'t add it. Your data didn\'t change.'**
   String get timetableSaveFailed;
+
+  /// No description provided for @panopto.
+  ///
+  /// In en, this message translates to:
+  /// **'Panopto recordings'**
+  String get panopto;
+
+  /// No description provided for @panoptoSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'Recording links found by themselves'**
+  String get panoptoSummary;
+
+  /// No description provided for @panoptoExperimental.
+  ///
+  /// In en, this message translates to:
+  /// **'Experimental'**
+  String get panoptoExperimental;
+
+  /// No description provided for @panoptoIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'LecCheck can find each class\'s recording in your university\'s Panopto and fill in its link, so missed classes show under Catch up on recordings by themselves.'**
+  String get panoptoIntro;
+
+  /// No description provided for @panoptoWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'Check the links it finds. It only reads Panopto, never changes links you pasted or removed, and can remove every link it found in one tap.'**
+  String get panoptoWarning;
+
+  /// No description provided for @panoptoSetUp.
+  ///
+  /// In en, this message translates to:
+  /// **'Set up'**
+  String get panoptoSetUp;
+
+  /// No description provided for @panoptoSetUpSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'About 3 minutes, once, on one device'**
+  String get panoptoSetUpSubtitle;
+
+  /// No description provided for @panoptoNoServer.
+  ///
+  /// In en, this message translates to:
+  /// **'This build has no sync server, which Panopto\'s sign-in needs.'**
+  String get panoptoNoServer;
+
+  /// No description provided for @panoptoSetupTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect Panopto'**
+  String get panoptoSetupTitle;
+
+  /// No description provided for @panoptoStepOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'Open Panopto'**
+  String get panoptoStepOpen;
+
+  /// No description provided for @panoptoStepOpenBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in to your university\'s Panopto in the browser. A computer is easiest.'**
+  String get panoptoStepOpenBody;
+
+  /// No description provided for @panoptoSite.
+  ///
+  /// In en, this message translates to:
+  /// **'Panopto address'**
+  String get panoptoSite;
+
+  /// No description provided for @panoptoOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'Open Panopto'**
+  String get panoptoOpen;
+
+  /// No description provided for @panoptoStepCreate.
+  ///
+  /// In en, this message translates to:
+  /// **'Create an API client'**
+  String get panoptoStepCreate;
+
+  /// No description provided for @panoptoStepCreateBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Open your picture or initials at the top, then User Settings, API Clients, and Create a new API Client.'**
+  String get panoptoStepCreateBody;
+
+  /// No description provided for @panoptoStepFill.
+  ///
+  /// In en, this message translates to:
+  /// **'Fill it in'**
+  String get panoptoStepFill;
+
+  /// No description provided for @panoptoStepFillBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Client Name: LecCheck. Client Type: Mobile or Desktop Application. Redirect URL: the address below, exactly. Leave the other fields empty, and press Create API Client.'**
+  String get panoptoStepFillBody;
+
+  /// No description provided for @panoptoRedirect.
+  ///
+  /// In en, this message translates to:
+  /// **'Redirect URL'**
+  String get panoptoRedirect;
+
+  /// No description provided for @panoptoCopy.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy'**
+  String get panoptoCopy;
+
+  /// No description provided for @panoptoCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Copied'**
+  String get panoptoCopied;
+
+  /// No description provided for @panoptoStepPaste.
+  ///
+  /// In en, this message translates to:
+  /// **'Paste its Client ID and secret'**
+  String get panoptoStepPaste;
+
+  /// No description provided for @panoptoStepPasteBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Panopto shows them once the client is created. They stay on this device.'**
+  String get panoptoStepPasteBody;
+
+  /// No description provided for @panoptoClientId.
+  ///
+  /// In en, this message translates to:
+  /// **'Client ID'**
+  String get panoptoClientId;
+
+  /// No description provided for @panoptoClientSecret.
+  ///
+  /// In en, this message translates to:
+  /// **'Client secret'**
+  String get panoptoClientSecret;
+
+  /// No description provided for @panoptoStepConnect.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect'**
+  String get panoptoStepConnect;
+
+  /// No description provided for @panoptoStepConnectBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in to Panopto once more in the browser. Then LecCheck looks for your recordings.'**
+  String get panoptoStepConnectBody;
+
+  /// No description provided for @panoptoConnect.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect'**
+  String get panoptoConnect;
+
+  /// No description provided for @panoptoOneDevice.
+  ///
+  /// In en, this message translates to:
+  /// **'Only one of your devices needs this: the others get the links through sync.'**
+  String get panoptoOneDevice;
+
+  /// No description provided for @panoptoWarnTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Try an experimental feature?'**
+  String get panoptoWarnTitle;
+
+  /// No description provided for @panoptoWarnBody.
+  ///
+  /// In en, this message translates to:
+  /// **'LecCheck will read your courses\' Panopto folders with the API client you created, and fill in recording links where a session has none.\n\n• Links it finds are marked “Found in Panopto”. It never changes links you pasted or removed.\n• Check them: a wrong link can be removed or replaced like any other.\n• Your Panopto sign-in stays on this device. Disconnecting removes it, and can remove every link it found.'**
+  String get panoptoWarnBody;
+
+  /// No description provided for @panoptoWarnContinue.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue'**
+  String get panoptoWarnContinue;
+
+  /// No description provided for @panoptoErrorClient.
+  ///
+  /// In en, this message translates to:
+  /// **'Panopto refused the Client ID or secret. Copy them again from Panopto.'**
+  String get panoptoErrorClient;
+
+  /// No description provided for @panoptoErrorDenied.
+  ///
+  /// In en, this message translates to:
+  /// **'The Panopto sign-in didn\'t finish.'**
+  String get panoptoErrorDenied;
+
+  /// No description provided for @panoptoErrorReconnect.
+  ///
+  /// In en, this message translates to:
+  /// **'Panopto\'s sign-in expired. Connect again.'**
+  String get panoptoErrorReconnect;
+
+  /// No description provided for @panoptoErrorNetwork.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t reach Panopto.'**
+  String get panoptoErrorNetwork;
+
+  /// No description provided for @panoptoErrorOther.
+  ///
+  /// In en, this message translates to:
+  /// **'Panopto answered with an error ({code}).'**
+  String panoptoErrorOther(String code);
+
+  /// No description provided for @panoptoConnectedTo.
+  ///
+  /// In en, this message translates to:
+  /// **'Connected to {site}'**
+  String panoptoConnectedTo(String site);
+
+  /// No description provided for @panoptoLastLook.
+  ///
+  /// In en, this message translates to:
+  /// **'Last look: {when}'**
+  String panoptoLastLook(String when);
+
+  /// No description provided for @panoptoFoundCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{No links found yet} =1{1 link found} other{{count} links found}}'**
+  String panoptoFoundCount(int count);
+
+  /// No description provided for @panoptoLooking.
+  ///
+  /// In en, this message translates to:
+  /// **'Looking for recordings…'**
+  String get panoptoLooking;
+
+  /// No description provided for @panoptoLookNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Look for recordings now'**
+  String get panoptoLookNow;
+
+  /// No description provided for @panoptoReconnect.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect again'**
+  String get panoptoReconnect;
+
+  /// No description provided for @panoptoDisconnect.
+  ///
+  /// In en, this message translates to:
+  /// **'Disconnect'**
+  String get panoptoDisconnect;
+
+  /// No description provided for @panoptoDisconnectTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Disconnect Panopto?'**
+  String get panoptoDisconnectTitle;
+
+  /// No description provided for @panoptoDisconnectBody.
+  ///
+  /// In en, this message translates to:
+  /// **'This device stops looking for recordings, and Panopto is asked to cancel its sign-in.'**
+  String get panoptoDisconnectBody;
+
+  /// No description provided for @panoptoRemoveFound.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Also remove the link it found} other{Also remove the {count} links it found}}'**
+  String panoptoRemoveFound(int count);
+
+  /// No description provided for @panoptoRemoved.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Removed 1 link} other{Removed {count} links}}'**
+  String panoptoRemoved(int count);
+
+  /// No description provided for @panoptoAskGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Which group\'s recordings are yours?'**
+  String get panoptoAskGroup;
+
+  /// No description provided for @panoptoAskFolder.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose its Panopto folder'**
+  String get panoptoAskFolder;
+
+  /// No description provided for @panoptoFolder.
+  ///
+  /// In en, this message translates to:
+  /// **'Panopto folder'**
+  String get panoptoFolder;
+
+  /// No description provided for @panoptoFolderAuto.
+  ///
+  /// In en, this message translates to:
+  /// **'Found by the course number at the next look'**
+  String get panoptoFolderAuto;
+
+  /// No description provided for @panoptoFolderNone.
+  ///
+  /// In en, this message translates to:
+  /// **'None: this course isn\'t looked for'**
+  String get panoptoFolderNone;
+
+  /// No description provided for @panoptoFolderChange.
+  ///
+  /// In en, this message translates to:
+  /// **'Change'**
+  String get panoptoFolderChange;
+
+  /// No description provided for @panoptoFolderSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Course number or name'**
+  String get panoptoFolderSearch;
+
+  /// No description provided for @panoptoFolderLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Or paste the folder\'s link from Panopto'**
+  String get panoptoFolderLink;
+
+  /// No description provided for @panoptoFolderLinkInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'That isn\'t a Panopto folder link.'**
+  String get panoptoFolderLinkInvalid;
+
+  /// No description provided for @panoptoFolderNotFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No folder found.'**
+  String get panoptoFolderNotFound;
+
+  /// No description provided for @panoptoFolderAutoOption.
+  ///
+  /// In en, this message translates to:
+  /// **'Find it by the course number'**
+  String get panoptoFolderAutoOption;
+
+  /// No description provided for @panoptoFolderNoneOption.
+  ///
+  /// In en, this message translates to:
+  /// **'No folder'**
+  String get panoptoFolderNoneOption;
+
+  /// No description provided for @panoptoGroupQuestion.
+  ///
+  /// In en, this message translates to:
+  /// **'{meeting}: several groups are recorded at this time. Whose recordings are yours?'**
+  String panoptoGroupQuestion(String meeting);
+
+  /// No description provided for @panoptoGroupOption.
+  ///
+  /// In en, this message translates to:
+  /// **'Group {group}'**
+  String panoptoGroupOption(String group);
+
+  /// No description provided for @panoptoHintLinks.
+  ///
+  /// In en, this message translates to:
+  /// **'Suggested by the links you pasted'**
+  String get panoptoHintLinks;
+
+  /// No description provided for @panoptoHintRoom.
+  ///
+  /// In en, this message translates to:
+  /// **'Suggested by the room'**
+  String get panoptoHintRoom;
+
+  /// No description provided for @panoptoGroupChosen.
+  ///
+  /// In en, this message translates to:
+  /// **'{meeting}: group {group}'**
+  String panoptoGroupChosen(String meeting, String group);
+
+  /// No description provided for @panoptoGroupAskAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask again'**
+  String get panoptoGroupAskAgain;
+
+  /// No description provided for @panoptoLookCourse.
+  ///
+  /// In en, this message translates to:
+  /// **'Look now'**
+  String get panoptoLookCourse;
+
+  /// No description provided for @panoptoFoundMark.
+  ///
+  /// In en, this message translates to:
+  /// **'Found in Panopto'**
+  String get panoptoFoundMark;
 }
 
 class _AppLocalizationsDelegate
