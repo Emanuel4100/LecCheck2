@@ -1,7 +1,8 @@
 # Panopto recordings, linked automatically
 
-Status: **designed, not built.** Step 0 done on 2026-11-16: it works (results below).
-Decided with the owner on 2026-11-16.
+Status: **experimental, built for one device** (Steps 0–3, 2026-11-16, not released yet).
+The device connected to Panopto finds the links; the user's other devices get them through
+sync. Pairing (Step 4) waits. Decided with the owner on 2026-11-16.
 
 ## Goal
 
@@ -123,6 +124,15 @@ Sources: [OAuth2 for users](https://support.panopto.com/s/article/How-to-Get-OAu
 | Unlocking on a new device | Pairing with an existing device, comparing a 6-digit code | No passphrase to remember |
 | Refresh tokens | Per device, never synced | They are what opens Panopto; each device signs in itself |
 
+For the experimental release (owner, after Step 0):
+
+| Question | Decision |
+|---|---|
+| Other devices | One connected device; the others get the links through sync. Vault and pairing later |
+| Parallel groups | Suggest a group (from links pasted before, then the room), ask once on the course page, remember the letter per meeting (synced) |
+| Found links | Marked "Found in Panopto", in their own column, with "remove every link it found" on Disconnect |
+| Setup guide | In the app, numbered steps with Copy for the redirect address; pictures from the owner later |
+
 Devices or server, compared:
 
 | | Devices (chosen) | Server (Worker cron) |
@@ -191,51 +201,72 @@ Steps 2–3 run by themselves over live sync, in about a second. Requests expire
 What the server sees: public keys, the commit, ciphertext. Encryption stops a server that
 only reads. The code comparison stops a server that tries to swap in its own key.
 
-### Finding recordings
+### Finding recordings (as built)
 
-- **Folders per course**: `courses.panoptoFolders`, a JSON list of folder ids (a lecture
-  folder and a practice folder are both fine). Not secret, synced. The course editor
-  suggests folders found by the course code (`CourseInfo.code`, e.g. 80430) and also takes
-  a pasted folder link.
-- **Runner** `core/recordings/recording_linker.dart`, on every connected device:
+- **Folders per course**: `courses.panoptoFolders`: `''` = not chosen yet, or a JSON list of
+  `{id, name}` (`[]` = none). Not secret, synced. A course without folders gets them by its
+  number: the one folder whose name has it, or the one of the semester's academic year
+  (`2026-27`); several leave the course for the user ("Choose its Panopto folder"). The
+  course page's Panopto part changes it: folder search, a pasted folder link
+  (`…folderID="<guid>"`), "find by the course number", or none.
+- **Runner** `core/recordings/recording_linker.dart`, on the connected device:
   - Which semesters: those running now or ended in the last 30 days
     (`ScheduleRepository.loadWindow`).
-  - What it does: for each course with folders, it lists the folder's sessions, newest
-    first, until older than the semester's start. Then it matches them and writes the
-    links with `setRecordingUrl` in one transaction.
+  - What it does: for each course with folders, it reads the folder's recordings by
+    `CreatedDate` newest first, page by page, until a page is all older than a week before
+    the semester. Then it matches and writes the links in one transaction
+    (`setFoundRecordings`). The report (time, links written, error, group questions,
+    courses to choose a folder for) stays in prefs for Settings and the course pages.
   - When it runs: at start and when the app comes back, at most every 3 hours (time kept
-    in prefs). Also in Android's daily task (`backgroundTaskDispatcher`,
-    `app/background_reminders.dart`), followed by `SyncEngine.syncOverHttp` as the widget
-    does, and on "Look for recordings now" on the course page.
-  - Two devices finding the same link write the same value; that's harmless.
+    in prefs, reloaded first since Android's task has its own cache); in Android's daily
+    task (`backgroundTaskDispatcher`) with the sync recorder on, then
+    `SyncEngine.syncOverHttp`; and on "Look for recordings now" (Settings, course page).
+  - Token refreshes run under a 30-second lease in `sync_meta` (`DbRefreshLock`): Android's
+    background task is another isolate in the same process, where file locks don't help.
 - **Matcher** `domain/recording_match.dart` (pure Dart):
-  - A recording goes to the course's session whose effective start (moved sessions
-    included) is closest to the recording's start, from 30 minutes before the start to
-    the end.
-  - Fallback without a usable start time: the date in the name, plus the type word
-    (`שעור`/`שיעור`/`הרצאה` lecture, `תרגיל`/`תרגול` practice, `מעבדה` lab).
-  - Never canceled sessions, and never one that already has a link. Each recording is
-    used once. A recording in progress waits until it's done.
-- **Removed stays removed**: clearing a link stores `''` instead of null
-  (`setRecordingUrl`), and the matcher fills only null. The app already treats `''` as no
-  link (`AttendanceStats.catchUp`, Today's card).
+  - Only finished recordings (`Status` 4 or 6) of this course: names starting with another
+    course number are left out.
+  - Start time: the clock digits as local time, unless reading `StartTime` as real UTC
+    fits more recordings to sessions (other sites may send true UTC).
+  - A session takes recordings starting from 30 minutes before it to its end, on its
+    effective date and time (moved sessions included). Lectures don't take recordings
+    marked as practices and vice versa; "other" sessions take any.
+  - A remembered group letter drops other groups' recordings. Without one, two groups at
+    the same time make a question for the meeting instead of a guess. The suggestion: the
+    group most links pasted into the meeting's sessions point to, else the one in the
+    meeting's room. (The owner follows group ו while the timetable's room is ד's: rooms
+    alone would have been wrong.)
+  - Ties: closest start, then the meeting's room, then an automatic recording (with the
+    timetable slot in its description), then the longest.
+  - Never canceled sessions, never ones not over yet, never one with the user's own link
+    or a removed one. Each recording is used once; recordings in links the user pasted
+    aren't used again.
+- **The user's link wins**: found links go to `session_overrides.recordingFound`, a column
+  of their own. A session shows `recordingUrl` if it isn't null (`''` = removed by hand),
+  else `recordingFound`. Two columns, so a found link never overwrites a pasted one in
+  sync, even when the paste was made offline and arrives later. Removing a link stores
+  `''`; typing into an empty field and erasing it again leaves null. "Remove every link
+  it found" empties `recordingFound` only. Older app versions don't show found links.
+- Editing a course or meeting leaves `panoptoFolders` and `panoptoGroup` alone
+  (`_Adapter.own`): the domain types don't carry them. Backups and snapshots restore them.
 - The viewer link needs a Panopto sign-in to play, so it isn't a secret in the synced
   session row.
 
-## Data model (schema v6)
-
-Follow CLAUDE.md's schema steps: `dart run drift_dev make-migrations`, a `stepByStep` step,
-a test in `test/drift`, defaults in `_Adapter.added`.
+## Data model (schema v6, as built)
 
 | Where | Change | Default |
 |---|---|---|
-| `courses.panoptoFolders` | TEXT, JSON list of folder ids | `'[]'` |
-| `user_settings.panoptoVault` | TEXT, nullable, encrypted setup | null |
-| new synced table `device_requests` | id, deviceName, commit, aPub, bPub, nonce, wrapped, kid, expiresAt | — |
+| `courses.panoptoFolders` | TEXT: `''` not chosen, or JSON list of `{id, name}` | `''` |
+| `meetings.panoptoGroup` | TEXT, the group letter whose recordings are the meeting's | `''` |
+| `session_overrides.recordingFound` | TEXT, nullable, a link found in Panopto | null |
 
-- Server: add `device_requests` to `SYNCED_TABLES` (`server/src/protocol.ts`). Older apps
-  ignore the table.
-- Per device, not synced: K, the refresh token, the last run time.
+- No server change for these (the server doesn't know columns). The server adds the page
+  `GET /v1/panopto/done` (`server/src/panopto.ts`), and the privacy policy a section.
+- Per device, not synced: the setup and tokens (secure storage, base64url JSON under
+  `leccheck.panopto`), the last look's report, and whether the warning was shown.
+- Later, for pairing (Step 4): `user_settings.panoptoVault` and a synced table
+  `device_requests` (id, deviceName, commit, aPub, bPub, nonce, wrapped, kid, expiresAt),
+  with `device_requests` added to `SYNCED_TABLES`.
 
 ## Steps
 
@@ -257,20 +288,23 @@ a test in `test/drift`, defaults in `_Adapter.added`.
      - page size;
      - whether folder search by "80430" finds the course.
    - Update this document with the answers.
-1. **Matcher**, with unit tests. No Panopto needed.
-2. **Panopto client** (`core/recordings/panopto_client.dart`): connect, refresh, folder
-   sessions, folder search. Tested against a fake HTTP server with fixtures from Step 0
-   (ids and links replaced).
+1. **Matcher**, with unit tests. No Panopto needed. *Done: tests on the real 80430 folder
+   (`test/fixtures/panopto`, ids and links replaced) and the owner's meetings.*
+2. **Panopto client** (`core/recordings/panopto_api.dart`, `panopto_connection.dart`):
+   connect, refresh, folder sessions, folder search. Tested against a fake HTTP server
+   with fixtures from Step 0 (ids and links replaced). *Done: `test/core/fake_panopto.dart`
+   behaves like HUJI's site.*
 3. **One device, no pairing yet**:
    - Settings → Panopto: setup steps with a Copy button for the redirect address, the
      Client ID and secret, Connect / Disconnect.
-   - Course editor: a folders row. Course page: "Look now".
+   - Course page (not the editor): the folder with Change, group questions, "Look now".
    - The runner.
    - `''` on clearing.
    - Schema v6 for `courses.panoptoFolders`.
    - Server: the redirect page.
 
-   This alone is a useful release: other devices get the links through sync.
+   This alone is a useful release: other devices get the links through sync. *Done as
+   an experimental feature; the setup guide has no pictures yet.*
 4. **Vault and pairing** (`core/recordings/panopto_vault.dart`):
    - `user_settings.panoptoVault` and `device_requests`.
    - "Use it here", and the "Allow this device?" prompt on Today and in Settings.

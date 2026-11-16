@@ -125,8 +125,12 @@ These are built and compile, but have only been exercised in tests so far:
 - The semester-dates warning still says "outside the new dates" when it counts
   every-other-week sessions: new wording in English and Hebrew.
 - Check on a phone that Today is current right after unlocking it in the morning.
-- Panopto recordings linked automatically: designed in [PANOPTO.md](PANOPTO.md), not built.
-  Starts with its Step 0 (checking the API with the owner's own API client).
+- Panopto recordings linked automatically, **experimental**: built (Steps 0–3 of
+  [PANOPTO.md](PANOPTO.md)), on one device with the others getting links through sync.
+  Before release: deploy the server's `/v1/panopto/done` page; the owner points their API
+  client's Redirect URL at it, tries it on the Linux build and the phone, and approves the
+  Hebrew strings; pictures for the setup guide (from the owner). Later: pairing other
+  devices (Step 4), "Watched the recording" from Panopto's watched percentage.
 
 On hold: Linux above 60 Hz, crash reporting. Later: a
 translation platform, the way open source apps do it; a backup server; a more desktop-like

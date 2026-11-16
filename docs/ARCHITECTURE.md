@@ -38,6 +38,7 @@ These directly fix v1, which serialized the whole app to one JSON blob per chang
 | `core/notifications/` | `NotificationService` (diff-based scheduling), background action handler |
 | `core/home_widget/` | Android widget snapshot + background callback |
 | `core/backup/` | JSON v3 export/import, v1/v2 importer |
+| `core/recordings/` | Panopto (experimental): `PanoptoConnection` (sign-in, rotating tokens under a database lease), `PanoptoApi` (read-only REST), `RecordingLinker` (finds and writes links); the matcher is `domain/recording_match.dart`. See [PANOPTO.md](PANOPTO.md) |
 | `core/icons/` | `LecIcons` (meaning → glyph) and the generated custom icon font class |
 | `app/` | Providers, router, shell, theme, formatting, notification/widget controllers, adaptive helpers (`adaptive.dart`) and keyboard shortcuts (`shortcuts.dart`) |
 | `features/` | Screens: onboarding, today, week, courses, session, stats, settings, sessions |
@@ -52,9 +53,9 @@ arriving already deleted get 0).
 | Table | Purpose / key columns |
 |---|---|
 | `semesters` | name, startDate, endDate, weekStart (ISO weekday), visibleDays (bitmask) |
-| `courses` | semesterId, name, code, lecturer, colorKey, website, notes, links (JSON), sortOrder |
-| `meetings` | courseId, type, kind (`weekly`/`once`), weekday or date, startMin, endMin, location, intervalWeeks (1/2), validFrom, validUntil, links |
-| `session_overrides` | **id = `{meetingId}_{yyyymmdd}`** of the original date; status, notes, recordingUrl, moved date/start/end/location |
+| `courses` | semesterId, name, code, lecturer, colorKey, website, notes, links (JSON), sortOrder, panoptoFolders |
+| `meetings` | courseId, type, kind (`weekly`/`once`), weekday or date, startMin, endMin, location, intervalWeeks (1/2), validFrom, validUntil, links, panoptoGroup |
+| `session_overrides` | **id = `{meetingId}_{yyyymmdd}`** of the original date; status, notes, recordingUrl (the user's; `''` = removed), recordingFound (from Panopto, shown only while recordingUrl is null), moved date/start/end/location |
 | `no_class_ranges` | semesterId, start, end, label |
 | `requirements` | courseId, type (null = all), minPercent, recordingsCount |
 | `user_settings` | single row `me`: use24h (null = follow device), meetingNumbers |

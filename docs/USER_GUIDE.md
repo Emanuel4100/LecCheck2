@@ -104,6 +104,41 @@ Tap any session to see its date, time, room and lecturer, and to:
   change), and undo that later,
 - remove a one-time session.
 
+## Panopto recordings (experimental)
+
+LecCheck can fill in recording links by itself from your university's Panopto (HUJI's is
+`huji.cloud.panopto.eu`), so missed classes show under **Stats → Catch up on recordings**.
+
+Set it up once, on one device (a computer is easiest): **Settings → Panopto recordings →
+Set up**, and follow the steps:
+
+1. Open Panopto in the browser and sign in.
+2. Open your picture or initials at the top → **User Settings** → **API Clients** →
+   **Create a new API Client**.
+3. Client Name `LecCheck`, Client Type **Mobile or Desktop Application**, and as the
+   Redirect URL the address the app shows (Copy button), exactly. Leave the rest empty.
+4. Paste the **Client ID** and **Client secret** Panopto shows into LecCheck, and press
+   **Connect**. You sign in to Panopto once more in the browser.
+
+Then:
+
+- LecCheck finds each course's Panopto folder by its **course number**. To pick another
+  folder (or none), open the course: the **Panopto recordings** part has a **Change**
+  button that searches folders or takes a pasted folder link.
+- A class gets the recording that started closest to its time (moved sessions included),
+  once the recording is finished. Canceled sessions get none.
+- When several groups are recorded at your class's time (two practice groups, say), the
+  course page asks **which group's recordings are yours**, with a suggestion from links you
+  pasted before or from the room. The answer is remembered, and **Ask again** changes it.
+- Found links are marked **Found in Panopto** in the session. A link you paste always wins,
+  and a link you remove stays removed.
+- It looks when the app starts or comes back (at most every 3 hours), on Android once a day
+  in the background, and when you tap **Look for recordings now**.
+- Only the connected device looks; your other devices get the links through sync.
+  Your Panopto Client ID, secret and sign-in stay on that device.
+- **Disconnect** forgets the sign-in and asks Panopto to cancel it; tick the box to also
+  remove every link it found.
+
 ## Today
 
 - Semester progress (week X of N).

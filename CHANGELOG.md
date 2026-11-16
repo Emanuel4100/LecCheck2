@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased
+
+- **Panopto recordings, found by themselves (experimental).** Settings → Panopto recordings
+  connects LecCheck to your university's Panopto with an API client you create there once.
+  It finds each course's folder by the course number and fills in each finished class's
+  recording link, so missed classes show under Catch up on recordings by themselves. When
+  several groups are recorded at the same time, the course page asks once which group is
+  yours, with a suggestion. Found links are marked "Found in Panopto"; your own links always
+  win, and links you remove stay removed. One connected device is enough: the links reach
+  your other devices through sync. Android also looks once a day in the background.
+- **Removing a recording link** now keeps it removed (stored as an empty link), so a link
+  found in Panopto doesn't take its place.
+
 ## 2.0.0-beta.19 — 2026-11-16
 
 - **A change for one week only keeps following the meeting.** Changing only the room for a
