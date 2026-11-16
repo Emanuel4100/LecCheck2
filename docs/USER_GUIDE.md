@@ -10,8 +10,9 @@
    If you signed in to an account that already has data, you skip this: LecCheck brings
    your semesters and asks which one to open.
 4. **A quick tour** follows the first setup: it points at Today, Week, Courses, Stats
-   and Settings in turn, and ends at **Add course**. **Skip** (✕) ends it; see it again
-   from **Settings → About → Show the app tour**.
+   and Settings in turn, offers to set up **Panopto recordings** (experimental, see
+   below; **Set it up** opens the steps), and ends at **Add course**. **Skip** (✕) ends
+   it; see it again from **Settings → About → Show the app tour**.
 5. Add your courses (Today shows an **Add course** button while you have none).
 
 ## Courses and meetings

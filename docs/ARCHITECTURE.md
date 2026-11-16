@@ -38,7 +38,7 @@ These directly fix v1, which serialized the whole app to one JSON blob per chang
 | `core/notifications/` | `NotificationService` (diff-based scheduling), background action handler |
 | `core/home_widget/` | Android widget snapshot + background callback |
 | `core/backup/` | JSON v3 export/import, v1/v2 importer |
-| `core/recordings/` | Panopto (experimental): `PanoptoConnection` (sign-in, rotating tokens under a database lease), `PanoptoApi` (read-only REST), `RecordingLinker` (finds and writes links); the matcher is `domain/recording_match.dart`. See [PANOPTO.md](PANOPTO.md) |
+| `core/recordings/` | Panopto (experimental): `PanoptoConnection` (sign-in, rotating tokens under a database lease), `PanoptoApi` (read-only REST), `RecordingLinker` (finds and writes links), `match_report.dart` (Developer mode's matching details); the matcher is `domain/recording_match.dart`; `PanoptoFeature.experimental` (`app/recordings_controller.dart`) switches the badges, the warning and the tour's default. See [PANOPTO.md](PANOPTO.md) |
 | `core/icons/` | `LecIcons` (meaning → glyph) and the generated custom icon font class |
 | `app/` | Providers, router, shell, theme, formatting, notification/widget controllers, adaptive helpers (`adaptive.dart`) and keyboard shortcuts (`shortcuts.dart`) |
 | `features/` | Screens: onboarding, today, week, courses, session, stats, settings, sessions |

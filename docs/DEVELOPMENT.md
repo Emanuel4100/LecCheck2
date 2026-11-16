@@ -140,6 +140,53 @@ adb install LecCheck-…-android-arm64.apk    # the same signing key; the data c
 
 After the restore, sign in again (the sign-in token isn't backed up).
 
+## A separate test copy on Linux
+
+To try a build with your own schedule without touching the installed LecCheck, its
+sign-ins or your account (how Panopto recordings were first tried, 2026-11-16):
+
+```bash
+T=~/.local/share/leccheck-test
+cd app && flutter build linux --release \
+  --dart-define=API_BASE_URL=https://leccheck-sync.leccheck.workers.dev
+mkdir -p "$T/data/com.leccheck.app" && cp -r build/linux/x64/release/bundle "$T/bundle"
+# A snapshot of the Flatpak's data (read only), and its settings without sync.* keys:
+SRC=~/.var/app/com.leccheck.app/data/com.leccheck.app
+sqlite3 -readonly "$SRC/leccheck.sqlite" ".backup '$T/data/com.leccheck.app/leccheck.sqlite'"
+```
+
+Copy `shared_preferences.json` keeping only `appearance.*`, `semester.*`, `week.*`,
+`hint.*` and `dev.*`: the `sync.*` keys attach the account. Then `$T/run.sh`:
+
+```bash
+#!/usr/bin/env bash
+set -eu
+here="$(cd "$(dirname "$0")" && pwd)"
+export XDG_DATA_HOME="$here/data" XDG_CACHE_HOME="$here/cache" XDG_STATE_HOME="$here/state"
+# Still find the browser's launcher (sign-ins open it).
+export XDG_DATA_DIRS="$HOME/.local/share:${XDG_DATA_DIRS:-/usr/local/share:/usr/share}"
+mkdir -p "$XDG_DATA_HOME" "$XDG_CACHE_HOME" "$XDG_STATE_HOME"
+exec dbus-run-session -- bash -c '
+  # A keyring of its own (data/keyrings). An empty password would make the first save
+  # ask for one in a window that cannot open here, so it has a fixed one.
+  eval "$(printf "leccheck-test" | gnome-keyring-daemon --unlock --components=secrets)" >/dev/null
+  exec "$1/bundle/leccheck"
+' _ "$here"
+```
+
+- Its own D-Bus session keeps it apart from the installed app (which would otherwise just
+  be brought to the front) and gives it its own keyring: not signed in to sync, so
+  nothing reaches the account. Don't sign in to sync there: it would merge into the
+  account.
+- No apostrophes inside the single-quoted `bash -c` block.
+- Sign-ins open the normal browser: Omarchy hands the link to a running Chromium-based
+  browser through its profile's socket, or starts it as a systemd user service with the
+  normal session, so the test keyring never reaches the browser.
+- Replace `bundle/` to update it (restart the copy); delete the folder to throw it away.
+- To check a build without a window: run it on a copy of the folder under
+  `xvfb-run -a` with `GDK_BACKEND=x11`, without `data/keyrings` (so no sign-in is used
+  or rotated), and read `data/com.leccheck.app/dev_log.txt`.
+
 ## Code style
 
 - `flutter analyze` must be clean; format with `dart format`.

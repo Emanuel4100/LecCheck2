@@ -125,12 +125,11 @@ These are built and compile, but have only been exercised in tests so far:
 - The semester-dates warning still says "outside the new dates" when it counts
   every-other-week sessions: new wording in English and Hebrew.
 - Check on a phone that Today is current right after unlocking it in the morning.
-- Panopto recordings linked automatically, **experimental**: built (Steps 0–3 of
-  [PANOPTO.md](PANOPTO.md)), on one device with the others getting links through sync.
-  Before release: deploy the server's `/v1/panopto/done` page; the owner points their API
-  client's Redirect URL at it, tries it on the Linux build and the phone, and approves the
-  Hebrew strings; pictures for the setup guide (from the owner). Later: pairing other
-  devices (Step 4), "Watched the recording" from Panopto's watched percentage.
+- **Panopto recordings, experimental**: built and tried on the owner's Linux test copy
+  (2026-11-16); the server page is deployed. What it does, its limits and the ideas are in
+  [PANOPTO.md](PANOPTO.md). Before release: the owner approves the Hebrew strings (the
+  `panopto*`, `tourPanopto*` and `tourLater` keys) and tries it on the phone; pictures for
+  the setup guide (from the owner) when ready.
 
 On hold: Linux above 60 Hz, crash reporting. Later: a
 translation platform, the way open source apps do it; a backup server; a more desktop-like
@@ -186,6 +185,21 @@ goes once nobody is left on the tarball.
   and canceling all classes on a day.
 - Done in 2.0.0-beta.19: the code review's logic fixes and two speedups (first sync,
   automatic backups).
+
+## Panopto recordings: after the experimental release
+
+From [PANOPTO.md](PANOPTO.md) "Limits" and "Ideas" (ask the owner which first):
+
+- Canceled sessions that Panopto recorded: a hint to fix the status or link it.
+- "Watched the recording" suggested from Panopto's watched percentage.
+- Make-up classes: a recording of the user's group at a time with no session, offered as
+  a one-time session.
+- More than one recording link per session (classes recorded in two parts).
+- A "Find in Panopto" button in the session; fix pasted links on another date.
+- Today says when the Panopto sign-in expired; "N new recordings" on Catch up.
+- Pairing other devices (the vault, Step 4), so any device can look.
+- Out of experimental (criteria in PANOPTO.md): flip `PanoptoFeature.experimental`, and
+  the tour leads with "Set it up".
 
 ## Later (M4)
 
