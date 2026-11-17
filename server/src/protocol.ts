@@ -118,7 +118,10 @@ export type ServerMessage =
       /** Set when storage can't be used right now (see `unavailable`): the
        * client keeps its changes and tries again at this server time (ms). */
       retryAt?: number;
-    };
+    }
+  /** The Panopto vault or a pairing request changed: read it again. Apps
+   * from before it ignore unknown messages. */
+  | { t: "panopto" };
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 

@@ -1,5 +1,6 @@
 import { DurableObject } from "cloudflare:workers";
 import { applyPatch, type RowState } from "./merge";
+import { panoptoOp, VAULT_SCHEMA, type PanoptoOp, type PanoptoReply } from "./panopto-vault";
 import {
   appTooOld,
   MAX_ACCOUNT_BYTES,
@@ -132,6 +133,7 @@ export class UserStore extends DurableObject<Env> {
         PRIMARY KEY (tbl, id)
       );
     `);
+    this.sql.exec(VAULT_SCHEMA);
     ctx.setWebSocketAutoResponse(
       new WebSocketRequestResponsePair('{"t":"ping"}', '{"t":"pong"}'),
     );
@@ -237,6 +239,9 @@ export class UserStore extends DurableObject<Env> {
         now,
       );
       this.sql.exec("DELETE FROM rows");
+      // The Panopto vault isn't restorable: set it up again.
+      this.sql.exec("DELETE FROM panopto_vault");
+      this.sql.exec("DELETE FROM panopto_pairs");
       this.setMeta("dataset", crypto.randomUUID());
       // Today's writes still count, so delete and push again can't skip the limit.
       this.saveUsage({ ...this.currentUsage(now), rows: 0, bytes: 0 });
@@ -309,6 +314,27 @@ export class UserStore extends DurableObject<Env> {
       .exec<{ at: number | null }>("SELECT MIN(deleted_at) AS at FROM trash")
       .toArray()[0]?.at;
     if (next != null) await this.ctx.storage.setAlarm(next + TRASH_DAYS * DAY_MS);
+  }
+
+  // ---------------------------------------------------------- panopto --
+
+  /** One vault or pairing operation (see panopto-vault.ts), for a session
+   * of [epoch]. Null when the session was revoked. Tells connected devices
+   * to read again when something changed. */
+  async panopto(epoch: number, op: PanoptoOp): Promise<PanoptoReply | null> {
+    if (epoch !== (await this.epoch())) return null;
+    const reply = this.ctx.storage.transactionSync(() => panoptoOp(this.sql, op, Date.now()));
+    if (reply.changed) {
+      const json = JSON.stringify({ t: "panopto" } satisfies ServerMessage);
+      for (const ws of this.ctx.getWebSockets()) {
+        try {
+          ws.send(json);
+        } catch {
+          // Closed sockets are cleaned up by the runtime.
+        }
+      }
+    }
+    return reply;
   }
 
   // --------------------------------------------------------- recovery --
