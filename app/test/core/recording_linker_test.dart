@@ -117,6 +117,7 @@ void main() {
       browser: panopto.browser,
       clock: () => now,
       redirectUrl: 'https://sync.example/v1/panopto/done',
+      networkRetry: Duration.zero,
     );
     linker = RecordingLinker(
       repo: repo,
@@ -222,6 +223,19 @@ void main() {
     expect(panopto.apiRequests.length, before);
     now = now.add(const Duration(hours: 2, minutes: 1));
     expect(await linker.run(), isNotNull);
+  });
+
+  test('no connection: the next start looks again, without waiting', () async {
+    await connection.connect(FakePanopto.setup);
+    panopto.apiOffline = 2;
+    expect((await linker.run())!.error, 'network');
+    now = now.add(const Duration(minutes: 5));
+    final report = (await linker.run())!;
+    expect(report.error, isNull);
+    expect(report.written, greaterThan(0));
+    // And then the usual 3 hours.
+    now = now.add(const Duration(minutes: 5));
+    expect(await linker.run(), isNull);
   });
 
   test('links pasted or cleared by hand stay', () async {

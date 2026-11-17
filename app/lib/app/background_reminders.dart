@@ -33,6 +33,10 @@ import 'providers.dart';
 
 const _topUpTask = 'reminderTopUp';
 
+/// Panopto's daily look: its own task, so WorkManager runs it only with a
+/// connection (the top-up mustn't wait for one).
+const _panoptoTask = 'panoptoLook';
+
 /// Plans and schedules reminders straight from the database, without
 /// providers or UI. Returns how many are planned.
 Future<int> topUpReminders(
@@ -140,7 +144,8 @@ Future<void> onNotificationActionInBackground(
   }
 }
 
-/// WorkManager's entry point (its own isolate): the daily top-up.
+/// WorkManager's entry point (its own isolate): the daily top-up, and the
+/// daily Panopto look.
 @pragma('vm:entry-point')
 void backgroundTaskDispatcher() {
   Workmanager().executeTask((task, _) async {
@@ -152,15 +157,18 @@ void backgroundTaskDispatcher() {
     final db = AppDatabase();
     try {
       final repo = ScheduleRepository(db);
+      if (task == _panoptoTask) {
+        await _lookForRecordings(db, repo, prefs);
+        return true;
+      }
       final count = await topUpReminders(repo, prefs);
       DevLog.add('Daily top-up: $count reminders planned');
       // The widget holds a week of days: move it along even when the app
       // isn't opened.
       await refreshTodayWidget(repo, prefs);
-      await _lookForRecordings(db, repo, prefs);
       return true;
     } on Object catch (e) {
-      debugPrint('Daily top-up failed: $e');
+      debugPrint('Daily $task failed: $e');
       return false;
     } finally {
       await db.close();
@@ -220,6 +228,13 @@ Future<void> scheduleDailyTopUp() async {
       _topUpTask,
       frequency: const Duration(hours: 24),
       existingWorkPolicy: ExistingPeriodicWorkPolicy.keep,
+    );
+    await Workmanager().registerPeriodicTask(
+      _panoptoTask,
+      _panoptoTask,
+      frequency: const Duration(hours: 24),
+      existingWorkPolicy: ExistingPeriodicWorkPolicy.keep,
+      constraints: Constraints(networkType: NetworkType.connected),
     );
   } on Object catch (e) {
     debugPrint('Could not schedule the daily reminder top-up: $e');

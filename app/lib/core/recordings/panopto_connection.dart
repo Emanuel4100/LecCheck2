@@ -111,11 +111,17 @@ abstract interface class RefreshLock {
 /// isolate from one database isolate, so its transactions decide who holds
 /// it.
 class DbRefreshLock implements RefreshLock {
-  DbRefreshLock(this.db);
+  DbRefreshLock(this.db, {Duration? giveUpAfter})
+    : _giveUpAfter = giveUpAfter ?? _lease + const Duration(seconds: 5);
 
   final AppDatabase db;
+  final Duration _giveUpAfter;
   static const _key = 'panopto.refreshLock';
-  static const _lease = Duration(seconds: 30);
+
+  /// Longer than a token request can take (its timeout), so a slow refresh
+  /// never loses the lease to another isolate that would refresh with the
+  /// same, already used, token.
+  static const _lease = Duration(seconds: 60);
   static Future<void> _tail = Future.value();
 
   @override
@@ -126,8 +132,13 @@ class DbRefreshLock implements RefreshLock {
     await previous;
     final owner = _randomString(12);
     try {
-      final giveUp = DateTime.now().add(_lease + const Duration(seconds: 5));
-      while (!await _take(owner) && DateTime.now().isBefore(giveUp)) {
+      final giveUp = DateTime.now().add(_giveUpAfter);
+      while (!await _take(owner)) {
+        // Never run without the lease: two refreshes with one token lose
+        // the sign-in. Another try comes with the next look.
+        if (!DateTime.now().isBefore(giveUp)) {
+          throw const PanoptoException('network', 'refresh lock busy');
+        }
         await Future<void>.delayed(const Duration(milliseconds: 250));
       }
       return await body();
@@ -180,6 +191,7 @@ class PanoptoConnection {
     BrowserSignIn? browser,
     DateTime Function()? clock,
     String? redirectUrl,
+    this._networkRetry = const Duration(seconds: 3),
   }) : _redirect = redirectUrl,
        _storage = storage ?? const FlutterSecureStorage(),
        _http = client ?? http.Client(),
@@ -192,10 +204,14 @@ class PanoptoConnection {
   final BrowserSignIn _browser;
   final DateTime Function() _clock;
   final String? _redirect;
+  final Duration _networkRetry;
 
   static const _key = 'leccheck.panopto';
   static const scope = 'openid api offline_access';
   static const _desktopPort = 43823;
+
+  /// Well inside [DbRefreshLock]'s lease.
+  static const tokenTimeout = Duration(seconds: 20);
 
   /// The redirect address the user puts in their Panopto API client: the
   /// sync server's page that hands the browser back to the app. Null when
@@ -310,6 +326,11 @@ class PanoptoConnection {
       });
     } on PanoptoException catch (e) {
       if (e.needsReconnect) {
+        // Forget only the token Panopto refused: one saved meanwhile (by a
+        // refresh that got past the lock) still works.
+        if ((await load())?.refreshToken != refreshToken) {
+          throw const PanoptoException('network', 'token changed meanwhile');
+        }
         await _save(PanoptoState(setup: state.setup));
         DevLog.add('Panopto sign-in expired: connect again');
       }
@@ -328,6 +349,7 @@ class PanoptoConnection {
       site: state.setup.site,
       client: _http,
       token: accessToken,
+      networkRetry: _networkRetry,
     );
   }
 
@@ -388,7 +410,7 @@ class PanoptoConnection {
             headers: _basic(setup),
             body: form,
           )
-          .timeout(const Duration(seconds: 30));
+          .timeout(tokenTimeout);
     } on Exception catch (e) {
       throw PanoptoException('network', '$e');
     }

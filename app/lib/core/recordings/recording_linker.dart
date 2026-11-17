@@ -266,6 +266,9 @@ class RecordingLinker {
     } on PanoptoException catch (e) {
       error = e.code;
       DevLog.add('Panopto look failed: $e');
+      // A passing problem (no connection yet, Panopto busy) doesn't wait
+      // 3 hours: the next start or return to the app looks again.
+      if (e.isPassing) await prefs.remove(_startedKey);
     }
     final next = LinkerReport(
       at: _clock(),

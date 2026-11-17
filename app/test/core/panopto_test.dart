@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:drift/native.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -21,6 +22,7 @@ void main() {
     browser: panopto.browser,
     clock: () => now,
     redirectUrl: 'https://sync.example/v1/panopto/done',
+    networkRetry: Duration.zero,
   );
 
   setUp(() {
@@ -152,6 +154,60 @@ void main() {
       },
     );
 
+    test(
+      'a refused token that was replaced meanwhile isn\'t forgotten',
+      () async {
+        // Another isolate refreshed while this one's request was on its way:
+        // Panopto refuses the old token, but the saved one still works.
+        final storage = _SwapOnRefresh(panopto);
+        final c = PanoptoConnection(
+          lock: MemoryLock(),
+          storage: storage,
+          client: panopto.client,
+          browser: panopto.browser,
+          clock: () => now,
+          redirectUrl: 'https://sync.example/v1/panopto/done',
+        );
+        await c.connect(FakePanopto.setup);
+        storage.swap = true;
+        await expectLater(
+          c.accessToken(refresh: true),
+          throwsA(
+            isA<PanoptoException>().having((e) => e.code, 'code', 'network'),
+          ),
+        );
+        expect(await c.status(), PanoptoStatus.connected);
+        expect((await c.load())!.refreshToken, 'elsewhere');
+      },
+    );
+
+    test('no connection for a moment: the API is read again', () async {
+      final c = connection();
+      await c.connect(FakePanopto.setup);
+      panopto.apiOffline = 1;
+      expect(await (await c.api())!.searchFolders('80430'), hasLength(1));
+      // No refresh for a network error.
+      expect(
+        panopto.requests.where((r) => r.url.path.endsWith('/token')),
+        hasLength(1),
+      );
+    });
+
+    test('still no connection: a network error', () async {
+      final c = connection();
+      await c.connect(FakePanopto.setup);
+      panopto.apiOffline = 2;
+      await expectLater(
+        (await c.api())!.searchFolders('80430'),
+        throwsA(
+          isA<PanoptoException>()
+              .having((e) => e.code, 'code', 'network')
+              .having((e) => e.isPassing, 'passing', true),
+        ),
+      );
+      expect(await c.status(), PanoptoStatus.connected);
+    });
+
     test('disconnecting revokes the refresh token and forgets it', () async {
       final c = connection();
       await c.connect(FakePanopto.setup);
@@ -199,6 +255,32 @@ void main() {
             ),
           );
       expect(await DbRefreshLock(db).run(() async => 'ran'), 'ran');
+    });
+
+    test('a lease that\'s still held is never ignored', () async {
+      final db = AppDatabase(NativeDatabase.memory());
+      addTearDown(db.close);
+      // Held for good by another isolate (renewed every time it's read).
+      Future<void> hold() => db
+          .into(db.syncMeta)
+          .insertOnConflictUpdate(
+            SyncMetaCompanion.insert(
+              key: 'panopto.refreshLock',
+              value: '${DateTime.now().millisecondsSinceEpoch + 3600000}:other',
+            ),
+          );
+      await hold();
+      var ran = false;
+      await expectLater(
+        DbRefreshLock(
+          db,
+          giveUpAfter: const Duration(milliseconds: 600),
+        ).run(() async => ran = true),
+        throwsA(isA<PanoptoException>()),
+      );
+      expect(ran, isFalse);
+      // The other isolate's lease stays.
+      expect(await db.select(db.syncMeta).get(), hasLength(1));
     });
   });
 
@@ -283,4 +365,60 @@ void main() {
       expect(PanoptoApi.isComplete(3), isFalse); // Processing
     });
   });
+}
+
+/// Secure storage where, during the next refresh, another isolate saves a
+/// newer token (and Panopto has already taken back the one being used).
+class _SwapOnRefresh extends FlutterSecureStorage {
+  _SwapOnRefresh(this.panopto);
+
+  final FakePanopto panopto;
+  bool swap = false;
+  String? _value;
+
+  @override
+  Future<String?> read({
+    required String key,
+    AppleOptions? iOptions,
+    AndroidOptions? aOptions,
+    LinuxOptions? lOptions,
+    WebOptions? webOptions,
+    AppleOptions? mOptions,
+    WindowsOptions? wOptions,
+  }) async {
+    final value = _value;
+    if (swap && value != null) {
+      // The first read (inside the lock) gets the old token; then the
+      // other isolate's refresh lands.
+      swap = false;
+      final state = PanoptoState.fromJson(
+        (jsonDecode(utf8.decode(base64Url.decode(value))) as Map)
+            .cast<String, Object?>(),
+      );
+      panopto.refreshToken = 'elsewhere';
+      _value = base64Url.encode(
+        utf8.encode(
+          jsonEncode(
+            PanoptoState(
+              setup: state.setup,
+              refreshToken: 'elsewhere',
+            ).toJson(),
+          ),
+        ),
+      );
+    }
+    return value;
+  }
+
+  @override
+  Future<void> write({
+    required String key,
+    required String? value,
+    AppleOptions? iOptions,
+    AndroidOptions? aOptions,
+    LinuxOptions? lOptions,
+    WebOptions? webOptions,
+    AppleOptions? mOptions,
+    WindowsOptions? wOptions,
+  }) async => _value = value;
 }

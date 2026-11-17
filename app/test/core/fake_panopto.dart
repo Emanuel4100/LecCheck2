@@ -36,8 +36,15 @@ class FakePanopto {
   /// The code the browser brings back.
   static const code = 'one-time-code';
 
+  /// How many of the next API requests fail with no connection.
+  var apiOffline = 0;
+
   late final client = MockClient((request) async {
     requests.add(request);
+    if (apiOffline > 0 && request.url.path.startsWith('/Panopto/api/')) {
+      apiOffline--;
+      throw http.ClientException('Failed host lookup');
+    }
     final path = request.url.path;
     if (request.method == 'POST' && path == '/Panopto/oauth2/connect/token') {
       return _token(request);

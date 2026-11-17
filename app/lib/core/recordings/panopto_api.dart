@@ -17,6 +17,10 @@ class PanoptoException implements Exception {
 
   bool get needsReconnect => code == 'reconnect';
 
+  /// Likely gone on the next try: no connection, or Panopto had a problem.
+  bool get isPassing =>
+      code == 'network' || code == 'bad_answer' || code.startsWith('http_5');
+
   @override
   String toString() =>
       'PanoptoException($code${detail.isEmpty ? '' : ': $detail'})';
@@ -29,7 +33,12 @@ class PanoptoApi {
     required this.site,
     required http.Client client,
     required this._token,
+    this.networkRetry = const Duration(seconds: 3),
   }) : _http = client;
+
+  /// The wait before reading again after a network error (once per call):
+  /// a phone that just woke up often has no connection for a moment.
+  final Duration networkRetry;
 
   /// The Panopto host, e.g. `huji.cloud.panopto.eu`.
   final String site;
@@ -121,11 +130,15 @@ class PanoptoApi {
   }
 
   /// GETs [path], asking for a new access token once if Panopto says the
-  /// current one isn't valid.
+  /// current one isn't valid, and reading once more after a network error.
   Future<Object?> _get(String path, [Map<String, String>? query]) async {
     final url = Uri.https(site, '/Panopto/api/v1/$path', query);
-    for (var attempt = 0; ; attempt++) {
-      final token = await _token(refresh: attempt > 0);
+    var refreshed = false;
+    var refreshNow = false;
+    var networkRetried = false;
+    while (true) {
+      final token = await _token(refresh: refreshNow);
+      refreshNow = false;
       final http.Response response;
       try {
         response = await _http
@@ -138,7 +151,10 @@ class PanoptoApi {
             )
             .timeout(const Duration(seconds: 30));
       } on Exception catch (e) {
-        throw PanoptoException('network', '$e');
+        if (networkRetried) throw PanoptoException('network', '$e');
+        networkRetried = true;
+        await Future<void>.delayed(networkRetry);
+        continue;
       }
       switch (response.statusCode) {
         case 200:
@@ -147,7 +163,8 @@ class PanoptoApi {
           } on FormatException {
             throw const PanoptoException('bad_answer');
           }
-        case 401 when attempt == 0:
+        case 401 when !refreshed:
+          refreshed = refreshNow = true;
           continue;
         case 401:
           throw const PanoptoException('reconnect', 'API refused the token');
