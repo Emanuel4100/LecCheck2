@@ -3,6 +3,7 @@
 //   flutter test test_screenshots --update-goldens
 //
 // Kept out of test/ because golden images differ slightly between machines.
+import 'dart:async';
 import 'dart:io';
 
 import 'package:drift/drift.dart' show driftRuntimeOptions;
@@ -23,6 +24,8 @@ import 'package:leccheck/core/db/app_database.dart';
 import 'package:leccheck/core/db/schedule_repository.dart';
 import 'package:leccheck/core/icons/lec_icons.dart';
 import 'package:leccheck/core/recordings/panopto_connection.dart';
+import 'package:leccheck/core/recordings/panopto_pairing.dart';
+import 'package:leccheck/features/settings/panopto_pairing.dart';
 import 'package:leccheck/core/recordings/recording_linker.dart';
 import 'package:leccheck/core/update/update_download.dart';
 import 'package:leccheck/core/update/update_service.dart';
@@ -479,6 +482,44 @@ void main() {
     await tester.ensureVisible(find.byType(PanoptoCourseSection));
     await _settle(tester);
     await _shot(tester, 'he_dark_course_panopto');
+  });
+
+  testWidgets('Panopto on another device', (tester) async {
+    // test_screenshots isn't under test/, where this is allowed.
+    // ignore: invalid_use_of_visible_for_testing_member
+    FlutterSecureStorage.setMockInitialValues({});
+    const redirect =
+        'https://leccheck-sync.leccheck.workers.dev/v1/panopto/done';
+    // Set up on another device: "Use it here", and "Allow" over there.
+    final e = await _pumpApp(
+      tester,
+      locale: 'en',
+      mode: ThemeMode.light,
+      overrides: [
+        panoptoRedirectProvider.overrideWithValue(redirect),
+        panoptoProvider.overrideWith(
+          () => _FixedPanopto(
+            const PanoptoView(
+              status: PanoptoStatus.elsewhere,
+              device: 'Android',
+            ),
+          ),
+        ),
+      ],
+    );
+    await _go(tester, e, '/settings');
+    await tester.tap(find.text('Panopto recordings'));
+    await _settle(tester);
+    await _shot(tester, 'en_light_panopto_elsewhere');
+    unawaited(
+      showAllowPairing(
+        tester.element(find.byType(Scaffold).last),
+        e.read(panoptoProvider.notifier),
+        const PairingPrompt(id: 'p', device: 'Linux · laptop', code: '482913'),
+      ),
+    );
+    await _settle(tester);
+    await _shot(tester, 'en_light_panopto_allow');
   });
 
   testWidgets('English · light', (tester) async {

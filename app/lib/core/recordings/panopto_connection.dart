@@ -350,6 +350,13 @@ class PanoptoConnection {
     }
   }
 
+  /// The account's vault on the server (null in builds without one).
+  VaultClient? get vaultClient => _vault;
+
+  /// The vault key this device holds for the signed-in account (to pair
+  /// another device).
+  Future<VaultKey?> heldKey() async => (await _heldKey())?.$1;
+
   Future<void> _keepKey(VaultKey key, String site) => _storage.write(
     key: _vaultKeyKey,
     value: _encode({...key.toJson(), 'site': site}),

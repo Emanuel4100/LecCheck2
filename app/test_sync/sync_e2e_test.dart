@@ -14,6 +14,9 @@ import 'package:leccheck/core/auth/auth_service.dart';
 import 'package:leccheck/core/auth/session.dart';
 import 'package:leccheck/core/db/app_database.dart';
 import 'package:leccheck/core/db/schedule_repository.dart';
+import 'package:leccheck/core/recordings/panopto_connection.dart';
+import 'package:leccheck/core/recordings/panopto_pairing.dart';
+import 'package:leccheck/core/recordings/panopto_vault.dart';
 import 'package:leccheck/core/sync/sync_config.dart';
 import 'package:leccheck/core/sync/sync_engine.dart';
 import 'package:leccheck/core/sync/sync_recorder.dart';
@@ -23,6 +26,9 @@ import 'package:leccheck/domain/schedule_types.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shared_preferences_platform_interface/in_memory_shared_preferences_async.dart';
 import 'package:shared_preferences_platform_interface/shared_preferences_async_platform_interface.dart';
+
+import '../test/core/fake_panopto.dart';
+import '../test/core/fake_vault.dart';
 
 class Device {
   Device._(this.db, this.repo, this.recorder);
@@ -384,4 +390,73 @@ void main() {
     expect(back.semesters, 1);
     expect(back.deletedAt, isNull);
   });
+
+  test(
+    'Panopto: set up on the phone, paired on the laptop, one sign-in',
+    () async {
+      final session = await devLogin(
+        'e2e-panopto-${DateTime.now().microsecondsSinceEpoch}',
+      );
+      final panopto = FakePanopto();
+      PanoptoConnection device(MemoryStorage storage) => PanoptoConnection(
+        lock: MemoryLock(),
+        vault: VaultClient(session: () async => session),
+        storage: storage,
+        client: panopto.client,
+        browser: panopto.browser,
+        redirectUrl: SyncConfig.api('/v1/panopto/done').toString(),
+      );
+      final phone = device(MemoryStorage());
+      final laptop = device(MemoryStorage());
+
+      // The phone listens live, like the app does.
+      var nudges = 0;
+      final listener = await Device.create('phonepanopto0001');
+      listener.engine = SyncEngine(
+        db: listener.db,
+        repo: listener.repo,
+        recorder: listener.recorder,
+        session: session,
+        watchLifecycle: false,
+        onPanopto: () => nudges++,
+      )..start();
+      addTearDown(() async {
+        await listener.disconnect();
+        await listener.db.close();
+      });
+      await eventually(
+        () async => listener.engine!.state.phase == SyncPhase.synced,
+        'phone connected',
+      );
+
+      await phone.connect(FakePanopto.setup);
+      expect((await phone.info()).shared, isTrue);
+      expect((await laptop.info()).status, PanoptoStatus.elsewhere);
+      await eventually(() async => nudges > 0, 'phone told the vault changed');
+
+      final request = await PairingRequest.start(laptop.vaultClient!);
+      final responder = PairingResponder();
+      expect(await responder.check(phone.vaultClient!), isEmpty);
+      final code = await request.poll(session.userId) as PairingCode;
+      final prompt = (await responder.check(phone.vaultClient!)).single;
+      expect(prompt.code, code.code);
+      await responder.allow(
+        phone.vaultClient!,
+        prompt,
+        (await phone.heldKey())!,
+      );
+      final done = await request.poll(session.userId) as PairingDone;
+      await laptop.useKey(done.key);
+
+      expect(await laptop.accessToken(), 'access-1');
+      expect(await phone.accessToken(refresh: true), 'access-2');
+      expect(await laptop.accessToken(refresh: true), 'access-2');
+      expect((await laptop.claimLook(force: false))!.ok, isTrue);
+      expect((await phone.claimLook(force: false))!.ok, isFalse);
+
+      await phone.disconnect(everywhere: true);
+      expect(panopto.revoked, ['refresh-2']);
+      expect((await laptop.info()).status, PanoptoStatus.off);
+    },
+  );
 }

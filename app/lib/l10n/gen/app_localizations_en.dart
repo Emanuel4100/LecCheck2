@@ -2377,6 +2377,51 @@ class AppLocalizationsEn extends AppLocalizations {
       'Panopto is asked to cancel the sign-in, and every device stops looking.';
 
   @override
+  String get panoptoPairTitle => 'Use Panopto here';
+
+  @override
+  String panoptoPairWaiting(String device) {
+    return 'Open LecCheck on $device. It shows a code to confirm this device.';
+  }
+
+  @override
+  String panoptoPairCheck(String device) {
+    return 'Check that $device shows this code, then tap Allow there.';
+  }
+
+  @override
+  String panoptoPairDenied(String device) {
+    return '$device didn\'t allow it.';
+  }
+
+  @override
+  String get panoptoPairExpired => 'The request ended. Try again.';
+
+  @override
+  String get panoptoPairDone => 'Panopto is ready on this device.';
+
+  @override
+  String panoptoAllowTitle(String device) {
+    return 'Use Panopto on $device?';
+  }
+
+  @override
+  String panoptoAllowBody(String device) {
+    return 'Allow only if $device shows this code. It gets your Panopto setup and sign-in.';
+  }
+
+  @override
+  String get panoptoAllow => 'Allow';
+
+  @override
+  String get panoptoDeny => 'Deny';
+
+  @override
+  String panoptoAllowed(String device) {
+    return 'Panopto is ready on $device.';
+  }
+
+  @override
   String panoptoRemoved(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,

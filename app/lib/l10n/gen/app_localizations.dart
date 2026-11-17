@@ -3992,6 +3992,72 @@ abstract class AppLocalizations {
   /// **'Panopto is asked to cancel the sign-in, and every device stops looking.'**
   String get panoptoDisconnectEverywhereBody;
 
+  /// No description provided for @panoptoPairTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Use Panopto here'**
+  String get panoptoPairTitle;
+
+  /// No description provided for @panoptoPairWaiting.
+  ///
+  /// In en, this message translates to:
+  /// **'Open LecCheck on {device}. It shows a code to confirm this device.'**
+  String panoptoPairWaiting(String device);
+
+  /// No description provided for @panoptoPairCheck.
+  ///
+  /// In en, this message translates to:
+  /// **'Check that {device} shows this code, then tap Allow there.'**
+  String panoptoPairCheck(String device);
+
+  /// No description provided for @panoptoPairDenied.
+  ///
+  /// In en, this message translates to:
+  /// **'{device} didn\'t allow it.'**
+  String panoptoPairDenied(String device);
+
+  /// No description provided for @panoptoPairExpired.
+  ///
+  /// In en, this message translates to:
+  /// **'The request ended. Try again.'**
+  String get panoptoPairExpired;
+
+  /// No description provided for @panoptoPairDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Panopto is ready on this device.'**
+  String get panoptoPairDone;
+
+  /// No description provided for @panoptoAllowTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Use Panopto on {device}?'**
+  String panoptoAllowTitle(String device);
+
+  /// No description provided for @panoptoAllowBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow only if {device} shows this code. It gets your Panopto setup and sign-in.'**
+  String panoptoAllowBody(String device);
+
+  /// No description provided for @panoptoAllow.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow'**
+  String get panoptoAllow;
+
+  /// No description provided for @panoptoDeny.
+  ///
+  /// In en, this message translates to:
+  /// **'Deny'**
+  String get panoptoDeny;
+
+  /// No description provided for @panoptoAllowed.
+  ///
+  /// In en, this message translates to:
+  /// **'Panopto is ready on {device}.'**
+  String panoptoAllowed(String device);
+
   /// No description provided for @panoptoRemoved.
   ///
   /// In en, this message translates to:

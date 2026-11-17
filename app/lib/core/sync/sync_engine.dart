@@ -79,6 +79,7 @@ class SyncEngine {
     required this._session,
     this.onSessionRevoked,
     this.renew,
+    this.onPanopto,
     this.watchLifecycle = true,
     bool? pauseWhenHidden,
     this._socketUri,
@@ -97,6 +98,9 @@ class SyncEngine {
   /// `AuthService.renewIfNeeded`), so an app left open for weeks stays
   /// signed in. Returns null when the server revoked the session.
   final Future<Session?> Function(Session session)? renew;
+
+  /// The account's Panopto vault or a pairing request changed.
+  final void Function()? onPanopto;
 
   /// Phones drop the connection 30 s after the app goes to the background to
   /// save battery. Desktops keep it: a hidden window (another workspace, or
@@ -538,6 +542,8 @@ class SyncEngine {
         );
         _inflight = null;
         _schedulePush(immediate: true);
+      case 'panopto':
+        onPanopto?.call();
       case 'error':
         debugPrint('Sync error: ${message['code']} ${message['message']}');
         if (message['code'] == 'upgrade_required') {

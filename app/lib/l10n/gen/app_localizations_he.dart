@@ -2370,6 +2370,51 @@ class AppLocalizationsHe extends AppLocalizations {
       'Panopto תתבקש לבטל את ההתחברות, וכל המכשירים יפסיקו לחפש.';
 
   @override
+  String get panoptoPairTitle => 'שימוש ב־Panopto כאן';
+
+  @override
+  String panoptoPairWaiting(String device) {
+    return 'פתחו את LecCheck ב־$device. יופיע שם קוד לאישור המכשיר הזה.';
+  }
+
+  @override
+  String panoptoPairCheck(String device) {
+    return 'בדקו ש־$device מציג את הקוד הזה, ואז הקישו שם על „אישור”.';
+  }
+
+  @override
+  String panoptoPairDenied(String device) {
+    return '$device לא אישר.';
+  }
+
+  @override
+  String get panoptoPairExpired => 'הבקשה הסתיימה. נסו שוב.';
+
+  @override
+  String get panoptoPairDone => 'Panopto מוכן במכשיר הזה.';
+
+  @override
+  String panoptoAllowTitle(String device) {
+    return 'להשתמש ב־Panopto ב־$device?';
+  }
+
+  @override
+  String panoptoAllowBody(String device) {
+    return 'אשרו רק אם $device מציג את הקוד הזה. הוא יקבל את הגדרת Panopto וההתחברות שלכם.';
+  }
+
+  @override
+  String get panoptoAllow => 'אישור';
+
+  @override
+  String get panoptoDeny => 'דחייה';
+
+  @override
+  String panoptoAllowed(String device) {
+    return 'Panopto מוכן ב־$device.';
+  }
+
+  @override
   String panoptoRemoved(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,

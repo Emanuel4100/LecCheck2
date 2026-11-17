@@ -16,12 +16,14 @@ import 'app/notification_controller.dart';
 import 'app/providers.dart';
 import 'app/recordings_controller.dart';
 import 'app/router.dart';
+import 'app/sync_providers.dart';
 import 'app/update_controller.dart';
 import 'app/widget_controller.dart';
 import 'core/dev/dev_log.dart';
 import 'core/dev/frame_stats.dart';
 import 'core/report/report_sender.dart';
 import 'features/settings/move_dialog.dart';
+import 'features/settings/panopto_pairing.dart';
 import 'features/settings/report_page.dart';
 import 'features/settings/update_dialog.dart';
 
@@ -58,6 +60,7 @@ Future<void> main() async {
     _dailySnapshots(container);
     _updateChecks(container);
     _recordingLinks(container);
+    _panoptoPairing(container);
   });
 }
 
@@ -67,6 +70,46 @@ void _recordingLinks(ProviderContainer container) {
   void look() => container.read(panoptoProvider.notifier).lookIfDue();
   look();
   AppLifecycleListener(onResume: look);
+}
+
+/// On a device holding the Panopto vault key: answers the account's new
+/// devices asking for it, and shows "Allow" with the code to compare. At
+/// start, when the app comes back, and when live sync says a request or
+/// the vault changed.
+void _panoptoPairing(ProviderContainer container) {
+  var running = false;
+  var again = false;
+  Future<void> check() async {
+    if (running) {
+      again = true;
+      return;
+    }
+    running = true;
+    try {
+      do {
+        again = false;
+        final controller = container.read(panoptoProvider.notifier);
+        final prompts = await controller.pairPrompts();
+        if (prompts.isEmpty) continue;
+        final router = container.read(routerProvider);
+        await _pastSplash(router);
+        for (final prompt in prompts) {
+          final context = router.routerDelegate.navigatorKey.currentContext;
+          if (context == null || !context.mounted) break;
+          await showAllowPairing(context, controller, prompt);
+        }
+      } while (again);
+    } finally {
+      running = false;
+    }
+  }
+
+  check();
+  AppLifecycleListener(onResume: check);
+  container.read(panoptoNudgesProvider).stream.listen((_) {
+    check();
+    container.read(panoptoProvider.notifier).reload();
+  });
 }
 
 /// Saves the day's automatic backup at startup, and when the app comes back

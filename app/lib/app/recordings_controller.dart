@@ -6,6 +6,7 @@ import '../core/dev/dev_log.dart';
 import '../core/recordings/match_report.dart';
 import '../core/recordings/panopto_api.dart';
 import '../core/recordings/panopto_connection.dart';
+import '../core/recordings/panopto_pairing.dart';
 import '../core/recordings/panopto_vault.dart';
 import '../core/recordings/recording_linker.dart';
 import '../domain/recording_match.dart';
@@ -178,6 +179,58 @@ class PanoptoController extends Notifier<PanoptoView> {
   }
 
   bool get warned => ref.read(sharedPrefsProvider).getBool(warnedKey) ?? false;
+
+  // ---------------------------------------------------------- pairing --
+
+  final _responder = PairingResponder();
+
+  /// Requests from the account's new devices this device can allow (it
+  /// holds the vault key): answered, and returned once each, ready to
+  /// show their code. Never throws.
+  Future<List<PairingPrompt>> pairPrompts() async {
+    final client = _connection.vaultClient;
+    try {
+      if (client == null || await _connection.heldKey() == null) {
+        return const [];
+      }
+      return await _responder.check(client);
+    } on Object catch (e) {
+      DevLog.add('Panopto pairing requests not read: $e');
+      return const [];
+    }
+  }
+
+  /// Hands the vault key to [prompt]'s device. Throws [PanoptoException].
+  Future<void> allow(PairingPrompt prompt) async {
+    final key = await _connection.heldKey();
+    if (key == null) throw const PanoptoException('pair_gone');
+    await _responder.allow(_connection.vaultClient!, prompt, key);
+  }
+
+  Future<void> deny(PairingPrompt prompt) async {
+    try {
+      await _responder.deny(_connection.vaultClient!, prompt.id);
+    } on PanoptoException catch (e) {
+      DevLog.add('Panopto pairing not denied: $e');
+    }
+  }
+
+  /// Asks the account's devices for the vault key (this device is B).
+  /// Throws [PanoptoException].
+  Future<PairingRequest> requestPairing() =>
+      PairingRequest.start(_connection.vaultClient!);
+
+  /// Where [request] stands; uses the key once it arrives.
+  Future<PairingStep> pollPairing(PairingRequest request) async {
+    final session = await _currentSession(ref);
+    if (session == null) throw const PanoptoException('network', 'signed out');
+    final step = await request.poll(session.userId);
+    if (step is PairingDone) {
+      await _connection.useKey(step.key);
+      await reload();
+    }
+    return step;
+  }
 
   Future<void> markWarned() =>
       ref.read(sharedPrefsProvider).setBool(warnedKey, true);

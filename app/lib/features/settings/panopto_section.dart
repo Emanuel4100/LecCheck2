@@ -14,6 +14,7 @@ import '../../domain/local_date.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../developer/developer_page.dart';
 import '../session/session_actions.dart';
+import 'panopto_pairing.dart';
 
 /// What a [PanoptoException] code means for the user.
 String panoptoErrorText(String code, AppLocalizations l) => switch (code) {
@@ -130,12 +131,22 @@ class PanoptoSection extends ConsumerWidget {
               leading: const Icon(LecIcons.recording),
               title: Text(l.panoptoSetUpElsewhere(view.device ?? '')),
               subtitle: Text(l.panoptoUseHereSubtitle(view.device ?? '')),
+              trailing: FilledButton.tonal(
+                onPressed: view.busy
+                    ? null
+                    : () => usePanoptoHere(context, ref),
+                child: Text(l.panoptoUseHere),
+              ),
             ),
           },
         if (view.sharedElsewhere case final device?)
           ListTile(
             leading: const Icon(LecIcons.info),
             subtitle: Text(l.panoptoSharedElsewhere(device)),
+            trailing: TextButton(
+              onPressed: view.busy ? null : () => usePanoptoHere(context, ref),
+              child: Text(l.panoptoUseHere),
+            ),
           ),
         if (view.busy) const LinearProgressIndicator(),
         if (view.status == PanoptoStatus.connected) ...[

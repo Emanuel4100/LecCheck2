@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:leccheck/core/auth/session.dart';
 import 'package:leccheck/core/recordings/panopto_api.dart';
 import 'package:leccheck/core/recordings/panopto_connection.dart';
+import 'package:leccheck/core/recordings/panopto_pairing.dart';
 import 'package:leccheck/core/recordings/panopto_vault.dart';
 
 import 'fake_panopto.dart';
@@ -303,6 +304,123 @@ void main() {
       expect(after.sharedElsewhere, isNull);
       // Its own sign-in was cancelled at Panopto.
       expect(panopto.revoked, ['refresh-1']);
+    });
+  });
+
+  group('pairing', () {
+    late PairingResponder responder;
+
+    setUp(() async {
+      await phone.connection.connect(FakePanopto.setup);
+      responder = PairingResponder();
+    });
+
+    Future<List<PairingPrompt>> phoneChecks() =>
+        responder.check(phone.connection.vaultClient!);
+
+    test(
+      'both devices show the same code, and Allow hands the key over',
+      () async {
+        final request = await PairingRequest.start(
+          laptop.connection.vaultClient!,
+        );
+        expect(await request.poll('user-1'), isA<PairingWaiting>());
+        // The phone answers by itself; nothing to ask yet.
+        expect(await phoneChecks(), isEmpty);
+        final shown = await request.poll('user-1');
+        expect(shown, isA<PairingCode>());
+        final prompts = await phoneChecks();
+        expect(prompts, hasLength(1));
+        expect(prompts.single.code, (shown as PairingCode).code);
+        expect(prompts.single.device, isNotEmpty);
+        // Asked about once.
+        expect(await phoneChecks(), isEmpty);
+
+        await responder.allow(
+          phone.connection.vaultClient!,
+          prompts.single,
+          (await phone.connection.heldKey())!,
+        );
+        final done = await request.poll('user-1');
+        expect(done, isA<PairingDone>());
+        await laptop.connection.useKey((done as PairingDone).key);
+        expect(
+          (await laptop.connection.info()).status,
+          PanoptoStatus.connected,
+        );
+        expect(await laptop.connection.accessToken(), 'access-1');
+        // The request is gone, and the vault key never passed in the clear.
+        expect(vault.pairs, isEmpty);
+        final key = base64Url.encode((await phone.connection.heldKey())!.bytes);
+        expect(vault.requests.map((r) => r.body).join(), isNot(contains(key)));
+      },
+    );
+
+    test('Deny', () async {
+      final request = await PairingRequest.start(
+        laptop.connection.vaultClient!,
+      );
+      await phoneChecks();
+      await request.poll('user-1');
+      final prompt = (await phoneChecks()).single;
+      await responder.deny(phone.connection.vaultClient!, prompt.id);
+      expect(await request.poll('user-1'), isA<PairingDenied>());
+    });
+
+    test(
+      'a key that doesn\'t match its commit is denied without asking',
+      () async {
+        final request = await PairingRequest.start(
+          laptop.connection.vaultClient!,
+        );
+        await phoneChecks();
+        await request.poll('user-1');
+        // The server swaps in its own key after the commit.
+        final (_, pub) = await PairingCrypto.keyPair();
+        vault.pairs.values.single['bPub'] = pub;
+        expect(await phoneChecks(), isEmpty);
+        expect(vault.pairs.values.single['denied'], isTrue);
+      },
+    );
+
+    test('a server that answers with its own key shows another code', () async {
+      final request = await PairingRequest.start(
+        laptop.connection.vaultClient!,
+      );
+      // The server answers instead of the phone...
+      final (_, evil) = await PairingCrypto.keyPair();
+      vault.pairs.values.single['aPub'] = evil;
+      final onLaptop = (await request.poll('user-1')) as PairingCode;
+      // ...and can't answer the phone with the laptop's key: the phone
+      // sees a request already answered and never prompts.
+      expect(await phoneChecks(), isEmpty);
+      final id = vault.pairs.keys.single;
+      final pair = vault.pairs[id]!;
+      expect(
+        onLaptop.code,
+        PairingCrypto.code(
+          id,
+          evil,
+          pair['bPub']! as String,
+          pair['nonce']! as String,
+        ),
+      );
+    });
+
+    test('a request ends after 10 minutes', () async {
+      final request = await PairingRequest.start(
+        laptop.connection.vaultClient!,
+      );
+      now = now.add(const Duration(minutes: 11));
+      expect(await request.poll('user-1'), isA<PairingGone>());
+    });
+
+    test('needs a vault', () async {
+      await phone.connection.disconnect(everywhere: true);
+      await expectLater(
+        PairingRequest.start(laptop.connection.vaultClient!),
+        throwsA(isA<PanoptoException>()),
+      );
     });
   });
 }

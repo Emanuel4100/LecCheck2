@@ -40,11 +40,14 @@ class TourController extends Notifier<TourStep?> {
   TourStep? build() => null;
 
   /// The steps this tour shows: Panopto only where it can be set up (a
-  /// build with a server) and isn't connected yet.
+  /// build with a server) and isn't connected yet, here or on another of
+  /// the account's devices (Settings offers to use that one).
   List<TourStep> get steps {
+    final status = ref.read(panoptoProvider).status;
     final panopto =
         ref.read(panoptoRedirectProvider) != null &&
-        ref.read(panoptoProvider).status != PanoptoStatus.connected;
+        status != PanoptoStatus.connected &&
+        status != PanoptoStatus.elsewhere;
     return [
       for (final s in TourStep.values)
         if (s != TourStep.panopto || panopto) s,

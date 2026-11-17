@@ -449,6 +449,14 @@ final accountSummaryProvider = FutureProvider.autoDispose<AccountSummary?>((
   return ref.read(authServiceProvider).accountSummary(session);
 });
 
+/// The server said the account's Panopto vault or a pairing request
+/// changed (over live sync).
+final panoptoNudgesProvider = Provider<StreamController<void>>((ref) {
+  final controller = StreamController<void>.broadcast();
+  ref.onDispose(controller.close);
+  return controller;
+});
+
 /// Runs while signed in; null otherwise. Rebuilt when the account changes,
 /// not when its token is renewed (the engine renews it itself).
 final syncEngineProvider = Provider<SyncEngine?>((ref) {
@@ -464,6 +472,7 @@ final syncEngineProvider = Provider<SyncEngine?>((ref) {
     onSessionRevoked: (reason) =>
         ref.read(authProvider.notifier).sessionRevoked(reason),
     renew: (s) => ref.read(authProvider.notifier).renew(s),
+    onPanopto: () => ref.read(panoptoNudgesProvider).add(null),
   )..start();
   ref.onDispose(engine.dispose);
   return engine;
