@@ -1,20 +1,20 @@
 {
   "beta": {
-    "version": "2.0.0-beta.20",
-    "build": 28,
-    "date": "2026-11-16",
-    "notesUrl": "https://github.com/Emanuel4100/LecCheck2/releases/tag/v2.0.0-beta.20",
-    "notes": "- **Panopto recordings, found by themselves (experimental).** Settings \u2192 Panopto recordings\n  connects LecCheck to your university's Panopto with an API client you create there once.\n  It finds each course's folder by the course number and fills in each finished class's\n  recording link, so missed classes show under Catch up on recordings by themselves. When\n  several groups are recorded at the same time, the course page asks once which group is\n  yours, with a suggestion. Found links are marked \"Found in Panopto\", and your own links always\n  win. One connected device is enough: the links reach\n  your other devices through sync. Android also looks once a day in the background.\n  A meeting learns its group by itself when the links you pasted into it all point to one\n  group. Removing a link asks whether Panopto may fill it (or, for a link Panopto found,\n  whether it was wrong). In Developer mode, **Matching details** shows why each session\n  got a link or not, and why each recording wasn't used. The tour offers to set it up.\n- **Removing a recording link** now keeps it removed (stored as an empty link) unless you let\n  Panopto fill it, so a link found in Panopto doesn't take its place.",
-    "androidArm64": "https://github.com/Emanuel4100/LecCheck2/releases/download/v2.0.0-beta.20/LecCheck-2.0.0-beta.20-android-arm64.apk",
-    "androidUniversal": "https://github.com/Emanuel4100/LecCheck2/releases/download/v2.0.0-beta.20/LecCheck-2.0.0-beta.20-android.apk",
+    "version": "2.0.0-beta.21",
+    "build": 29,
+    "date": "2026-11-17",
+    "notesUrl": "https://github.com/Emanuel4100/LecCheck2/releases/tag/v2.0.0-beta.21",
+    "notes": "- **Panopto on all your devices, set up once.** Signed in to LecCheck, your Panopto setup\n  and sign-in are kept encrypted for your devices: the LecCheck server stores them but\n  can't read them. On another device, Settings \u2192 Panopto recordings shows **Set up on \u2026**\n  with **Use it here**: check that both devices show the same 6-digit code and tap\n  **Allow** on the first one. No Client ID, secret or browser on the new device, and every\n  device looks for recordings (at most every 3 hours for all of them together). A device\n  connected in beta.20 moves its connection in by itself. **Disconnect** works on this\n  device or on all of them.\n- **Importing a timetable from a chatbot asks for what's missing.** The prompt has the\n  chatbot ask first about the semester's dates, which group is yours when several are shown,\n  course numbers and unreadable times. If its file still leaves something out, LecCheck asks\n  you for it in the summary (dates, days, times, and optionally course numbers, which find\n  Panopto recordings) instead of refusing the file.\n- **A clearer Panopto setup guide**, in English and Hebrew.\n- **\"Couldn't reach Panopto\" no longer sticks.** Android's daily look now waits for a\n  connection, a look that failed without one tries again when you open the app instead\n  of 3 hours later, and each read retries once after a dropped connection. Two rare ways\n  to lose the Panopto sign-in during a refresh are fixed.",
+    "androidArm64": "https://github.com/Emanuel4100/LecCheck2/releases/download/v2.0.0-beta.21/LecCheck-2.0.0-beta.21-android-arm64.apk",
+    "androidUniversal": "https://github.com/Emanuel4100/LecCheck2/releases/download/v2.0.0-beta.21/LecCheck-2.0.0-beta.21-android.apk",
     "flatpakref": "https://emanuel4100.github.io/LecCheck2/leccheck.flatpakref",
     "sha256": {
-      "androidArm64": "ff594c9b802de0f58387a80c35e005084efbc1294366eeb0c7e086a79839cc30",
-      "androidUniversal": "c5c3b82e3733c1d811e80076e5c72d563d8430ff464ac8217c8d8ee2ae0eeb5e"
+      "androidArm64": "f34c72e4803b36a7099876194da507e0353f2c19b868ec755b54c57ee619e007",
+      "androidUniversal": "3eadb5e6ff226748808d84008cf9527e5b53f677734e975b4c1a67d791ffc517"
     },
     "size": {
-      "androidArm64": 28569471,
-      "androidUniversal": 79714630
+      "androidArm64": 28831615,
+      "androidUniversal": 80501062
     }
   }
 }
