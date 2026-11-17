@@ -156,16 +156,24 @@ class RecordingLinker {
     // Android's daily task runs in another isolate with its own cache.
     await prefs.reloadCache();
     final now = _clock();
+    // With the account's vault, the 3 hours count for every device.
+    SharedLook? shared;
+    try {
+      shared = await connection.claimLook(force: force);
+    } on PanoptoException catch (e) {
+      // No answer: this device's own time decides, and the look shows why.
+      DevLog.add('Panopto: the account\'s look not claimed ($e)');
+    }
+    if (shared != null && !shared.ok) return null;
     final started = prefs.getInt(_startedKey);
-    if (!force &&
+    if (shared == null &&
+        !force &&
         started != null &&
         now.millisecondsSinceEpoch - started < interval.inMilliseconds) {
       return null;
     }
     // Before looking, so a second trigger meanwhile doesn't look again.
     await prefs.setInt(_startedKey, now.millisecondsSinceEpoch);
-    final api = await connection.api();
-    if (api == null) return null;
 
     final previous = report;
     var written = 0;
@@ -183,6 +191,8 @@ class RecordingLinker {
     String? error;
     final looks = <CourseLook>[];
     try {
+      final api = await connection.api();
+      if (api == null) return null;
       final today = LocalDate.today(now);
       final window = await repo.loadWindow(
         today.addDays(-afterSemester.inDays),
@@ -268,7 +278,7 @@ class RecordingLinker {
       DevLog.add('Panopto look failed: $e');
       // A passing problem (no connection yet, Panopto busy) doesn't wait
       // 3 hours: the next start or return to the app looks again.
-      if (e.isPassing) await prefs.remove(_startedKey);
+      if (e.isPassing) await _giveBack(shared);
     }
     final next = LinkerReport(
       at: _clock(),
@@ -284,6 +294,17 @@ class RecordingLinker {
       '${error == null ? '' : ', $error'}',
     );
     return next;
+  }
+
+  /// Lets the next start look again: gives back the account's claim, or
+  /// this device's time.
+  Future<void> _giveBack(SharedLook? shared) async {
+    await prefs.remove(_startedKey);
+    try {
+      await shared?.cancel();
+    } on PanoptoException catch (e) {
+      DevLog.add('Panopto: the account\'s look not given back ($e)');
+    }
   }
 
   /// A folder that's gone or no longer visible gives no recordings (and

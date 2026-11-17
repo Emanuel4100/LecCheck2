@@ -14,6 +14,7 @@ import '../core/home_widget/today_widget.dart';
 import '../core/notifications/notification_actions.dart';
 import '../core/notifications/notification_service.dart';
 import '../core/recordings/panopto_connection.dart';
+import '../core/recordings/panopto_vault.dart';
 import '../core/recordings/recording_linker.dart';
 import '../core/sync/sync_config.dart';
 import '../core/sync/sync_engine.dart';
@@ -186,7 +187,16 @@ Future<void> _lookForRecordings(
   SharedPreferencesWithCache prefs,
 ) async {
   try {
-    final connection = PanoptoConnection(lock: DbRefreshLock(db));
+    final auth = AuthService();
+    final connection = PanoptoConnection(
+      lock: DbRefreshLock(db),
+      vault: SyncConfig.enabled
+          ? VaultClient(
+              session: () =>
+                  auth.load().onError<SessionUnreadable>((e, _) => null),
+            )
+          : null,
+    );
     if (await connection.status() != PanoptoStatus.connected) return;
     final attached = prefs.getString(SyncRecorder.attachedAccountKey) != null;
     final recorder = SyncConfig.enabled && attached
@@ -201,7 +211,7 @@ Future<void> _lookForRecordings(
     ).run();
     DevLog.add('Daily Panopto look: ${report?.written ?? 'not due'}');
     if (recorder == null || (report?.written ?? 0) == 0) return;
-    final session = await AuthService().load().onError<SessionUnreadable>(
+    final session = await auth.load().onError<SessionUnreadable>(
       (e, _) => null,
     );
     if (session == null) return;

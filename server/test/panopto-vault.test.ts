@@ -132,6 +132,12 @@ describe("the Panopto vault", () => {
       state.storage.sql.exec("UPDATE panopto_vault SET looked_at = ?", Date.now() - LOOK_EVERY_MS - 1);
     });
     expect((await call("POST", "/vault/look", {})).body.ok).toBe(true);
+    // A look that failed gives its claim back; an older claim can't.
+    const claim = (await call("POST", "/vault/look", { force: true })).body.lookedAt;
+    await call("POST", "/vault/unlook", { at: claim - 1 });
+    expect((await call("POST", "/vault/look", {})).body.ok).toBe(false);
+    await call("POST", "/vault/unlook", { at: claim });
+    expect((await call("POST", "/vault/look", {})).body.ok).toBe(true);
     // Saving the vault keeps the look time.
     const before = (await call("GET", "/vault")).body.vault.lookedAt;
     await call("PUT", "/vault", vault({ expect: 1 }));

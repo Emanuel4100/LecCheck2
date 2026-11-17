@@ -1,13 +1,17 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../core/auth/session.dart';
 import '../core/dev/dev_log.dart';
 import '../core/recordings/match_report.dart';
 import '../core/recordings/panopto_api.dart';
 import '../core/recordings/panopto_connection.dart';
+import '../core/recordings/panopto_vault.dart';
 import '../core/recordings/recording_linker.dart';
 import '../domain/recording_match.dart';
+import '../core/sync/sync_config.dart';
 import 'providers.dart';
+import 'sync_providers.dart';
 
 /// Panopto recordings (experimental): this device's connection, and the
 /// last look's report.
@@ -15,6 +19,9 @@ class PanoptoView {
   const PanoptoView({
     this.status = PanoptoStatus.off,
     this.site,
+    this.device,
+    this.shared = false,
+    this.sharedElsewhere,
     this.busy = false,
     this.report = const LinkerReport(),
     this.looks = const [],
@@ -24,6 +31,17 @@ class PanoptoView {
 
   /// The Panopto host this device is set up with.
   final String? site;
+
+  /// The device that set Panopto up for the account
+  /// ([PanoptoStatus.elsewhere]).
+  final String? device;
+
+  /// This device uses the account's shared setup (the vault).
+  final bool shared;
+
+  /// This device has its own connection while the account's shared one
+  /// exists too (set up on this device name).
+  final String? sharedElsewhere;
 
   /// Connecting or looking right now.
   final bool busy;
@@ -42,9 +60,24 @@ class PanoptoView {
   }) => PanoptoView(
     status: status ?? this.status,
     site: site ?? this.site,
+    device: device,
+    shared: shared,
+    sharedElsewhere: sharedElsewhere,
     busy: busy ?? this.busy,
     report: report ?? this.report,
     looks: looks ?? this.looks,
+  );
+
+  /// What [info] says about this device's connection; the rest stays.
+  PanoptoView withInfo(PanoptoInfo info, LinkerReport report) => PanoptoView(
+    status: info.status,
+    site: info.site,
+    device: info.device,
+    shared: info.shared,
+    sharedElsewhere: info.sharedElsewhere,
+    busy: busy,
+    report: report,
+    looks: looks,
   );
 
   /// The open group questions of [courseId].
@@ -69,8 +102,30 @@ final panoptoRedirectProvider = Provider<String?>(
 );
 
 final panoptoConnectionProvider = Provider<PanoptoConnection>(
-  (ref) => PanoptoConnection(lock: DbRefreshLock(ref.watch(databaseProvider))),
+  (ref) => PanoptoConnection(
+    lock: DbRefreshLock(ref.watch(databaseProvider)),
+    vault: SyncConfig.enabled
+        ? VaultClient(session: () => _currentSession(ref))
+        : null,
+  ),
 );
+
+/// The signed-in account, waiting while the saved sign-in loads. Listens
+/// while reading: Riverpod pauses a provider nobody listens to.
+Future<Session?> _currentSession(Ref ref) async {
+  final now = ref.read(authProvider);
+  if (!now.isLoading) return now.value;
+  final sub = ref.listen(authProvider, (_, _) {});
+  try {
+    return await ref
+        .read(authProvider.future)
+        .timeout(const Duration(seconds: 15));
+  } on Object {
+    return null;
+  } finally {
+    sub.close();
+  }
+}
 
 final recordingLinkerProvider = Provider<RecordingLinker>(
   (ref) => RecordingLinker(
@@ -115,12 +170,8 @@ class PanoptoController extends Notifier<PanoptoView> {
   /// Reads this device's connection again.
   Future<void> reload() async {
     try {
-      final saved = await _connection.load();
-      state = state.copyWith(
-        status: await _connection.status(),
-        site: saved?.setup.site,
-        report: _linker.report,
-      );
+      final info = await _connection.info();
+      state = state.withInfo(info, _linker.report);
     } on Object catch (e) {
       DevLog.add('Panopto state unreadable: $e');
     }
@@ -135,7 +186,7 @@ class PanoptoController extends Notifier<PanoptoView> {
   /// secure storage doesn't answer (a locked keyring).
   Future<PanoptoSetup?> savedSetup() async {
     try {
-      return (await _connection.load())?.setup;
+      return await _connection.setup();
     } on Object catch (e) {
       DevLog.add('Panopto setup unreadable: $e');
       return null;
@@ -154,13 +205,18 @@ class PanoptoController extends Notifier<PanoptoView> {
     await lookNow();
   }
 
-  /// Forgets the connection on this device; [removeLinks] also empties the
-  /// links it found (on every device, through sync).
-  Future<int> disconnect({required bool removeLinks}) async {
+  /// Forgets the connection on this device ([everywhere]: on every device
+  /// of the account); [removeLinks] also empties the links it found (on
+  /// every device, through sync). Throws [PanoptoException] when
+  /// [everywhere] and the server can't be reached.
+  Future<int> disconnect({
+    required bool removeLinks,
+    bool everywhere = false,
+  }) async {
     state = state.copyWith(busy: true);
     var removed = 0;
     try {
-      await _connection.disconnect();
+      await _connection.disconnect(everywhere: everywhere);
       await _linker.clearReport();
       if (removeLinks) {
         removed = await ref.read(repositoryProvider).clearFoundRecordings();

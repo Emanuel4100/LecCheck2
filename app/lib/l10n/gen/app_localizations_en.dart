@@ -2258,14 +2258,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get panoptoOneDevice =>
-      'Only one of your devices needs this: the others get the links through sync.';
+      'Set it up on one device. Your other devices signed in to LecCheck can use it after you confirm a code, and the links reach every device through sync.';
 
   @override
   String get panoptoWarnTitle => 'Try an experimental feature?';
 
   @override
   String get panoptoWarnBody =>
-      'LecCheck will read your courses\' Panopto folders with the API client you created, and fill in recording links where a session has none.\n\n• Links it finds are marked “Found in Panopto”. It never changes links you pasted or removed.\n• Check them: a wrong link can be removed or replaced like any other.\n• Your Panopto sign-in stays on this device. Disconnecting removes it, and can remove every link it found.';
+      'LecCheck will read your courses\' Panopto folders with the API client you created, and fill in recording links where a session has none.\n\n• Links it finds are marked “Found in Panopto”. It never changes links you pasted or removed.\n• Check them: a wrong link can be removed or replaced like any other.\n• Signed in to LecCheck, your Panopto setup and sign-in are encrypted on your devices: the LecCheck server keeps them for your other devices but can\'t read them. Disconnecting removes them, and can remove every link it found.';
 
   @override
   String get panoptoWarnContinue => 'Continue';
@@ -2340,6 +2340,41 @@ class AppLocalizationsEn extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String get panoptoShared => 'Shared with your devices signed in to LecCheck';
+
+  @override
+  String panoptoSetUpElsewhere(String device) {
+    return 'Set up on $device';
+  }
+
+  @override
+  String get panoptoUseHere => 'Use it here';
+
+  @override
+  String panoptoUseHereSubtitle(String device) {
+    return 'Confirm with a code on $device. Nothing to set up on this device.';
+  }
+
+  @override
+  String panoptoSharedElsewhere(String device) {
+    return 'Your account also has the Panopto setup from $device. Use it here to share one sign-in with your other devices.';
+  }
+
+  @override
+  String get panoptoDisconnectHere => 'Only this device';
+
+  @override
+  String get panoptoDisconnectHereBody =>
+      'This device stops looking. Your other devices keep using Panopto.';
+
+  @override
+  String get panoptoDisconnectEverywhere => 'All my devices';
+
+  @override
+  String get panoptoDisconnectEverywhereBody =>
+      'Panopto is asked to cancel the sign-in, and every device stops looking.';
 
   @override
   String panoptoRemoved(int count) {

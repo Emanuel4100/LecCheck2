@@ -92,6 +92,8 @@ panopto.post("/vault/refused", async (c) =>
 
 panopto.post("/vault/look", async (c) => run(c, { op: "look", force: (await body(c)).force === true }));
 
+panopto.post("/vault/unlook", async (c) => run(c, { op: "unlook", at: Number((await body(c)).at) }));
+
 panopto.post("/pairs", async (c) => {
   const b = await body(c);
   return run(c, { op: "pair", device: str(b.device), commit: str(b.commit) });

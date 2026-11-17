@@ -2252,14 +2252,14 @@ class AppLocalizationsHe extends AppLocalizations {
 
   @override
   String get panoptoOneDevice =>
-      'מספיק לעשות את זה במכשיר אחד: המכשירים האחרים מקבלים את הקישורים בסנכרון.';
+      'מגדירים במכשיר אחד. המכשירים האחרים שלכם שמחוברים ל־LecCheck יכולים להשתמש בהגדרה אחרי אישור עם קוד, והקישורים מגיעים לכל המכשירים בסנכרון.';
 
   @override
   String get panoptoWarnTitle => 'לנסות תכונה ניסיונית?';
 
   @override
   String get panoptoWarnBody =>
-      'LecCheck תקרא את התיקיות של הקורסים שלכם ב־Panopto בעזרת ה־API client שיצרתם, ותמלא קישורים להקלטות בשיעורים שאין להם קישור.\n\n• קישורים שהיא מוצאת מסומנים „נמצא ב־Panopto”. היא לא משנה קישורים שהדבקתם או מחקתם.\n• בדקו אותם: קישור שגוי אפשר למחוק או להחליף כמו כל קישור.\n• ההתחברות ל־Panopto נשמרת רק במכשיר הזה. ניתוק מוחק אותה, ויכול גם להסיר את כל הקישורים שנמצאו.';
+      'LecCheck תקרא את התיקיות של הקורסים שלכם ב־Panopto בעזרת ה־API client שיצרתם, ותמלא קישורים להקלטות בשיעורים שאין להם קישור.\n\n• קישורים שהיא מוצאת מסומנים „נמצא ב־Panopto”. היא לא משנה קישורים שהדבקתם או מחקתם.\n• בדקו אותם: קישור שגוי אפשר למחוק או להחליף כמו כל קישור.\n• כשאתם מחוברים ל־LecCheck, הגדרת Panopto וההתחברות מוצפנות במכשירים שלכם: השרת של LecCheck שומר אותן בשביל המכשירים האחרים אבל לא יכול לקרוא אותן. ניתוק מוחק אותן, ויכול גם להסיר את כל הקישורים שנמצאו.';
 
   @override
   String get panoptoWarnContinue => 'המשך';
@@ -2333,6 +2333,41 @@ class AppLocalizationsHe extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String get panoptoShared => 'משותף עם המכשירים שלכם שמחוברים ל־LecCheck';
+
+  @override
+  String panoptoSetUpElsewhere(String device) {
+    return 'מוגדר ב־$device';
+  }
+
+  @override
+  String get panoptoUseHere => 'להשתמש כאן';
+
+  @override
+  String panoptoUseHereSubtitle(String device) {
+    return 'מאשרים עם קוד ב־$device. אין מה להגדיר במכשיר הזה.';
+  }
+
+  @override
+  String panoptoSharedElsewhere(String device) {
+    return 'בחשבון שלכם יש גם את הגדרת Panopto מ־$device. השתמשו בה כאן כדי לשתף התחברות אחת עם המכשירים האחרים.';
+  }
+
+  @override
+  String get panoptoDisconnectHere => 'רק המכשיר הזה';
+
+  @override
+  String get panoptoDisconnectHereBody =>
+      'המכשיר הזה יפסיק לחפש. המכשירים האחרים ימשיכו להשתמש ב־Panopto.';
+
+  @override
+  String get panoptoDisconnectEverywhere => 'כל המכשירים שלי';
+
+  @override
+  String get panoptoDisconnectEverywhereBody =>
+      'Panopto תתבקש לבטל את ההתחברות, וכל המכשירים יפסיקו לחפש.';
 
   @override
   String panoptoRemoved(int count) {

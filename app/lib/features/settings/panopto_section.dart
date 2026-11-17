@@ -117,13 +117,26 @@ class PanoptoSection extends ConsumerWidget {
               title: Text(l.panoptoConnectedTo(view.site ?? '')),
               subtitle: Text(
                 [
-                  if (report.at != null)
-                    l.panoptoLastLook(_when(context, report.at!)),
-                  l.panoptoFoundCount(found),
-                ].join(' · '),
+                  [
+                    if (report.at != null)
+                      l.panoptoLastLook(_when(context, report.at!)),
+                    l.panoptoFoundCount(found),
+                  ].join(' · '),
+                  if (view.shared) l.panoptoShared,
+                ].join('\n'),
               ),
             ),
+            PanoptoStatus.elsewhere => ListTile(
+              leading: const Icon(LecIcons.recording),
+              title: Text(l.panoptoSetUpElsewhere(view.device ?? '')),
+              subtitle: Text(l.panoptoUseHereSubtitle(view.device ?? '')),
+            ),
           },
+        if (view.sharedElsewhere case final device?)
+          ListTile(
+            leading: const Icon(LecIcons.info),
+            subtitle: Text(l.panoptoSharedElsewhere(device)),
+          ),
         if (view.busy) const LinearProgressIndicator(),
         if (view.status == PanoptoStatus.connected) ...[
           if (report.error != null && report.error != 'reconnect')
@@ -147,7 +160,9 @@ class PanoptoSection extends ConsumerWidget {
           ),
         ],
         // Developer mode: how each course matched (English only).
-        if (view.status != PanoptoStatus.off && ref.watch(devModeProvider))
+        if (view.status != PanoptoStatus.off &&
+            view.status != PanoptoStatus.elsewhere &&
+            ref.watch(devModeProvider))
           ListTile(
             leading: const Icon(LecIcons.developer),
             title: const Text('Matching details'),
@@ -155,12 +170,13 @@ class PanoptoSection extends ConsumerWidget {
             trailing: const Icon(LecIcons.chevronEnd),
             onTap: () => context.push('/panopto-debug'),
           ),
-        if (view.status != PanoptoStatus.off)
+        if (view.status != PanoptoStatus.off &&
+            view.status != PanoptoStatus.elsewhere)
           ListTile(
             leading: const Icon(LecIcons.close),
             title: Text(l.panoptoDisconnect),
             enabled: !view.busy,
-            onTap: () => _disconnect(context, ref, found),
+            onTap: () => _disconnect(context, ref, found, shared: view.shared),
           ),
         Padding(
           padding: const EdgeInsets.fromLTRB(20, 8, 20, 8),
@@ -192,11 +208,13 @@ class PanoptoSection extends ConsumerWidget {
   static Future<void> _disconnect(
     BuildContext context,
     WidgetRef ref,
-    int found,
-  ) async {
+    int found, {
+    required bool shared,
+  }) async {
     final l = AppLocalizations.of(context);
     final messenger = ScaffoldMessenger.of(context);
     var removeLinks = false;
+    var everywhere = false;
     final ok = await showDialog<bool>(
       context: context,
       builder: (context) => StatefulBuilder(
@@ -206,7 +224,30 @@ class PanoptoSection extends ConsumerWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(l.panoptoDisconnectBody),
+              if (shared)
+                RadioGroup<bool>(
+                  groupValue: everywhere,
+                  onChanged: (v) => setState(() => everywhere = v ?? false),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      RadioListTile<bool>(
+                        contentPadding: EdgeInsets.zero,
+                        value: false,
+                        title: Text(l.panoptoDisconnectHere),
+                        subtitle: Text(l.panoptoDisconnectHereBody),
+                      ),
+                      RadioListTile<bool>(
+                        contentPadding: EdgeInsets.zero,
+                        value: true,
+                        title: Text(l.panoptoDisconnectEverywhere),
+                        subtitle: Text(l.panoptoDisconnectEverywhereBody),
+                      ),
+                    ],
+                  ),
+                )
+              else
+                Text(l.panoptoDisconnectBody),
               if (found > 0)
                 CheckboxListTile(
                   contentPadding: EdgeInsets.zero,
@@ -230,9 +271,17 @@ class PanoptoSection extends ConsumerWidget {
       ),
     );
     if (ok != true) return;
-    final removed = await ref
-        .read(panoptoProvider.notifier)
-        .disconnect(removeLinks: removeLinks);
+    final int removed;
+    try {
+      removed = await ref
+          .read(panoptoProvider.notifier)
+          .disconnect(removeLinks: removeLinks, everywhere: everywhere);
+    } on PanoptoException catch (e) {
+      messenger.showSnackBar(
+        SnackBar(content: Text(panoptoErrorText(e.code, l))),
+      );
+      return;
+    }
     if (removed > 0) {
       messenger.showSnackBar(
         SnackBar(content: Text(l.panoptoRemoved(removed))),

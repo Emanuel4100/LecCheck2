@@ -3827,7 +3827,7 @@ abstract class AppLocalizations {
   /// No description provided for @panoptoOneDevice.
   ///
   /// In en, this message translates to:
-  /// **'Only one of your devices needs this: the others get the links through sync.'**
+  /// **'Set it up on one device. Your other devices signed in to LecCheck can use it after you confirm a code, and the links reach every device through sync.'**
   String get panoptoOneDevice;
 
   /// No description provided for @panoptoWarnTitle.
@@ -3839,7 +3839,7 @@ abstract class AppLocalizations {
   /// No description provided for @panoptoWarnBody.
   ///
   /// In en, this message translates to:
-  /// **'LecCheck will read your courses\' Panopto folders with the API client you created, and fill in recording links where a session has none.\n\n• Links it finds are marked “Found in Panopto”. It never changes links you pasted or removed.\n• Check them: a wrong link can be removed or replaced like any other.\n• Your Panopto sign-in stays on this device. Disconnecting removes it, and can remove every link it found.'**
+  /// **'LecCheck will read your courses\' Panopto folders with the API client you created, and fill in recording links where a session has none.\n\n• Links it finds are marked “Found in Panopto”. It never changes links you pasted or removed.\n• Check them: a wrong link can be removed or replaced like any other.\n• Signed in to LecCheck, your Panopto setup and sign-in are encrypted on your devices: the LecCheck server keeps them for your other devices but can\'t read them. Disconnecting removes them, and can remove every link it found.'**
   String get panoptoWarnBody;
 
   /// No description provided for @panoptoWarnContinue.
@@ -3937,6 +3937,60 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{count, plural, =1{Also remove the link it found} other{Also remove the {count} links it found}}'**
   String panoptoRemoveFound(int count);
+
+  /// No description provided for @panoptoShared.
+  ///
+  /// In en, this message translates to:
+  /// **'Shared with your devices signed in to LecCheck'**
+  String get panoptoShared;
+
+  /// No description provided for @panoptoSetUpElsewhere.
+  ///
+  /// In en, this message translates to:
+  /// **'Set up on {device}'**
+  String panoptoSetUpElsewhere(String device);
+
+  /// No description provided for @panoptoUseHere.
+  ///
+  /// In en, this message translates to:
+  /// **'Use it here'**
+  String get panoptoUseHere;
+
+  /// No description provided for @panoptoUseHereSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm with a code on {device}. Nothing to set up on this device.'**
+  String panoptoUseHereSubtitle(String device);
+
+  /// No description provided for @panoptoSharedElsewhere.
+  ///
+  /// In en, this message translates to:
+  /// **'Your account also has the Panopto setup from {device}. Use it here to share one sign-in with your other devices.'**
+  String panoptoSharedElsewhere(String device);
+
+  /// No description provided for @panoptoDisconnectHere.
+  ///
+  /// In en, this message translates to:
+  /// **'Only this device'**
+  String get panoptoDisconnectHere;
+
+  /// No description provided for @panoptoDisconnectHereBody.
+  ///
+  /// In en, this message translates to:
+  /// **'This device stops looking. Your other devices keep using Panopto.'**
+  String get panoptoDisconnectHereBody;
+
+  /// No description provided for @panoptoDisconnectEverywhere.
+  ///
+  /// In en, this message translates to:
+  /// **'All my devices'**
+  String get panoptoDisconnectEverywhere;
+
+  /// No description provided for @panoptoDisconnectEverywhereBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Panopto is asked to cancel the sign-in, and every device stops looking.'**
+  String get panoptoDisconnectEverywhereBody;
 
   /// No description provided for @panoptoRemoved.
   ///

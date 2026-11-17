@@ -66,6 +66,7 @@ export type PanoptoOp =
     }
   | { op: "refused"; expect: number }
   | { op: "look"; force: boolean }
+  | { op: "unlook"; at: number }
   | { op: "delete" }
   | { op: "pair"; device: string; commit: string }
   | { op: "pairGet"; id: string }
@@ -251,6 +252,12 @@ export function panoptoOp(sql: SqlStorage, op: PanoptoOp, now: number): PanoptoR
       }
       sql.exec("UPDATE panopto_vault SET looked_at = ? WHERE k = 1", now);
       return { status: 200, body: { ok: true, lookedAt: now } };
+    }
+
+    case "unlook": {
+      // A look that failed for a passing reason gives its claim back.
+      sql.exec("UPDATE panopto_vault SET looked_at = 0 WHERE k = 1 AND looked_at = ?", op.at);
+      return { status: 204, body: null };
     }
 
     case "delete": {
