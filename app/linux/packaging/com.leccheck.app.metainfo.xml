@@ -55,6 +55,16 @@
   </supports>
   <content_rating type="oars-1.1" />
   <releases>
+    <release version="2.0.0-beta.21" date="2026-11-17" type="development">
+      <description>
+        <ul>
+          <li><em>Panopto on all your devices, set up once.</em> Signed in to LecCheck, your Panopto setup and sign-in are kept encrypted for your devices: the LecCheck server stores them but can't read them. On another device, Settings → Panopto recordings shows <em>Set up on …</em> with <em>Use it here</em>: check that both devices show the same 6-digit code and tap <em>Allow</em> on the first one. No Client ID, secret or browser on the new device, and every device looks for recordings (at most every 3 hours for all of them together). A device connected in beta.20 moves its connection in by itself. <em>Disconnect</em> works on this device or on all of them.</li>
+          <li><em>Importing a timetable from a chatbot asks for what's missing.</em> The prompt has the chatbot ask first about the semester's dates, which group is yours when several are shown, course numbers and unreadable times. If its file still leaves something out, LecCheck asks you for it in the summary (dates, days, times, and optionally course numbers, which find Panopto recordings) instead of refusing the file.</li>
+          <li><em>A clearer Panopto setup guide</em>, in English and Hebrew.</li>
+          <li><em>"Couldn't reach Panopto" no longer sticks.</em> Android's daily look now waits for a connection, a look that failed without one tries again when you open the app instead of 3 hours later, and each read retries once after a dropped connection. Two rare ways to lose the Panopto sign-in during a refresh are fixed.</li>
+        </ul>
+      </description>
+    </release>
     <release version="2.0.0-beta.20" date="2026-11-16" type="development">
       <description>
         <ul>
@@ -144,26 +154,6 @@
           <li><em>Move sessions by dragging</em> (desktop): drag a session to another time or day, or its bottom edge to change when it ends. A weekly meeting asks <em>This week only</em> or <em>Every week</em>, then <em>Undo</em> is offered for a few seconds. Every week moves the sessions' marks along to the new day.</li>
           <li><em>Desktop sidebar like Google Calendar</em>: a raised <em>+ Create</em> button replaces Add, and a month calendar shows under the tabs: click a day to open its week; the week you're looking at is highlighted, class days have a dot, and no-class days are dimmed with their name on hover.</li>
           <li>The Week grid scrolls by itself when a drag nears its top or bottom.</li>
-        </ul>
-      </description>
-    </release>
-    <release version="2.0.0-beta.13" date="2026-10-26" type="development">
-      <description>
-        <ul>
-          <li><em>Linux: no more surprise sign-outs.</em> On a keyring without a password (common with automatic login), GNOME Keyring emptied LecCheck's saved sign-in whenever it re-read its file, because the value contained backslashes, so you came back signed out. The sign-in is now saved in a form without any, and an older one is converted the first time it's read. If you were signed out, sign in once more.</li>
-          <li><em>A sign-in that can't be read isn't a sign-out</em>: when the system keyring doesn't answer, LecCheck asks it again, and if it still can't, Account and Today say so with <em>Retry</em> and <em>Sign in again</em> instead of showing you as signed out. Nothing is removed.</li>
-          <li><em>Canceling a session drops its reminder.</em> A canceled class could still announce itself: reminders were updated two seconds after a change, and leaving the app (home, Recents, swiping it away) in those seconds kept the old one. They're now updated at once when you leave.</li>
-          <li><em>Reminders on screen go away when they're out of date</em>: "class starts soon" for a session you canceled or skipped since, and "how was class?" for one you marked in the app (also last night's).</li>
-          <li><em>Skipped ahead, no reminder</em>: a session marked Skipped before it starts gets no "class starts soon".</li>
-          <li><em>Sync now shows what it did</em>: the icon turns while it syncs, then the cloud with its check pops in ("Up to date"), or it says it couldn't sync (your changes are kept). It also checks that the connection still works: before, pressing it while synced did nothing at all. With reduced motion the icons just change, and screen readers hear the result.</li>
-          <li><em>Click the cloud icon to sync</em>: in the title bar (or the sidebar on wide windows), clicking it syncs now, like Ctrl+R / F5; right-click or long-press opens Settings.</li>
-          <li><em>Linux remembers the window size</em> and whether it was maximized: it was never saved.</li>
-        </ul>
-        <p>Smaller things</p>
-        <ul>
-          <li>Settings → Developer's log notes each start's sign-in and why a sign-in was ever removed, and <em>Copy diagnostics</em> includes the sign-in state.</li>
-          <li>Settings → Developer → <em>Sync now</em> says whether the server answered.</li>
-          <li>Builds pointed at a local test server keep their own sign-in, so testing can't sign out the installed app.</li>
         </ul>
       </description>
     </release>

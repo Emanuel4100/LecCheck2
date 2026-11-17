@@ -103,6 +103,11 @@
   after a server reset even if the app closed, caps pushes in bytes and notices a revoked
   sign-in at once; one reminder re-plan at a time; a faster first sync and backups off the UI
   thread.
+- **Panopto on every device** (2.0.0-beta.21): the setup and sign-in in an end-to-end
+  encrypted vault in the user's Durable Object; other devices pair with a 6-digit code and
+  share one Panopto sign-in; looks every 3 hours for the whole account; disconnect here or
+  everywhere. Also: a look without a connection retries, the chatbot timetable import asks
+  for what's missing, and a clearer setup guide with the owner's Hebrew.
 - **Panopto recordings, experimental** (2.0.0-beta.20): with an API client the user
   creates once, the connected device fills in each finished class's recording link from
   the course's Panopto folder, and the other devices get them through sync. Found links
@@ -128,7 +133,7 @@ These are built and compile, but have only been exercised in tests so far:
   (Android, iPhone) and Android's daily background look. Tried on Linux only (a separate
   test copy, 2026-11-16).
 
-## Next: 2.0.0-beta.21
+## Next: 2.0.0-beta.22
 
 - Upload a syllabus and build the course from it (ask about the design first).
 - The semester-dates warning still says "outside the new dates" when it counts
@@ -138,10 +143,9 @@ These are built and compile, but have only been exercised in tests so far:
   owner tries it on the phone and approves the Hebrew strings (the `panopto*`,
   `tourPanopto*` and `tourLater` keys); pictures for the setup guide when ready; then
   pick from "after the experimental release" below.
-- **Panopto on every device** (built 2026-11-17, unreleased; server deployed): the owner
-  checks on real devices that the phone's beta.20 connection moves into the vault after
-  updating, then pairs the Linux app. Its Hebrew, the setup guide's and the timetable
-  import's were reviewed by the owner on 2026-11-17.
+- **Panopto on every device** (beta.21): the owner checks on real devices that the
+  phone's beta.20 connection moves into the vault after updating, then pairs the Linux
+  app.
 
 On hold: Linux above 60 Hz, crash reporting. Later: a
 translation platform, the way open source apps do it; a backup server; a more desktop-like
@@ -199,6 +203,8 @@ goes once nobody is left on the tarball.
   automatic backups).
 - Done in 2.0.0-beta.20: Panopto recordings found by themselves (experimental), with
   Matching details and a tour step.
+- Done in 2.0.0-beta.21: Panopto on every device (the vault and pairing), the chatbot
+  import asking for what's missing, a clearer Panopto setup guide.
 
 ## Panopto recordings: after the experimental release
 

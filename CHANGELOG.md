@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 2.0.0-beta.21 — 2026-11-17
 
 - **Panopto on all your devices, set up once.** Signed in to LecCheck, your Panopto setup
   and sign-in are kept encrypted for your devices: the LecCheck server stores them but
