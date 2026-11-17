@@ -44,6 +44,14 @@ Secrets: `JWT_SECRET`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`. Variable: `DE
 | `DELETE /v1/account` | Bearer | Moves the user's rows to a trash (erased after 30 days) and signs out every device |
 | `POST /v1/account/restore` | Bearer | Brings back rows from the trash that weren't re-created since |
 | `POST /v1/account/restore-to` `{at}` | Bearer | Rolls the user's storage back to a time in the last 30 days (Durable Object point-in-time recovery; not available in `wrangler dev`) |
+| `GET /v1/panopto/done` | — | Panopto's sign-in comes back here; sends the browser on to the app |
+| `GET /v1/panopto/vault` | Bearer | The account's Panopto vault (ciphertext, version, `lookedAt`, `refused`) and open pairing requests |
+| `PUT /v1/panopto/vault` `{expect, kid, nonce, ct, device, owner?}` | Bearer | Saves over version `expect` (0: none yet); 409 when it changed or another device holds the lease |
+| `POST /v1/panopto/vault/lease` / `release` `{owner}` | Bearer | One device at a time refreshes Panopto's sign-in (60 s; the holder's save ends it) |
+| `POST /v1/panopto/vault/refused` `{expect}` | Bearer | Panopto refused that version's sign-in |
+| `POST /v1/panopto/vault/look` `{force}` / `unlook` `{at}` | Bearer | Claims the account's look (every 3 hours), or gives a failed one back |
+| `DELETE /v1/panopto/vault` | Bearer | Disconnect everywhere (also done by `DELETE /v1/account`) |
+| `POST /v1/panopto/pairs`, `GET`/`PATCH`/`DELETE /v1/panopto/pairs/:id` | Bearer | Pairing a new device: its request, then A's key, B's key and nonce, the wrapped key, each once and in order (10 minutes, at most 5) |
 
 User ids are `g:<google sub>` (or `dev:<name>`). Session tokens carry the user's
 `epoch`; a token with an old epoch is rejected.

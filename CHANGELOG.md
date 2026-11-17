@@ -1,5 +1,20 @@
 # Changelog
 
+## Unreleased
+
+- **Panopto on all your devices, set up once.** Signed in to LecCheck, your Panopto setup
+  and sign-in are kept encrypted for your devices: the LecCheck server stores them but
+  can't read them. On another device, Settings → Panopto recordings shows **Set up on …**
+  with **Use it here**: check that both devices show the same 6-digit code and tap
+  **Allow** on the first one. No Client ID, secret or browser on the new device, and every
+  device looks for recordings (at most every 3 hours for all of them together). A device
+  connected in beta.20 moves its connection in by itself. **Disconnect** works on this
+  device or on all of them.
+- **"Couldn't reach Panopto" no longer sticks.** Android's daily look now waits for a
+  connection, a look that failed without one tries again when you open the app instead
+  of 3 hours later, and each read retries once after a dropped connection. Two rare ways
+  to lose the Panopto sign-in during a refresh are fixed.
+
 ## 2.0.0-beta.20 — 2026-11-16
 
 - **Panopto recordings, found by themselves (experimental).** Settings → Panopto recordings

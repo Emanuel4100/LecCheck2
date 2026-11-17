@@ -38,7 +38,7 @@ These directly fix v1, which serialized the whole app to one JSON blob per chang
 | `core/notifications/` | `NotificationService` (diff-based scheduling), background action handler |
 | `core/home_widget/` | Android widget snapshot + background callback |
 | `core/backup/` | JSON v3 export/import, v1/v2 importer |
-| `core/recordings/` | Panopto (experimental): `PanoptoConnection` (sign-in, rotating tokens under a database lease), `PanoptoApi` (read-only REST), `RecordingLinker` (finds and writes links), `match_report.dart` (Developer mode's matching details); the matcher is `domain/recording_match.dart`; `PanoptoFeature.experimental` (`app/recordings_controller.dart`) switches the badges, the warning and the tour's default. See [PANOPTO.md](PANOPTO.md) |
+| `core/recordings/` | Panopto (experimental): `PanoptoConnection` (sign-in, rotating tokens under a database lease, kept in the account's encrypted vault when signed in), `panopto_vault.dart` (the vault key, sealing, the server client), `panopto_pairing.dart` (handing the key to a new device), `PanoptoApi` (read-only REST), `RecordingLinker` (finds and writes links), `match_report.dart` (Developer mode's matching details); the matcher is `domain/recording_match.dart`; `PanoptoFeature.experimental` (`app/recordings_controller.dart`) switches the badges, the warning and the tour's default. See [PANOPTO.md](PANOPTO.md) |
 | `core/icons/` | `LecIcons` (meaning → glyph) and the generated custom icon font class |
 | `app/` | Providers, router, shell, theme, formatting, notification/widget controllers, adaptive helpers (`adaptive.dart`) and keyboard shortcuts (`shortcuts.dart`) |
 | `features/` | Screens: onboarding, today, week, courses, session, stats, settings, sessions |
@@ -205,7 +205,9 @@ the phone setting a status and the laptop editing notes on the same session both
 their change. Accepted changes bump a monotonically increasing `version` (the clients'
 cursor) and are broadcast to all of the user's sockets. A push is one transaction that
 writes each touched row once. "Delete cloud data" moves rows to a trash for 30 days.
-Details, including the free plan's daily limits: [server/README.md](../server/README.md).
+The same object keeps the account's Panopto vault (ciphertext the server can't read, with
+a version and a refresh lease) and pairing requests, outside the synced rows; changes to
+them send `{"t":"panopto"}` to the user's sockets ([PANOPTO.md](PANOPTO.md)). Details, including the free plan's daily limits: [server/README.md](../server/README.md).
 
 ### Sign-in
 

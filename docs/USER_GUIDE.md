@@ -141,10 +141,17 @@ Then:
   each session got a link or not, and can copy it all as text for a bug report.
 - It looks when the app starts or comes back (at most every 3 hours), on Android once a day
   in the background, and when you tap **Look for recordings now**.
-- Only the connected device looks; your other devices get the links through sync.
-  Your Panopto Client ID, secret and sign-in stay on that device.
-- **Disconnect** forgets the sign-in and asks Panopto to cancel it; tick the box to also
-  remove every link it found.
+- **Your other devices** (signed in to LecCheck) don't need the setup: Settings →
+  Panopto recordings shows **Set up on …** with **Use it here**. Tap it, open LecCheck on
+  the device you set it up on, check that both show the same 6-digit code, and tap
+  **Allow** there. Every device then shares one Panopto sign-in and looks for recordings;
+  the 3 hours between looks count for all of them. Devices you don't pair still get the
+  links through sync.
+- Your Panopto Client ID, secret and sign-in are encrypted on your devices. The LecCheck
+  server keeps them for your other devices but can't read them. Without a LecCheck
+  sign-in they stay on the device.
+- **Disconnect** on one device or on all of them. "All my devices" asks Panopto to cancel
+  the sign-in. Tick the box to also remove every link it found.
 
 ## Today
 

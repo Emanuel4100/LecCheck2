@@ -1,8 +1,9 @@
 # Panopto recordings, linked automatically
 
-Status: **experimental, on one device** (built 2026-11-16, not released yet). The device
-connected to Panopto finds the links; the user's other devices get them through sync.
-Pairing other devices (Step 4) waits. Decisions are the owner's, from 2026-11-16.
+Status: **experimental** (released in 2.0.0-beta.20). Since 2026-11-17 the setup and
+sign-in live in the account's **vault**, encrypted on the devices, and other devices use
+them after **pairing** (a 6-digit code), with no setup of their own. Decisions are the
+owner's, from 2026-11-16 and 2026-11-17.
 
 This document is the place to come back to: what is built and how it behaves (first),
 its **limits** and the **ideas** for making it better, how to debug a missing link, and
@@ -34,8 +35,17 @@ built yet).
   recording wasn't used, copyable as text.
 - **Where it runs**: at start and when the app comes back (at most every 3 hours), in
   Android's daily background task (then a sync), and on "Look now".
-- **Server**: only `GET /v1/panopto/done`, a page that sends the browser back to the app,
-  and a privacy policy section. No Panopto work on the server.
+- **One setup for every device** (signed in to LecCheck): connecting puts the setup and
+  sign-in in the account's vault, encrypted with a key only the devices hold. Another
+  device shows "Set up on <device>" with **Use it here**: both devices show a 6-digit
+  code, the user taps **Allow** on the one that has the key, and the new device uses
+  Panopto right away (no Client ID, secret or browser). All devices share one Panopto
+  sign-in. Disconnect: only this device, or all devices. Without a LecCheck sign-in,
+  the connection stays on the device as in beta.20.
+- **Server**: `GET /v1/panopto/done`, a page that sends the browser back to the app; the
+  vault and pairing endpoints (`/v1/panopto/vault`, `/v1/panopto/pairs`) in the user's
+  Durable Object, which only ever sees ciphertext and public keys; and a privacy policy
+  section. No Panopto calls on the server.
 
 Code:
 
@@ -43,7 +53,10 @@ Code:
 |---|---|
 | `app/lib/domain/recording_match.dart` | The matcher (pure Dart), its details, recording names and descriptions |
 | `app/lib/core/recordings/panopto_api.dart` | Read-only REST calls, parsing, name cleanup, the two readings of `StartTime` |
-| `app/lib/core/recordings/panopto_connection.dart` | Sign-in, rotating tokens in secure storage, the refresh lease (`DbRefreshLock`) |
+| `app/lib/core/recordings/panopto_connection.dart` | Sign-in, rotating tokens (in the vault or on the device), the refresh leases, moving a beta.20 connection into the vault |
+| `app/lib/core/recordings/panopto_vault.dart` | The vault key, AES-GCM sealing, the server client (`VaultClient`) |
+| `app/lib/core/recordings/panopto_pairing.dart` | Pairing: the crypto, the new device's request, the answering device |
+| `app/lib/features/settings/panopto_pairing.dart` | "Use it here" and "Allow" dialogs |
 | `app/lib/core/recordings/recording_linker.dart` | The runner: folders, matching, writing, the report |
 | `app/lib/core/recordings/match_report.dart` | Matching details per course, and the text report |
 | `app/lib/app/recordings_controller.dart` | Providers, `PanoptoController`, `PanoptoFeature.experimental` |
@@ -53,9 +66,11 @@ Code:
 | `app/lib/features/session/session_sheet.dart` | "Found in Panopto", the question after removing a link |
 | `app/lib/features/tour/` | The tour's Panopto step |
 | `app/lib/app/background_reminders.dart` | Android's daily look |
-| `server/src/panopto.ts` | The redirect page |
+| `server/src/panopto.ts` | The redirect page, the vault and pairing routes |
+| `server/src/panopto-vault.ts` | The vault and pairing in the user's Durable Object |
 | `app/test/fixtures/panopto/` | The real 80430 folder of 2026-11-16 (ids and links replaced) |
 | `app/test/core/fake_panopto.dart` | A fake Panopto that behaves like HUJI's site |
+| `app/test/core/fake_vault.dart` | A fake of the server's vault endpoints, and per-device secure storage |
 
 ## How it behaves
 
@@ -116,6 +131,10 @@ or 6 Archived), recordings whose name starts with another course number.
 - Courses with folders; a course without folders gets them by its number (the one
   folder whose name has it, or the one of the semester's academic year, `2026-27`).
   Several → "Choose its Panopto folder".
+- With the vault, the 3 hours count for the whole account (the server keeps the last
+  look's time): a device skips its look when another one looked. "Look now" always looks.
+  A look that failed for a passing reason (no connection, Panopto's 5xx) gives its time
+  back, so the next start looks again.
 - Each folder's recordings by `CreatedDate`, newest first, 50 a page, until a page is all
   older than a week before the semester: 1–3 requests per course.
 - `StartTime` is read as wall-clock digits (how HUJI sends it), unless reading it as real
@@ -125,7 +144,8 @@ or 6 Archived), recordings whose name starts with another course number.
 
 | Synced | On this device only |
 |---|---|
-| Found links (`recordingFound`), removed links (`''`) | Client ID, secret, access and refresh tokens (secure storage) |
+| Found links (`recordingFound`), removed links (`''`) | The vault key (secure storage), or without a LecCheck sign-in the Client ID, secret and tokens |
+| The vault (server only, encrypted): Client ID, secret, tokens | |
 | Folders per course (`courses.panoptoFolders`) | The last look's report: time, links written, error |
 | Groups per meeting (`meetings.panoptoGroup`) | Open group questions, courses to choose a folder for |
 | | Whether the warning was shown; matching details (memory only) |
@@ -168,15 +188,19 @@ Each with what it means for a user, and the likely fix.
     again" (Developer mode only). *Fix: a "Find in Panopto" button in the session sheet.*
 11. **Older app versions** don't show found links (they read only `recordingUrl`), and
     clear a link to null instead of `''`.
-12. **Only one device looks.** Other devices get links when that device has looked and
-    synced; on iPhone there's no background look (only when the app runs). Two connected
-    devices are allowed; if they disagree, the last `recordingFound` written wins.
+12. **Devices that aren't paired don't look.** They get links when a paired device has
+    looked and synced; on iPhone there's no background look (only when the app runs). If
+    two devices disagree, the last `recordingFound` written wins.
 13. **Group questions and the folder-choice list are per device** (prefs), shown on the
-    connected device only; the answers (groups, folders) sync.
-14. **Sign-in**: refresh tokens work once. If the app dies after Panopto rotated the token
-    but before it was saved, the sign-in is lost ("Connect again"). The refresh token's
-    lifetime is unknown (the owner's test token from 2026-11-16 20:53 measures it).
-    Background looks never open a browser; an expired sign-in shows only in Settings.
+    device that looked; the answers (groups, folders) sync.
+14. **Sign-in**: refresh tokens work once, and all paired devices share one. A refreshed
+    token is kept on the device before it's sent to the vault, and sent later if it
+    didn't arrive; meanwhile another device may be refused and show "Connect again"
+    until it arrives. If the app dies after Panopto rotated the token but before it kept
+    it, the sign-in is lost for every device ("Connect again" on any one fixes all). The
+    refresh token's lifetime is unknown (the owner's test token from 2026-11-16 20:53
+    measures it). Background looks never open a browser; an expired sign-in shows only
+    in Settings.
 15. **One redirect address per Panopto client**, so every user's client points at
     `https://leccheck-sync.leccheck.workers.dev/v1/panopto/done`. Moving the server to
     another address breaks every client until its Redirect URL is edited.
@@ -187,6 +211,17 @@ Each with what it means for a user, and the likely fix.
     from Android's background look).
 18. **Desktop sign-in** uses loopback port 43823, like Google sign-in.
 19. **Rate limits are unknown** (no headers seen). The 3-hour throttle keeps requests few.
+20. **Pairing needs LecCheck open on a device with the key.** There's no push to wake a
+    phone: the request waits up to 10 minutes, and the new device says "Open LecCheck on
+    <device>". The answering device keeps its pairing key in memory: if its app closes
+    between answering and Allow, the request has to be made again.
+21. **Device names are plain** ("Android", "iPhone", "Linux · <hostname>"): two Android
+    phones look alike in "Set up on …". *Fix: the model name (`device_info_plus`).*
+22. **The vault key only lives on devices.** If every device that held it is gone, set up
+    again (Panopto's Generate button makes a new secret). A device signed in to another
+    LecCheck account never uses the key.
+23. **A beta.20 device whose account already has a vault** keeps its own connection until
+    "Use it here" (Settings says so); pairing then revokes its own sign-in.
 
 ## Ideas to make it better
 
@@ -206,7 +241,8 @@ Roughly by value:
 9. **Use the description's slot** (`יום ב 12:00 - 13:45`) to confirm a match or to match
    recordings that started late.
 10. **Normalize group letters** and parse other universities' names.
-11. **Pairing other devices** (Step 4 below), so any device can look.
+11. **Pairing from a notification**: ask on the phone with a notification instead of
+    waiting for the app to be opened (needs push, or a short background poll).
 12. **Search inside recordings** (`folders/{id}/sessions/search` finds words in the
     lecture, without timestamps) and **thumbnails** (public images).
 
@@ -354,14 +390,14 @@ across sessions.
 | Client type | Mobile or Desktop Application | Made for apps; works with SSO |
 | Who creates it | Each user, once | Works at any Panopto university, depends on nobody's account. A shared HUJI client is unconfirmed and its secret would be public in the open-source app |
 | Where it runs | Devices | See the comparison below |
-| Refresh tokens | Per device, never synced | They are what opens Panopto; each device signs in itself |
-| Other devices (later) | The setup syncs, encrypted end to end; a new device is unlocked by pairing (a 6-digit code) | Every device can look; the server can't read it; no passphrase |
+| Refresh tokens | In the vault, shared by the paired devices (changed 2026-11-17; was per device) | The owner wants other devices to need no setup and no browser |
+| Other devices | The setup and sign-in in a vault the server can't read; a new device is unlocked by pairing (a 6-digit code) | Every device can look; no passphrase |
 
 For the experimental release (owner, after Step 0):
 
 | Question | Decision |
 |---|---|
-| Other devices | One connected device; the others get the links through sync. Vault and pairing later |
+| Other devices | One connected device; the others get the links through sync. Vault and pairing later (built 2026-11-17) |
 | Parallel groups | Suggest a group (from links pasted before, then the room), ask once on the course page, remember the letter per meeting (synced) |
 | Found links | Marked "Found in Panopto", in their own column, with "remove every link it found" on Disconnect |
 | Removing a link | Ask each time (when Panopto is in use): a pasted link may be filled from Panopto, a found one may be put back |
@@ -378,6 +414,17 @@ Devices or server, compared:
 | When links appear | When a connected device runs: opening the app, Android's daily task, "Look now" | On a schedule, even if no device runs |
 | New code | App, plus a tiny redirect page on the server | Account registry, the server writing user data with its own clock, cron, limits |
 
+For the vault and pairing (owner, 2026-11-17, after the Linux app asked for the setup
+again):
+
+| Question | Decision |
+|---|---|
+| What other devices do | Nothing but confirm a code: no Client ID, secret or browser (one shared sign-in) |
+| Can the server read the setup | No: encrypted end to end, the key reaches devices only by pairing |
+| Comparing the code | Yes, so a server can't swap in its own key |
+| The 3-hour wait between looks | Account-wide |
+| Where the vault lives | The user's Durable Object, behind its own endpoints (a version check and a lease, which synced rows can't give), not a synced row |
+
 ## Signing in (as built)
 
 - One redirect address for every device and platform:
@@ -389,54 +436,75 @@ Devices or server, compared:
 - The app opens the browser with `flutter_web_auth_2` (as Google sign-in does), scopes
   `openid api offline_access`, and exchanges the code at the token endpoint with the id
   and secret in Basic auth, unencoded.
-- The setup and tokens go to secure storage as base64url JSON (`leccheck.panopto`), never
-  synced. Each refresh's new token is saved before anything else, under a 30-second
-  lease in `sync_meta` (`DbRefreshLock`): Android's background task is another isolate in
-  the same process, where file locks don't keep them apart. A refused refresh token
-  means "Connect again" (one browser tap; HUJI's sign-in is usually remembered).
-  Background work never opens a browser.
-- Disconnect asks Panopto to revoke the refresh token and forgets it.
+- Signed in to LecCheck, the setup and tokens go to the vault (below); otherwise to
+  secure storage as base64url JSON (`leccheck.panopto`). A device connected before the
+  vault existed moves its connection into it by itself when the account has none
+  (checked at most every 10 minutes); without an answer it keeps it and tries later.
+- Refreshes run one at a time on the device under a 60-second lease in `sync_meta`
+  (`DbRefreshLock`; Android's background task is another isolate in the same process,
+  where file locks don't keep them apart), and across devices under the vault's lease.
+  The lease outlasts a token request (20 s). A lease still held is never ignored. A
+  refused refresh token means "Connect again" (one browser tap; HUJI's sign-in is
+  usually remembered). Background work never opens a browser.
+- Disconnect on this device forgets the key (and revokes the device's own sign-in, if it
+  has one). Disconnect everywhere asks Panopto to revoke the shared refresh token and
+  deletes the vault; the other devices then forget their keys.
 
-## Not built yet: the vault and pairing (Step 4)
+## The vault and pairing (as built, 2026-11-17)
 
-### The setup on every device: the vault
+### The vault
 
-- The **setup** is `{site, clientId, clientSecret}`.
-- The first device makes a random 256-bit key **K**, keeps it in secure storage, and syncs
-  the setup encrypted with it in `user_settings.panoptoVault`:
-  `{"v":1, "kid": first 8 bytes of SHA-256(K) as hex, "nonce", "ct"}`. AES-256-GCM
-  (`cryptography` package, already used for update signatures), with the account's user
-  id as associated data so a vault can't be moved to another account.
-- A device whose key has another `kid` (the setup was redone elsewhere) offers "Use it
-  here" again.
-- Disconnecting everywhere clears the vault (synced); each device deletes its key and
-  token.
-- A lost phone loses nothing: redo the setup on any device (Panopto's Generate button
-  makes a new secret).
+- Its contents are the setup and sign-in: `{setup: {site, clientId, clientSecret},
+  refreshToken, accessToken, accessExpiresAt}`, sealed with AES-256-GCM under a random
+  256-bit key **K** (the `cryptography` package), with `leccheck-panopto-v1:<user id>`
+  as associated data so a vault can't be moved to another account. `kid` = the first
+  8 bytes of SHA-256(K), as hex.
+- Devices keep K in secure storage (`leccheck.panopto.key`, with the user id and the site
+  for showing offline). The server keeps one row per account in its Durable Object:
+  `v` (a version), `kid`, `nonce`, `ct`, the device that saved it, `lookedAt`, `refused`,
+  and a lease.
+- `PUT /v1/panopto/vault` saves only over the version the device read (`expect`), and not
+  while another device holds the lease. `POST …/lease` holds it for 60 s; the holder's
+  save ends it.
+- A refresh: read the vault (cached for a minute); if its access token is still good
+  (or another device's refresh replaced the one the API refused), use it. Otherwise take
+  the lease (waiting while another device has it), read again, refresh at Panopto, keep
+  the new tokens on the device (`leccheck.panopto.pending`), then save them over the
+  version read. A save that doesn't arrive is sent first next time; it still fits
+  because nobody else could refresh with the old token.
+- Panopto refusing the token marks that version `refused` (`POST …/refused`): every
+  device shows "Connect again". Connecting again on a device with K keeps K.
+- A device whose K no longer matches the vault (set up again elsewhere), or whose vault
+  is gone (disconnected everywhere), forgets K.
+- `POST …/look` claims the account's look (3 hours, unless forced); `…/unlook` gives a
+  failed one back. "Delete cloud data" deletes the vault too (it isn't restorable).
+- Connected devices get `{"t":"panopto"}` over live sync when the vault or a pairing
+  request changes. Older apps ignore it.
 
 ### Pairing a new device
 
-What the user does:
-1. On the new device, tap **Use it here**.
-2. Check that the phone shows the same 6-digit code, and tap **Allow**.
-3. Tap **Connect** on the new device: one browser tap.
+What the user does: tap **Use it here** on the new device, check that the other device
+shows the same 6-digit code, and tap **Allow** there.
 
-Underneath, a commit-then-reveal exchange in sync rows. Committing first stops the
-server from grinding a key pair that happens to show the same code:
-1. New device B: makes an X25519 key pair and a random nonce. Writes a request: its name
-   and `commit = SHA-256(B.pub ‖ nonce)`.
-2. Device A (has K): makes an X25519 key pair and writes `A.pub`.
-3. B: writes `B.pub` and `nonce`. A checks them against the commit.
-4. Both show `code = 6 digits of SHA-256("leccheck-pair-v1" ‖ request id ‖ A.pub ‖ B.pub ‖ nonce)`.
-5. A, on **Allow**: `wrapKey = HKDF-SHA256(X25519(a, B.pub), salt = request id,
-   info = "leccheck-pair-v1")`. Writes `wrapped = AES-GCM(wrapKey, K)` with `kid`.
-6. B unwraps K, stores it, decrypts the vault, and tombstones the request.
+Underneath (`/v1/panopto/pairs`, each step once and in order):
+1. New device B: an X25519 key pair and a random nonce. `POST /pairs` with its name and
+   `commit = SHA-256(B.pub . nonce)`. Only when the account has a vault; at most 5 open.
+2. A device holding K (A), by itself: its own key pair, `PATCH {aPub}`. The first one
+   wins; others get 409 and leave it.
+3. B: `PATCH {bPub, nonce}`. A checks them against the commit (a mismatch is denied
+   without asking). Committing first stops a server from grinding a key pair that
+   happens to give the same code.
+4. Both show `code = 6 digits of SHA-256("leccheck-pair-v1|id|A.pub|B.pub|nonce")`.
+5. A, on **Allow**: `wrapKey = HKDF-SHA256(X25519(a, B.pub), salt = id,
+   info = "leccheck-pair-v1")`; `PATCH {wrapped = AES-GCM(wrapKey, K, aad = id), kid}`.
+6. B opens it, checks the `kid`, keeps K, and deletes the request. Its own connection
+   (beta.20), if any, is revoked.
 
-Steps 2–3 run by themselves over live sync, in about a second. Requests expire after
-10 minutes, and done or expired ones are tombstoned. Only devices holding K answer.
+B polls every 2 seconds; A answers at start, on return to the app, and on the live
+message. Requests end after 10 minutes, on Deny, or when the vault gets a new key.
 
 What the server sees: public keys, the commit, ciphertext. Encryption stops a server that
-only reads. The code comparison stops a server that tries to swap in its own key.
+only reads; the code comparison stops one that swaps in its own key.
 
 ## Data model (schema v6, as built)
 
@@ -451,9 +519,8 @@ only reads. The code comparison stops a server that tries to swap in its own key
   (`_Adapter.own`): the domain types don't carry them. Backups and snapshots restore them.
 - The viewer link needs a Panopto sign-in to play, so it isn't a secret in the synced
   session row.
-- Later, for pairing: `user_settings.panoptoVault` and a synced table `device_requests`
-  (id, deviceName, commit, aPub, bPub, nonce, wrapped, kid, expiresAt), added to
-  `SYNCED_TABLES`.
+- The vault and pairing requests aren't in the app's database: they live in the user's
+  Durable Object (`panopto_vault`, `panopto_pairs`), so no schema change.
 
 ## Steps
 
@@ -468,7 +535,8 @@ only reads. The code comparison stops a server that tries to swap in its own key
    server page. Done 2026-11-16 as an experimental feature, then (same day) Matching
    details, learning groups, asking on removal, ranking pairs across sessions, the
    tour step.
-4. **Vault and pairing** (`core/recordings/panopto_vault.dart`): not started.
+4. **Vault and pairing**: done 2026-11-17 (server, the app's vault, pairing), after the
+   owner's Linux app asked for the setup again.
 5. **Polish**: USER_GUIDE, CHANGELOG and tour done. Waiting: the owner's approval of the
    Hebrew strings; pictures for the setup guide; then out of experimental.
 
@@ -488,12 +556,22 @@ only reads. The code comparison stops a server that tries to swap in its own key
   winning, course edits keeping folders and groups, an expired sign-in.
 - `test/widget/flows_test.dart`: the question after removing a found or pasted link.
 - `test/widget/tour_test.dart`: the tour's Panopto step.
+- `test/core/panopto_vault_test.dart`: the setup in the vault (no secret in what the
+  server stores), another device paired without a browser, no sign-in or no answer
+  (kept on the device, moved later), another account's key, refreshes shared between
+  devices, a refused token another device already replaced, waiting for the lease, a
+  late save healing a refused device, connecting again for all, disconnecting here or
+  everywhere, account-wide looks, offline Settings, moving a beta.20 connection; pairing
+  (the same code, Allow, Deny, a key not matching its commit, a server answering with
+  its own key, expiry).
 - `test/drift`: upgrades to v6. `server/test/panopto.test.ts`: the redirect page.
+  `server/test/panopto-vault.test.ts`: versions, leases, refused, looks, delete (also
+  with Delete cloud data), revoked sessions, pairing order, expiry, the cap, the live
+  message.
+- `test_sync`: a phone and a laptop pairing through a local Worker, sharing refreshes and
+  looks, and disconnecting everywhere.
 - Screenshots: the setup page, the Settings section, the course page's part, the tour
-  step.
-- Later, for pairing: vault round trip, wrong account, wrong `kid`, two simulated devices,
-  a swapped key giving a different code, no plaintext in synced rows; `test_sync` with
-  two devices pairing through a local Worker.
+  step, "Set up on …" with Use it here, and Allow.
 
 ## Risks and open questions
 
@@ -501,6 +579,6 @@ only reads. The code comparison stops a server that tries to swap in its own key
 - The refresh token's lifetime: if short, "Connect again" will show often.
 - Panopto's rate limits are unknown.
 - Settled since Step 0: parallel groups (ask once, or learn from pasted links); wall-clock
-  `StartTime` (both readings, per folder); rotating refresh tokens (saved first, one
-  refresh at a time per device); a class in two parts (one link, limit 1 above).
+  `StartTime` (both readings, per folder); rotating refresh tokens (kept first, one
+  refresh at a time per account); a class in two parts (one link, limit 1 above).
 - Open: "Watched the recording" from `PercentCompleted` (idea 2).
