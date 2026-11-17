@@ -10,6 +10,12 @@
   device looks for recordings (at most every 3 hours for all of them together). A device
   connected in beta.20 moves its connection in by itself. **Disconnect** works on this
   device or on all of them.
+- **Importing a timetable from a chatbot asks for what's missing.** The prompt has the
+  chatbot ask first about the semester's dates, which group is yours when several are shown,
+  course numbers and unreadable times. If its file still leaves something out, LecCheck asks
+  you for it in the summary (dates, days, times, and optionally course numbers, which find
+  Panopto recordings) instead of refusing the file.
+- **A clearer Panopto setup guide**, in English and Hebrew.
 - **"Couldn't reach Panopto" no longer sticks.** Android's daily look now waits for a
   connection, a look that failed without one tries again when you open the app instead
   of 3 hours later, and each read retries once after a dropped connection. Two rare ways

@@ -2151,6 +2151,32 @@ class AppLocalizationsHe extends AppLocalizations {
       'פעולה זו מוסיפה סמסטר חדש. הנתונים הקיימים לא משתנים.';
 
   @override
+  String get timetableMissingTitle => 'חסרים כמה פרטים';
+
+  @override
+  String get timetableMissingBody =>
+      'הצ׳אטבוט לא כתב אותם. השלימו אותם כדי להוסיף את הסמסטר.';
+
+  @override
+  String get timetableChoose => 'בחירה';
+
+  @override
+  String get timetableEndsBeforeStart => 'מסתיים לפני שהוא מתחיל';
+
+  @override
+  String get timetableOutsideSemester => 'לא בתוך תאריכי הסמסטר';
+
+  @override
+  String get timetableCodesTitle => 'מספרי קורסים (לא חובה)';
+
+  @override
+  String get timetableCodesBody =>
+      'LecCheck מוצאת את ההקלטות של כל קורס ב־Panopto לפי המספר שלו. אפשר להוסיף אותם גם אחר כך.';
+
+  @override
+  String get timetableFillIn => 'השלימו את מה שחסר כדי להוסיף את הסמסטר.';
+
+  @override
   String get timetableAdd => 'הוספת הסמסטר';
 
   @override
@@ -2176,7 +2202,7 @@ class AppLocalizationsHe extends AppLocalizations {
 
   @override
   String get panoptoWarning =>
-      'בדקו את הקישורים שהיא מוצאת. היא רק קוראת מ־Panopto, לא משנה קישורים שהדבקתם או מחקתם, ואפשר להסיר בלחיצה אחת את כל הקישורים שמצאה.';
+      'בדקו את הקישורים שנמצאים. LecCheck רק קוראת מ־Panopto, לא נוגעת בקישורים שהדבקתם או מחקתם, ואפשר להסיר בלחיצה אחת את כל הקישורים שהיא מצאה.';
 
   @override
   String get panoptoSetUp => 'הגדרה';
@@ -2189,34 +2215,34 @@ class AppLocalizationsHe extends AppLocalizations {
       'בגרסה הזו אין שרת סנכרון, וההתחברות ל־Panopto צריכה אותו.';
 
   @override
-  String get panoptoSetupTitle => 'חיבור Panopto';
+  String get panoptoSetupTitle => 'חיבור ל־Panopto';
 
   @override
-  String get panoptoStepOpen => 'פתחו את Panopto';
+  String get panoptoStepOpen => 'נכנסים ל־Panopto';
 
   @override
   String get panoptoStepOpenBody =>
-      'התחברו ל־Panopto של האוניברסיטה בדפדפן. הכי נוח במחשב.';
+      'פתחו את Panopto של האוניברסיטה בדפדפן והתחברו כרגיל. הכי נוח לעשות את זה במחשב.';
 
   @override
-  String get panoptoSite => 'כתובת Panopto';
+  String get panoptoSite => 'הכתובת של Panopto';
 
   @override
   String get panoptoOpen => 'פתיחת Panopto';
 
   @override
-  String get panoptoStepCreate => 'צרו API client';
+  String get panoptoStepCreate => 'יוצרים API Client';
 
   @override
   String get panoptoStepCreateBody =>
-      'לחצו על התמונה או ראשי התיבות שלכם למעלה, ואחר כך על User Settings,‏ API Clients ו־Create a new API Client.';
+      'ב־Panopto, לחצו על השם או התמונה שלכם בפינה העליונה ובחרו User Settings. עברו ל־API Clients ולחצו על Create a new API Client.';
 
   @override
-  String get panoptoStepFill => 'מלאו את הפרטים';
+  String get panoptoStepFill => 'ממלאים את הטופס';
 
   @override
   String get panoptoStepFillBody =>
-      'Client Name: ‏LecCheck. ‏Client Type: ‏Mobile or Desktop Application. ‏Redirect URL: הכתובת שלמטה, בדיוק. השאירו את שאר השדות ריקים ולחצו Create API Client.';
+      'בשדה Client Name כתבו LecCheck. ב־Client Type בחרו Mobile or Desktop Application. ב־Redirect URL הדביקו את הכתובת שמופיעה למטה, בדיוק כמו שהיא. את שאר השדות השאירו ריקים, ולחצו על Create API Client.';
 
   @override
   String get panoptoRedirect => 'Redirect URL';
@@ -2228,11 +2254,11 @@ class AppLocalizationsHe extends AppLocalizations {
   String get panoptoCopied => 'הועתק';
 
   @override
-  String get panoptoStepPaste => 'הדביקו את ה־Client ID וה־secret';
+  String get panoptoStepPaste => 'מעתיקים לכאן את ה־Client ID וה־secret';
 
   @override
   String get panoptoStepPasteBody =>
-      'Panopto מציגה אותם אחרי יצירת ה־client. הם נשמרים רק במכשיר הזה.';
+      'Panopto מציגה אותם מיד אחרי שיוצרים את ה־API Client. LecCheck שומרת אותם מוצפנים, והמכשירים האחרים שלכם יכולים להשתמש בהם אחרי אישור עם קוד.';
 
   @override
   String get panoptoClientId => 'Client ID';
@@ -2241,11 +2267,11 @@ class AppLocalizationsHe extends AppLocalizations {
   String get panoptoClientSecret => 'Client secret';
 
   @override
-  String get panoptoStepConnect => 'התחברו';
+  String get panoptoStepConnect => 'מתחברים';
 
   @override
   String get panoptoStepConnectBody =>
-      'התחברו ל־Panopto עוד פעם בדפדפן. אחר כך LecCheck מחפשת את ההקלטות שלכם.';
+      'Panopto תבקש מכם להתחבר עוד פעם בדפדפן. אחר כך LecCheck תתחיל לחפש את ההקלטות שלכם.';
 
   @override
   String get panoptoConnect => 'התחברות';

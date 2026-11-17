@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:leccheck/core/backup/timetable_import.dart';
+import 'package:leccheck/domain/local_date.dart';
 import 'package:leccheck/domain/schedule_types.dart';
 
 Map<String, dynamic> _example() =>
@@ -67,6 +68,62 @@ void main() {
     _refuses((j) => _meeting(j)['day'] = 'someday', 'valid "day"');
     _refuses((j) {
       _meeting(j)['date'] = '2030-01-01';
-    }, 'outside the semester');
+    }, 'no date in the semester');
   });
+
+  test('a file with gaps is kept as a draft that says what is missing', () {
+    final json = _example();
+    (json['semester'] as Map).remove('end');
+    (json['semester'] as Map)['name'] = '';
+    final course = (json['courses'] as List).first as Map<String, dynamic>;
+    course.remove('code');
+    final [lecture, practice, _, once] = course['meetings'] as List;
+    (lecture as Map).remove('end');
+    (practice as Map)['day'] = 'someday';
+    (once as Map)['date'] = 'December 1';
+
+    final draft = TimetableDraft.read(jsonEncode(json));
+    expect(draft.gaps.map((g) => g.kind), [
+      TimetableGapKind.semesterName,
+      TimetableGapKind.semesterEnd,
+      TimetableGapKind.meetingEnd,
+      TimetableGapKind.meetingDay,
+      // A one-time class keeps asking for a date, not a weekday.
+      TimetableGapKind.meetingDate,
+    ]);
+    expect(draft.coursesWithoutCode, [0]);
+    expect(draft.build, throwsStateError);
+    // The strict reading says the first one.
+    expect(
+      () => ParsedTimetable.parse(jsonEncode(json)),
+      throwsA(isA<FormatException>()),
+    );
+
+    final meetings = draft.courses.single.meetings;
+    draft
+      ..semesterName = 'Semester A'
+      ..end = LocalDate(2027, 1, 22);
+    meetings[0].endMin = 12 * 60;
+    meetings[1].weekday = DateTime.tuesday;
+    meetings[3].date = LocalDate(2026, 12, 1);
+    expect(draft.gaps, isEmpty);
+    // The course number stays optional.
+    final t = draft.build();
+    expect(t.semester.name, 'Semester A');
+    expect(t.courses.single.course.code, '');
+    final [lectureRule, practiceRule, _, onceRule] = t.courses.single.meetings;
+    expect(lectureRule.endMin, 720);
+    expect(practiceRule.weekday, DateTime.tuesday);
+    expect(practiceRule.intervalWeeks, 2);
+    expect(onceRule.kind, MeetingKind.once);
+    expect(onceRule.date, LocalDate(2026, 12, 1));
+  });
+
+  test(
+    'the prompt asks before writing, and leaves out what I don\'t answer',
+    () {
+      expect(timetablePrompt, contains('which group or section is mine'));
+      expect(timetablePrompt, contains('LecCheck will ask me for it'));
+    },
+  );
 }

@@ -663,6 +663,61 @@ void main() {
       }
     });
 
+    testWidgets('asks for what the chatbot left out before adding', (
+      tester,
+    ) async {
+      final (container, _) = await _start(tester);
+      final json = jsonDecode(timetableExample) as Map<String, dynamic>;
+      final semester = json['semester'] as Map<String, dynamic>
+        ..remove('start')
+        ..remove('end');
+      final course = (json['courses'] as List).first as Map<String, dynamic>
+        ..remove('code');
+      ((course['meetings'] as List).first as Map<String, dynamic>).remove(
+        'end',
+      );
+      // Picking today for both dates leaves no room for the one-time class.
+      (course['meetings'] as List).removeLast();
+      container.read(routerProvider).push('/timetable-import');
+      await _settle(tester);
+      await tester.enterText(find.byType(TextField), jsonEncode(json));
+      await _settle(tester);
+      final page = find.byType(Scrollable).first;
+      await tester.scrollUntilVisible(
+        find.text('Add semester'),
+        200,
+        scrollable: page,
+      );
+      expect(find.text('A few things are missing'), findsOneWidget);
+      expect(find.text('Course numbers (optional)'), findsOneWidget);
+      FilledButton add() => tester.widget<FilledButton>(
+        find.widgetWithText(FilledButton, 'Add semester'),
+      );
+      expect(add().onPressed, isNull);
+
+      Future<void> choose(String label) async {
+        final field = find.widgetWithText(InputDecorator, label);
+        await tester.ensureVisible(field);
+        await _settle(tester);
+        await tester.tap(field);
+        await _settle(tester);
+        await tester.tap(find.text('OK'));
+        await _settle(tester);
+      }
+
+      await choose('Start date');
+      await choose('End date');
+      await choose('End');
+      expect(semester, isNotEmpty);
+      await tester.enterText(
+        find.widgetWithText(TextFormField, 'Calculus 1'),
+        '104031',
+      );
+      await _settle(tester);
+      expect(find.text('A few things are missing'), findsNothing);
+      expect(add().onPressed, isNotNull);
+    });
+
     testWidgets('says what is wrong and offers no Add button', (tester) async {
       final (container, _) = await _start(tester);
       container.read(routerProvider).push('/timetable-import');

@@ -2156,6 +2156,32 @@ class AppLocalizationsEn extends AppLocalizations {
       'This adds a new semester. Your existing data doesn\'t change.';
 
   @override
+  String get timetableMissingTitle => 'A few things are missing';
+
+  @override
+  String get timetableMissingBody =>
+      'The chatbot didn\'t write these. Fill them in to add the semester.';
+
+  @override
+  String get timetableChoose => 'Choose';
+
+  @override
+  String get timetableEndsBeforeStart => 'Ends before it starts';
+
+  @override
+  String get timetableOutsideSemester => 'Not within the semester\'s dates';
+
+  @override
+  String get timetableCodesTitle => 'Course numbers (optional)';
+
+  @override
+  String get timetableCodesBody =>
+      'LecCheck finds each course\'s Panopto recordings by its number. You can also add them later.';
+
+  @override
+  String get timetableFillIn => 'Fill in what\'s missing to add the semester.';
+
+  @override
   String get timetableAdd => 'Add semester';
 
   @override
@@ -2198,11 +2224,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get panoptoSetupTitle => 'Connect Panopto';
 
   @override
-  String get panoptoStepOpen => 'Open Panopto';
+  String get panoptoStepOpen => 'Sign in to Panopto';
 
   @override
   String get panoptoStepOpenBody =>
-      'Sign in to your university\'s Panopto in the browser. A computer is easiest.';
+      'Open your university\'s Panopto in the browser and sign in as usual. This is easiest on a computer.';
 
   @override
   String get panoptoSite => 'Panopto address';
@@ -2215,14 +2241,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get panoptoStepCreateBody =>
-      'Open your picture or initials at the top, then User Settings, API Clients, and Create a new API Client.';
+      'In Panopto, click your name or picture at the top right, then User Settings. Open API Clients and click Create a new API Client.';
 
   @override
-  String get panoptoStepFill => 'Fill it in';
+  String get panoptoStepFill => 'Fill in the form';
 
   @override
   String get panoptoStepFillBody =>
-      'Client Name: LecCheck. Client Type: Mobile or Desktop Application. Redirect URL: the address below, exactly. Leave the other fields empty, and press Create API Client.';
+      'Client Name: LecCheck. Client Type: Mobile or Desktop Application. Redirect URL: copy the address below and paste it exactly as it is. Leave the other fields empty and click Create API Client.';
 
   @override
   String get panoptoRedirect => 'Redirect URL';
@@ -2234,11 +2260,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get panoptoCopied => 'Copied';
 
   @override
-  String get panoptoStepPaste => 'Paste its Client ID and secret';
+  String get panoptoStepPaste => 'Copy the Client ID and secret here';
 
   @override
   String get panoptoStepPasteBody =>
-      'Panopto shows them once the client is created. They stay on this device.';
+      'Panopto shows them right after you create the client. LecCheck keeps them encrypted, and your other devices can use them after you confirm a code.';
 
   @override
   String get panoptoClientId => 'Client ID';
@@ -2251,7 +2277,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get panoptoStepConnectBody =>
-      'Sign in to Panopto once more in the browser. Then LecCheck looks for your recordings.';
+      'Panopto asks you to sign in once more in the browser. Then LecCheck starts looking for your recordings.';
 
   @override
   String get panoptoConnect => 'Connect';

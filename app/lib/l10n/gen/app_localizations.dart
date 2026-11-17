@@ -3644,6 +3644,54 @@ abstract class AppLocalizations {
   /// **'This adds a new semester. Your existing data doesn\'t change.'**
   String get timetableAddsSemester;
 
+  /// No description provided for @timetableMissingTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'A few things are missing'**
+  String get timetableMissingTitle;
+
+  /// No description provided for @timetableMissingBody.
+  ///
+  /// In en, this message translates to:
+  /// **'The chatbot didn\'t write these. Fill them in to add the semester.'**
+  String get timetableMissingBody;
+
+  /// No description provided for @timetableChoose.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose'**
+  String get timetableChoose;
+
+  /// No description provided for @timetableEndsBeforeStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Ends before it starts'**
+  String get timetableEndsBeforeStart;
+
+  /// No description provided for @timetableOutsideSemester.
+  ///
+  /// In en, this message translates to:
+  /// **'Not within the semester\'s dates'**
+  String get timetableOutsideSemester;
+
+  /// No description provided for @timetableCodesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Course numbers (optional)'**
+  String get timetableCodesTitle;
+
+  /// No description provided for @timetableCodesBody.
+  ///
+  /// In en, this message translates to:
+  /// **'LecCheck finds each course\'s Panopto recordings by its number. You can also add them later.'**
+  String get timetableCodesBody;
+
+  /// No description provided for @timetableFillIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Fill in what\'s missing to add the semester.'**
+  String get timetableFillIn;
+
   /// No description provided for @timetableAdd.
   ///
   /// In en, this message translates to:
@@ -3719,13 +3767,13 @@ abstract class AppLocalizations {
   /// No description provided for @panoptoStepOpen.
   ///
   /// In en, this message translates to:
-  /// **'Open Panopto'**
+  /// **'Sign in to Panopto'**
   String get panoptoStepOpen;
 
   /// No description provided for @panoptoStepOpenBody.
   ///
   /// In en, this message translates to:
-  /// **'Sign in to your university\'s Panopto in the browser. A computer is easiest.'**
+  /// **'Open your university\'s Panopto in the browser and sign in as usual. This is easiest on a computer.'**
   String get panoptoStepOpenBody;
 
   /// No description provided for @panoptoSite.
@@ -3749,19 +3797,19 @@ abstract class AppLocalizations {
   /// No description provided for @panoptoStepCreateBody.
   ///
   /// In en, this message translates to:
-  /// **'Open your picture or initials at the top, then User Settings, API Clients, and Create a new API Client.'**
+  /// **'In Panopto, click your name or picture at the top right, then User Settings. Open API Clients and click Create a new API Client.'**
   String get panoptoStepCreateBody;
 
   /// No description provided for @panoptoStepFill.
   ///
   /// In en, this message translates to:
-  /// **'Fill it in'**
+  /// **'Fill in the form'**
   String get panoptoStepFill;
 
   /// No description provided for @panoptoStepFillBody.
   ///
   /// In en, this message translates to:
-  /// **'Client Name: LecCheck. Client Type: Mobile or Desktop Application. Redirect URL: the address below, exactly. Leave the other fields empty, and press Create API Client.'**
+  /// **'Client Name: LecCheck. Client Type: Mobile or Desktop Application. Redirect URL: copy the address below and paste it exactly as it is. Leave the other fields empty and click Create API Client.'**
   String get panoptoStepFillBody;
 
   /// No description provided for @panoptoRedirect.
@@ -3785,13 +3833,13 @@ abstract class AppLocalizations {
   /// No description provided for @panoptoStepPaste.
   ///
   /// In en, this message translates to:
-  /// **'Paste its Client ID and secret'**
+  /// **'Copy the Client ID and secret here'**
   String get panoptoStepPaste;
 
   /// No description provided for @panoptoStepPasteBody.
   ///
   /// In en, this message translates to:
-  /// **'Panopto shows them once the client is created. They stay on this device.'**
+  /// **'Panopto shows them right after you create the client. LecCheck keeps them encrypted, and your other devices can use them after you confirm a code.'**
   String get panoptoStepPasteBody;
 
   /// No description provided for @panoptoClientId.
@@ -3815,7 +3863,7 @@ abstract class AppLocalizations {
   /// No description provided for @panoptoStepConnectBody.
   ///
   /// In en, this message translates to:
-  /// **'Sign in to Panopto once more in the browser. Then LecCheck looks for your recordings.'**
+  /// **'Panopto asks you to sign in once more in the browser. Then LecCheck starts looking for your recordings.'**
   String get panoptoStepConnectBody;
 
   /// No description provided for @panoptoConnect.
