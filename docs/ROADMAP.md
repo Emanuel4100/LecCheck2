@@ -138,13 +138,10 @@ These are built and compile, but have only been exercised in tests so far:
   owner tries it on the phone and approves the Hebrew strings (the `panopto*`,
   `tourPanopto*` and `tourLater` keys); pictures for the setup guide when ready; then
   pick from "after the experimental release" below.
-- **Panopto on every device** (built 2026-11-17, unreleased): the owner checks on real
-  devices that the phone's beta.20 connection moves into the vault after updating, then
-  pairs the Linux app (and approves the new Hebrew strings: `panoptoShared`,
-  `panoptoSetUpElsewhere`, `panoptoUseHere*`, `panoptoSharedElsewhere`,
-  `panoptoDisconnectHere*`, `panoptoDisconnectEverywhere*`, `panoptoPair*`,
-  `panoptoAllow*`, `panoptoDeny`, `panoptoAllowed`, and the changed `panoptoOneDevice`
-  and `panoptoWarnBody`). The server must be deployed before the app ships.
+- **Panopto on every device** (built 2026-11-17, unreleased; server deployed): the owner
+  checks on real devices that the phone's beta.20 connection moves into the vault after
+  updating, then pairs the Linux app. Its Hebrew, the setup guide's and the timetable
+  import's were reviewed by the owner on 2026-11-17.
 
 On hold: Linux above 60 Hz, crash reporting. Later: a
 translation platform, the way open source apps do it; a backup server; a more desktop-like

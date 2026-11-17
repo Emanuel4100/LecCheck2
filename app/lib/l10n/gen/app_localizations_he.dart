@@ -2161,7 +2161,7 @@ class AppLocalizationsHe extends AppLocalizations {
   String get timetableChoose => 'בחירה';
 
   @override
-  String get timetableEndsBeforeStart => 'מסתיים לפני שהוא מתחיל';
+  String get timetableEndsBeforeStart => 'מסתיים לפני שמתחיל';
 
   @override
   String get timetableOutsideSemester => 'לא בתוך תאריכי הסמסטר';
@@ -2202,7 +2202,7 @@ class AppLocalizationsHe extends AppLocalizations {
 
   @override
   String get panoptoWarning =>
-      'בדקו את הקישורים שנמצאים. LecCheck רק קוראת מ־Panopto, לא נוגעת בקישורים שהדבקתם או מחקתם, ואפשר להסיר בלחיצה אחת את כל הקישורים שהיא מצאה.';
+      'בדוק את הקישורים שנמצאו. LecCheck רק קוראת מ־Panopto, לא נוגעת בקישורים שהדבקתם או מחקתם, ואפשר להסיר בלחיצה אחת את כל הקישורים שהיא מצאה.';
 
   @override
   String get panoptoSetUp => 'הגדרה';
@@ -2215,10 +2215,10 @@ class AppLocalizationsHe extends AppLocalizations {
       'בגרסה הזו אין שרת סנכרון, וההתחברות ל־Panopto צריכה אותו.';
 
   @override
-  String get panoptoSetupTitle => 'חיבור ל־Panopto';
+  String get panoptoSetupTitle => 'קישור ל-Panopto';
 
   @override
-  String get panoptoStepOpen => 'נכנסים ל־Panopto';
+  String get panoptoStepOpen => 'התחבר ל־Panopto';
 
   @override
   String get panoptoStepOpenBody =>
@@ -2231,7 +2231,7 @@ class AppLocalizationsHe extends AppLocalizations {
   String get panoptoOpen => 'פתיחת Panopto';
 
   @override
-  String get panoptoStepCreate => 'יוצרים API Client';
+  String get panoptoStepCreate => 'צור API client';
 
   @override
   String get panoptoStepCreateBody =>
@@ -2242,7 +2242,7 @@ class AppLocalizationsHe extends AppLocalizations {
 
   @override
   String get panoptoStepFillBody =>
-      'בשדה Client Name כתבו LecCheck. ב־Client Type בחרו Mobile or Desktop Application. ב־Redirect URL הדביקו את הכתובת שמופיעה למטה, בדיוק כמו שהיא. את שאר השדות השאירו ריקים, ולחצו על Create API Client.';
+      'בשדה Client Name כתבו LecCheck.\nב־Client Type בחרו Mobile or Desktop Application.\nב־Redirect URL הדביקו את הכתובת שמופיעה למטה, בדיוק כמו שהיא. את שאר השדות השאירו ריקים, ולחצו על Create API Client.';
 
   @override
   String get panoptoRedirect => 'Redirect URL';
@@ -2258,7 +2258,7 @@ class AppLocalizationsHe extends AppLocalizations {
 
   @override
   String get panoptoStepPasteBody =>
-      'Panopto מציגה אותם מיד אחרי שיוצרים את ה־API Client. LecCheck שומרת אותם מוצפנים, והמכשירים האחרים שלכם יכולים להשתמש בהם אחרי אישור עם קוד.';
+      'Panopto מציגה אותם מיד לאחר יצירת ה-API client. המערכת של LecCheck שומרת אותם במצב מוצפן, והמכשירים האחרים שלך יוכלו להשתמש בהם לאחר אישור קוד.';
 
   @override
   String get panoptoClientId => 'Client ID';
@@ -2267,7 +2267,7 @@ class AppLocalizationsHe extends AppLocalizations {
   String get panoptoClientSecret => 'Client secret';
 
   @override
-  String get panoptoStepConnect => 'מתחברים';
+  String get panoptoStepConnect => 'התחברו';
 
   @override
   String get panoptoStepConnectBody =>
@@ -2278,7 +2278,7 @@ class AppLocalizationsHe extends AppLocalizations {
 
   @override
   String get panoptoOneDevice =>
-      'מגדירים במכשיר אחד. המכשירים האחרים שלכם שמחוברים ל־LecCheck יכולים להשתמש בהגדרה אחרי אישור עם קוד, והקישורים מגיעים לכל המכשירים בסנכרון.';
+      'הגדר זאת במכשיר אחד. מכשירים אחרים שלך המחוברים ל-LecCheck יוכלו להשתמש בכך לאחר שתאשר קוד, והקישורים יגיעו לכל מכשיר באמצעות סנכרון.';
 
   @override
   String get panoptoWarnTitle => 'לנסות תכונה ניסיונית?';
@@ -2361,7 +2361,7 @@ class AppLocalizationsHe extends AppLocalizations {
   }
 
   @override
-  String get panoptoShared => 'משותף עם המכשירים שלכם שמחוברים ל־LecCheck';
+  String get panoptoShared => 'משותף עם המכשירים שלך המחוברים ל-LecCheck';
 
   @override
   String panoptoSetUpElsewhere(String device) {
@@ -2378,7 +2378,7 @@ class AppLocalizationsHe extends AppLocalizations {
 
   @override
   String panoptoSharedElsewhere(String device) {
-    return 'בחשבון שלכם יש גם את הגדרת Panopto מ־$device. השתמשו בה כאן כדי לשתף התחברות אחת עם המכשירים האחרים.';
+    return 'בחשבון שלכם יש גם את Panopto מוגדר מ־$device. השתמשו בו כאן כדי לשתף התחברות אחת עם המכשירים האחרים.';
   }
 
   @override
@@ -2396,7 +2396,7 @@ class AppLocalizationsHe extends AppLocalizations {
       'Panopto תתבקש לבטל את ההתחברות, וכל המכשירים יפסיקו לחפש.';
 
   @override
-  String get panoptoPairTitle => 'שימוש ב־Panopto כאן';
+  String get panoptoPairTitle => 'השתמש ב-Panopto כאן';
 
   @override
   String panoptoPairWaiting(String device) {
@@ -2405,7 +2405,7 @@ class AppLocalizationsHe extends AppLocalizations {
 
   @override
   String panoptoPairCheck(String device) {
-    return 'בדקו ש־$device מציג את הקוד הזה, ואז הקישו שם על „אישור”.';
+    return 'בדקו ש־$device מציג את הקוד הזה, ואז הקישו שם על \"אפשר\".';
   }
 
   @override
@@ -2430,7 +2430,7 @@ class AppLocalizationsHe extends AppLocalizations {
   }
 
   @override
-  String get panoptoAllow => 'אישור';
+  String get panoptoAllow => 'אפשר';
 
   @override
   String get panoptoDeny => 'דחייה';
