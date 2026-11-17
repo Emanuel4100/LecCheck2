@@ -370,8 +370,10 @@ final minuteClockProvider = StreamProvider<DateTime>((ref) {
   return controller.stream;
 });
 
+/// The minute clock, or the wall clock before its first tick (not
+/// `DateTime.now`, so tests and screenshots that set the clock get theirs).
 DateTime _nowOf(Ref ref) =>
-    ref.watch(minuteClockProvider).value ?? DateTime.now();
+    ref.watch(minuteClockProvider).value ?? ref.watch(wallClockProvider)();
 
 /// Changes once a day.
 final todayProvider = Provider<LocalDate>(
