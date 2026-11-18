@@ -50,6 +50,8 @@ done
 cd ../../app
 dart run flutter_launcher_icons
 dart run flutter_native_splash:create
+cd ..
+python3 design/make_windows_icon.py   # the Windows .ico, 16 to 256 px
 ```
 
 ## Font

@@ -94,10 +94,9 @@ flutter_launcher_icons:
   adaptive_icon_monochrome: assets/branding/monochrome.png
   ios: true
   remove_alpha_ios: true
+  # The Windows .ico holds every size Windows uses: design/make_windows_icon.py.
   windows:
-    generate: true
-    image_path: assets/branding/icon_rounded.png
-    icon_size: 256
+    generate: false
   macos:
     generate: true
     image_path: assets/branding/icon_rounded.png

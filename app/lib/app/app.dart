@@ -9,6 +9,7 @@ import 'providers.dart';
 import 'router.dart';
 import 'sync_providers.dart';
 import 'theme/app_theme.dart';
+import 'window_frame.dart';
 
 class LecCheckApp extends ConsumerWidget {
   const LecCheckApp({super.key});
@@ -58,15 +59,18 @@ class LecCheckApp extends ConsumerWidget {
           // System bar style for screens without an app bar (and the bottom
           // navigation bar area everywhere).
           value: Theme.of(context).appBarTheme.systemOverlayStyle!,
-          child: FmtScope(
-            fmt: Fmt(
-              Localizations.localeOf(context).toLanguageTag(),
-              use24h: use24h ?? MediaQuery.alwaysUse24HourFormatOf(context),
+          child: WindowFrameTheme(
+            brightness: Theme.of(context).brightness,
+            child: FmtScope(
+              fmt: Fmt(
+                Localizations.localeOf(context).toLanguageTag(),
+                use24h: use24h ?? MediaQuery.alwaysUse24HourFormatOf(context),
+              ),
+              // fl_chart still uses package:flutter/material; the bridge lets
+              // its widgets resolve our material_ui theme until it migrates.
+              // ignore: deprecated_member_use
+              child: MaterialUiCompatibilityBridge(child: child!),
             ),
-            // fl_chart still uses package:flutter/material; the bridge lets
-            // its widgets resolve our material_ui theme until it migrates.
-            // ignore: deprecated_member_use
-            child: MaterialUiCompatibilityBridge(child: child!),
           ),
         ),
       ),

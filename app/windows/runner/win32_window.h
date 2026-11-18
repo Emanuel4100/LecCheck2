@@ -12,6 +12,10 @@
 // rendering and input handling
 class Win32Window {
  public:
+  // The window class, which a second LecCheck finds to bring this one forward
+  // (main.cpp).
+  static constexpr const wchar_t* kClassName = L"LECCHECK_WINDOW";
+
   struct Point {
     unsigned int x;
     unsigned int y;
@@ -55,6 +59,10 @@ class Win32Window {
   // Return a RECT representing the bounds of the current client area.
   RECT GetClientArea();
 
+  // Draws the title bar dark or light, following LecCheck's theme (set from
+  // Dart through the com.leccheck.app/window channel) rather than Windows'.
+  void SetDarkFrame(bool dark);
+
  protected:
   // Processes and route salient window messages for mouse handling,
   // size change and DPI. Delegates handling of these to member overloads that
@@ -91,6 +99,13 @@ class Win32Window {
   static void UpdateTheme(HWND const window);
 
   bool quit_on_close_ = false;
+
+  // Show maximized: it was maximized when LecCheck last closed.
+  bool show_maximized_ = false;
+
+  // The title bar follows LecCheck's theme once Dart has set it, instead of
+  // Windows' app mode.
+  bool theme_from_app_ = false;
 
   // window handle for top level window.
   HWND window_handle_ = nullptr;

@@ -1,8 +1,12 @@
 #include "flutter_window.h"
 
+#include <flutter/standard_method_codec.h>
+
 #include <optional>
+#include <variant>
 
 #include "flutter/generated_plugin_registrant.h"
+#include "window_state.h"
 
 FlutterWindow::FlutterWindow(const flutter::DartProject& project)
     : project_(project) {}
@@ -25,6 +29,26 @@ bool FlutterWindow::OnCreate() {
     return false;
   }
   RegisterPlugins(flutter_controller_->engine());
+  window_channel_ =
+      std::make_unique<flutter::MethodChannel<flutter::EncodableValue>>(
+          flutter_controller_->engine()->messenger(), "com.leccheck.app/window",
+          &flutter::StandardMethodCodec::GetInstance());
+  window_channel_->SetMethodCallHandler(
+      [this](const flutter::MethodCall<flutter::EncodableValue>& call,
+             std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>>
+                 result) {
+        if (call.method_name() != "setDark") {
+          result->NotImplemented();
+          return;
+        }
+        const auto* dark = std::get_if<bool>(call.arguments());
+        if (dark == nullptr) {
+          result->Error("bad_args", "setDark takes a bool");
+          return;
+        }
+        SetDarkFrame(*dark);
+        result->Success();
+      });
   SetChildContent(flutter_controller_->view()->GetNativeWindow());
 
   flutter_controller_->engine()->SetNextFrameCallback([&]() {
@@ -40,6 +64,7 @@ bool FlutterWindow::OnCreate() {
 }
 
 void FlutterWindow::OnDestroy() {
+  window_channel_ = nullptr;
   if (flutter_controller_) {
     flutter_controller_ = nullptr;
   }
@@ -51,6 +76,12 @@ LRESULT
 FlutterWindow::MessageHandler(HWND hwnd, UINT const message,
                               WPARAM const wparam,
                               LPARAM const lparam) noexcept {
+  // Before Flutter, which may hold the close back to ask the app first: the
+  // window is still on screen here.
+  if (message == WM_CLOSE) {
+    SaveWindowPlacement(hwnd);
+  }
+
   // Give Flutter, including plugins, an opportunity to handle window messages.
   if (flutter_controller_) {
     std::optional<LRESULT> result =

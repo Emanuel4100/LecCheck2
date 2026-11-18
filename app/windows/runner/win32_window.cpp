@@ -4,6 +4,7 @@
 #include <flutter_windows.h>
 
 #include "resource.h"
+#include "window_state.h"
 
 namespace {
 
@@ -16,7 +17,15 @@ namespace {
 #define DWMWA_USE_IMMERSIVE_DARK_MODE 20
 #endif
 
-constexpr const wchar_t kWindowClassName[] = L"FLUTTER_RUNNER_WIN32_WINDOW";
+constexpr const wchar_t* kWindowClassName = Win32Window::kClassName;
+
+// The smallest window content, in logical pixels, as on Linux.
+constexpr int kMinWidth = 360;
+constexpr int kMinHeight = 600;
+
+// Saves the window's place this long after it last moved or changed size.
+constexpr UINT_PTR kSaveTimer = 1;
+constexpr UINT kSaveDelayMs = 500;
 
 /// Registry key for app theme preference.
 ///
@@ -145,11 +154,21 @@ bool Win32Window::Create(const std::wstring& title,
   }
 
   UpdateTheme(window);
+  show_maximized_ = RestoreWindowPlacement(window);
 
   return OnCreate();
 }
 
 bool Win32Window::Show() {
+  if (show_maximized_) {
+    ShowWindow(window_handle_, SW_SHOWMAXIMIZED);
+    // A process's first ShowWindow can be overruled by how it was started (a
+    // shortcut set to "Normal window"), so ask again.
+    if (!IsZoomed(window_handle_)) {
+      ShowWindow(window_handle_, SW_SHOWMAXIMIZED);
+    }
+    return true;
+  }
   return ShowWindow(window_handle_, SW_SHOWNORMAL);
 }
 
@@ -204,6 +223,37 @@ Win32Window::MessageHandler(HWND hwnd,
         MoveWindow(child_content_, rect.left, rect.top, rect.right - rect.left,
                    rect.bottom - rect.top, TRUE);
       }
+      if (wparam != SIZE_MINIMIZED) {
+        SetTimer(hwnd, kSaveTimer, kSaveDelayMs, nullptr);
+      }
+      return 0;
+    }
+
+    case WM_MOVE:
+      SetTimer(hwnd, kSaveTimer, kSaveDelayMs, nullptr);
+      return 0;
+
+    case WM_TIMER:
+      if (wparam == kSaveTimer) {
+        // Saved soon after every change, not only on close: Flutter can quit
+        // without closing the window (an update's restart).
+        KillTimer(hwnd, kSaveTimer);
+        SaveWindowPlacement(hwnd);
+        return 0;
+      }
+      break;
+
+    case WM_GETMINMAXINFO: {
+      // The content at least kMinWidth by kMinHeight, plus the frame.
+      const UINT dpi = GetDpiForWindow(hwnd);
+      if (dpi == 0) break;
+      const int scale = static_cast<int>(dpi);
+      RECT smallest = {0, 0, MulDiv(kMinWidth, scale, 96),
+                       MulDiv(kMinHeight, scale, 96)};
+      AdjustWindowRectExForDpi(&smallest, WS_OVERLAPPEDWINDOW, FALSE, 0, dpi);
+      auto info = reinterpret_cast<MINMAXINFO*>(lparam);
+      info->ptMinTrackSize.x = smallest.right - smallest.left;
+      info->ptMinTrackSize.y = smallest.bottom - smallest.top;
       return 0;
     }
 
@@ -214,7 +264,9 @@ Win32Window::MessageHandler(HWND hwnd,
       return 0;
 
     case WM_DWMCOLORIZATIONCOLORCHANGED:
-      UpdateTheme(hwnd);
+      if (!theme_from_app_) {
+        UpdateTheme(hwnd);
+      }
       return 0;
   }
 
@@ -257,6 +309,14 @@ RECT Win32Window::GetClientArea() {
 
 HWND Win32Window::GetHandle() {
   return window_handle_;
+}
+
+void Win32Window::SetDarkFrame(bool dark) {
+  theme_from_app_ = true;
+  if (window_handle_ == nullptr) return;
+  BOOL enable_dark_mode = dark ? TRUE : FALSE;
+  DwmSetWindowAttribute(window_handle_, DWMWA_USE_IMMERSIVE_DARK_MODE,
+                        &enable_dark_mode, sizeof(enable_dark_mode));
 }
 
 void Win32Window::SetQuitOnClose(bool quit_on_close) {
