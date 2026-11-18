@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:leccheck/core/notifications/notification_service.dart';
 import 'package:leccheck/domain/occurrence.dart';
@@ -69,6 +70,16 @@ void main() {
   setUp(() {
     os = FakeReminderOs();
     service = NotificationService.forTesting(os);
+  });
+
+  test('Windows has no reminders yet: nothing is scheduled', () async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.windows;
+    addTearDown(() => debugDefaultTargetPlatformOverride = null);
+    expect(NotificationService.supported, isFalse);
+    await service.apply(plan());
+    expect(os.scheduled, isEmpty);
+    debugDefaultTargetPlatformOverride = TargetPlatform.linux;
+    expect(NotificationService.supported, isTrue);
   });
 
   test('schedules the plan once, then only what changed', () async {

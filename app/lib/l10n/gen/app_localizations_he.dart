@@ -1420,6 +1420,10 @@ class AppLocalizationsHe extends AppLocalizations {
       'במחשב הזה התזכורות מופיעות כש-LecCheck פתוחה.';
 
   @override
+  String get remindersNotHere =>
+      'תזכורות עדיין לא זמינות ב-Windows. הן יגיעו בגרסה מאוחרת יותר.';
+
+  @override
   String get openSettings => 'לפתוח את ההגדרות';
 
   @override
@@ -1660,6 +1664,18 @@ class AppLocalizationsHe extends AppLocalizations {
   @override
   String get updateRestartFailed =>
       'לא ניתן היה להפעיל מחדש את LecCheck. יש לסגור ולפתוח אותה שוב כדי להשתמש בגרסה החדשה.';
+
+  @override
+  String get updateSetupReady =>
+      'מוכן. בהפעלה מחדש LecCheck נסגרת, ההתקנה מתקינה את הגרסה החדשה ופותחת אותה שוב.';
+
+  @override
+  String get updateFailedSetup =>
+      'ההתקנה לא התחילה. אפשר לנסות שוב, או להוריד אותה מדף הגרסה.';
+
+  @override
+  String get updateWindowsHint =>
+      'העותק הזה של LecCheck לא הותקן בתוכנית ההתקנה שלה, ולכן הוא לא יכול להתעדכן בעצמו: אפשר להוריד את ההתקנה מדף הגרסה.';
 
   @override
   String get updateCopyCommand => 'העתקת הפקודה';

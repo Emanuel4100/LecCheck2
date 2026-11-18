@@ -14,6 +14,7 @@ import '../../app/widgets/common.dart';
 import '../../app/widgets/tab_app_bar.dart';
 import '../../app/widgets/progress_ring.dart';
 import '../../core/icons/lec_icons.dart';
+import '../../core/notifications/notification_service.dart';
 import '../../domain/attendance_stats.dart';
 import '../../domain/schedule_types.dart';
 import '../../l10n/gen/app_localizations.dart';
@@ -214,7 +215,7 @@ class CourseDetailView extends ConsumerWidget {
             ),
         ],
       ),
-      if (reminders.any)
+      if (reminders.any && NotificationService.supported)
         SliverToBoxAdapter(
           child: SwitchListTile.adaptive(
             secondary: const Icon(LecIcons.notifications),

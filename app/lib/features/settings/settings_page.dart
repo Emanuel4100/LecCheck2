@@ -302,7 +302,7 @@ class _AboutSectionState extends ConsumerState<_AboutSection> {
       switch (via) {
         case UpdateVia.move:
           showMoveDialog(context);
-        case UpdateVia.apk || UpdateVia.flatpak:
+        case UpdateVia.apk || UpdateVia.flatpak || UpdateVia.setup:
           controller.install();
           showUpdateDialog(context);
         case UpdateVia.browser:
@@ -322,7 +322,9 @@ class _AboutSectionState extends ConsumerState<_AboutSection> {
               : SnackBarAction(
                   label: switch (via) {
                     UpdateVia.move => l.updateMove,
-                    UpdateVia.apk || UpdateVia.flatpak => l.updateInstall,
+                    UpdateVia.apk ||
+                    UpdateVia.flatpak ||
+                    UpdateVia.setup => l.updateInstall,
                     UpdateVia.browser => l.updateDownload,
                   },
                   onPressed: open,

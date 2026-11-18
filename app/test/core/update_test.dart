@@ -16,6 +16,7 @@ import 'package:leccheck/core/update/flatpak.dart';
 import 'package:leccheck/core/update/tarball_install.dart';
 import 'package:leccheck/core/update/update_download.dart';
 import 'package:leccheck/core/update/update_service.dart';
+import 'package:leccheck/core/update/windows_install.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shared_preferences_platform_interface/in_memory_shared_preferences_async.dart';
@@ -29,11 +30,13 @@ Map<String, Object?> _entry(String version, int build) => {
   'androidArm64': 'https://example.com/$version-android-arm64.apk',
   'androidUniversal': 'https://example.com/$version-android.apk',
   'linux': 'https://example.com/$version-linux-x64.tar.gz',
+  'windows': 'https://example.com/LecCheck-$version-windows-setup.exe',
 };
 
 /// The release files the mock GitHub serves.
 final _apk = List.generate(70000, (i) => i * 7 % 256);
 final _tarball = List.generate(50000, (i) => i * 13 % 256);
+final _setup = List.generate(60000, (i) => i * 11 % 256);
 
 /// [entry] with the hashes of the files above.
 Map<String, Object?> _hashed(Map<String, Object?> entry) => {
@@ -41,6 +44,7 @@ Map<String, Object?> _hashed(Map<String, Object?> entry) => {
   'sha256': {
     'androidUniversal': sha256.convert(_apk).toString(),
     'linux': sha256.convert(_tarball).toString(),
+    'windows': sha256.convert(_setup).toString(),
   },
 };
 
@@ -221,6 +225,38 @@ void main() {
       universalOnly.installFile(android: true, arm64: false)?.url,
       'https://example.com/2.0.0-android.apk',
     );
+  });
+
+  test('Windows: the setup, with its hash and size', () {
+    final hash = 'CD' * 32;
+    final update = AppUpdate.tryParse({
+      ..._entry('2.0.0-beta.22', 30),
+      'sha256': {'windows': hash},
+      'size': {'windows': 18200000},
+    })!;
+    expect(
+      update.windowsSetup,
+      UpdateFile(
+        'https://example.com/LecCheck-2.0.0-beta.22-windows-setup.exe',
+        'cd' * 32,
+        size: 18200000,
+      ),
+    );
+    // No hash (or no setup): Download opens the release page.
+    expect(AppUpdate.tryParse(_entry('2.0.0', 20))!.windowsSetup, isNull);
+    expect(
+      AppUpdate.tryParse({..._entry('2.0.0', 20), 'windows': null})!.windows,
+      isNull,
+    );
+    // Only https, like every link.
+    expect(
+      AppUpdate.tryParse({
+        ..._entry('2.0.0', 20),
+        'windows': 'http://example.com/setup.exe',
+      }),
+      isNull,
+    );
+    expect(update.downloadUrl(android: false, arm64: false), update.notesUrl);
   });
 
   test('sizes and the Flatpak: only what parses counts', () {
@@ -418,6 +454,7 @@ void main() {
         final path = request.url.path;
         if (path.endsWith('.apk')) return http.Response.bytes(_apk, 200);
         if (path.endsWith('.tar.gz')) return http.Response.bytes(_tarball, 200);
+        if (path.endsWith('.exe')) return http.Response.bytes(_setup, 200);
         return manifestResponse(request.url);
       });
       PackageInfo.setMockInitialValues(
@@ -441,6 +478,8 @@ void main() {
       UpdateController.startLatestFlatpak = FlatpakPortal.startLatest;
       UpdateController.verifyAtLeast = const Duration(milliseconds: 900);
       UpdateController.exitApp = realExit;
+      UpdateController.windowsSetupDir = WindowsInstall.setupDir;
+      UpdateController.runSetup = WindowsInstall.runSetup;
     });
 
     ProviderContainer container() {
@@ -743,6 +782,98 @@ void main() {
         expect(c.read(updateProvider).update, isNotNull);
         expect(c.read(updateProvider).via, UpdateVia.browser);
         expect(c.read(updateProvider).file, isNull);
+      });
+
+      group('Windows', () {
+        final ran = <(String, String)>[];
+        var exited = 0;
+
+        setUp(() {
+          debugDefaultTargetPlatformOverride = TargetPlatform.windows;
+          ran.clear();
+          exited = 0;
+          UpdateController.windowsSetupDir = () async =>
+              r'C:\Users\dana\AppData\Local\Programs\LecCheck';
+          UpdateController.runSetup = (setup, {required log}) async {
+            ran.add((setup, log));
+          };
+          UpdateController.exitApp = () async => exited++;
+        });
+
+        test(
+          'downloads the setup and checks it; Restart runs it and quits',
+          () async {
+            final c = container();
+            final controller = c.read(updateProvider.notifier);
+            await controller.check(now: morning);
+            expect(c.read(updateProvider).via, UpdateVia.setup);
+            expect(
+              c.read(updateProvider).file?.url,
+              endsWith('-windows-setup.exe'),
+            );
+
+            final phases = <UpdatePhase>[];
+            c.listen(updateProvider, (_, next) {
+              if (phases.lastOrNull != next.phase) phases.add(next.phase);
+            });
+            await controller.install();
+            expect(phases, [
+              UpdatePhase.downloading,
+              UpdatePhase.verifying,
+              UpdatePhase.restart,
+            ]);
+            final setup = '${dir.path}/u/LecCheck-setup.exe';
+            expect(await File(setup).readAsBytes(), _setup);
+            // Nothing runs until Restart.
+            expect(ran, isEmpty);
+
+            await controller.restart();
+            expect(ran, [(setup, '${dir.path}/u/setup.log')]);
+            expect(exited, 1);
+          },
+        );
+
+        test('a setup that doesn\'t start fails, and LecCheck stays', () async {
+          UpdateController.runSetup = (_, {required log}) async =>
+              throw const OSError('Access is denied', 5);
+          final c = container();
+          final controller = c.read(updateProvider.notifier);
+          await controller.check(now: morning);
+          await controller.install();
+          await controller.restart();
+          expect(c.read(updateProvider).phase, UpdatePhase.failed);
+          expect(c.read(updateProvider).failedStep, UpdateStep.install);
+          expect(c.read(updateProvider).failure, UpdateFailure.setup);
+          expect(exited, 0);
+        });
+
+        test('a copy the setup didn\'t install opens the browser', () async {
+          UpdateController.windowsSetupDir = () async => null;
+          final c = container();
+          await c.read(updateProvider.notifier).check(now: morning);
+          expect(c.read(updateProvider).update, isNotNull);
+          expect(c.read(updateProvider).via, UpdateVia.browser);
+          expect(c.read(updateProvider).file, isNull);
+        });
+
+        test(
+          'without a hash for the setup, Download opens the browser',
+          () async {
+            served = {'beta': _entry('2.0.1-beta.1', 21)};
+            final c = container();
+            await c.read(updateProvider.notifier).check(now: morning);
+            expect(c.read(updateProvider).via, UpdateVia.browser);
+          },
+        );
+
+        test('the start after an update reads the setup\'s log', () async {
+          final log = File('${dir.path}/u/${WindowsInstall.logName}')
+            ..createSync(recursive: true)
+            ..writeAsStringSync('Installation process succeeded.\n');
+          final c = container();
+          await c.read(updateProvider.notifier).check(startup: true);
+          expect(log.existsSync(), isFalse);
+        });
       });
 
       group('Flatpak', () {

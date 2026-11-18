@@ -39,6 +39,9 @@ enum UpdateFailure {
 
   /// The new version didn't start.
   restart,
+
+  /// Windows: the downloaded setup didn't start.
+  setup,
 }
 
 /// An update that couldn't be downloaded, verified or installed. [message]

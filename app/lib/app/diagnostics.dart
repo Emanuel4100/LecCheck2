@@ -11,6 +11,7 @@ import '../core/notifications/notification_service.dart';
 import '../core/sync/sync_config.dart';
 import '../core/update/flatpak.dart';
 import '../core/update/tarball_install.dart';
+import '../core/update/windows_install.dart';
 import 'adaptive.dart';
 import 'providers.dart';
 import 'sync_providers.dart';
@@ -42,7 +43,11 @@ Future<String> collectDiagnostics(
     (i) => '${i.version} (${i.buildNumber})',
     onError: (Object e) => '? ($e)',
   );
-  final installed = AppIdiom.isLinux ? await linuxInstallLine() : null;
+  final installed = AppIdiom.isLinux
+      ? await linuxInstallLine()
+      : AppIdiom.isWindows
+      ? await windowsInstallLine()
+      : null;
   return [
     'LecCheck $version',
     if (android != null)
@@ -97,6 +102,13 @@ Future<String> linuxInstallLine() async {
   return await TarballInstall.installDir() != null
       ? 'tarball (install.sh)'
       : 'other';
+}
+
+/// How LecCheck for Windows was installed: "setup, in C:\Users\…" or
+/// "not by the setup" (flutter run, a copied folder: no in-app updates).
+Future<String> windowsInstallLine() async {
+  final dir = await WindowsInstall.setupDir();
+  return dir == null ? 'not by the setup' : 'setup, in $dir';
 }
 
 /// "Android 15 (SDK 35), samsung SM-S918B", from [AndroidDevice.info].

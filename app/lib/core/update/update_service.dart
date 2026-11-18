@@ -15,13 +15,19 @@ class AppUpdate {
     this.androidArm64,
     this.androidUniversal,
     this.linux,
+    this.windows,
     this.sha256 = const {},
     this.size = const {},
     this.flatpakRef,
     this.notes = '',
   });
 
-  static const _files = ['androidArm64', 'androidUniversal', 'linux'];
+  static const _files = [
+    'androidArm64',
+    'androidUniversal',
+    'linux',
+    'windows',
+  ];
   static final _hex64 = RegExp(r'^[0-9a-fA-F]{64}$');
 
   /// Null when [json] isn't a valid entry. Every link must be https (they're
@@ -57,6 +63,7 @@ class AppUpdate {
       androidArm64: _https(json['androidArm64']),
       androidUniversal: _https(json['androidUniversal']),
       linux: _https(json['linux']),
+      windows: _https(json['windows']),
       sha256: sha256,
       size: size,
       flatpakRef: _https(json['flatpakref']),
@@ -88,6 +95,10 @@ class AppUpdate {
   final String? androidUniversal;
   final String? linux;
 
+  /// The Windows setup (2.0.0-beta.22 on), which installs or updates
+  /// LecCheck for the user.
+  final String? windows;
+
   /// The SHA-256 (hex) of each file, keyed like the links (`androidArm64`,
   /// …). Releases before 2.0.0-beta.8 have none.
   final Map<String, String> sha256;
@@ -118,6 +129,14 @@ class AppUpdate {
       'androidUniversal' => androidUniversal,
       _ => linux,
     };
+    return _file(key, url);
+  }
+
+  /// What Update runs on Windows: the setup, which closes LecCheck, installs
+  /// the new version and opens it again. Null when the setup has no hash.
+  UpdateFile? get windowsSetup => _file('windows', windows);
+
+  UpdateFile? _file(String key, String? url) {
     final hash = sha256[key];
     return url == null || hash == null
         ? null
@@ -125,7 +144,7 @@ class AppUpdate {
   }
 
   /// What Download opens: the APK for this phone, or the release page (it
-  /// says how to install the Flatpak on Linux).
+  /// says how to install the Flatpak on Linux, and the Windows setup).
   String downloadUrl({required bool android, required bool arm64}) {
     if (android) {
       return (arm64 ? androidArm64 : null) ?? androidUniversal ?? notesUrl;
@@ -142,6 +161,7 @@ class AppUpdate {
       other.androidArm64 == androidArm64 &&
       other.androidUniversal == androidUniversal &&
       other.linux == linux &&
+      other.windows == windows &&
       other.flatpakRef == flatpakRef &&
       other.notes == notes &&
       mapEquals(other.sha256, sha256) &&
@@ -155,6 +175,7 @@ class AppUpdate {
     androidArm64,
     androidUniversal,
     linux,
+    windows,
     flatpakRef,
     notes,
     Object.hashAllUnordered(

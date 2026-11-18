@@ -189,6 +189,12 @@ class NotificationService {
 
   static final instance = NotificationService._();
 
+  /// Whether this platform has reminders. Not Windows yet: there they come
+  /// in a later version (the plugin can schedule them through Windows, but
+  /// can't take a shown one back without an MSIX package).
+  static bool get supported =>
+      !kIsWeb && defaultTargetPlatform != TargetPlatform.windows;
+
   final _plugin = FlutterLocalNotificationsPlugin();
   late final ReminderOs _os;
   final bool _osSchedules;
@@ -264,6 +270,8 @@ class NotificationService {
       debugPrint('Unknown time zone, reminders use UTC: $e');
       tz.setLocalLocation(tz.UTC);
     }
+    // The time zone above is still set: Settings → Developer reads it.
+    if (!supported) return;
     final darwin = DarwinInitializationSettings(
       // Permission is requested only when reminders are switched on.
       requestAlertPermission: false,
@@ -441,6 +449,7 @@ class NotificationService {
   /// changed reminders are rescheduled, plus (on Android) any whose alarm the
   /// system dropped. With [force], everything is rescheduled.
   Future<void> apply(List<PlannedReminder> plan, {bool force = false}) async {
+    if (!supported) return;
     if (!_ready) {
       debugPrint(
         'Reminders not scheduled: notifications aren\'t set up '

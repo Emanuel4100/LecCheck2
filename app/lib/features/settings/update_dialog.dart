@@ -40,6 +40,7 @@ String updateFailureText(AppLocalizations l, UpdateFailure? failure) =>
       UpdateFailure.flatpakNotYet => l.updateFailedFlatpakNotYet,
       UpdateFailure.flatpak => l.updateFailedFlatpak,
       UpdateFailure.restart => l.updateRestartFailed,
+      UpdateFailure.setup => l.updateFailedSetup,
       null => l.updateFailed,
     };
 
@@ -87,7 +88,7 @@ class UpdateDialog extends ConsumerWidget {
           child: Text(l.updateLater),
         ),
         switch (state.via) {
-          UpdateVia.apk || UpdateVia.flatpak => FilledButton(
+          UpdateVia.apk || UpdateVia.flatpak || UpdateVia.setup => FilledButton(
             onPressed: controller.install,
             child: Text(l.updateInstall),
           ),
@@ -134,6 +135,7 @@ class UpdateDialog extends ConsumerWidget {
       UpdateVia.flatpak => l.updateFlatpakHint,
       UpdateVia.move => l.updateMoveHint,
       UpdateVia.browser when AppIdiom.isLinux => l.updateLinuxHint,
+      UpdateVia.browser when AppIdiom.isWindows => l.updateWindowsHint,
       _ => null,
     };
     final size = state.size;
@@ -233,6 +235,12 @@ class _Steps extends StatelessWidget {
     final failed = phase == UpdatePhase.failed ? state.failedStep : null;
 
     StepStatus of(UpdateStep step) {
+      // Windows: downloaded and checked; the setup installs after Restart.
+      if (phase == UpdatePhase.restart && state.via == UpdateVia.setup) {
+        return step == UpdateStep.install
+            ? StepStatus.waiting
+            : StepStatus.done;
+      }
       if (failed != null) {
         return step.index < failed.index
             ? StepStatus.done
@@ -286,6 +294,8 @@ class _Steps extends StatelessWidget {
     };
     final installDetail = switch (phase) {
       UpdatePhase.downloaded => l.updateInstallHint,
+      UpdatePhase.restart when state.via == UpdateVia.setup =>
+        l.updateSetupReady,
       UpdatePhase.restart =>
         state.failure == UpdateFailure.restart
             ? l.updateRestartFailed

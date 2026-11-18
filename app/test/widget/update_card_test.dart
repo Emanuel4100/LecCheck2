@@ -104,6 +104,17 @@ void main() {
     expect(find.textContaining('comes as a Flatpak'), findsNothing);
   }, variant: TargetPlatformVariant.only(TargetPlatform.linux));
 
+  testWidgets('Windows copies the setup didn\'t install say why', (
+    tester,
+  ) async {
+    await pump(tester, const UpdateState(update: _update));
+    expect(
+      find.textContaining("wasn't installed by its setup"),
+      findsOneWidget,
+    );
+    expect(button('Download'), findsOneWidget);
+  }, variant: TargetPlatformVariant.only(TargetPlatform.windows));
+
   testWidgets('install.sh installs get the move card instead', (tester) async {
     await pump(tester, const UpdateState(update: _update, via: UpdateVia.move));
     expect(find.byType(Card), findsNothing);
@@ -305,6 +316,36 @@ void main() {
       );
       expect(find.textContaining("isn't enough space"), findsOneWidget);
     });
+
+    testWidgets('Windows: the setup runs after Restart', (tester) async {
+      UpdateState setup(UpdatePhase phase, {UpdateFailure? failure}) =>
+          UpdateState(
+            update: _update,
+            via: UpdateVia.setup,
+            file: _file,
+            phase: phase,
+            received: 10000000,
+            total: 10000000,
+            checked: 10000000,
+            failedStep: failure == null ? null : UpdateStep.install,
+            failure: failure,
+          );
+      await show(tester, setup(UpdatePhase.idle));
+      expect(find.widgetWithText(FilledButton, 'Update'), findsOneWidget);
+
+      await show(tester, setup(UpdatePhase.restart));
+      expect(find.textContaining('the setup installs'), findsOneWidget);
+      // Not "Installed": that happens after Restart.
+      expect(find.textContaining('Installed'), findsNothing);
+      expect(button('Restart'), findsOneWidget);
+
+      await show(
+        tester,
+        setup(UpdatePhase.failed, failure: UpdateFailure.setup),
+      );
+      expect(find.textContaining("setup didn't start"), findsOneWidget);
+      expect(button('Retry'), findsOneWidget);
+    }, variant: TargetPlatformVariant.only(TargetPlatform.windows));
 
     group('Flatpak', () {
       UpdateState flatpak(

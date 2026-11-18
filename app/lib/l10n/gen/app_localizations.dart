@@ -2456,6 +2456,12 @@ abstract class AppLocalizations {
   /// **'On this computer, reminders appear while LecCheck is open.'**
   String get remindersWhileOpen;
 
+  /// Settings → Reminders on Windows, which has no reminders yet.
+  ///
+  /// In en, this message translates to:
+  /// **'Reminders aren\'t available on Windows yet. They\'ll come in a later version.'**
+  String get remindersNotHere;
+
   /// No description provided for @openSettings.
   ///
   /// In en, this message translates to:
@@ -2857,6 +2863,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Couldn\'t restart LecCheck. Close it and open it again to use the new version.'**
   String get updateRestartFailed;
+
+  /// Windows: the update's setup is downloaded and checked; Restart runs it.
+  ///
+  /// In en, this message translates to:
+  /// **'Ready. Restart: LecCheck closes, the setup installs the new version and opens it again.'**
+  String get updateSetupReady;
+
+  /// Windows: the downloaded setup couldn't be started.
+  ///
+  /// In en, this message translates to:
+  /// **'The setup didn\'t start. Try again, or download it from the release page.'**
+  String get updateFailedSetup;
+
+  /// Windows, when LecCheck runs from a folder its setup didn't install (Download opens the release page).
+  ///
+  /// In en, this message translates to:
+  /// **'This copy of LecCheck wasn\'t installed by its setup, so it can\'t update itself: download the setup from the release page.'**
+  String get updateWindowsHint;
 
   /// No description provided for @updateCopyCommand.
   ///

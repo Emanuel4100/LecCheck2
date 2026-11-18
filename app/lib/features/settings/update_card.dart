@@ -42,6 +42,9 @@ class UpdateCard extends ConsumerWidget {
       UpdatePhase.idle
           when state.via == UpdateVia.browser && AppIdiom.isLinux =>
         l.updateLinuxHint,
+      UpdatePhase.idle
+          when state.via == UpdateVia.browser && AppIdiom.isWindows =>
+        l.updateWindowsHint,
       UpdatePhase.idle => size == null ? null : l.updateSize(formatBytes(size)),
       UpdatePhase.downloading =>
         progress == null
@@ -49,6 +52,8 @@ class UpdateCard extends ConsumerWidget {
             : '${l.updateDownloading} ${percent.format(progress)}',
       UpdatePhase.verifying => l.updateChecking,
       UpdatePhase.downloaded => l.updateInstallHint,
+      UpdatePhase.restart when state.via == UpdateVia.setup =>
+        l.updateSetupReady,
       UpdatePhase.restart =>
         state.failure == UpdateFailure.restart
             ? l.updateRestartFailed

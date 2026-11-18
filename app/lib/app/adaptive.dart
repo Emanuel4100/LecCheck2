@@ -33,6 +33,7 @@ abstract final class AppIdiom {
   static bool get isAndroid => defaultTargetPlatform == TargetPlatform.android;
   static bool get isIOS => defaultTargetPlatform == TargetPlatform.iOS;
   static bool get isLinux => defaultTargetPlatform == TargetPlatform.linux;
+  static bool get isWindows => defaultTargetPlatform == TargetPlatform.windows;
 
   /// iOS and macOS: Cupertino dialogs and pickers, ⌘ instead of Ctrl.
   static bool get isApple =>

@@ -14,6 +14,7 @@ import '../core/update/flatpak.dart';
 import '../core/update/tarball_install.dart';
 import '../core/update/update_download.dart';
 import '../core/update/update_service.dart';
+import '../core/update/windows_install.dart';
 import 'adaptive.dart';
 import 'providers.dart';
 
@@ -35,6 +36,11 @@ enum UpdateVia {
   /// Flatpak since 2.0.0-beta.15, so Update moves it there
   /// ([moveProvider]).
   move,
+
+  /// Windows installed by LecCheck's setup: downloads the next setup and
+  /// checks it, then Restart runs it. It waits for LecCheck to close,
+  /// installs the new version and opens it.
+  setup,
 }
 
 /// How far Update got.
@@ -54,7 +60,8 @@ enum UpdatePhase {
   /// it again (after Cancel in the system dialog, say).
   downloaded,
 
-  /// Flatpak: installed; Restart starts the new version.
+  /// Flatpak: installed; Restart starts the new version. Windows: the setup
+  /// is downloaded and checked; Restart runs it.
   restart,
 
   /// Something went wrong ([UpdateState.failure]): Retry, or download it in
@@ -87,7 +94,8 @@ class UpdateState {
 
   final UpdateVia via;
 
-  /// The APK Update installs ([UpdateVia.apk]).
+  /// The APK or the Windows setup Update downloads ([UpdateVia.apk],
+  /// [UpdateVia.setup]).
   final UpdateFile? file;
 
   final UpdatePhase phase;
@@ -222,7 +230,8 @@ enum UpdateStep {
   /// repository's GPG signature, checked by Flatpak).
   verify,
 
-  /// Android: the system installer opens; Flatpak: the portal installs.
+  /// Android: the system installer opens; Flatpak: the portal installs;
+  /// Windows: the setup runs after Restart.
   install,
 }
 
@@ -278,6 +287,16 @@ class UpdateController extends Notifier<UpdateState> {
   @visibleForTesting
   static Future<String?> Function() linuxInstallDir = TarballInstall.installDir;
 
+  /// The folder LecCheck's setup installed this Windows app in, if it did;
+  /// replaced in tests.
+  @visibleForTesting
+  static Future<String?> Function() windowsSetupDir = WindowsInstall.setupDir;
+
+  /// Starts the downloaded Windows setup; replaced in tests.
+  @visibleForTesting
+  static Future<void> Function(String setup, {required String log}) runSetup =
+      WindowsInstall.runSetup;
+
   /// The check step shows at least this long, however fast the file is
   /// hashed, so it can be seen; zero in tests.
   @visibleForTesting
@@ -301,10 +320,14 @@ class UpdateController extends Notifier<UpdateState> {
   /// The downloaded APK, for Install.
   File? _apk;
 
+  /// The downloaded and checked Windows setup, for Restart.
+  File? _setup;
+
   /// Asked once: see [linuxInstallDir].
   Future<String?>? _linuxDir;
 
-  static bool get supported => AppIdiom.isAndroid || AppIdiom.isLinux;
+  static bool get supported =>
+      AppIdiom.isAndroid || AppIdiom.isLinux || AppIdiom.isWindows;
 
   @override
   UpdateState build() =>
@@ -336,6 +359,14 @@ class UpdateController extends Notifier<UpdateState> {
     }
     if (info.installerStore?.startsWith(_obtainium) ?? false) return null;
 
+    if (startup && AppIdiom.isWindows) {
+      // How the update that opened this LecCheck went.
+      try {
+        await WindowsInstall.reportSetupLog(await directory());
+      } on Object catch (e) {
+        debugPrint('Windows setup log not read: $e');
+      }
+    }
     now ??= DateTime.now();
     final checkedAt = _prefs.getInt(_checkedAtKey);
     final due =
@@ -438,13 +469,13 @@ class UpdateController extends Notifier<UpdateState> {
   Future<void> install() => switch (state.via) {
     UpdateVia.apk => _installApk(),
     UpdateVia.flatpak => _installFlatpak(),
+    UpdateVia.setup => _downloadSetup(),
     // Download opens the browser, and Move its own window.
     UpdateVia.browser || UpdateVia.move => Future.value(),
   };
 
   Future<void> _installApk() async {
-    final file = state.file;
-    if (file == null || _download != null) return;
+    if (state.file == null || _download != null) return;
     final apk = _apk;
     if (state.phase == UpdatePhase.downloaded &&
         apk != null &&
@@ -454,13 +485,41 @@ class UpdateController extends Notifier<UpdateState> {
       }
       return;
     }
+    await _fetchVerified('update.apk', (apk) async {
+      _apk = apk;
+      _set(UpdatePhase.downloaded);
+      if (!await installApk(apk.path)) {
+        throw const UpdateFailed(
+          "Android's installer didn't open",
+          UpdateFailure.installer,
+        );
+      }
+    });
+  }
+
+  /// Windows: downloads the setup and checks it; Restart runs it.
+  Future<void> _downloadSetup() =>
+      _fetchVerified('LecCheck-setup.exe', (setup) async {
+        _setup = setup;
+        _set(UpdatePhase.restart);
+      });
+
+  /// Downloads [UpdateState.file] into the updates folder as [name] and
+  /// checks it against the signed manifest, then hands it to [install].
+  /// Never throws: a failure (in [install] too) shows on the card.
+  Future<void> _fetchVerified(
+    String name,
+    Future<void> Function(File file) install,
+  ) async {
+    final file = state.file;
+    if (file == null || _download != null) return;
     final client = _download = UpdateController.client();
     if (ref.mounted) state = state._restart(UpdatePhase.downloading);
     var step = UpdateStep.download;
     try {
       final dir = await directory();
       await clearUpdates(dir);
-      final dest = File('${dir.path}/update.apk');
+      final dest = File('${dir.path}/$name');
       final clock = Stopwatch()..start();
       var shown = -1;
       await downloadUpdate(
@@ -511,14 +570,7 @@ class UpdateController extends Notifier<UpdateState> {
       if (left > Duration.zero) await Future<void>.delayed(left);
       if (!identical(_download, client)) return;
       step = UpdateStep.install;
-      _apk = dest;
-      _set(UpdatePhase.downloaded);
-      if (!await installApk(dest.path)) {
-        throw const UpdateFailed(
-          "Android's installer didn't open",
-          UpdateFailure.installer,
-        );
-      }
+      await install(dest);
     } on Object catch (e) {
       if (!identical(_download, client)) return; // Cancel
       debugPrint(e is UpdateFailed ? '$e' : 'Update failed: $e');
@@ -605,16 +657,35 @@ class UpdateController extends Notifier<UpdateState> {
     _set(UpdatePhase.idle);
   }
 
-  /// Restart (Flatpak, after Update): starts the new version, then quits.
+  /// Restart, after Update: on Flatpak starts the new version, on Windows
+  /// runs the setup (which opens the new version when it's done); then
+  /// quits.
   Future<void> restart() async {
-    if (state.via != UpdateVia.flatpak) return;
-    try {
-      await startLatestFlatpak();
-    } on Object catch (e) {
-      // It's installed: closing and opening LecCheck again starts it.
-      debugPrint('Restart failed: $e');
-      if (ref.mounted) state = state._with(failure: UpdateFailure.restart);
-      return;
+    switch (state.via) {
+      case UpdateVia.flatpak:
+        try {
+          await startLatestFlatpak();
+        } on Object catch (e) {
+          // It's installed: closing and opening LecCheck again starts it.
+          debugPrint('Restart failed: $e');
+          if (ref.mounted) state = state._with(failure: UpdateFailure.restart);
+          return;
+        }
+      case UpdateVia.setup:
+        final setup = _setup;
+        if (setup == null) return;
+        try {
+          await runSetup(
+            setup.path,
+            log: '${setup.parent.path}/${WindowsInstall.logName}',
+          );
+        } on Object catch (e) {
+          debugPrint('The Windows setup did not start: $e');
+          _fail(UpdateStep.install, UpdateFailure.setup);
+          return;
+        }
+      case UpdateVia.apk || UpdateVia.browser || UpdateVia.move:
+        return;
     }
     await exitApp();
   }
@@ -656,11 +727,19 @@ class UpdateController extends Notifier<UpdateState> {
     return abis is List && abis.contains('arm64-v8a');
   }
 
-  /// How [update] installs here, and the file Update downloads (Android).
+  /// How [update] installs here, and the file Update downloads (Android,
+  /// Windows).
   Future<(UpdateVia, UpdateFile?)> _installer(AppUpdate update) async {
     if (AppIdiom.isAndroid) {
       final file = update.installFile(android: true, arm64: await _arm64());
       return (file == null ? UpdateVia.browser : UpdateVia.apk, file);
+    }
+    if (AppIdiom.isWindows) {
+      final file = update.windowsSetup;
+      if (file == null || await windowsSetupDir() == null) {
+        return (UpdateVia.browser, null);
+      }
+      return (UpdateVia.setup, file);
     }
     if (isFlatpak()) {
       return (update.flatpak ? UpdateVia.flatpak : UpdateVia.browser, null);

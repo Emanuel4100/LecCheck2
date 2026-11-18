@@ -1427,6 +1427,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'On this computer, reminders appear while LecCheck is open.';
 
   @override
+  String get remindersNotHere =>
+      'Reminders aren\'t available on Windows yet. They\'ll come in a later version.';
+
+  @override
   String get openSettings => 'Open settings';
 
   @override
@@ -1670,6 +1674,18 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get updateRestartFailed =>
       'Couldn\'t restart LecCheck. Close it and open it again to use the new version.';
+
+  @override
+  String get updateSetupReady =>
+      'Ready. Restart: LecCheck closes, the setup installs the new version and opens it again.';
+
+  @override
+  String get updateFailedSetup =>
+      'The setup didn\'t start. Try again, or download it from the release page.';
+
+  @override
+  String get updateWindowsHint =>
+      'This copy of LecCheck wasn\'t installed by its setup, so it can\'t update itself: download the setup from the release page.';
 
   @override
   String get updateCopyCommand => 'Copy command';

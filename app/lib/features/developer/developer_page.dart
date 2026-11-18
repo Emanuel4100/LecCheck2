@@ -607,8 +607,10 @@ class _DeveloperPageState extends ConsumerState<DeveloperPage> {
                     context.pop();
                   },
                 ),
-                const SectionHeader(title: 'Notifications'),
-                _notificationTools(),
+                if (NotificationService.supported) ...[
+                  const SectionHeader(title: 'Notifications'),
+                  _notificationTools(),
+                ],
                 const SectionHeader(title: 'Sync'),
                 _syncTools(),
                 const SectionHeader(title: 'Data'),

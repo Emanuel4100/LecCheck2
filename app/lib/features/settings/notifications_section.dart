@@ -116,6 +116,12 @@ class _NotificationsSectionState extends ConsumerState<NotificationsSection> {
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
+    if (!NotificationService.supported) {
+      return ListTile(
+        leading: const Icon(LecIcons.info),
+        subtitle: Text(l.remindersNotHere),
+      );
+    }
     final settings = ref.watch(reminderSettingsProvider);
     final health = ref.watch(reminderHealthProvider);
     final controller = ref.read(reminderSettingsProvider.notifier);
