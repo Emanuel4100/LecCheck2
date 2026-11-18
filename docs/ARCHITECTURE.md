@@ -318,7 +318,7 @@ semester?". The semester list is re-read from the database there, not from the
 - **Windows packaging**: an Inno Setup setup (`app/windows/installer/leccheck.iss`), built
   by CI (`scripts/windows_build.ps1`) since Flutter builds Windows only on Windows. It
   installs for the user, without admin rights, in `%LOCALAPPDATA%\Programs\LecCheck`, with
-  the VC++ runtime beside the app; the data stays in `%APPDATA%\com.leccheck\LecCheck`
+  the VC++ runtime beside the app; the data stays in `%APPDATA%\LecCheck`
   even when it's uninstalled. Sign-in uses the browser and the loopback port, like Linux,
   and is kept by `flutter_secure_storage` (encrypted with the user's Windows key, DPAPI).
 - **Updates** (`app/update_controller.dart`): a signed `update.json` says what's new for

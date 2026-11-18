@@ -60,5 +60,5 @@ the design; [CHANGELOG.md](CHANGELOG.md) what each beta shipped.
   smoke-tests it. Before pushing runner changes, `scripts/check_windows_runner.sh` (MSVC
   builds with `/W4 /WX`; keep the C++ ASCII-only). `flutter build windows --build-name`
   without `--build-number` leaves the build out of the exe's version (update check reads
-  0). Never change the setup's `AppId` or Runner.rc's CompanyName/ProductName (data
-  folder).
+  0). Never change the setup's `AppId` or Runner.rc's ProductName, nor add a CompanyName
+  (the data folder is `%APPDATA%\LecCheck`).

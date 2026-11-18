@@ -89,10 +89,10 @@ BEGIN
     BEGIN
         BLOCK "040904e4"
         BEGIN
-            // Keep CompanyName and ProductName: path_provider puts the data
-            // in %APPDATA%\CompanyName\ProductName, so changing either one
-            // would leave every user's data behind.
-            VALUE "CompanyName", "com.leccheck" "\0"
+            // No CompanyName, and keep ProductName: path_provider puts the
+            // data in %APPDATA%\ProductName (%APPDATA%\CompanyName\ProductName
+            // with a CompanyName), so changing either would leave every
+            // user's data behind.
             VALUE "FileDescription", "LecCheck" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
             VALUE "InternalName", "leccheck" "\0"

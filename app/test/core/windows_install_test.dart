@@ -23,11 +23,11 @@ void main() {
 
   test('the setup runs without its wizard and opens LecCheck again', () {
     final log = WindowsInstall.windowsPath(
-      r'C:\Users\Dana Levi\AppData\Local\com.leccheck\LecCheck/updates/setup.log',
+      r'C:\Users\Dana Levi\AppData\Local\LecCheck/updates/setup.log',
     );
     expect(
       log,
-      r'C:\Users\Dana Levi\AppData\Local\com.leccheck\LecCheck\updates\setup.log',
+      r'C:\Users\Dana Levi\AppData\Local\LecCheck\updates\setup.log',
     );
     expect(WindowsInstall.setupArguments(log), [
       '/SILENT',

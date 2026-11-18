@@ -19,10 +19,10 @@ New-Item -ItemType Directory -Force -Path $Out | Out-Null
 $Out = (Resolve-Path $Out).Path
 $installDir = Join-Path $env:LOCALAPPDATA 'Programs\LecCheck'
 $exe = Join-Path $installDir 'leccheck.exe'
-# path_provider's folder (Runner.rc's CompanyName\ProductName), and the
-# runner's window.ini.
-$dataDir = Join-Path $env:APPDATA 'com.leccheck\LecCheck'
-$windowIni = Join-Path $env:LOCALAPPDATA 'com.leccheck\LecCheck\window.ini'
+# path_provider's folder (Runner.rc's ProductName, no CompanyName), which
+# also has the runner's window.ini.
+$dataDir = Join-Path $env:APPDATA 'LecCheck'
+$windowIni = Join-Path $dataDir 'window.ini'
 $shortcut = Join-Path $env:APPDATA 'Microsoft\Windows\Start Menu\Programs\LecCheck.lnk'
 
 function Save-Screenshot([string]$name) {

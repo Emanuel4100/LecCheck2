@@ -276,10 +276,10 @@ Flutter builds Windows apps only on Windows, so the Windows build comes from CI:
   as errors (MSVC builds it with `/W4 /WX`). Keep the runner's C++ files ASCII-only.
 - **The setup** (`app/windows/installer/leccheck.iss`, Inno Setup 6) installs for the
   current user in `%LOCALAPPDATA%\Programs\LecCheck`, without admin rights. Never change its
-  `AppId`, or Runner.rc's CompanyName and ProductName: the data is in
-  `%APPDATA%\com.leccheck\LecCheck` (path_provider builds it from those two) and the
-  window's place in `%LOCALAPPDATA%\com.leccheck\LecCheck\window.ini`. Uninstalling keeps
-  both.
+  `AppId`, Runner.rc's ProductName, or add a CompanyName: the data is in
+  `%APPDATA%\LecCheck` (path_provider builds it from those), with the window's place in
+  `window.ini` beside it; downloaded updates go to `%LOCALAPPDATA%\LecCheck\updates`.
+  Uninstalling keeps the data.
 - **Not signed** yet: Windows' SmartScreen asks once (**More info → Run anyway**). Updates
   from inside the app aren't asked about (the app downloads the file itself).
 

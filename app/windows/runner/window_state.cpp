@@ -14,19 +14,18 @@ constexpr const wchar_t kSection[] = L"window";
 // its default size instead.
 constexpr LONG kMinSaved = 200;
 
-// %LOCALAPPDATA%\com.leccheck\LecCheck\window.ini, beside the folder
-// path_provider uses for the data (Runner.rc's CompanyName\ProductName), but
-// local: the place of a window belongs to this PC's screens. Empty when
-// Windows doesn't say where the folder is. With |create|, the folder is made.
+// %APPDATA%\LecCheck\window.ini, with the data: path_provider's folder
+// (Runner.rc's ProductName). Empty when Windows doesn't say where the folder
+// is. With |create|, the folder is made.
 std::wstring StateFile(bool create) {
-  PWSTR local = nullptr;
-  const HRESULT found = SHGetKnownFolderPath(FOLDERID_LocalAppData,
-                                             KF_FLAG_DEFAULT, nullptr, &local);
-  std::wstring folder =
-      SUCCEEDED(found) ? std::wstring(local) + L"\\com.leccheck\\LecCheck"
-                       : std::wstring();
+  PWSTR roaming = nullptr;
+  const HRESULT found = SHGetKnownFolderPath(FOLDERID_RoamingAppData,
+                                             KF_FLAG_DEFAULT, nullptr, &roaming);
+  std::wstring folder = SUCCEEDED(found)
+                            ? std::wstring(roaming) + L"\\LecCheck"
+                            : std::wstring();
   // Freed whether it succeeded or not.
-  CoTaskMemFree(local);
+  CoTaskMemFree(roaming);
   if (folder.empty()) return folder;
   if (create) {
     // ERROR_ALREADY_EXISTS is fine; any other failure shows when writing.

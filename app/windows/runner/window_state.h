@@ -4,8 +4,8 @@
 #include <windows.h>
 
 // LecCheck's window size, position and maximized state between launches, kept
-// in %LOCALAPPDATA%\com.leccheck\LecCheck\window.ini (the Linux runner keeps
-// the same keys in $XDG_CONFIG_HOME/com.leccheck.app/window.ini).
+// in %APPDATA%\LecCheck\window.ini beside the data (the Linux runner keeps the
+// same keys in $XDG_CONFIG_HOME/com.leccheck.app/window.ini).
 
 // Puts |window|, created but not yet shown, where it was when LecCheck last
 // closed. Without a saved place, or when it's on no monitor any more (a

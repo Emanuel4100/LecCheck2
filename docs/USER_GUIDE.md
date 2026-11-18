@@ -437,7 +437,7 @@ backup**.
 Each device keeps a SQLite database and its automatic backups (Linux:
 `~/.var/app/com.leccheck.app/data/com.leccheck.app/`, or
 `~/.local/share/com.leccheck.app/` for `install.sh` installs; Windows:
-`%APPDATA%\com.leccheck\LecCheck\`; backups in `snapshots/`). Android's backup to your
+`%APPDATA%\LecCheck\`; backups in `snapshots/`). Android's backup to your
 Google Drive and iPhone's iCloud backup include them, so a new phone gets them back
 (sign in again after a restore). When signed in, the server stores your rows in your own
 private storage unit; nobody else's data is ever mixed with yours.

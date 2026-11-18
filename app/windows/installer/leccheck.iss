@@ -7,7 +7,7 @@
 ; /SILENT /NORESTART /RELAUNCH=1 /LOG=... (lib/core/update/windows_install.dart).
 ;
 ; Never change AppId: Windows and the setup know an installed LecCheck by it.
-; The data (%APPDATA%\com.leccheck\LecCheck) is never touched, uninstalling too.
+; The data (%APPDATA%\LecCheck) is never touched, uninstalling too.
 
 #ifndef AppVersion
   #define AppVersion "0.0.0-dev"
