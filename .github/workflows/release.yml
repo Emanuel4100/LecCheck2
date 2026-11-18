@@ -145,6 +145,34 @@ jobs:
         with:
           path: site
 
+  # The Windows setup (Inno Setup): Flutter builds Windows only on Windows.
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+      - run: flutter pub get
+        working-directory: app
+      # The full tag (e.g. 2.0.0-beta.22) and pubspec's build number, which
+      # the update check reads from the exe.
+      - name: Build the setup
+        id: build
+        shell: pwsh
+        run: |
+          ./scripts/windows_build.ps1 -BuildName ("${{ github.ref_name }}" -replace '^v', '') -DartDefine "API_BASE_URL=${{ vars.API_BASE_URL }}"
+      - name: Collect
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path out | Out-Null
+          Copy-Item "${{ steps.build.outputs.setup }}" out/
+      - uses: actions/upload-artifact@v7
+        with:
+          name: windows
+          path: out/
+
   ios:
     runs-on: macos-latest
     defaults:
@@ -179,7 +207,7 @@ jobs:
   # Run by hand (Run workflow on main), everything above builds and nothing is
   # published: a dry run before tagging.
   publish:
-    needs: [android, linux, flatpak, ios, server]
+    needs: [android, linux, flatpak, windows, ios, server]
     if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
     permissions:
@@ -200,6 +228,10 @@ jobs:
         with:
           name: ios
           path: out
+      - uses: actions/download-artifact@v8
+        with:
+          name: windows
+          path: out
       - name: AltStore / SideStore source and release notes
         run: |
           V="${GITHUB_REF_NAME#v}"
@@ -218,7 +250,7 @@ jobs:
           FLATPAKREF="https://${GITHUB_REPOSITORY_OWNER,,}.github.io/${GITHUB_REPOSITORY#*/}/leccheck.flatpakref"
           echo "FLATPAKREF=$FLATPAKREF" >> "$GITHUB_ENV"
           if [[ "$V" == *-* ]]; then
-            BETA=$'> **Beta.** Not yet verified on every device: reminders and their buttons, the Android widget and the iPhone build. Please report problems in Issues.\n'
+            BETA=$'> **Beta.** Not yet verified on every device: reminders and their buttons, the Android widget, the iPhone build and Windows. Please report problems in Issues.\n'
             OBTAINIUM=' Turn on **Include prereleases** to get betas.'
           else
             BETA=''
@@ -244,6 +276,9 @@ jobs:
             (or open [leccheck.flatpakref]($FLATPAKREF) in your software center). Installed with
             \`install.sh\` before? 2.0.0-beta.15 offers **Move to the Flatpak**; from an older one,
             install the Flatpak as above and sign in or import a backup.
+          - **Windows** (experimental; 64-bit Windows 10 or 11): run \`LecCheck-$V-windows-setup.exe\`,
+            then LecCheck updates itself. The setup isn't signed yet, so Windows may say it protected
+            your PC: choose **More info**, then **Run anyway**. No reminders on Windows yet.
           EOF
       - uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
         with:
@@ -260,7 +295,7 @@ jobs:
         uses: actions/deploy-pages@v5
       # GitHub's "latest" release links skip pre-releases, so AltStore / SideStore
       # read the source from the altstore branch, which always has the newest one.
-      # update.json there tells the Android and Linux apps about new releases
+      # update.json there tells the Android, Linux and Windows apps about new releases
       # (with each file's SHA-256, so they can install it themselves). It's
       # signed (update.json.sig, Ed25519): the apps ignore it otherwise.
       - name: Update the AltStore / SideStore source and update.json

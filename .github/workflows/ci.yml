@@ -56,6 +56,43 @@ jobs:
       - run: flutter pub get
       - run: flutter build linux --release
 
+  # Flutter builds Windows apps only on Windows. Every push gets a test setup
+  # to try on a real PC (the run's artifacts), after a smoke test here.
+  windows:
+    name: Windows build (setup + smoke test)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+        with:
+          flutter-version: 3.47.6
+          channel: stable
+          cache: true
+      - run: flutter pub get
+        working-directory: app
+      # A test build says so: 2.0.0-ci.<run> (a beta, so it's offered the next
+      # beta), with pubspec's build number.
+      - name: Build the setup
+        id: build
+        shell: pwsh
+        run: |
+          $name = (Select-String app/pubspec.yaml -Pattern '^version:\s*([^+\s]+)').Matches[0].Groups[1].Value
+          ./scripts/windows_build.ps1 -BuildName "$name-ci.${{ github.run_number }}" -DartDefine "API_BASE_URL=${{ vars.API_BASE_URL }}"
+      - name: Smoke test
+        shell: pwsh
+        run: ./scripts/windows_smoke_test.ps1 -Setup "${{ steps.build.outputs.setup }}" -Out smoke
+      - uses: actions/upload-artifact@v7
+        with:
+          name: windows-setup
+          path: ${{ steps.build.outputs.setup }}
+          retention-days: 14
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: windows-smoke
+          path: smoke/
+          if-no-files-found: ignore
+
   server:
     name: Sync server (typecheck + test)
     runs-on: ubuntu-latest

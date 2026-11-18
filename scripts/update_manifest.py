@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Updates update.json, the file the Android and Linux apps check for new releases.
+"""Updates update.json, the file the Android, Linux and Windows apps check for new releases.
 
     python3 scripts/update_manifest.py <existing-or-missing.json> <release> <build> <repo-url> [<assets-dir> [<flatpakref-url>]] > update.json
 
@@ -46,6 +46,8 @@ files = {
     "androidUniversal": f"LecCheck-{release}-android.apk",
 }
 if assets:
+    # The Windows setup (2.0.0-beta.22 on) only when the release has it.
+    files["windows"] = f"LecCheck-{release}-windows-setup.exe"
     files = {
         key: name
         for key, name in files.items()
