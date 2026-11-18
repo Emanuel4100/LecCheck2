@@ -142,10 +142,23 @@ These are built and compile, but have only been exercised in tests so far:
 - **Windows, experimental** (built; decided 2026-11-18): an Inno Setup setup on the
   release, for the user without admin rights, unsigned (SmartScreen: More info → Run
   anyway); updates from inside the app through the setup; no reminders, tray or start at
-  login yet; Windows' own title bar following LecCheck's theme. Next: the owner tries a
-  test setup from CI on a Windows PC, approves the Hebrew strings (`remindersNotHere`,
-  `updateSetupReady`, `updateFailedSetup`, `updateWindowsHint`, and the setup's
-  `CloseLecCheck`), then it ships in beta.22.
+  login yet; Windows' own title bar following LecCheck's theme. Tried on the owner's
+  Windows PC on 2026-11-18: tests, a local build, and a whole update from inside the app
+  with a test key (DEVELOPMENT.md, "Testing an update locally"). Next: the owner approves
+  the Hebrew strings (`remindersNotHere`, `updateSetupReady`, `updateFailedSetup`,
+  `updateWindowsHint`, and the setup's `CloseLecCheck`), then it ships in beta.22.
+  **At the beta.22 release**: on the Windows PC, the CI build there (2.0.0-ci.41, build 29)
+  must offer beta.22 (build 30) and update to it (Testing on Windows, step 8): the first
+  real Windows update.
+- **An older LecCheck opening a newer database** (fix in beta.22, found 2026-11-18):
+  `app_database.dart` (schemaVersion 6) doesn't guard against a database whose version is
+  higher than the app's. It can happen: the Windows setup installs an older build over a
+  newer one without a word (build 29 went over build 901 in the update test), and so can a
+  downgraded Android APK or an older Flatpak. Harmless today (every build is at 6); risky
+  at the next schema change. Wanted: notice `from > to` in the migration, never change or
+  delete the file, and show a clear screen ("This data is from a newer LecCheck: update
+  LecCheck") with Export backup; maybe the setup warns before a downgrade. Tests in
+  `test/drift`.
 - Upload a syllabus and build the course from it (ask about the design first).
 - The semester-dates warning still says "outside the new dates" when it counts
   every-other-week sessions: new wording in English and Hebrew.
