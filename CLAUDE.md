@@ -1,8 +1,9 @@
 # LecCheck — notes for Claude Code
 
 A lecture-attendance app: Flutter (`app/`, Android + iPhone via AltStore/SideStore +
-Linux as a Flatpak, English and Hebrew/RTL) and a Cloudflare Worker sync server (`server/`, Durable
-Objects, free plan only). Tools are pinned in `mise.toml`.
+Linux as a Flatpak + Windows as an Inno Setup setup (experimental), English and
+Hebrew/RTL) and a Cloudflare Worker sync server (`server/`, Durable Objects, free plan
+only). Tools are pinned in `mise.toml`.
 
 **Start here:** [docs/ROADMAP.md](docs/ROADMAP.md) "Next" has the next release's decided
 plan and the to-do list by release; [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) has the
@@ -55,3 +56,9 @@ the design; [CHANGELOG.md](CHANGELOG.md) what each beta shipped.
   portal. The portal's first `Update` shows a desktop dialog (answer kept per app:
   `flatpak permission-set flatpak updates com.leccheck.app yes` for tests).
 - Waiting for a process by pid: `kill -0` succeeds on a zombie; check `/proc/PID/stat`.
+- Flutter builds Windows only on Windows: CI's `windows` job builds the setup and
+  smoke-tests it. Before pushing runner changes, `scripts/check_windows_runner.sh` (MSVC
+  builds with `/W4 /WX`; keep the C++ ASCII-only). `flutter build windows --build-name`
+  without `--build-number` leaves the build out of the exe's version (update check reads
+  0). Never change the setup's `AppId` or Runner.rc's CompanyName/ProductName (data
+  folder).

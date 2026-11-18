@@ -7,7 +7,7 @@
 **Mark every lecture, practice and lab you attend, and see your semester at a glance.**
 Fast, offline-first, and synced live between your phone and computer — for free.
 
-Android · iPhone · Linux · (Windows coming) &nbsp;|&nbsp; English · עברית
+Android · iPhone · Linux · Windows (experimental) &nbsp;|&nbsp; English · עברית
 
 </div>
 
@@ -55,6 +55,7 @@ fields in the background — so it is instant, works offline, and never loses ed
 | Android | APK from [Releases](https://github.com/Emanuel4100/LecCheck2/releases), or [Obtainium](https://obtainium.imranr.dev) for auto-updates |
 | iPhone | Add this source in [AltStore](https://altstore.io) / [SideStore](https://sidestore.io): `https://raw.githubusercontent.com/Emanuel4100/LecCheck2/altstore/altstore-source.json` |
 | Linux | `flatpak install --user https://emanuel4100.github.io/LecCheck2/leccheck.flatpakref` (or open it in your software center) |
+| Windows (experimental) | `LecCheck-…-windows-setup.exe` from [Releases](https://github.com/Emanuel4100/LecCheck2/releases) (64-bit Windows 10/11; not signed yet: **More info → Run anyway**), then it updates itself |
 
 ## Documentation
 
@@ -76,7 +77,7 @@ fields in the background — so it is instant, works offline, and never loses ed
 | App | Flutter 3.47 (Dart 3.13), `material_ui`, Riverpod 3, go_router, Drift (SQLite) |
 | Sync server | Cloudflare Workers + Durable Objects (SQLite), Hono, jose — free plan |
 | Notifications / widget | flutter_local_notifications, home_widget + Jetpack Glance |
-| CI / releases | GitHub Actions: tests, signed APK, unsigned IPA + AltStore source, Linux Flatpak in its own repository on GitHub Pages |
+| CI / releases | GitHub Actions: tests, signed APK, unsigned IPA + AltStore source, Linux Flatpak in its own repository on GitHub Pages, Windows setup (Inno Setup) |
 
 ## Quick start (development)
 

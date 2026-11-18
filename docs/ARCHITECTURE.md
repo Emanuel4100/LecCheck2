@@ -256,6 +256,9 @@ semester?". The semester list is re-read from the database there, not from the
   every 30 s (plus a one-shot timer for the next one). Dart timers don't count time while
   the computer sleeps, so after a suspend `NotificationService.dueReminders` shows what's
   late and skips what's stale (a "starts soon" for a class that has started).
+  Windows has no reminders yet (`NotificationService.supported`): the plugin could
+  schedule them through Windows, but without an MSIX package it can't take back one
+  already shown, so a canceled class's reminder would stay.
 - Reminders are also topped up without the UI (`app/background_reminders.dart`): after a
   notification button, and once a day from WorkManager (`scheduleDailyTopUp`).
 - `ReminderHealth` (permission, blocked channels, exact alarms, battery optimization,
@@ -300,7 +303,11 @@ semester?". The semester list is re-read from the database there, not from the
     (Esc, Ctrl+S). Single-key shortcuts are ignored while a text field has focus.
 - **Platform runners**: Linux is single-instance (a second launch presents the existing
   window), uses a GTK header bar only on GNOME-family desktops, and has a minimum window
-  size. Android enables predictive back and draws edge-to-edge on every version.
+  size. Windows (`app/windows/runner`) is single-instance through a named mutex (which
+  its setup waits for too), reopens at its saved place (`window_state.cpp`, saved 500 ms
+  after a change and on close), has the same minimum size, and draws its own title bar
+  light or dark with LecCheck's theme (`WindowFrameTheme` → `com.leccheck.app/window`).
+  Android enables predictive back and draws edge-to-edge on every version.
 - **Linux packaging**: a Flatpak on `org.freedesktop.Platform` (`app/linux/flatpak/`),
   repackaging the bundle the release builds, from LecCheck's own GPG-signed repository on
   GitHub Pages. The bundle links only GTK 3 and libsecret: `desktop_webview_window`
@@ -308,13 +315,21 @@ semester?". The semester list is re-read from the database there, not from the
   code, since sign-in uses the browser and a loopback port. The sign-in goes through
   libsecret, which uses the Secret portal where the desktop has one and the keyring
   (`--talk-name=org.freedesktop.secrets`) elsewhere.
+- **Windows packaging**: an Inno Setup setup (`app/windows/installer/leccheck.iss`), built
+  by CI (`scripts/windows_build.ps1`) since Flutter builds Windows only on Windows. It
+  installs for the user, without admin rights, in `%LOCALAPPDATA%\Programs\LecCheck`, with
+  the VC++ runtime beside the app; the data stays in `%APPDATA%\com.leccheck\LecCheck`
+  even when it's uninstalled. Sign-in uses the browser and the loopback port, like Linux,
+  and is kept by `flutter_secure_storage` (encrypted with the user's Windows key, DPAPI).
 - **Updates** (`app/update_controller.dart`): a signed `update.json` says what's new for
   every platform. Android downloads the APK, reads it back to check its SHA-256, and opens
   the system installer. The Flatpak asks the Flatpak portal (`core/update/flatpak.dart`,
   over D-Bus): `CreateUpdateMonitor`, `Update` with `Progress` signals, and `Spawn` with
   the latest version for Restart; the runner's `--after-update` waits until the old
   instance gives up the app's D-Bus name. `install.sh` installs (the tarball, until
-  2.0.0-beta.15) move to the Flatpak instead (`app/move_controller.dart`).
+  2.0.0-beta.15) move to the Flatpak instead (`app/move_controller.dart`). Windows
+  downloads and checks the setup like an APK; Restart starts it
+  (`core/update/windows_install.dart`) and quits, and the setup opens the new version.
 - **Theme** (`app/theme`): `material_ui` (the standalone Material package). Presets build
   a `ColorScheme.fromSeed` with a per-preset scheme variant; `StatusColors` and
   `CourseColors` theme extensions compute light/dark tones in HCT and harmonize them with

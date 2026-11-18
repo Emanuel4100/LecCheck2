@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+- **LecCheck for Windows, experimental.** A setup for 64-bit Windows 10 and 11 installs
+  LecCheck for you, without admin rights, and LecCheck then updates itself from inside the
+  app. The setup isn't signed yet, so Windows may say it protected your PC: choose **More
+  info**, then **Run anyway**. Sign-in, sync, backups and Panopto work as on Linux; the
+  window opens where you left it, and the title bar follows LecCheck's light or dark
+  theme. No reminders on Windows yet. Uninstalling keeps your data.
+
 ## 2.0.0-beta.21 — 2026-11-17
 
 - **Panopto on all your devices, set up once.** Signed in to LecCheck, your Panopto setup

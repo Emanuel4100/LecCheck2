@@ -132,9 +132,20 @@ These are built and compile, but have only been exercised in tests so far:
 - Panopto recordings on a phone: the sign-in coming back through `leccheck://panopto`
   (Android, iPhone) and Android's daily background look. Tried on Linux only (a separate
   test copy, 2026-11-16).
+- Windows (experimental from beta.22): only CI's smoke test so far (install, start, a
+  second start, close, uninstall on GitHub's runner). The owner tries it on a Windows PC
+  ([DEVELOPMENT.md](DEVELOPMENT.md) "Testing on Windows"); the first in-app update is
+  beta.22 → beta.23.
 
 ## Next: 2.0.0-beta.22
 
+- **Windows, experimental** (built; decided 2026-11-18): an Inno Setup setup on the
+  release, for the user without admin rights, unsigned (SmartScreen: More info → Run
+  anyway); updates from inside the app through the setup; no reminders, tray or start at
+  login yet; Windows' own title bar following LecCheck's theme. Next: the owner tries a
+  test setup from CI on a Windows PC, approves the Hebrew strings (`remindersNotHere`,
+  `updateSetupReady`, `updateFailedSetup`, `updateWindowsHint`, and the setup's
+  `CloseLecCheck`), then it ships in beta.22.
 - Upload a syllabus and build the course from it (ask about the design first).
 - The semester-dates warning still says "outside the new dates" when it counts
   every-other-week sessions: new wording in English and Hebrew.
@@ -223,8 +234,14 @@ From [PANOPTO.md](PANOPTO.md) "Limits" and "Ideas" (ask the owner which first):
 
 ## Later (M4)
 
-- **Desktop**: system tray (keep reminders running when the window is closed), Windows
-  build + installer.
+- **Desktop**: system tray (keep reminders running when the window is closed).
+- **Windows, after the experimental release**: reminders (flutter_local_notifications
+  schedules them through Windows even with LecCheck closed, but without an MSIX package
+  can't take back one already shown; action buttons with the app closed need a COM
+  activator registered by the setup); a tray and start at login; code signing through
+  SignPath Foundation (free for open source; the publisher shown is "SignPath
+  Foundation"); the Microsoft Store (free registration for individuals, MSIX signed by
+  Microsoft, updates through the Store); an ARM64 build.
 - **iPhone widget** (WidgetKit) — needs App Group support from AltStore/SideStore.
 - **Data safety, part 3**: SQLite WAL + `quick_check` on startup (offer the latest
   automatic backup if it fails; the check exists in Settings → Developer), re-fetch rows

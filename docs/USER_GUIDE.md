@@ -241,11 +241,12 @@ kept up to date as you edit (also when you leave the app right after), when you 
 app, and once a day in the background. They follow every
 semester running then, whichever semester you're looking at. On Linux they fire while
 LecCheck is running (also right after the computer wakes up; ones that are no longer
-useful, like "class starts soon" for a class already under way, are skipped).
+useful, like "class starts soon" for a class already under way, are skipped). Windows has
+no reminders yet.
 
 ## Updates
 
-On Android and Linux, LecCheck checks for a new version every time it starts. When there is one,
+On Android, Linux and Windows, LecCheck checks for a new version every time it starts. When there is one,
 the **update window** opens when you start LecCheck, with what's new in it, and
 **LecCheck X is available** appears at the top of Settings (and on Today, until **Later**).
 **Later** asks again the next time you start LecCheck.
@@ -260,14 +261,27 @@ the **update window** opens when you start LecCheck, with what's new in it, and
   repository's signature ("Verified by Flatpak"), and **Restart** starts the new version.
   If you chose **Deny**, or a new version needs new permissions, the window says so and
   gives the command to run instead; `flatpak update` and software centers update it too.
+- **Windows**: after the download and the check, **Restart** closes LecCheck and runs the
+  new setup, which shows its progress and opens the new version when it's done.
 - When something goes wrong, the window says what (no connection, not enough space, a
   file that doesn't match) and **Retry** tries again.
 - LecCheck only offers releases from a list signed by the release build, so a changed
   list or file is never installed.
-- **Download** appears instead for releases before 2.0.0-beta.8, and for Linux builds that
-  aren't the Flatpak: it opens the release page.
+- **Download** appears instead for releases before 2.0.0-beta.8, for Linux builds that
+  aren't the Flatpak, and on Windows for a LecCheck its setup didn't install: it opens the
+  release page.
 - **What's new** opens the release notes, and **Skip this version** hides it until the
   next one.
+
+### Windows: installing
+
+LecCheck for Windows is experimental. Download `LecCheck-…-windows-setup.exe` from the
+[release page](https://github.com/Emanuel4100/LecCheck2/releases) and run it: it installs
+LecCheck for you only, without asking for admin rights (64-bit Windows 10 version 1903 or
+later, or Windows 11). The setup isn't signed yet, so Windows may say **Windows protected
+your PC**: choose **More info**, then **Run anyway**. Updates after that come from inside
+the app. Uninstall it in **Settings → Apps**: your data stays, and comes back if you
+install it again.
 
 ### Linux: moving to the Flatpak
 
@@ -422,7 +436,8 @@ backup**.
 
 Each device keeps a SQLite database and its automatic backups (Linux:
 `~/.var/app/com.leccheck.app/data/com.leccheck.app/`, or
-`~/.local/share/com.leccheck.app/` for `install.sh` installs; backups in `snapshots/`). Android's backup to your
+`~/.local/share/com.leccheck.app/` for `install.sh` installs; Windows:
+`%APPDATA%\com.leccheck\LecCheck\`; backups in `snapshots/`). Android's backup to your
 Google Drive and iPhone's iCloud backup include them, so a new phone gets them back
 (sign in again after a restore). When signed in, the server stores your rows in your own
 private storage unit; nobody else's data is ever mixed with yours.

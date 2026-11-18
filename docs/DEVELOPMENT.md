@@ -16,6 +16,8 @@ Other requirements:
 - **Android builds**: the Android SDK in `~/Android/Sdk` (`mise.toml` sets
   `ANDROID_HOME`). Gradle downloads the NDK and other pieces on the first build.
 - **iOS builds**: macOS with Xcode — or let the release workflow build the IPA.
+- **Windows builds**: Windows with Visual Studio's C++ tools — Flutter can't build Windows
+  apps anywhere else, so CI builds them (see [Windows](#windows) below).
 
 ## Repository layout
 
@@ -31,11 +33,14 @@ app/                      Flutter app
   test_sync/              two-device sync test against a local Worker
   android/…/widget/       Jetpack Glance home-screen widget (Kotlin)
   linux/flatpak/          the Flatpak manifest and the repository's public key
+  windows/runner/         the Windows window (one instance, its place, title bar theme)
+  windows/installer/      the Windows setup (Inno Setup)
   third_party/            a stand-in for desktop_webview_window (no WebKitGTK)
 server/                   Cloudflare Worker sync server (TypeScript) — see server/README.md
 design/                   icon and logo sources — see design/README.md
 scripts/                  release helpers: update_manifest.py, flatpak_site.py,
-                          metainfo_releases.py, altstore_source.py
+                          metainfo_releases.py, altstore_source.py, windows_build.ps1,
+                          windows_smoke_test.ps1, check_windows_runner.sh
 .github/workflows/        ci.yml, release.yml, deploy-server.yml
 ```
 
@@ -103,6 +108,7 @@ Edit `design/app-icon/*.svg`, export PNGs into `app/assets/branding/` (see
 ```bash
 dart run flutter_launcher_icons
 dart run flutter_native_splash:create
+python3 ../design/make_windows_icon.py   # the Windows .ico (16 to 256 px)
 ```
 
 ## Testing on a real phone
@@ -199,10 +205,10 @@ exec dbus-run-session -- bash -c '
 
 | Workflow | Trigger | Does |
 |---|---|---|
-| `ci.yml` | push to main, PRs | analyze + test the app, typecheck + test the server, check generated Drift code |
+| `ci.yml` | push to main, PRs | analyze + test the app, typecheck + test the server, check generated Drift code, build Linux, build the Windows setup and smoke-test it (artifact `windows-setup`) |
 | `deploy-server.yml` | push to main touching `server/`, manual, and every release | test, deploy, smoke-test, roll back on failure (see below) |
 | `server-health.yml` | every 6 hours, manual | deep health check of the live server; a failure emails you |
-| `release.yml` | tag `v*` | signed Android APKs, unsigned iOS IPA, AltStore source → GitHub Release, after the server for that commit is live; the Linux Flatpak into its GPG-signed repository on GitHub Pages; then `altstore-source.json` and `update.json` (the apps' update check) on the `altstore` branch |
+| `release.yml` | tag `v*` | signed Android APKs, unsigned iOS IPA, the Windows setup, AltStore source → GitHub Release, after the server for that commit is live; the Linux Flatpak into its GPG-signed repository on GitHub Pages; then `altstore-source.json` and `update.json` (the apps' update check) on the `altstore` branch |
 
 To release: bump `version:` in `app/pubspec.yaml`, then `git tag vX.Y.Z && git push --tags`.
 Required secrets and variables are listed in [SETUP.md](SETUP.md).
@@ -230,7 +236,9 @@ Required secrets and variables are listed in [SETUP.md](SETUP.md).
    release certificate (`aapt2 dump badging`, `apksigner verify --print-certs`);
    `update.json` on the `altstore` branch has the new version and build with sha256s and
    sizes matching the release's assets, and `flatpakref`; `altstore-source.json` has the
-   new build; `flatpak remote-info leccheck com.leccheck.app` shows the new version.
+   new build; `flatpak remote-info leccheck com.leccheck.app` shows the new version;
+   the release has `LecCheck-<version>-windows-setup.exe`, and `update.json`'s `windows`
+   sha256 matches it.
 
 **Trying the Flatpak on your own Linux PC**: the manifest is
 `app/linux/flatpak/com.leccheck.app.yml`. It packages the release bundle, so build that
@@ -250,6 +258,48 @@ flatpak run com.leccheck.app//test
 
 A build with the *previous* build number still sees the real release in the update window.
 Its data is in `~/.var/app/com.leccheck.app` like the real Flatpak's.
+
+## Windows
+
+Flutter builds Windows apps only on Windows, so the Windows build comes from CI:
+
+- **Test builds**: every push to main runs CI's `windows` job. It builds the setup
+  (`scripts/windows_build.ps1`, version `2.0.0-ci.<run>` with pubspec's build number), then
+  `scripts/windows_smoke_test.ps1` installs it on the runner, starts LecCheck, checks it
+  keeps running and that a second start leaves one, closes it (the window's place must be
+  saved), and uninstalls it (the data must stay). Get the setup from the run's
+  **windows-setup** artifact (`gh run download <run-id> -n windows-setup`, or the run's
+  page on GitHub); **windows-smoke** has the screenshots, the setup's log and LecCheck's
+  own log.
+- **Before pushing runner changes**: `scripts/check_windows_runner.sh` parses
+  `app/windows/runner` with clang against Flutter's and MinGW's Windows headers, warnings
+  as errors (MSVC builds it with `/W4 /WX`). Keep the runner's C++ files ASCII-only.
+- **The setup** (`app/windows/installer/leccheck.iss`, Inno Setup 6) installs for the
+  current user in `%LOCALAPPDATA%\Programs\LecCheck`, without admin rights. Never change its
+  `AppId`, or Runner.rc's CompanyName and ProductName: the data is in
+  `%APPDATA%\com.leccheck\LecCheck` (path_provider builds it from those two) and the
+  window's place in `%LOCALAPPDATA%\com.leccheck\LecCheck\window.ini`. Uninstalling keeps
+  both.
+- **Not signed** yet: Windows' SmartScreen asks once (**More info → Run anyway**). Updates
+  from inside the app aren't asked about (the app downloads the file itself).
+
+### Testing on Windows
+
+On a Windows PC, with a test setup from CI or a release:
+
+1. Run the setup (SmartScreen: **More info → Run anyway**); LecCheck is in the Start menu.
+2. Sign in with Google (the browser opens and comes back to LecCheck), and check that sync
+   brings the phone's semesters; mark a session and see it on the phone.
+3. Hebrew (right to left), dark mode: the title bar follows LecCheck's theme.
+4. Move, resize and maximize the window, close it and open it again: same place. Start
+   LecCheck a second time: the first window comes forward.
+5. Settings → Data: export a backup and import it; Panopto pairing, if used.
+6. Settings → Reminders says they aren't on Windows yet.
+7. Uninstall (Settings → Apps), install again: the data is still there.
+8. Updates: install a setup with an older build than the latest release, then **Update**
+   in the update window: it downloads and checks the setup, **Restart** closes LecCheck,
+   the setup's progress shows, and the new version opens. Settings → Developer → the log
+   says "Windows setup: the update was installed".
 
 ## Server deploys
 
@@ -316,6 +366,12 @@ With a hash, the card's **Update** installs the release from inside the app:
   runner waits until the old instance has given up the D-Bus name.
 - **`install.sh` installs** (the tarball, until 2.0.0-beta.15): no updates, **Move to the
   Flatpak** instead (`MoveController`, `TarballInstall`).
+- **Windows** (2.0.0-beta.22 on): only a LecCheck its setup installed (`unins000.exe`
+  beside it, `WindowsInstall.setupDir`). It downloads the release's setup (`windows` in
+  `update.json`) into the updates folder and checks the hash; **Restart** starts it with
+  `/SILENT /NORESTART /RELAUNCH=1 /LOG=…` and quits. The setup waits up to 30 s for the
+  app's mutex, installs, and opens the new version; the next start puts the setup's log in
+  Settings → Developer when it failed. Other copies get **Download**.
 
 Without a hash (older manifests, other Linux builds), **Download** opens the browser as
 before. To try **Update** for real, point a build with a lower build number at a test
