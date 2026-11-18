@@ -655,6 +655,18 @@ class ScheduleRepository {
         await _patchOverride(session, {'recordingUrl': null});
       });
 
+  /// The user chose Panopto's [url] for [session] ("Find in Panopto"): it
+  /// becomes the session's found link, over a link the user pasted or
+  /// removed (which is cleared), so a later look may move it like any found
+  /// link.
+  Future<void> useFoundRecording(Occurrence session, String url) =>
+      db.transaction(() async {
+        await _patchOverride(session, {
+          'recordingUrl': null,
+          'recordingFound': url,
+        });
+      });
+
   /// Saves links found in Panopto, in their own column: the user's link
   /// (pasted or removed) always wins over them, also when it reaches this
   /// device later through sync. Returns how many changed.

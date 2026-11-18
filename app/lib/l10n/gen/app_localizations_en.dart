@@ -2547,9 +2547,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get panoptoGroupAskAgain => 'Ask again';
-
-  @override
   String get panoptoLookCourse => 'Look now';
 
   @override
@@ -2561,6 +2558,94 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get panoptoAskFindBody =>
       'You removed the link. LecCheck can fill in this class\'s recording from Panopto, or leave it empty.';
+
+  @override
+  String get panoptoFindHere => 'Find in Panopto';
+
+  @override
+  String get panoptoFoundHere => 'Found this class\'s recording in Panopto';
+
+  @override
+  String get panoptoLinkMatches =>
+      'Your link is this class\'s recording in Panopto';
+
+  @override
+  String get panoptoReplaceTitle => 'Replace your link?';
+
+  @override
+  String panoptoReplaceBody(String name) {
+    return 'Panopto has another recording for this class: $name.';
+  }
+
+  @override
+  String get panoptoKeepMine => 'Keep mine';
+
+  @override
+  String get panoptoReplace => 'Replace';
+
+  @override
+  String get panoptoWhichGroupTitle => 'Which group are you in?';
+
+  @override
+  String get panoptoNothingTitle => 'No recording for this class';
+
+  @override
+  String get panoptoWhyNotOver => 'The class isn\'t over yet.';
+
+  @override
+  String get panoptoWhyProcessing =>
+      'Its recording is still being recorded or processed. Try again later.';
+
+  @override
+  String get panoptoWhyNoRecording =>
+      'Nothing of this course was recorded at its time.';
+
+  @override
+  String get panoptoWhyOtherGroup =>
+      'Only another group\'s recording is at its time. You can change the group on the course page.';
+
+  @override
+  String get panoptoWhyOtherType =>
+      'Only a recording of another kind (like a practice instead of a lecture) is at its time.';
+
+  @override
+  String get panoptoWhyUsedElsewhere =>
+      'The recording at its time fits another class better.';
+
+  @override
+  String get panoptoWhyCanceled => 'The class is canceled.';
+
+  @override
+  String get panoptoWhyNoFolder =>
+      'The course has no Panopto folder. Choose one on the course page.';
+
+  @override
+  String get panoptoPickRecording => 'Pick a recording';
+
+  @override
+  String panoptoPickTitle(String date) {
+    return 'Recordings on $date';
+  }
+
+  @override
+  String get panoptoGroupChange => 'Change';
+
+  @override
+  String get panoptoGroupChoose => 'Choose group';
+
+  @override
+  String panoptoGroupTitle(String meeting) {
+    return '$meeting: whose recordings are yours?';
+  }
+
+  @override
+  String get panoptoGroupOnlyOne => 'Only one group is recorded at its times.';
+
+  @override
+  String get panoptoGroupNoneFound => 'No group names in its recordings.';
+
+  @override
+  String get panoptoGroupNone => 'No group';
 
   @override
   String get panoptoLeaveEmpty => 'Leave empty';

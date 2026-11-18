@@ -356,4 +356,109 @@ void main() {
       '2099-00',
     );
   });
+
+  group('Find in Panopto for one session', () {
+    Future<Occurrence> session(String meetingId, {int index = 0}) async {
+      final all = [
+        for (final s in await sessions())
+          if (s.meetingId == meetingId && s.hasEnded(now)) s,
+      ];
+      return all[index];
+    }
+
+    List<(String, String, Map<String, Object?>)> foundWrites() => [
+      for (final c in recorder.changes)
+        if (c.$3['recordingFound'] != null) c,
+    ];
+
+    test('finds the recording the look would, and writes nothing', () async {
+      await connection.connect(FakePanopto.setup);
+      final s = await session('tue10', index: 1);
+      final check = await linker.check(s);
+      expect(check.outcome, SessionOutcome.found);
+      expect(check.found, isNotNull);
+      expect(foundWrites(), isEmpty);
+      // Not the account's look: the report and the 3 hours stay.
+      expect(linker.report.at, isNull);
+
+      await linker.run();
+      expect((await links())['tue10 ${s.date}'], check.found!.viewerUrl);
+    });
+
+    test('leaves a pasted or removed link out, to compare with it', () async {
+      await connection.connect(FakePanopto.setup);
+      final s = await session('tue10', index: 1);
+      await repo.setRecordingUrl(s, 'https://example.com/mine');
+      final pasted = await linker.check(
+        (await sessions()).firstWhere((o) => o.id == s.id),
+      );
+      expect(pasted.found, isNotNull);
+
+      await repo.setRecordingUrl(s, '');
+      final removed = await linker.check(
+        (await sessions()).firstWhere((o) => o.id == s.id),
+      );
+      expect(removed.found?.id, pasted.found!.id);
+      expect(foundWrites(), isEmpty);
+    });
+
+    test('parallel groups: asks, then finds the chosen group', () async {
+      await connection.connect(FakePanopto.setup);
+      final s = await session('thuPractice', index: 2);
+      final ask = await linker.check(s);
+      expect(ask.found, isNull);
+      expect(ask.outcome, SessionOutcome.askGroup);
+      expect(
+        ask.question!.options.map((o) => o.group),
+        containsAll(['ד', 'ו']),
+      );
+      // Both groups' recordings that day, to pick from.
+      expect(
+        ask.sameDay.map((r) => r.recording.group).toSet(),
+        containsAll(['ד', 'ו']),
+      );
+
+      await repo.setPanoptoGroup('thuPractice', 'ו');
+      final found = await linker.check(s);
+      expect(found.found!.group, 'ו');
+      expect(found.question, isNull);
+    });
+
+    test('says why when nothing fits', () async {
+      await connection.connect(FakePanopto.setup);
+      final future = (await sessions()).firstWhere(
+        (s) => s.meetingId == 'tue10' && !s.hasEnded(now),
+      );
+      final check = await linker.check(future);
+      expect(check.found, isNull);
+      expect(check.outcome, SessionOutcome.notOver);
+
+      await repo.setPanoptoFolders(course.id, const []);
+      final none = await linker.check(await session('tue10'));
+      expect(none.noFolder, isTrue);
+      expect(none.found, isNull);
+    });
+
+    test('the groups recorded at a meeting, whatever is chosen', () async {
+      await connection.connect(FakePanopto.setup);
+      final before = await linker.groupOptions(course.id, 'thuPractice');
+      expect(before.map((o) => o.group), containsAll(['ד', 'ו']));
+      await repo.setPanoptoGroup('thuPractice', 'ו');
+      final after = await linker.groupOptions(course.id, 'thuPractice');
+      expect(after.map((o) => o.group), before.map((o) => o.group));
+    });
+
+    test('using the found recording replaces a pasted link', () async {
+      await connection.connect(FakePanopto.setup);
+      final s = await session('tue10', index: 1);
+      await repo.setRecordingUrl(s, 'https://example.com/mine');
+      final check = await linker.check(s);
+      await repo.useFoundRecording(s, check.found!.viewerUrl);
+      expect((await links())['tue10 ${s.date}'], check.found!.viewerUrl);
+      expect((await links()).containsKey('tue10 ${s.date} (pasted)'), isFalse);
+      // A later look keeps it.
+      await linker.run(force: true);
+      expect((await links())['tue10 ${s.date}'], check.found!.viewerUrl);
+    });
+  });
 }

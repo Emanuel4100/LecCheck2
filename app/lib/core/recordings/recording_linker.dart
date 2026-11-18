@@ -3,8 +3,10 @@ import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../domain/local_date.dart';
+import '../../domain/occurrence.dart';
 import '../../domain/recording_match.dart';
 import '../../domain/schedule_types.dart';
+import '../../domain/semester_data.dart';
 import '../db/schedule_repository.dart';
 import '../dev/dev_log.dart';
 import 'match_report.dart';
@@ -109,6 +111,35 @@ class LinkerReport {
   };
 }
 
+/// What Panopto has for one session ([RecordingLinker.check]).
+class SessionCheck {
+  const SessionCheck({
+    this.found,
+    this.question,
+    this.outcome,
+    this.sameDay = const [],
+    this.noFolder = false,
+  });
+
+  /// The recording that fits the session, its own link left out.
+  final PanoptoRecording? found;
+
+  /// Several groups were recorded at its time and the meeting has none
+  /// chosen: which one is the user's?
+  final GroupQuestion? question;
+
+  /// Why it has no [found] recording (or [SessionOutcome.found]).
+  final SessionOutcome? outcome;
+
+  /// The course's finished recordings on the session's date, by start, for
+  /// picking one by hand.
+  final List<RecordingDetail> sameDay;
+
+  /// The course has no Panopto folder (none found by its number, or set to
+  /// none).
+  final bool noFolder;
+}
+
 /// Finds each session's Panopto recording and fills in its link, on this
 /// device (the links reach the user's other devices through sync).
 class RecordingLinker {
@@ -209,38 +240,28 @@ class RecordingLinker {
             code: course.code,
             skipped: why,
           );
-          var refs = folders[course.id];
+          final refs = await _foldersOf(api, course, data.semester, folders);
           if (refs == null) {
-            refs = await _findFolders(api, course, data.semester);
-            if (refs == null) {
-              final hasCode = course.code.trim().isNotEmpty;
-              if (hasCode) chooseFolder.add(course.id);
-              looks.add(
-                skip(
-                  hasCode
-                      ? 'no single folder found by the course number'
-                      : 'no course number to find its folder by',
-                ),
-              );
-              continue;
-            }
-            await repo.setPanoptoFolders(course.id, refs);
+            final hasCode = course.code.trim().isNotEmpty;
+            if (hasCode) chooseFolder.add(course.id);
+            looks.add(
+              skip(
+                hasCode
+                    ? 'no single folder found by the course number'
+                    : 'no course number to find its folder by',
+              ),
+            );
+            continue;
           }
           if (refs.isEmpty) {
             looks.add(skip('folder set to none'));
             continue;
           }
-          final recordings = <PanoptoRecording>[];
-          final folderErrors = <String>[];
-          for (final folder in refs) {
-            final (found, problem) = await _recordingsOf(
-              api,
-              folder,
-              since: data.semester.start.addDays(-7),
-            );
-            recordings.addAll(found);
-            if (problem != null) folderErrors.add('${folder.name}: $problem');
-          }
+          final (recordings, folderErrors) = await _read(
+            api,
+            refs,
+            data.semester,
+          );
           final result = RecordingMatcher.match(
             recordings: recordings,
             sessions: window.index.forCourse(course.id),
@@ -294,6 +315,195 @@ class RecordingLinker {
       '${error == null ? '' : ', $error'}',
     );
     return next;
+  }
+
+  /// What Panopto has for one [session], asked from its session sheet
+  /// ("Find in Panopto"). The session's own link (pasted or removed) is
+  /// left out, so the answer can be compared with it. Writes nothing, and
+  /// doesn't count as the account's look. Throws [PanoptoException].
+  Future<SessionCheck> check(Occurrence session) async {
+    final api = await connection.api();
+    if (api == null) throw const PanoptoException('reconnect');
+    final course = await _courseOf(session.courseId, near: session.date);
+    if (course == null) return const SessionCheck(noFolder: true);
+    final (:data, :sessions) = course;
+    final info = data.course(session.courseId)!;
+    final refs = await _foldersOf(
+      api,
+      info,
+      data.semester,
+      await repo.panoptoFolders(),
+    );
+    if (refs == null || refs.isEmpty) return const SessionCheck(noFolder: true);
+    final (recordings, _) = await _read(api, refs, data.semester);
+    final result = RecordingMatcher.match(
+      recordings: recordings,
+      sessions: [
+        for (final s in sessions)
+          if (s.id == session.id) withoutLink(s) else s,
+      ],
+      meetings: data.meetingsOf(info.id),
+      groups: await repo.panoptoGroups(),
+      now: _clock(),
+      courseCode: info.code,
+    );
+    final found = result.links
+        .where((f) => f.session.id == session.id)
+        .firstOrNull;
+    final outcome = result.details.sessions
+        .where((d) => d.session.id == session.id)
+        .firstOrNull
+        ?.outcome;
+    return SessionCheck(
+      found: found?.recording,
+      question: found != null
+          ? null
+          : result.questions
+                .where((q) => q.meetingId == session.meetingId)
+                .firstOrNull,
+      outcome: found != null
+          ? SessionOutcome.found
+          : outcome ?? SessionOutcome.notOver,
+      sameDay: [
+        for (final r in result.details.recordings)
+          if (r.start.date == session.date &&
+              r.outcome != RecordingOutcome.otherCourse &&
+              r.outcome != RecordingOutcome.processing)
+            r,
+      ]..sort((a, b) => a.start.minute.compareTo(b.start.minute)),
+    );
+  }
+
+  /// The groups recorded at [meetingId]'s times, whatever group is chosen
+  /// for it now: for changing it on the course page. Throws
+  /// [PanoptoException].
+  Future<List<GroupOption>> groupOptions(
+    String courseId,
+    String meetingId,
+  ) async {
+    final api = await connection.api();
+    if (api == null) throw const PanoptoException('reconnect');
+    final course = await _courseOf(courseId);
+    if (course == null) return const [];
+    final (:data, :sessions) = course;
+    final info = data.course(courseId)!;
+    final refs = await _foldersOf(
+      api,
+      info,
+      data.semester,
+      await repo.panoptoFolders(),
+    );
+    if (refs == null || refs.isEmpty) return const [];
+    final (recordings, _) = await _read(api, refs, data.semester);
+    final meetingSessions = [
+      for (final s in sessions)
+        // Every past session of the meeting, its own links left out, so
+        // each one shows the groups recorded at its time.
+        if (s.meetingId == meetingId) withoutLink(s),
+    ];
+    final result = RecordingMatcher.match(
+      recordings: recordings,
+      sessions: meetingSessions,
+      meetings: data.meetingsOf(courseId),
+      groups: const {},
+      now: _clock(),
+      courseCode: info.code,
+    );
+    final question = result.questions
+        .where((q) => q.meetingId == meetingId)
+        .firstOrNull;
+    if (question != null) return question.options;
+    // One group (or none named) at its times.
+    final seen = <String, GroupOption>{};
+    for (final f in result.links) {
+      final r = f.recording;
+      if (r.group == null) continue;
+      seen[r.group!] = GroupOption(group: r.group!, room: r.room, type: r.type);
+    }
+    return seen.values.toList()..sort((a, b) => a.group.compareTo(b.group));
+  }
+
+  /// [s] as if it had no link: neither pasted, found, nor removed.
+  static Occurrence withoutLink(Occurrence s) => Occurrence(
+    id: s.id,
+    meetingId: s.meetingId,
+    courseId: s.courseId,
+    type: s.type,
+    originalDate: s.originalDate,
+    date: s.date,
+    startMin: s.startMin,
+    endMin: s.endMin,
+    location: s.location,
+    status: s.status,
+    explicitStatus: s.explicitStatus,
+    noClassDay: s.noClassDay,
+    isMoved: s.isMoved,
+    isOneOff: s.isOneOff,
+    number: s.number,
+    notes: s.notes,
+    recordingUrl: null,
+    excluded: s.excluded,
+  );
+
+  /// The semester holding [courseId] (the one around [near] first, then the
+  /// newest), with the course's sessions.
+  Future<({SemesterData data, List<Occurrence> sessions})?> _courseOf(
+    String courseId, {
+    LocalDate? near,
+  }) async {
+    final semesters = [...await repo.semesters()]
+      ..sort((a, b) => b.start.compareTo(a.start));
+    final ordered = [
+      if (near != null)
+        for (final s in semesters)
+          if (!near.isBefore(s.start) && !s.end.isBefore(near)) s,
+      ...semesters,
+    ];
+    for (final semester in ordered) {
+      final window = await repo.loadWindow(semester.start, semester.end);
+      for (final data in window.semesters) {
+        if (data.semester.id == semester.id && data.course(courseId) != null) {
+          return (data: data, sessions: window.index.forCourse(courseId));
+        }
+      }
+    }
+    return null;
+  }
+
+  /// The course's folders: the saved ones, or found by its number (and
+  /// saved). Null when there's no single folder to take.
+  Future<List<PanoptoFolderRef>?> _foldersOf(
+    PanoptoApi api,
+    CourseInfo course,
+    SemesterInfo semester,
+    Map<String, List<PanoptoFolderRef>?> saved,
+  ) async {
+    final refs = saved[course.id];
+    if (refs != null) return refs;
+    final found = await _findFolders(api, course, semester);
+    if (found != null) await repo.setPanoptoFolders(course.id, found);
+    return found;
+  }
+
+  /// The folders' recordings since a week before the semester, and the
+  /// problems of folders that couldn't be read.
+  Future<(List<PanoptoRecording>, List<String>)> _read(
+    PanoptoApi api,
+    List<PanoptoFolderRef> refs,
+    SemesterInfo semester,
+  ) async {
+    final recordings = <PanoptoRecording>[];
+    final errors = <String>[];
+    for (final folder in refs) {
+      final (found, problem) = await _recordingsOf(
+        api,
+        folder,
+        since: semester.start.addDays(-7),
+      );
+      recordings.addAll(found);
+      if (problem != null) errors.add('${folder.name}: $problem');
+    }
+    return (recordings, errors);
   }
 
   /// Lets the next start look again: gives back the account's claim, or

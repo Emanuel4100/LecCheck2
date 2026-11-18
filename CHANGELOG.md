@@ -11,6 +11,11 @@
 - **More colors, and your own.** Settings → Appearance has Teal, Amber and Indigo, and
   **Custom**: slide to any color and LecCheck builds its theme from it. Each device keeps
   its own choice.
+- **Find a class's recording in Panopto right away.** A search button by the recording
+  link looks for that class now. When several groups were recorded, it asks which one is
+  yours and remembers it; it asks before replacing a link you pasted; and when nothing
+  fits it says why and lets you pick from that day's recordings. On the course page,
+  **Change** switches a class to another group's recordings.
 
 ## 2.0.0-beta.21 — 2026-11-17
 

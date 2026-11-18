@@ -15,6 +15,7 @@ import '../../domain/schedule_types.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../settings/panopto_section.dart';
 import 'meeting_summary.dart';
+import 'panopto_group_choice.dart';
 
 /// The course page's Panopto part (experimental): the course's folder, the
 /// group questions, and "Look now". Shown when this device is connected or
@@ -94,13 +95,22 @@ class PanoptoCourseSection extends ConsumerWidget {
                   ? TextButton(
                       onPressed: view.busy
                           ? null
-                          : () => controller.forgetGroup(
-                              courseId: course.id,
-                              meetingId: m.id,
-                            ),
-                      child: Text(l.panoptoGroupAskAgain),
+                          : () => _changeGroup(context, ref, m, label(m)),
+                      child: Text(l.panoptoGroupChange),
                     )
                   : null,
+            )
+          // No group yet and no question about it: one can be set anyway.
+          else if (connected && !questions.any((q) => q.meetingId == m.id))
+            ListTile(
+              leading: Icon(m.type.icon),
+              title: Text(label(m)),
+              trailing: TextButton(
+                onPressed: view.busy
+                    ? null
+                    : () => _changeGroup(context, ref, m, label(m)),
+                child: Text(l.panoptoGroupChoose),
+              ),
             ),
         if (connected)
           ListTile(
@@ -111,6 +121,29 @@ class PanoptoCourseSection extends ConsumerWidget {
           ),
       ],
     );
+  }
+
+  /// Change (or choose) which group's recordings [meeting] gets.
+  Future<void> _changeGroup(
+    BuildContext context,
+    WidgetRef ref,
+    MeetingRule meeting,
+    String label,
+  ) async {
+    final current = ref.read(panoptoGroupsProvider).value?[meeting.id] ?? '';
+    final group = await showAppSheet<String>(
+      context: context,
+      builder: (_) => _GroupSheet(
+        courseId: course.id,
+        meetingId: meeting.id,
+        label: label,
+        current: current,
+      ),
+    );
+    if (group == null || group == current) return;
+    await ref
+        .read(panoptoProvider.notifier)
+        .answer(courseId: course.id, meetingId: meeting.id, group: group);
   }
 
   Future<void> _chooseFolder(BuildContext context, WidgetRef ref) async {
@@ -127,7 +160,7 @@ class PanoptoCourseSection extends ConsumerWidget {
 }
 
 /// Which group's recordings a meeting gets, with the suggestion selected.
-class _GroupQuestionCard extends StatefulWidget {
+class _GroupQuestionCard extends StatelessWidget {
   const _GroupQuestionCard({
     super.key,
     required this.question,
@@ -142,63 +175,115 @@ class _GroupQuestionCard extends StatefulWidget {
   final ValueChanged<String> onAnswer;
 
   @override
-  State<_GroupQuestionCard> createState() => _GroupQuestionCardState();
-}
-
-class _GroupQuestionCardState extends State<_GroupQuestionCard> {
-  late String? _selected = widget.question.suggested;
-
-  @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
-    final theme = Theme.of(context);
-    final q = widget.question;
-    final hint = switch (q.hint) {
-      GroupHint.links => l.panoptoHintLinks,
-      GroupHint.room => l.panoptoHintRoom,
-      null => null,
-    };
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      color: theme.colorScheme.secondaryContainer,
+      color: Theme.of(context).colorScheme.secondaryContainer,
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(l.panoptoGroupQuestion(widget.meetingLabel)),
+            Text(l.panoptoGroupQuestion(meetingLabel)),
             const SizedBox(height: 12),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                for (final o in q.options)
-                  ChoiceChip(
-                    label: Text(
-                      [
-                        l.panoptoGroupOption(o.group),
-                        if (o.room != null) o.room!,
-                      ].join(' · '),
-                    ),
-                    selected: _selected == o.group,
-                    onSelected: (_) => setState(() => _selected = o.group),
-                  ),
+            GroupChoice(
+              options: question.options,
+              selected: question.suggested,
+              hint: question.hint,
+              busy: busy,
+              onSave: onAnswer,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// The groups recorded at a meeting's times, read from Panopto, to change
+/// its group. Pops with the group chosen (`''`: none).
+class _GroupSheet extends ConsumerStatefulWidget {
+  const _GroupSheet({
+    required this.courseId,
+    required this.meetingId,
+    required this.label,
+    required this.current,
+  });
+
+  final String courseId;
+  final String meetingId;
+  final String label;
+  final String current;
+
+  @override
+  ConsumerState<_GroupSheet> createState() => _GroupSheetState();
+}
+
+class _GroupSheetState extends ConsumerState<_GroupSheet> {
+  List<GroupOption>? _options;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    // After this frame: loading marks Panopto busy, which can't change
+    // while the tree builds.
+    WidgetsBinding.instance.addPostFrameCallback((_) => _load());
+  }
+
+  Future<void> _load() async {
+    if (!mounted) return;
+    try {
+      final options = await ref
+          .read(panoptoProvider.notifier)
+          .groupOptions(widget.courseId, widget.meetingId);
+      if (mounted) setState(() => _options = options);
+    } on PanoptoException catch (e) {
+      if (mounted) {
+        setState(
+          () => _error = panoptoErrorText(e.code, AppLocalizations.of(context)),
+        );
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+    final options = _options;
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              l.panoptoGroupTitle(widget.label),
+              style: theme.textTheme.titleMedium,
+            ),
+            const SizedBox(height: 12),
+            if (_error != null)
+              Text(_error!)
+            else if (options == null)
+              const LinearProgressIndicator()
+            else ...[
+              if (options.isEmpty)
+                Text(l.panoptoGroupNoneFound)
+              else if (options.length == 1)
+                Text(l.panoptoGroupOnlyOne),
+              if (options.isNotEmpty || widget.current.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                GroupChoice(
+                  options: options,
+                  selected: widget.current.isEmpty ? null : widget.current,
+                  allowNone: widget.current.isNotEmpty,
+                  onSave: (group) => Navigator.pop(context, group),
+                ),
               ],
-            ),
-            if (hint != null && _selected == q.suggested) ...[
-              const SizedBox(height: 8),
-              Text(hint, style: theme.textTheme.bodySmall),
             ],
-            const SizedBox(height: 8),
-            Align(
-              alignment: AlignmentDirectional.centerEnd,
-              child: FilledButton(
-                onPressed: _selected == null || widget.busy
-                    ? null
-                    : () => widget.onAnswer(_selected!),
-                child: Text(l.save),
-              ),
-            ),
           ],
         ),
       ),

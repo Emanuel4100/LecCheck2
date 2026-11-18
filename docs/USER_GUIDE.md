@@ -130,9 +130,15 @@ Then:
   once the recording is finished. Canceled sessions get none.
 - When several groups are recorded at your class's time (two practice groups, say), the
   course page asks **which group's recordings are yours**, with a suggestion from links you
-  pasted before or from the room. The answer is remembered, and **Ask again** changes it.
-  If at least two links you pasted into that class all point to one group, LecCheck takes
-  that group without asking.
+  pasted before or from the room. The answer is remembered; **Change** next to it on the
+  course page shows the groups recorded at that time and switches to another one (or
+  **Choose group** before any question came). If at least two links you pasted into that
+  class all point to one group, LecCheck takes that group without asking.
+- **Find in Panopto** (the search button by a class's recording link) finds that class's
+  recording right away. When several groups were recorded and you haven't said which is
+  yours, it asks and remembers it. If you pasted a different link, it asks before replacing
+  it. If nothing fits, it says why (not over yet, still processing, another group's
+  recording…) and lets you **Pick a recording** from that day's.
 - Found links are marked **Found in Panopto** in the session. A link you paste always wins.
 - Removing a link asks what to do next: for a link you pasted, whether Panopto may fill in
   the recording; for one Panopto found, whether it was the wrong recording (**Put it back**

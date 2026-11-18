@@ -159,6 +159,9 @@ These are built and compile, but have only been exercised in tests so far:
   delete the file, and show a clear screen ("This data is from a newer LecCheck: update
   LecCheck") with Export backup; maybe the setup warns before a downgrade. Tests in
   `test/drift`.
+- **Find in Panopto for one class, Change group** (built 2026-11-18, PANOPTO.md idea 5):
+  the owner tries it on the PC and phone and approves the Hebrew (`panoptoFindHere` …
+  `panoptoGroupNone`, the keys after `panoptoAskFindBody` in `app_he.arb`).
 - **More theme colors** (built 2026-11-18): Teal, Amber, Indigo, and a Custom color (a hue
   slider), per device. Next: the owner approves the Hebrew (`presetTeal`, `presetAmber`,
   `presetIndigo`, `presetCustom`, `customColorTitle`) and, on Linux, regenerates the

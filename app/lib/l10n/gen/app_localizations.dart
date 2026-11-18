@@ -4268,12 +4268,6 @@ abstract class AppLocalizations {
   /// **'{meeting}: group {group}'**
   String panoptoGroupChosen(String meeting, String group);
 
-  /// No description provided for @panoptoGroupAskAgain.
-  ///
-  /// In en, this message translates to:
-  /// **'Ask again'**
-  String get panoptoGroupAskAgain;
-
   /// No description provided for @panoptoLookCourse.
   ///
   /// In en, this message translates to:
@@ -4297,6 +4291,156 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'You removed the link. LecCheck can fill in this class\'s recording from Panopto, or leave it empty.'**
   String get panoptoAskFindBody;
+
+  /// No description provided for @panoptoFindHere.
+  ///
+  /// In en, this message translates to:
+  /// **'Find in Panopto'**
+  String get panoptoFindHere;
+
+  /// No description provided for @panoptoFoundHere.
+  ///
+  /// In en, this message translates to:
+  /// **'Found this class\'s recording in Panopto'**
+  String get panoptoFoundHere;
+
+  /// No description provided for @panoptoLinkMatches.
+  ///
+  /// In en, this message translates to:
+  /// **'Your link is this class\'s recording in Panopto'**
+  String get panoptoLinkMatches;
+
+  /// No description provided for @panoptoReplaceTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Replace your link?'**
+  String get panoptoReplaceTitle;
+
+  /// No description provided for @panoptoReplaceBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Panopto has another recording for this class: {name}.'**
+  String panoptoReplaceBody(String name);
+
+  /// No description provided for @panoptoKeepMine.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep mine'**
+  String get panoptoKeepMine;
+
+  /// No description provided for @panoptoReplace.
+  ///
+  /// In en, this message translates to:
+  /// **'Replace'**
+  String get panoptoReplace;
+
+  /// No description provided for @panoptoWhichGroupTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Which group are you in?'**
+  String get panoptoWhichGroupTitle;
+
+  /// No description provided for @panoptoNothingTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No recording for this class'**
+  String get panoptoNothingTitle;
+
+  /// No description provided for @panoptoWhyNotOver.
+  ///
+  /// In en, this message translates to:
+  /// **'The class isn\'t over yet.'**
+  String get panoptoWhyNotOver;
+
+  /// No description provided for @panoptoWhyProcessing.
+  ///
+  /// In en, this message translates to:
+  /// **'Its recording is still being recorded or processed. Try again later.'**
+  String get panoptoWhyProcessing;
+
+  /// No description provided for @panoptoWhyNoRecording.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing of this course was recorded at its time.'**
+  String get panoptoWhyNoRecording;
+
+  /// No description provided for @panoptoWhyOtherGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Only another group\'s recording is at its time. You can change the group on the course page.'**
+  String get panoptoWhyOtherGroup;
+
+  /// No description provided for @panoptoWhyOtherType.
+  ///
+  /// In en, this message translates to:
+  /// **'Only a recording of another kind (like a practice instead of a lecture) is at its time.'**
+  String get panoptoWhyOtherType;
+
+  /// No description provided for @panoptoWhyUsedElsewhere.
+  ///
+  /// In en, this message translates to:
+  /// **'The recording at its time fits another class better.'**
+  String get panoptoWhyUsedElsewhere;
+
+  /// No description provided for @panoptoWhyCanceled.
+  ///
+  /// In en, this message translates to:
+  /// **'The class is canceled.'**
+  String get panoptoWhyCanceled;
+
+  /// No description provided for @panoptoWhyNoFolder.
+  ///
+  /// In en, this message translates to:
+  /// **'The course has no Panopto folder. Choose one on the course page.'**
+  String get panoptoWhyNoFolder;
+
+  /// No description provided for @panoptoPickRecording.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick a recording'**
+  String get panoptoPickRecording;
+
+  /// No description provided for @panoptoPickTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Recordings on {date}'**
+  String panoptoPickTitle(String date);
+
+  /// No description provided for @panoptoGroupChange.
+  ///
+  /// In en, this message translates to:
+  /// **'Change'**
+  String get panoptoGroupChange;
+
+  /// No description provided for @panoptoGroupChoose.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose group'**
+  String get panoptoGroupChoose;
+
+  /// No description provided for @panoptoGroupTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'{meeting}: whose recordings are yours?'**
+  String panoptoGroupTitle(String meeting);
+
+  /// No description provided for @panoptoGroupOnlyOne.
+  ///
+  /// In en, this message translates to:
+  /// **'Only one group is recorded at its times.'**
+  String get panoptoGroupOnlyOne;
+
+  /// No description provided for @panoptoGroupNoneFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No group names in its recordings.'**
+  String get panoptoGroupNoneFound;
+
+  /// No description provided for @panoptoGroupNone.
+  ///
+  /// In en, this message translates to:
+  /// **'No group'**
+  String get panoptoGroupNone;
 
   /// No description provided for @panoptoLeaveEmpty.
   ///

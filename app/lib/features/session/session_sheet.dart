@@ -19,6 +19,7 @@ import '../../domain/local_date.dart';
 import '../../domain/occurrence.dart';
 import '../../domain/schedule_types.dart';
 import '../../l10n/gen/app_localizations.dart';
+import 'panopto_find.dart';
 import 'session_actions.dart';
 import 'status_buttons.dart';
 
@@ -226,6 +227,24 @@ class _SessionSheetState extends ConsumerState<SessionSheet> {
         ? ref.watch(noClassLabelProvider(session.date))
         : null;
 
+    // Find in Panopto: only where this device can look.
+    final panopto = ref.watch(panoptoProvider);
+    final findButton = panopto.status == PanoptoStatus.connected
+        ? IconButton(
+            key: const ValueKey('find-in-panopto'),
+            tooltip: l.panoptoFindHere,
+            onPressed: panopto.busy
+                ? null
+                : () => findInPanopto(context, ref, session),
+            icon: panopto.busy
+                ? const SizedBox.square(
+                    dimension: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(LecIcons.search),
+          )
+        : null;
+
     final links = <NamedLink>[
       if (course != null && course.website.isNotEmpty)
         NamedLink(title: l.courseWebsite, url: course.website),
@@ -388,6 +407,7 @@ class _SessionSheetState extends ConsumerState<SessionSheet> {
                     icon: const Icon(LecIcons.edit),
                     onPressed: () => setState(() => _editingRecording = true),
                   ),
+                  ?findButton,
                 ],
               )
             else
@@ -401,6 +421,7 @@ class _SessionSheetState extends ConsumerState<SessionSheet> {
                   labelText: l.recordingLink,
                   hintText: 'https://',
                   prefixIcon: const Icon(LecIcons.recording),
+                  suffixIcon: findButton,
                 ),
                 onTapOutside: (_) => _recordingFocus.unfocus(),
                 onChanged: (text) {

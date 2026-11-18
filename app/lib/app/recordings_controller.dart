@@ -9,6 +9,7 @@ import '../core/recordings/panopto_connection.dart';
 import '../core/recordings/panopto_pairing.dart';
 import '../core/recordings/panopto_vault.dart';
 import '../core/recordings/recording_linker.dart';
+import '../domain/occurrence.dart';
 import '../domain/recording_match.dart';
 import '../core/sync/sync_config.dart';
 import 'providers.dart';
@@ -324,11 +325,24 @@ class PanoptoController extends Notifier<PanoptoView> {
     await lookNow(courseId: courseId);
   }
 
-  /// Asks again which group is the meeting's.
-  Future<void> forgetGroup({
-    required String courseId,
-    required String meetingId,
-  }) => answer(courseId: courseId, meetingId: meetingId, group: '');
+  /// What Panopto has for [session] ("Find in Panopto" in its sheet).
+  /// Throws [PanoptoException].
+  Future<SessionCheck> checkSession(Occurrence session) =>
+      _busyWhile(() => _linker.check(session));
+
+  /// The groups recorded at [meetingId]'s times, for changing its group.
+  /// Throws [PanoptoException].
+  Future<List<GroupOption>> groupOptions(String courseId, String meetingId) =>
+      _busyWhile(() => _linker.groupOptions(courseId, meetingId));
+
+  Future<T> _busyWhile<T>(Future<T> Function() work) async {
+    state = state.copyWith(busy: true);
+    try {
+      return await work();
+    } finally {
+      state = state.copyWith(busy: false);
+    }
+  }
 
   /// Sets a course's folders (null: find them by the course number) and
   /// finds its links again.

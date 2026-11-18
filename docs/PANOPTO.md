@@ -94,6 +94,18 @@ Code:
     again. "Yes, remove it" → stays `''`.
   - Closing the sheet mid-edit keeps `''`.
 - Typing into an empty field and erasing it again leaves null (nothing was removed).
+- **Find in Panopto** (a search button by the link, on a device that can look; built
+  2026-11-18): `RecordingLinker.check` reads the course's folders and runs the matcher
+  with this session's own link left out. It writes nothing and doesn't claim the
+  account's 3-hour look. Then:
+  - found, no link of the user's → `useFoundRecording` (found column; a removed `''`
+    becomes null);
+  - found, the user's link is the same recording → "Your link is this class's recording";
+  - found, a different pasted link → "Replace your link?" (Keep mine / Replace);
+  - several groups and none chosen → "Which group are you in?", saved for the meeting
+    (`answer`: the meeting's found links are found again), then checked again once;
+  - nothing → why (the session's `SessionOutcome`, or no folder), and **Pick a recording**
+    from the course's finished recordings that day, saved as the user's own link.
 - Your links guide matching: the recording a pasted link points to isn't given to
   another session; two or more pasted links into a meeting, all of one group, teach the
   meeting that group; one suggests it when the group question comes.
@@ -111,7 +123,10 @@ on the session's date (its moved date and time, if moved). Then, in this order:
      recordings and ones without a group count.
    - It has none: no guess. The session stays empty and the course page asks which
      group's recordings are the user's, suggesting one from pasted links, else the one
-     in the meeting's room. The answer is remembered per meeting and syncs.
+     in the meeting's room. The answer is remembered per meeting and syncs. **Change** (or
+     **Choose group**) on the course page lists the groups recorded at the meeting's times
+     (`RecordingLinker.groupOptions`, whatever is chosen now) and switches; "No group"
+     asks again.
 3. **The same group, or no group** (Wednesday 13:00: the automatic `תרגיל ג` and the
    hand-named `13-14 on 11/11`): no question. One wins, by: closest start, then the
    meeting's room, then an automatic recording (with the timetable slot in its
@@ -234,7 +249,8 @@ Roughly by value:
 3. **Make-up classes**: offer recordings of the user's group at times with no session as
    one-time sessions.
 4. **More than one link per session** (split recordings).
-5. **A "Find in Panopto" button** in the session sheet (also undoes a removal).
+5. ~~**A "Find in Panopto" button** in the session sheet~~: built 2026-11-18 (see "Your
+   link and Panopto's link").
 6. **Pasted links on another date** (Matching details flags them): offer to fix.
 7. **Tell the user on Today** when the Panopto sign-in expired.
 8. **"N new recordings"** on Catch up on recordings.
@@ -555,6 +571,11 @@ only reads; the code comparison stops one that swaps in its own key.
   3-hour throttle, pasted and removed links staying, a paste that syncs in later
   winning, course edits keeping folders and groups, an expired sign-in.
 - `test/widget/flows_test.dart`: the question after removing a found or pasted link.
+- Find in Panopto: `test/core/recording_linker_test.dart` (`check` and `groupOptions`
+  on the real folder: found, pasted or removed links left out, parallel groups, why not,
+  no folder, nothing written; `useFoundRecording`), and `test/widget/panopto_find_test.dart`
+  (no button when not connected, found, Replace / Keep mine, the same link, the group
+  dialog, Pick a recording, Change on the course page).
 - `test/widget/tour_test.dart`: the tour's Panopto step.
 - `test/core/panopto_vault_test.dart`: the setup in the vault (no secret in what the
   server stores), another device paired without a browser, no sign-in or no answer

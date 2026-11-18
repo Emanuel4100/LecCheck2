@@ -2540,9 +2540,6 @@ class AppLocalizationsHe extends AppLocalizations {
   }
 
   @override
-  String get panoptoGroupAskAgain => 'לשאול שוב';
-
-  @override
   String get panoptoLookCourse => 'חיפוש עכשיו';
 
   @override
@@ -2554,6 +2551,92 @@ class AppLocalizationsHe extends AppLocalizations {
   @override
   String get panoptoAskFindBody =>
       'מחקתם את הקישור. LecCheck יכולה למלא את ההקלטה של השיעור הזה מ־Panopto, או להשאיר אותו ריק.';
+
+  @override
+  String get panoptoFindHere => 'חיפוש ב־Panopto';
+
+  @override
+  String get panoptoFoundHere => 'ההקלטה של השיעור נמצאה ב־Panopto';
+
+  @override
+  String get panoptoLinkMatches => 'הקישור שלכם הוא ההקלטה של השיעור ב־Panopto';
+
+  @override
+  String get panoptoReplaceTitle => 'להחליף את הקישור שלכם?';
+
+  @override
+  String panoptoReplaceBody(String name) {
+    return 'ב־Panopto יש הקלטה אחרת לשיעור הזה: $name.';
+  }
+
+  @override
+  String get panoptoKeepMine => 'להשאיר את שלי';
+
+  @override
+  String get panoptoReplace => 'להחליף';
+
+  @override
+  String get panoptoWhichGroupTitle => 'באיזו קבוצה אתם?';
+
+  @override
+  String get panoptoNothingTitle => 'אין הקלטה לשיעור הזה';
+
+  @override
+  String get panoptoWhyNotOver => 'השיעור עוד לא הסתיים.';
+
+  @override
+  String get panoptoWhyProcessing =>
+      'ההקלטה שלו עדיין מוקלטת או בעיבוד. נסו שוב מאוחר יותר.';
+
+  @override
+  String get panoptoWhyNoRecording => 'שום דבר מהקורס הזה לא הוקלט בזמן הזה.';
+
+  @override
+  String get panoptoWhyOtherGroup =>
+      'בזמן הזה יש רק הקלטה של קבוצה אחרת. אפשר לשנות את הקבוצה בעמוד הקורס.';
+
+  @override
+  String get panoptoWhyOtherType =>
+      'בזמן הזה יש רק הקלטה מסוג אחר (למשל תרגול במקום הרצאה).';
+
+  @override
+  String get panoptoWhyUsedElsewhere =>
+      'ההקלטה מהזמן הזה מתאימה יותר לשיעור אחר.';
+
+  @override
+  String get panoptoWhyCanceled => 'השיעור בוטל.';
+
+  @override
+  String get panoptoWhyNoFolder =>
+      'לקורס אין תיקייה ב־Panopto. בחרו אחת בעמוד הקורס.';
+
+  @override
+  String get panoptoPickRecording => 'בחירת הקלטה';
+
+  @override
+  String panoptoPickTitle(String date) {
+    return 'הקלטות ב־$date';
+  }
+
+  @override
+  String get panoptoGroupChange => 'שינוי';
+
+  @override
+  String get panoptoGroupChoose => 'בחירת קבוצה';
+
+  @override
+  String panoptoGroupTitle(String meeting) {
+    return '$meeting: ההקלטות של איזו קבוצה הן שלכם?';
+  }
+
+  @override
+  String get panoptoGroupOnlyOne => 'בזמנים שלו מוקלטת רק קבוצה אחת.';
+
+  @override
+  String get panoptoGroupNoneFound => 'אין שמות קבוצות בהקלטות שלו.';
+
+  @override
+  String get panoptoGroupNone => 'ללא קבוצה';
 
   @override
   String get panoptoLeaveEmpty => 'להשאיר ריק';
