@@ -1,20 +1,23 @@
 {
   "beta": {
-    "version": "2.0.0-beta.21",
-    "build": 29,
-    "date": "2026-11-17",
-    "notesUrl": "https://github.com/Emanuel4100/LecCheck2/releases/tag/v2.0.0-beta.21",
-    "notes": "- **Panopto on all your devices, set up once.** Signed in to LecCheck, your Panopto setup\n  and sign-in are kept encrypted for your devices: the LecCheck server stores them but\n  can't read them. On another device, Settings \u2192 Panopto recordings shows **Set up on \u2026**\n  with **Use it here**: check that both devices show the same 6-digit code and tap\n  **Allow** on the first one. No Client ID, secret or browser on the new device, and every\n  device looks for recordings (at most every 3 hours for all of them together). A device\n  connected in beta.20 moves its connection in by itself. **Disconnect** works on this\n  device or on all of them.\n- **Importing a timetable from a chatbot asks for what's missing.** The prompt has the\n  chatbot ask first about the semester's dates, which group is yours when several are shown,\n  course numbers and unreadable times. If its file still leaves something out, LecCheck asks\n  you for it in the summary (dates, days, times, and optionally course numbers, which find\n  Panopto recordings) instead of refusing the file.\n- **A clearer Panopto setup guide**, in English and Hebrew.\n- **\"Couldn't reach Panopto\" no longer sticks.** Android's daily look now waits for a\n  connection, a look that failed without one tries again when you open the app instead\n  of 3 hours later, and each read retries once after a dropped connection. Two rare ways\n  to lose the Panopto sign-in during a refresh are fixed.",
-    "androidArm64": "https://github.com/Emanuel4100/LecCheck2/releases/download/v2.0.0-beta.21/LecCheck-2.0.0-beta.21-android-arm64.apk",
-    "androidUniversal": "https://github.com/Emanuel4100/LecCheck2/releases/download/v2.0.0-beta.21/LecCheck-2.0.0-beta.21-android.apk",
+    "version": "2.0.0-beta.22",
+    "build": 30,
+    "date": "2026-11-18",
+    "notesUrl": "https://github.com/Emanuel4100/LecCheck2/releases/tag/v2.0.0-beta.22",
+    "notes": "- **LecCheck for Windows is released.** The Windows build is out and ready on GitHub:\n  download `LecCheck-2.0.0-beta.22-windows-setup.exe` from this release's files\n  (https://github.com/Emanuel4100/LecCheck2/releases). The setup, for 64-bit Windows 10\n  and 11, installs LecCheck for you without admin rights, and LecCheck then updates itself\n  from inside the app. It's experimental and not signed yet, so Windows may say it\n  protected your PC: choose **More info**, then **Run anyway**. Sign-in, sync, backups and Panopto work as on Linux; the\n  window opens where you left it, and the title bar follows LecCheck's light or dark\n  theme. No reminders on Windows yet. Uninstalling keeps your data.\n- **More colors, and your own.** Settings \u2192 Appearance has Teal, Amber and Indigo, and\n  **Custom**: slide to any color and LecCheck builds its theme from it. Each device keeps\n  its own choice.\n- **Find a class's recording in Panopto right away.** A search button by the recording\n  link looks for that class now. When several groups were recorded, it asks which one is\n  yours and remembers it; it asks before replacing a link you pasted; and when nothing\n  fits it says why and lets you pick from that day's recordings. On the course page,\n  **Change** switches a class to another group's recordings.",
+    "androidArm64": "https://github.com/Emanuel4100/LecCheck2/releases/download/v2.0.0-beta.22/LecCheck-2.0.0-beta.22-android-arm64.apk",
+    "androidUniversal": "https://github.com/Emanuel4100/LecCheck2/releases/download/v2.0.0-beta.22/LecCheck-2.0.0-beta.22-android.apk",
+    "windows": "https://github.com/Emanuel4100/LecCheck2/releases/download/v2.0.0-beta.22/LecCheck-2.0.0-beta.22-windows-setup.exe",
     "flatpakref": "https://emanuel4100.github.io/LecCheck2/leccheck.flatpakref",
     "sha256": {
-      "androidArm64": "f34c72e4803b36a7099876194da507e0353f2c19b868ec755b54c57ee619e007",
-      "androidUniversal": "3eadb5e6ff226748808d84008cf9527e5b53f677734e975b4c1a67d791ffc517"
+      "androidArm64": "d9a6f829fe296cd1fac3b91d8c97c5643820577490a456e881c4f6a708554d3c",
+      "androidUniversal": "ec96721e3d7d1235cac64d32c4518a2f2c2171fcb3112fb4d62f583946bd2abd",
+      "windows": "f1ad5fbb711da6be5551fa471ba98aac0efe669e3c9db02c24487a7ba16b81fb"
     },
     "size": {
-      "androidArm64": 28831615,
-      "androidUniversal": 80501062
+      "androidArm64": 28897151,
+      "androidUniversal": 80615750,
+      "windows": 13961417
     }
   }
 }
