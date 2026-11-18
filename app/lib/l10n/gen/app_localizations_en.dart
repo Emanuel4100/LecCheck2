@@ -929,6 +929,21 @@ class AppLocalizationsEn extends AppLocalizations {
   String get presetMono => 'Mono';
 
   @override
+  String get presetTeal => 'Teal';
+
+  @override
+  String get presetAmber => 'Amber';
+
+  @override
+  String get presetIndigo => 'Indigo';
+
+  @override
+  String get presetCustom => 'Custom';
+
+  @override
+  String get customColorTitle => 'Your color';
+
+  @override
   String get language => 'Language';
 
   @override

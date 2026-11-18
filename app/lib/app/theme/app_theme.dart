@@ -13,12 +13,15 @@ abstract final class AppTheme {
     required ThemePreset preset,
     required Brightness brightness,
     ColorScheme? wallpaperScheme,
+    Color? customSeed,
     bool pureBlack = false,
   }) {
     var scheme = preset == ThemePreset.wallpaper && wallpaperScheme != null
         ? wallpaperScheme
         : ColorScheme.fromSeed(
-            seedColor: preset.seed,
+            seedColor: preset == ThemePreset.custom
+                ? customSeed ?? preset.seed
+                : preset.seed,
             brightness: brightness,
             dynamicSchemeVariant: preset.variant,
           );

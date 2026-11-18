@@ -3,16 +3,22 @@ import 'package:material_ui/material_ui.dart';
 
 import '../../domain/schedule_types.dart';
 
-/// Built-in color themes. [wallpaper] uses Material You colors where the
-/// platform provides them and falls back to [ocean].
+/// Built-in color themes, in the picker's order (saved by name, so the order
+/// can change). [wallpaper] uses Material You colors where the platform
+/// provides them and falls back to [ocean]; [custom] is built from the color
+/// the user picked (`AppearanceSettings.customSeed`), [ocean]'s until then.
 enum ThemePreset {
   wallpaper(Color(0xFF2A7BCC), DynamicSchemeVariant.tonalSpot),
   ocean(Color(0xFF2A7BCC), DynamicSchemeVariant.tonalSpot),
-  sunset(Color(0xFFF0623A), DynamicSchemeVariant.vibrant),
+  teal(Color(0xFF0F9E8E), DynamicSchemeVariant.tonalSpot),
   forest(Color(0xFF2E7D4F), DynamicSchemeVariant.tonalSpot),
-  grape(Color(0xFF7B4FD6), DynamicSchemeVariant.expressive),
+  amber(Color(0xFFE2A013), DynamicSchemeVariant.tonalSpot),
+  sunset(Color(0xFFF0623A), DynamicSchemeVariant.vibrant),
   rose(Color(0xFFD9467A), DynamicSchemeVariant.tonalSpot),
-  mono(Color(0xFF5F6368), DynamicSchemeVariant.monochrome);
+  grape(Color(0xFF7B4FD6), DynamicSchemeVariant.expressive),
+  indigo(Color(0xFF4858D6), DynamicSchemeVariant.tonalSpot),
+  mono(Color(0xFF5F6368), DynamicSchemeVariant.monochrome),
+  custom(Color(0xFF2A7BCC), DynamicSchemeVariant.tonalSpot);
 
   const ThemePreset(this.seed, this.variant);
   final Color seed;

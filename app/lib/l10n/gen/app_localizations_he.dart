@@ -926,6 +926,21 @@ class AppLocalizationsHe extends AppLocalizations {
   String get presetMono => 'מונוכרום';
 
   @override
+  String get presetTeal => 'טורקיז';
+
+  @override
+  String get presetAmber => 'ענבר';
+
+  @override
+  String get presetIndigo => 'אינדיגו';
+
+  @override
+  String get presetCustom => 'מותאם אישית';
+
+  @override
+  String get customColorTitle => 'הצבע שלך';
+
+  @override
   String get language => 'שפה';
 
   @override

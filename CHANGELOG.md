@@ -8,6 +8,9 @@
   info**, then **Run anyway**. Sign-in, sync, backups and Panopto work as on Linux; the
   window opens where you left it, and the title bar follows LecCheck's light or dark
   theme. No reminders on Windows yet. Uninstalling keeps your data.
+- **More colors, and your own.** Settings → Appearance has Teal, Amber and Indigo, and
+  **Custom**: slide to any color and LecCheck builds its theme from it. Each device keeps
+  its own choice.
 
 ## 2.0.0-beta.21 — 2026-11-17
 

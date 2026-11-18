@@ -123,9 +123,16 @@ class AppearanceSettings {
     this.mode = ThemeMode.system,
     this.pureBlack = false,
     this.localeCode,
+    this.customSeed,
   });
 
   final ThemePreset preset;
+
+  /// The color picked for [ThemePreset.custom] (ARGB), kept when another
+  /// preset is chosen so Custom comes back the same.
+  final int? customSeed;
+
+  Color? get customColor => customSeed == null ? null : Color(customSeed!);
   final ThemeMode mode;
   final bool pureBlack;
 
@@ -139,11 +146,13 @@ class AppearanceSettings {
     ThemeMode? mode,
     bool? pureBlack,
     String? Function()? localeCode,
+    int? customSeed,
   }) => AppearanceSettings(
     preset: preset ?? this.preset,
     mode: mode ?? this.mode,
     pureBlack: pureBlack ?? this.pureBlack,
     localeCode: localeCode == null ? this.localeCode : localeCode(),
+    customSeed: customSeed ?? this.customSeed,
   );
 
   @override
@@ -152,16 +161,19 @@ class AppearanceSettings {
       other.preset == preset &&
       other.mode == mode &&
       other.pureBlack == pureBlack &&
-      other.localeCode == localeCode;
+      other.localeCode == localeCode &&
+      other.customSeed == customSeed;
 
   @override
-  int get hashCode => Object.hash(preset, mode, pureBlack, localeCode);
+  int get hashCode =>
+      Object.hash(preset, mode, pureBlack, localeCode, customSeed);
 }
 
 class AppearanceController extends Notifier<AppearanceSettings> {
   static const _preset = 'appearance.preset';
   static const _mode = 'appearance.mode';
   static const _black = 'appearance.pureBlack';
+  static const _custom = 'appearance.customSeed';
   static const _locale = localeKey;
 
   /// The app's language ('en', 'he', or none for the system's).
@@ -178,11 +190,20 @@ class AppearanceController extends Notifier<AppearanceSettings> {
     ),
     pureBlack: _prefs.getBool(_black) ?? false,
     localeCode: _prefs.getString(_locale),
+    customSeed: _prefs.getInt(_custom),
   );
 
   void setPreset(ThemePreset preset) {
     state = state.copyWith(preset: preset);
     _prefs.setString(_preset, preset.name);
+  }
+
+  /// Picks [ThemePreset.custom] with [seed] as its color.
+  void setCustom(Color seed) {
+    final argb = seed.toARGB32();
+    state = state.copyWith(preset: ThemePreset.custom, customSeed: argb);
+    _prefs.setInt(_custom, argb);
+    _prefs.setString(_preset, ThemePreset.custom.name);
   }
 
   void setMode(ThemeMode mode) {

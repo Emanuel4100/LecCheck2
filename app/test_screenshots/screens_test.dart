@@ -569,6 +569,19 @@ void main() {
     await tester.tap(find.text('Appearance'));
     await _settle(tester);
     await _shot(tester, 'en_light_settings_appearance');
+    final custom = find.byKey(const ValueKey('preset-custom'));
+    await tester.scrollUntilVisible(
+      custom,
+      200,
+      scrollable: find.byWidgetPredicate(
+        (w) => w is Scrollable && w.axisDirection == AxisDirection.right,
+      ),
+    );
+    await tester.tap(custom);
+    await _settle(tester);
+    await _shot(tester, 'en_light_custom_color');
+    await tester.tap(find.text('Cancel'));
+    await _settle(tester);
     await tester.pageBack();
     await _settle(tester);
     await _go(tester, c, '/course-editor?id=calc');

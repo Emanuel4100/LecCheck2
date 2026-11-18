@@ -4,6 +4,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:material_color_utilities/material_color_utilities.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
@@ -506,6 +507,7 @@ class _ThemePresetPicker extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l = AppLocalizations.of(context);
     final selected = ref.watch(appearanceProvider.select((a) => a.preset));
+    final custom = ref.watch(appearanceProvider.select((a) => a.customColor));
     final brightness = Theme.of(context).brightness;
     final motion = AppMotion.of(context);
     // iPhone has no wallpaper colors; desktops offer their accent color.
@@ -517,12 +519,26 @@ class _ThemePresetPicker extends ConsumerWidget {
       ThemePreset.wallpaper =>
         AppIdiom.isDesktop ? l.presetAccent : l.presetWallpaper,
       ThemePreset.ocean => l.presetOcean,
-      ThemePreset.sunset => l.presetSunset,
+      ThemePreset.teal => l.presetTeal,
       ThemePreset.forest => l.presetForest,
-      ThemePreset.grape => l.presetGrape,
+      ThemePreset.amber => l.presetAmber,
+      ThemePreset.sunset => l.presetSunset,
       ThemePreset.rose => l.presetRose,
+      ThemePreset.grape => l.presetGrape,
+      ThemePreset.indigo => l.presetIndigo,
       ThemePreset.mono => l.presetMono,
+      ThemePreset.custom => l.presetCustom,
     };
+
+    Future<void> pickCustom() async {
+      final color = await showDialog<Color>(
+        context: context,
+        builder: (_) => _CustomColorDialog(initial: custom),
+      );
+      if (color != null) {
+        ref.read(appearanceProvider.notifier).setCustom(color);
+      }
+    }
 
     return SizedBox(
       height: 116,
@@ -538,11 +554,16 @@ class _ThemePresetPicker extends ConsumerWidget {
               : AppTheme.build(
                   preset: preset,
                   brightness: brightness,
+                  customSeed: custom,
                 ).colorScheme;
           final isSelected = preset == selected;
+          // Custom before a color was picked: an icon instead of colors.
+          final unpicked = preset == ThemePreset.custom && custom == null;
           return GestureDetector(
-            onTap: () =>
-                ref.read(appearanceProvider.notifier).setPreset(preset),
+            key: ValueKey('preset-${preset.name}'),
+            onTap: preset == ThemePreset.custom
+                ? pickCustom
+                : () => ref.read(appearanceProvider.notifier).setPreset(preset),
             child: Column(
               children: [
                 AnimatedContainer(
@@ -561,24 +582,9 @@ class _ThemePresetPicker extends ConsumerWidget {
                     ),
                   ),
                   padding: const EdgeInsets.all(12),
-                  child: Row(
-                    children: [
-                      for (final c in [
-                        scheme.primary,
-                        scheme.tertiary,
-                        scheme.secondaryContainer,
-                      ])
-                        Expanded(
-                          child: Container(
-                            margin: const EdgeInsets.all(1.5),
-                            decoration: BoxDecoration(
-                              color: c,
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
+                  child: unpicked
+                      ? Icon(LecIcons.palette, color: scheme.primary, size: 28)
+                      : _Swatches(scheme),
                 ),
                 const SizedBox(height: 6),
                 Text(
@@ -592,6 +598,118 @@ class _ThemePresetPicker extends ConsumerWidget {
           );
         },
       ),
+    );
+  }
+}
+
+/// A scheme's primary, tertiary and secondary container side by side: what
+/// the theme tiles and the custom color's preview show.
+class _Swatches extends StatelessWidget {
+  const _Swatches(this.scheme);
+
+  final ColorScheme scheme;
+
+  @override
+  Widget build(BuildContext context) => Row(
+    children: [
+      for (final c in [
+        scheme.primary,
+        scheme.tertiary,
+        scheme.secondaryContainer,
+      ])
+        Expanded(
+          child: Container(
+            margin: const EdgeInsets.all(1.5),
+            decoration: BoxDecoration(
+              color: c,
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
+        ),
+    ],
+  );
+}
+
+/// Picks the Custom theme's color: a hue slider over a rainbow, and the
+/// theme it makes. Returns the color on Save, null on Cancel.
+class _CustomColorDialog extends StatefulWidget {
+  const _CustomColorDialog({this.initial});
+
+  final Color? initial;
+
+  @override
+  State<_CustomColorDialog> createState() => _CustomColorDialogState();
+}
+
+class _CustomColorDialogState extends State<_CustomColorDialog> {
+  late double _hue = Hct.fromInt(
+    (widget.initial ?? ThemePreset.ocean.seed).toARGB32(),
+  ).hue;
+
+  /// A vivid color of [hue]: the theme is built from it, so chroma and
+  /// tone only need to be lively enough for every hue.
+  static Color _color(double hue) => Color(Hct.from(hue, 48, 50).toInt());
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    final color = _color(_hue);
+    final scheme = AppTheme.build(
+      preset: ThemePreset.custom,
+      brightness: Theme.of(context).brightness,
+      customSeed: color,
+    ).colorScheme;
+    return AlertDialog(
+      title: Text(l.customColorTitle),
+      content: SizedBox(
+        width: 320,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              height: 72,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: scheme.surfaceContainerHigh,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: _Swatches(scheme),
+            ),
+            const SizedBox(height: 20),
+            Padding(
+              // Lines the rainbow up with the slider's track.
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Container(
+                height: 12,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(6),
+                  gradient: LinearGradient(
+                    colors: [
+                      for (var h = 0; h <= 360; h += 30) _color(h.toDouble()),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            Slider(
+              value: _hue,
+              max: 360,
+              activeColor: color,
+              onChanged: (v) => setState(() => _hue = v),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text(l.cancel),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.of(context).pop(color),
+          child: Text(l.save),
+        ),
+      ],
     );
   }
 }

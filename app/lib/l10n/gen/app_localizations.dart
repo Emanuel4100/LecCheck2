@@ -1682,6 +1682,36 @@ abstract class AppLocalizations {
   /// **'Mono'**
   String get presetMono;
 
+  /// No description provided for @presetTeal.
+  ///
+  /// In en, this message translates to:
+  /// **'Teal'**
+  String get presetTeal;
+
+  /// No description provided for @presetAmber.
+  ///
+  /// In en, this message translates to:
+  /// **'Amber'**
+  String get presetAmber;
+
+  /// No description provided for @presetIndigo.
+  ///
+  /// In en, this message translates to:
+  /// **'Indigo'**
+  String get presetIndigo;
+
+  /// No description provided for @presetCustom.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom'**
+  String get presetCustom;
+
+  /// No description provided for @customColorTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your color'**
+  String get customColorTitle;
+
   /// No description provided for @language.
   ///
   /// In en, this message translates to:

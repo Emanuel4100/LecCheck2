@@ -159,6 +159,11 @@ These are built and compile, but have only been exercised in tests so far:
   delete the file, and show a clear screen ("This data is from a newer LecCheck: update
   LecCheck") with Export backup; maybe the setup warns before a downgrade. Tests in
   `test/drift`.
+- **More theme colors** (built 2026-11-18): Teal, Amber, Indigo, and a Custom color (a hue
+  slider), per device. Next: the owner approves the Hebrew (`presetTeal`, `presetAmber`,
+  `presetIndigo`, `presetCustom`, `customColorTitle`) and, on Linux, regenerates the
+  goldens (`en_light_settings_appearance`, `desktop_settings` and the new
+  `en_light_custom_color`) and looks at them.
 - Upload a syllabus and build the course from it (ask about the design first).
 - The semester-dates warning still says "outside the new dates" when it counts
   every-other-week sessions: new wording in English and Hebrew.
