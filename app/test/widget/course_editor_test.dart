@@ -579,7 +579,7 @@ void main() {
       await _tap(tester, find.text('Undo'));
       meetings = await _meetings(tester, db);
       expect(meetings.map((m) => m.id), ['m1']);
-    }, variant: TargetPlatformVariant.only(TargetPlatform.linux));
+    }, variant: _desktopPlatforms);
 
     testWidgets('dragging a session moves it this week or every week, with '
         'Undo', (tester) async {
@@ -619,7 +619,7 @@ void main() {
       // The meeting itself didn't change.
       m1 = (await _meetings(tester, db)).single;
       expect((m1.weekday, m1.startMin), (2, 600));
-    }, variant: TargetPlatformVariant.only(TargetPlatform.linux));
+    }, variant: _desktopPlatforms);
   });
 
   testWidgets('in Hebrew', (tester) async {
@@ -631,3 +631,9 @@ void main() {
     expect(find.text('פעם בשבועיים, החל משבוע 2'), findsOneWidget);
   });
 }
+
+// Desktop behavior, the same on Linux and Windows.
+final _desktopPlatforms = TargetPlatformVariant({
+  TargetPlatform.linux,
+  TargetPlatform.windows,
+});

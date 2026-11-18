@@ -109,7 +109,11 @@ Future<void> _ctrl(WidgetTester tester, LogicalKeyboardKey key) async {
   await _settle(tester);
 }
 
-final _linux = TargetPlatformVariant.only(TargetPlatform.linux);
+// Desktop behavior, the same on Linux and Windows.
+final _desktopPlatforms = TargetPlatformVariant({
+  TargetPlatform.linux,
+  TargetPlatform.windows,
+});
 final _iOS = TargetPlatformVariant.only(TargetPlatform.iOS);
 
 void main() {
@@ -162,7 +166,7 @@ void main() {
       await tester.sendKeyEvent(LogicalKeyboardKey.f1);
       await _settle(tester);
       expect(find.text('Keyboard shortcuts'), findsOneWidget);
-    }, variant: _linux);
+    }, variant: _desktopPlatforms);
 
     testWidgets('right-click a session to mark it; no swipe gestures', (
       tester,
@@ -191,7 +195,7 @@ void main() {
       );
       await _settle(tester);
       expect(await _statusOf(tester, db), 'attended');
-    }, variant: _linux);
+    }, variant: _desktopPlatforms);
 
     testWidgets('number keys mark the open session, but not while typing', (
       tester,
@@ -210,7 +214,7 @@ void main() {
       await tester.sendKeyEvent(LogicalKeyboardKey.digit2);
       await _settle(tester);
       expect(await _statusOf(tester, db), 'attended');
-    }, variant: _linux);
+    }, variant: _desktopPlatforms);
 
     testWidgets('Courses side by side; Settings in two panes', (tester) async {
       final (container, _) = await _start(tester);
@@ -231,7 +235,7 @@ void main() {
       await tester.tap(find.text('This device'));
       await _settle(tester);
       expect(find.text('Keyboard shortcuts'), findsOneWidget);
-    }, variant: _linux);
+    }, variant: _desktopPlatforms);
   });
 
   group('iPhone', () {
