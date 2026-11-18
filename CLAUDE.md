@@ -22,7 +22,9 @@ the design; [CHANGELOG.md](CHANGELOG.md) what each beta shipped.
 
 ## Checks
 
-- `cd app && flutter analyze && TZ=Asia/Jerusalem flutter test`
+- `cd app && flutter analyze && TZ=Asia/Jerusalem flutter test`. On Windows leave `TZ`
+  out (its C runtime reads `Asia/Jerusalem` as UTC and time tests fail); the PC's own zone
+  must be Israel. Windows builds: DEVELOPMENT.md, "Building on a Windows PC".
 - `flutter test test_screenshots`: phone goldens stay identical unless a screen changed
   on purpose; regenerate with `--update-goldens` and look at the PNGs. Don't commit
   `en_light_semester_form.png` (it changes with today's date).

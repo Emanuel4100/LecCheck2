@@ -261,7 +261,8 @@ Its data is in `~/.var/app/com.leccheck.app` like the real Flatpak's.
 
 ## Windows
 
-Flutter builds Windows apps only on Windows, so the Windows build comes from CI:
+Flutter builds Windows apps only on Windows, so the Windows build comes from CI (or a
+Windows PC, see [Building on a Windows PC](#building-on-a-windows-pc)):
 
 - **Test builds**: every push to main runs CI's `windows` job. It builds the setup
   (`scripts/windows_build.ps1`, version `2.0.0-ci.<run>` with pubspec's build number), then
@@ -300,6 +301,56 @@ On a Windows PC, with a test setup from CI or a release:
    in the update window: it downloads and checks the setup, **Restart** closes LecCheck,
    the setup's progress shows, and the new version opens. Settings → Developer → the log
    says "Windows setup: the update was installed".
+
+### Building on a Windows PC
+
+CI is enough for releases, but a Windows PC can build and test too (done on 2026-11-18):
+
+- **Once**: Windows **Developer Mode** on (Flutter's plugin symlinks need it), Visual
+  Studio 2022 with "Desktop development with C++", then `mise trust` and
+  `mise install flutter node` (Java and ninja are only for Android and Linux). Inno Setup
+  for this user, no admin: `winget install JRSoftware.InnoSetup --scope user` (it lands in
+  `%LOCALAPPDATA%\Programs\Inno Setup 6`, which isn't on PATH).
+- **Checks**: `flutter analyze` and `flutter test` **without** `TZ`: Windows' C runtime
+  reads `TZ=Asia/Jerusalem` as UTC, and three time tests fail. The PC's own time zone
+  must be Israel's.
+- **Don't run `flutter test` and `flutter build` at once**: the tests keep
+  `build\native_assets\windows\sqlite3.dll` open and the build fails to replace it.
+- **The setup**: put mise's Flutter and Inno Setup on PATH and run the script itself:
+
+  ```powershell
+  $env:PATH = "$(mise where flutter)\bin;$env:LOCALAPPDATA\Programs\Inno Setup 6;$env:PATH"
+  .\scripts\windows_build.ps1 -BuildName 2.0.0-beta.90 -BuildNumber 900 -DartDefine $defines
+  ```
+
+  Not through `mise exec -- pwsh -File …`: the `-DartDefine` values arrive as literal text
+  (the app then looked for updates at `$u/update.json`).
+
+#### Testing an update locally
+
+The whole update path, with nothing published (verified 2026-11-18, beta.90 → beta.91).
+The app takes its manifest address and public key from `UPDATE_URL` and
+`UPDATE_PUBLIC_KEY`, and downloads update files only from **https** links.
+
+1. Back up `%APPDATA%\LecCheck`: the test builds use your real data.
+2. A throwaway key (Git's openssl):
+   `openssl genpkey -algorithm ed25519 -out test.pem`, and its public half for the app:
+   `openssl pkey -in test.pem -pubout -outform DER | tail -c 32 | base64`.
+3. Serve a folder and give it an https address:
+   `python -m http.server 8765 --bind 127.0.0.1 --directory serve` and
+   `cloudflared tunnel --url http://127.0.0.1:8765` (a random `trycloudflare.com` address).
+4. Build two setups (above) with
+   `-DartDefine "UPDATE_URL=https://<tunnel>/update.json","UPDATE_PUBLIC_KEY=<key>"`: an
+   older build number and a newer one. Put the newer setup in the served folder.
+5. `serve/update.json`: a `beta` entry with `version`, `build`, `date`, `notesUrl`, `notes`,
+   `windows` (the setup's https link) and its `sha256` and `size` under `"windows"` (see
+   `scripts/update_manifest.py`). Sign the exact bytes:
+   `openssl pkeyutl -sign -rawin -inkey test.pem -in update.json | base64 -w0 > update.json.sig`.
+6. Install the older setup (`/VERYSILENT`), open LecCheck: the update window offers the
+   newer one. **Update**, **Restart**: the new version opens and the log says "Windows
+   setup: the update was installed".
+7. Stop the tunnel, and install a CI or release setup again (the test builds only look at
+   the tunnel).
 
 ## Server deploys
 

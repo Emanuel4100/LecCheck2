@@ -6,4 +6,4 @@ node = "22"
 ninja = "1.13.2"
 
 [env]
-ANDROID_HOME = "{{env.HOME}}/Android/Sdk"
+ANDROID_HOME = "{{ get_env(name='HOME', default=get_env(name='USERPROFILE', default='')) }}/Android/Sdk"
