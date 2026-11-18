@@ -103,6 +103,11 @@
   after a server reset even if the app closed, caps pushes in bytes and notices a revoked
   sign-in at once; one reminder re-plan at a time; a faster first sync and backups off the UI
   thread.
+- **LecCheck for Windows, more colors, Find in Panopto** (2.0.0-beta.22): an Inno Setup
+  setup on the release (for the user, no admin rights, unsigned) that updates itself from
+  inside the app; Teal, Amber, Indigo and a custom color; a button that finds one class's
+  recording now, asks the group when several are recorded, asks before replacing a pasted
+  link and lets you pick from the day's recordings; Change group on the course page.
 - **Panopto on every device** (2.0.0-beta.21): the setup and sign-in in an end-to-end
   encrypted vault in the user's Durable Object; other devices pair with a 6-digit code and
   share one Panopto sign-in; looks every 3 hours for the whole account; disconnect here or
@@ -137,20 +142,15 @@ These are built and compile, but have only been exercised in tests so far:
   ([DEVELOPMENT.md](DEVELOPMENT.md) "Testing on Windows"); the first in-app update is
   beta.22 → beta.23.
 
-## Next: 2.0.0-beta.22
+## Next: 2.0.0-beta.23
 
-- **Windows, experimental** (built; decided 2026-11-18): an Inno Setup setup on the
-  release, for the user without admin rights, unsigned (SmartScreen: More info → Run
-  anyway); updates from inside the app through the setup; no reminders, tray or start at
-  login yet; Windows' own title bar following LecCheck's theme. Tried on the owner's
-  Windows PC on 2026-11-18: tests, a local build, and a whole update from inside the app
-  with a test key (DEVELOPMENT.md, "Testing an update locally"). Next: the owner approves
-  the Hebrew strings (`remindersNotHere`, `updateSetupReady`, `updateFailedSetup`,
-  `updateWindowsHint`, and the setup's `CloseLecCheck`), then it ships in beta.22.
-  **At the beta.22 release**: on the Windows PC, the CI build there (2.0.0-ci.41, build 29)
-  must offer beta.22 (build 30) and update to it (Testing on Windows, step 8): the first
-  real Windows update.
-- **An older LecCheck opening a newer database** (fix in beta.22, found 2026-11-18):
+- **Windows, experimental** (released in beta.22): no reminders, tray or start at login
+  yet. Check on the Windows PC that a CI build (build 29 or lower) offers beta.22 and
+  updates to it (Testing on Windows, step 8): the first real Windows update. The owner
+  reviews its Hebrew (`remindersNotHere`, `updateSetupReady`, `updateFailedSetup`,
+  `updateWindowsHint`, and the setup's `CloseLecCheck`), shipped unreviewed in beta.22.
+- **An older LecCheck opening a newer database** (fix in beta.23, before the next schema
+  change; found 2026-11-18):
   `app_database.dart` (schemaVersion 6) doesn't guard against a database whose version is
   higher than the app's. It can happen: the Windows setup installs an older build over a
   newer one without a word (build 29 went over build 901 in the update test), and so can a
@@ -159,11 +159,11 @@ These are built and compile, but have only been exercised in tests so far:
   delete the file, and show a clear screen ("This data is from a newer LecCheck: update
   LecCheck") with Export backup; maybe the setup warns before a downgrade. Tests in
   `test/drift`.
-- **Find in Panopto for one class, Change group** (built 2026-11-18, PANOPTO.md idea 5):
-  the owner tries it on the PC and phone and approves the Hebrew (`panoptoFindHere` …
+- **Find in Panopto for one class, Change group** (beta.22, PANOPTO.md idea 5): the owner
+  tries it on the PC and phone and reviews the Hebrew, shipped unreviewed (`panoptoFindHere` …
   `panoptoGroupNone`, the keys after `panoptoAskFindBody` in `app_he.arb`).
-- **More theme colors** (built 2026-11-18): Teal, Amber, Indigo, and a Custom color (a hue
-  slider), per device. Next: the owner approves the Hebrew (`presetTeal`, `presetAmber`,
+- **More theme colors** (beta.22): Teal, Amber, Indigo, and a Custom color (a hue slider),
+  per device. Next: the owner reviews the Hebrew, shipped unreviewed (`presetTeal`, `presetAmber`,
   `presetIndigo`, `presetCustom`, `customColorTitle`) and, on Linux, regenerates the
   goldens (`en_light_settings_appearance`, `desktop_settings` and the new
   `en_light_custom_color`) and looks at them.
@@ -237,6 +237,8 @@ goes once nobody is left on the tarball.
   Matching details and a tour step.
 - Done in 2.0.0-beta.21: Panopto on every device (the vault and pairing), the chatbot
   import asking for what's missing, a clearer Panopto setup guide.
+- Done in 2.0.0-beta.22: LecCheck for Windows (experimental), more theme colors and a
+  custom one, Find in Panopto for one class and Change group.
 
 ## Panopto recordings: after the experimental release
 

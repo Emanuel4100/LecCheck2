@@ -55,6 +55,15 @@
   </supports>
   <content_rating type="oars-1.1" />
   <releases>
+    <release version="2.0.0-beta.22" date="2026-11-18" type="development">
+      <description>
+        <ul>
+          <li><em>LecCheck for Windows is released.</em> The Windows build is out and ready on GitHub: download <code>LecCheck-2.0.0-beta.22-windows-setup.exe</code> from this release's files (github.com/Emanuel4100/LecCheck2/releases). The setup, for 64-bit Windows 10 and 11, installs LecCheck for you without admin rights, and LecCheck then updates itself from inside the app. It's experimental and not signed yet, so Windows may say it protected your PC: choose <em>More info</em>, then <em>Run anyway</em>. Sign-in, sync, backups and Panopto work as on Linux; the window opens where you left it, and the title bar follows LecCheck's light or dark theme. No reminders on Windows yet. Uninstalling keeps your data.</li>
+          <li><em>More colors, and your own.</em> Settings → Appearance has Teal, Amber and Indigo, and <em>Custom</em>: slide to any color and LecCheck builds its theme from it. Each device keeps its own choice.</li>
+          <li><em>Find a class's recording in Panopto right away.</em> A search button by the recording link looks for that class now. When several groups were recorded, it asks which one is yours and remembers it; it asks before replacing a link you pasted; and when nothing fits it says why and lets you pick from that day's recordings. On the course page, <em>Change</em> switches a class to another group's recordings.</li>
+        </ul>
+      </description>
+    </release>
     <release version="2.0.0-beta.21" date="2026-11-17" type="development">
       <description>
         <ul>
@@ -144,16 +153,6 @@
           <li>The update window that opens at startup no longer closes again by itself when LecCheck moves on from its splash screen.</li>
           <li>Linux no longer needs WebKitGTK or libsoup.</li>
           <li>Settings → Developer → <em>Copy diagnostics</em> says how LecCheck was installed on Linux.</li>
-        </ul>
-      </description>
-    </release>
-    <release version="2.0.0-beta.14" date="2026-10-26" type="development">
-      <description>
-        <ul>
-          <li><em>Add on Week like in a calendar</em>: tap an empty spot for an hour there, drag out the time with the mouse, or on a phone long-press and drag (15-minute steps). <em>Quick add</em> opens beside it: pick a course or name a new one right there, weekly or one-time, the type and the room, then <em>Save</em> (with Undo). <em>More options</em> opens the course editor with everything filled in.</li>
-          <li><em>Move sessions by dragging</em> (desktop): drag a session to another time or day, or its bottom edge to change when it ends. A weekly meeting asks <em>This week only</em> or <em>Every week</em>, then <em>Undo</em> is offered for a few seconds. Every week moves the sessions' marks along to the new day.</li>
-          <li><em>Desktop sidebar like Google Calendar</em>: a raised <em>+ Create</em> button replaces Add, and a month calendar shows under the tabs: click a day to open its week; the week you're looking at is highlighted, class days have a dot, and no-class days are dimmed with their name on hover.</li>
-          <li>The Week grid scrolls by itself when a drag nears its top or bottom.</li>
         </ul>
       </description>
     </release>

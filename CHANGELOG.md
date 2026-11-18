@@ -1,11 +1,13 @@
 # Changelog
 
-## Unreleased
+## 2.0.0-beta.22 — 2026-11-18
 
-- **LecCheck for Windows, experimental.** A setup for 64-bit Windows 10 and 11 installs
-  LecCheck for you, without admin rights, and LecCheck then updates itself from inside the
-  app. The setup isn't signed yet, so Windows may say it protected your PC: choose **More
-  info**, then **Run anyway**. Sign-in, sync, backups and Panopto work as on Linux; the
+- **LecCheck for Windows is released.** The Windows build is out and ready on GitHub:
+  download `LecCheck-2.0.0-beta.22-windows-setup.exe` from this release's files
+  (https://github.com/Emanuel4100/LecCheck2/releases). The setup, for 64-bit Windows 10
+  and 11, installs LecCheck for you without admin rights, and LecCheck then updates itself
+  from inside the app. It's experimental and not signed yet, so Windows may say it
+  protected your PC: choose **More info**, then **Run anyway**. Sign-in, sync, backups and Panopto work as on Linux; the
   window opens where you left it, and the title bar follows LecCheck's light or dark
   theme. No reminders on Windows yet. Uninstalling keeps your data.
 - **More colors, and your own.** Settings → Appearance has Teal, Amber and Indigo, and
