@@ -9,6 +9,7 @@ import {
   type SessionClaims,
   type StateClaims,
 } from "./jwt";
+import { DIRECTORY, type Who } from "./directory";
 import type { Env } from "./user-store";
 
 const GOOGLE_AUTHORIZE = "https://accounts.google.com/o/oauth2/v2/auth";
@@ -50,6 +51,14 @@ export async function issueSession(
     env.JWT_SECRET,
     SESSION_TTL,
   );
+}
+
+/** Records a sign-in in the directory. False when the beta whitelist is on
+ * and [who] isn't on it (the app says "cloud sync is in closed beta"). */
+export async function signInAllowed(env: Env, who: Who): Promise<boolean> {
+  const directory = env.USER_STORE.get(env.USER_STORE.idFromName(DIRECTORY));
+  const reply = await directory.directory({ op: "signIn", who });
+  return reply.ok && reply.allowed === true;
 }
 
 export const auth = new Hono<{ Bindings: Env }>();
@@ -162,6 +171,9 @@ auth.post("/token", async (c) => {
   if (!(await store.consumeCode(claims.jti, claims.exp ?? 0))) {
     return c.json({ error: "code_used" }, 400);
   }
+  if (!(await signInAllowed(c.env, claims))) {
+    return c.json({ error: "not_invited" }, 403);
+  }
   const token = await issueSession(c.env, claims.sub, claims);
   return c.json({
     token,
@@ -174,6 +186,9 @@ auth.post("/dev", async (c) => {
   if (c.env.DEV_AUTH !== "1") return c.notFound();
   const { name = "tester" } = await c.req.json<{ name?: string }>().catch(() => ({ name: "tester" }));
   const sub = `dev:${name}`;
+  if (!(await signInAllowed(c.env, { sub, name, email: `${name}@dev.local` }))) {
+    return c.json({ error: "not_invited" }, 403);
+  }
   const token = await issueSession(c.env, sub, { name, email: `${name}@dev.local` });
   return c.json({ token, user: { id: sub, name, email: `${name}@dev.local` } });
 });

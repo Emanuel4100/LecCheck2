@@ -11,9 +11,12 @@
   },
   // The Workers Free plan only supports SQLite-backed Durable Objects.
   "migrations": [{ "tag": "v1", "new_sqlite_classes": ["UserStore"] }],
+  // Usage events (src/stats.ts): free, kept 3 months.
+  "analytics_engine_datasets": [{ "binding": "STATS", "dataset": "leccheck_sync" }],
   "vars": {
     // "1" enables POST /v1/auth/dev (local testing only, never in production).
     "DEV_AUTH": "0"
   }
-  // Secrets (wrangler secret put …): GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, JWT_SECRET
+  // Secrets (wrangler secret put …): GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, JWT_SECRET,
+  // and optionally HEALTH_TOKEN, REPORTS_GITHUB_TOKEN, ADMIN_TOKEN (the /v1/admin routes)
 }

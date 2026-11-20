@@ -1,10 +1,12 @@
 import { Hono } from "hono";
+import { admin } from "./admin";
 import { activeSession, auth, issueSession, sessionFromRequest } from "./auth";
 import { pages } from "./pages";
 import { panopto } from "./panopto";
 import { reports, reportsHealth } from "./reports";
 import { appTooOld, PROTOCOL_VERSION, unavailable, unavailableResponse } from "./protocol";
-import { UserStore, type Env } from "./user-store";
+import { platformOf } from "./stats";
+import { identityHeaders, UserStore, type Env } from "./user-store";
 
 export { UserStore };
 
@@ -17,6 +19,8 @@ app.route("/v1/auth", auth);
 app.route("/v1/panopto", panopto);
 
 app.route("/v1/reports", reports);
+
+app.route("/v1/admin", admin);
 
 function storeFor(env: Env, userId: string) {
   return env.USER_STORE.get(env.USER_STORE.idFromName(userId));
@@ -63,6 +67,7 @@ app.get("/v1/sync", async (c) => {
   }
   const headers = new Headers(c.req.raw.headers);
   headers.set("X-Session-Epoch", String(session.epoch));
+  identityHeaders(headers, session);
   try {
     return await storeFor(c.env, session.sub).fetch(new Request(c.req.raw, { headers }));
   } catch (error) {
@@ -77,7 +82,7 @@ app.post("/v1/sync", async (c) => {
   const session = await sessionFromRequest(c.req.raw, c.env);
   if (!session) return c.text("Unauthorized", 401);
   const body = await c.req
-    .json<{ since?: number; changes?: unknown[]; dataset?: unknown; app?: unknown }>()
+    .json<{ since?: number; changes?: unknown[]; dataset?: unknown; app?: unknown; platform?: unknown }>()
     .catch(() => null);
   if (!body) return c.json({ error: "bad_json" }, 400);
   if (appTooOld(c.env.MIN_APP_BUILD, body.app)) {
@@ -90,6 +95,13 @@ app.post("/v1/sync", async (c) => {
       Number(body.since) || 0,
       Array.isArray(body.changes) ? body.changes : [],
       typeof body.dataset === "string" ? body.dataset : null,
+      {
+        sub: session.sub,
+        email: session.email,
+        name: session.name,
+        platform: platformOf(body.platform),
+        build: typeof body.app === "number" ? body.app : null,
+      },
     );
   } catch (error) {
     console.error("sync failed", error);

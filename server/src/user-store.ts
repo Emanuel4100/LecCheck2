@@ -1,6 +1,15 @@
 import { DurableObject } from "cloudflare:workers";
 import { applyPatch, type RowState } from "./merge";
+import {
+  DIRECTORY,
+  DIRECTORY_SCHEMA,
+  directoryOp,
+  type DirectoryOp,
+  type DirectoryReply,
+  type Who,
+} from "./directory";
 import { panoptoOp, VAULT_SCHEMA, type PanoptoOp, type PanoptoReply } from "./panopto-vault";
+import { platformOf, record, type StatsEvent } from "./stats";
 import {
   appTooOld,
   MAX_ACCOUNT_BYTES,
@@ -39,6 +48,24 @@ export interface Env {
   REPORTS_GITHUB_TOKEN?: string;
   /** Where reports go (default: Emanuel4100/LecCheck-reports). */
   REPORTS_REPO?: string;
+  /** Lets the owner list users and edit the beta whitelist through
+   * `/v1/admin`. The admin routes are off without it. */
+  ADMIN_TOKEN?: string;
+  /** Usage events (see stats.ts). Optional: off in tests. */
+  STATS?: AnalyticsEngineDataset;
+}
+
+/** Who a sync request is from, and what the app runs (for stats). */
+export interface Caller extends Who {
+  platform?: string;
+  build?: number | null;
+}
+
+/** Saved on each live-sync socket, so its events can be counted later. */
+interface SocketInfo {
+  sub: string;
+  platform: string;
+  build: number | null;
 }
 
 export interface SyncResult {
@@ -93,6 +120,7 @@ interface Incoming {
   since?: unknown;
   dataset?: unknown;
   app?: unknown;
+  platform?: unknown;
   batchId?: unknown;
   changes?: unknown;
 }
@@ -170,6 +198,58 @@ export class UserStore extends DurableObject<Env> {
     this.setMeta(`reports:${day}`, String(total + 1));
     this.setMeta(`reports:${day}:${sender}`, String(mine + 1));
     return true;
+  }
+
+  // -------------------------------------------------------- directory --
+
+  /** The user directory and beta whitelist (only the reserved
+   * `__directory__` instance; see directory.ts). */
+  async directory(op: DirectoryOp): Promise<DirectoryReply> {
+    this.sql.exec(DIRECTORY_SCHEMA);
+    return this.ctx.storage.transactionSync(() => directoryOp(this.sql, op, Date.now()));
+  }
+
+  /** Once per account: makes sure the directory lists it, for accounts that
+   * signed in before it existed. Call only for a valid, unrevoked session. */
+  private noteCaller(who: Who): void {
+    if (!who.sub || this.meta("dir_seen") !== null) return;
+    const directory = this.env.USER_STORE.get(this.env.USER_STORE.idFromName(DIRECTORY));
+    this.ctx.waitUntil(
+      directory
+        .directory({ op: "seen", who: { sub: who.sub, email: who.email, name: who.name } })
+        .then(() => this.setMeta("dir_seen", "1"))
+        .catch((error) => console.error("directory update failed", error)),
+    );
+  }
+
+  // ------------------------------------------------------------ stats --
+
+  /** Devices connected live, except [leaving]. */
+  private openSockets(leaving?: WebSocket): number {
+    return this.ctx
+      .getWebSockets()
+      .filter((ws) => ws !== leaving && ws.readyState === WebSocket.OPEN).length;
+  }
+
+  /** A usage event (see stats.ts). [withSize] adds the account's
+   * size from what's already in memory or saved (never counts rows). */
+  private stat(event: StatsEvent, info: SocketInfo, sockets: number, withSize = false): void {
+    let size: { rows: number; bytes: number; written: number } | undefined;
+    if (withSize) {
+      let usage = this.usage;
+      if (!usage) {
+        try {
+          usage = JSON.parse(this.meta("usage") ?? "null") as Usage | null;
+        } catch {
+          usage = null;
+        }
+      }
+      const today = Math.floor(Date.now() / DAY_MS);
+      if (usage) {
+        size = { rows: usage.rows, bytes: usage.bytes, written: usage.day === today ? usage.written : 0 };
+      }
+    }
+    record(this.env.STATS, { ...info, event, sockets, ...size });
   }
 
   private setMeta(key: string, value: string): void {
@@ -418,13 +498,19 @@ export class UserStore extends DurableObject<Env> {
     since: number,
     changes: unknown[],
     knownDataset: string | null = null,
+    caller?: Caller,
   ): Promise<SyncResult | Unavailable | null> {
     try {
       if (epoch !== (await this.epoch())) return null;
+      if (caller) this.noteCaller(caller);
       if (knownDataset !== null && knownDataset !== this.dataset()) since = 0;
       const { changedRows, rejected, corrections } = this.applyChanges(changes);
       if (changedRows.length) this.broadcast(changedRows);
       const page = this.changesSince(since);
+      if (caller) {
+        const info = { sub: caller.sub, platform: platformOf(caller.platform), build: caller.build ?? null };
+        this.stat("sync", info, this.openSockets(), true);
+      }
       return {
         ...page,
         rejected,
@@ -649,8 +735,13 @@ export class UserStore extends DurableObject<Env> {
       console.error("connect failed", error);
       return unavailableResponse(unavailable(error, Date.now()));
     }
+    const who = callerFrom(request.headers);
+    if (who) this.noteCaller(who);
     const pair = new WebSocketPair();
     this.ctx.acceptWebSocket(pair[1]);
+    const info: SocketInfo = { sub: who?.sub ?? "", platform: "", build: null };
+    pair[1].serializeAttachment(info);
+    this.stat("connect", info, this.openSockets() + 1);
     return new Response(null, { status: 101, webSocket: pair[0] });
   }
 
@@ -691,6 +782,16 @@ export class UserStore extends DurableObject<Env> {
             message: "Update LecCheck to keep syncing",
           });
           return;
+        }
+        const before = socketInfo(ws);
+        if (before) {
+          const info: SocketInfo = {
+            sub: before.sub,
+            platform: platformOf(msg.platform),
+            build: typeof msg.app === "number" ? msg.app : null,
+          };
+          ws.serializeAttachment(info);
+          this.stat("hello", info, this.openSockets(), true);
         }
         const dataset = this.dataset();
         // A device that synced with another copy of the data (before a reset
@@ -733,6 +834,8 @@ export class UserStore extends DurableObject<Env> {
   }
 
   async webSocketClose(ws: WebSocket, code: number, reason: string): Promise<void> {
+    const info = socketInfo(ws);
+    if (info) this.stat("close", info, this.openSockets(ws));
     try {
       ws.close(code, reason);
     } catch {
@@ -742,5 +845,39 @@ export class UserStore extends DurableObject<Env> {
 
   private send(ws: WebSocket, message: ServerMessage): void {
     ws.send(JSON.stringify(message));
+  }
+}
+
+/** The account behind a live-sync request (set by the Worker, see
+ * [identityHeaders]). Null if it isn't there. */
+function callerFrom(headers: Headers): Who | null {
+  const sub = headers.get("X-Session-Sub");
+  if (!sub) return null;
+  const decode = (v: string | null) => {
+    try {
+      return v === null ? undefined : decodeURIComponent(v);
+    } catch {
+      return undefined;
+    }
+  };
+  return { sub, email: decode(headers.get("X-Session-Email")), name: decode(headers.get("X-Session-Name")) };
+}
+
+/** Headers carrying [who] to the user's Durable Object (URI-encoded, since
+ * header values can't hold every character a name can). */
+export function identityHeaders(headers: Headers, who: Who): void {
+  // Never what the client sent.
+  for (const h of ["X-Session-Sub", "X-Session-Email", "X-Session-Name"]) headers.delete(h);
+  headers.set("X-Session-Sub", who.sub);
+  if (who.email) headers.set("X-Session-Email", encodeURIComponent(who.email));
+  if (who.name) headers.set("X-Session-Name", encodeURIComponent(who.name));
+}
+
+function socketInfo(ws: WebSocket): SocketInfo | null {
+  try {
+    const info = ws.deserializeAttachment() as SocketInfo | null;
+    return info && info.sub ? info : null;
+  } catch {
+    return null;
   }
 }

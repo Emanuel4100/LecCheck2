@@ -11,6 +11,7 @@ export default defineConfig({
           DEV_AUTH: "1",
           GOOGLE_CLIENT_ID: "test-client.apps.googleusercontent.com",
           HEALTH_TOKEN: "test-health-token",
+          ADMIN_TOKEN: "test-admin-token",
         },
       },
     }),
