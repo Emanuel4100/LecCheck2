@@ -1148,6 +1148,10 @@ class AppLocalizationsHe extends AppLocalizations {
   String get signInFailed => 'ההתחברות נכשלה. בדקו את החיבור ונסו שוב.';
 
   @override
+  String get signInNotInvited =>
+      'הסנכרון בענן נמצא בבטא סגורה, והחשבון הזה עדיין לא ברשימה. LecCheck ממשיכה לעבוד במכשיר הזה גם בלעדיו.';
+
+  @override
   String get syncSignedOutTitle => 'התנתקת מהחשבון';
 
   @override

@@ -1994,6 +1994,12 @@ abstract class AppLocalizations {
   /// **'Couldn\'t sign in. Check your connection and try again.'**
   String get signInFailed;
 
+  /// No description provided for @signInNotInvited.
+  ///
+  /// In en, this message translates to:
+  /// **'Cloud sync is in a closed beta, and this account isn\'t on the list yet. LecCheck keeps working on this device without it.'**
+  String get signInNotInvited;
+
   /// No description provided for @syncSignedOutTitle.
   ///
   /// In en, this message translates to:

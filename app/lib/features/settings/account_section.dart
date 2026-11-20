@@ -80,6 +80,12 @@ Future<SignInResult> signIn(
     if (e.code != 'CANCELED') {
       messenger?.showSnackBar(SnackBar(content: Text(l.signInFailed)));
     }
+  } on AuthException catch (e) {
+    messenger?.showSnackBar(
+      SnackBar(
+        content: Text(e.isNotInvited ? l.signInNotInvited : l.signInFailed),
+      ),
+    );
   } on Object {
     messenger?.showSnackBar(SnackBar(content: Text(l.signInFailed)));
   }

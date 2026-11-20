@@ -1,3 +1,6 @@
+import 'dart:io' show Platform;
+
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:package_info_plus/package_info_plus.dart';
 
 /// Build-time sync settings, passed with `--dart-define`:
@@ -26,4 +29,8 @@ abstract final class SyncConfig {
     (info) => int.tryParse(info.buildNumber),
     onError: (Object _) => null,
   );
+
+  /// What the app runs on (android, ios, linux, …), sent with every sync so
+  /// the server's usage stats can count platforms.
+  static String? get platform => kIsWeb ? null : Platform.operatingSystem;
 }

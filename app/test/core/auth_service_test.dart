@@ -18,4 +18,20 @@ void main() {
       throwsA(isA<AuthException>()),
     );
   });
+
+  test('a sign-in refused by the beta whitelist says so', () async {
+    AuthService answering(int status, String body) => AuthService(
+      client: MockClient((_) async => http.Response(body, status)),
+    );
+    await expectLater(
+      answering(403, '{"error":"not_invited"}').signInDev('x'),
+      throwsA(
+        isA<AuthException>().having((e) => e.isNotInvited, 'not invited', true),
+      ),
+    );
+    await expectLater(
+      answering(403, 'Forbidden').signInDev('x'),
+      throwsA(isA<AuthException>().having((e) => e.code, 'code', 'http_403')),
+    );
+  });
 }

@@ -17,8 +17,25 @@ class AuthException implements Exception {
   const AuthException(this.code);
   final String code;
 
+  /// Cloud sync is in a closed beta and this account isn't invited.
+  bool get isNotInvited => code == notInvited;
+
   @override
   String toString() => 'AuthException($code)';
+}
+
+/// [AuthException.code] when the server's beta whitelist refused the account.
+const notInvited = 'not_invited';
+
+String? _errorOf(http.Response response) {
+  try {
+    final body = jsonDecode(response.body);
+    return body is Map<String, Object?> && body['error'] is String
+        ? body['error']! as String
+        : null;
+  } on FormatException {
+    return null;
+  }
 }
 
 /// The saved sign-in couldn't be read: the system's secure storage (on Linux,
@@ -206,6 +223,10 @@ class AuthService {
   }
 
   Future<Session> _sessionFrom(http.Response response) async {
+    if (response.statusCode == 403 && _errorOf(response) == 'not_invited') {
+      // The beta's whitelist is on and this account isn't on it.
+      throw const AuthException(notInvited);
+    }
     if (response.statusCode != 200) {
       throw AuthException('http_${response.statusCode}');
     }

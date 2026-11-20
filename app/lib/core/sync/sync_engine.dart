@@ -332,6 +332,7 @@ class SyncEngine {
           'since': await _cursor(),
           'dataset': await _meta(db, _datasetKey),
           'app': ?build,
+          'platform': ?SyncConfig.platform,
         }),
       );
       _pingTimer = Timer.periodic(_pingEvery, (_) => _ping(socket));
@@ -853,6 +854,7 @@ class SyncEngine {
             'since': since,
             'dataset': await _meta(db, _datasetKey),
             'app': ?build,
+            'platform': ?SyncConfig.platform,
             'changes': [for (final e in entries) _changeJson(e)],
           }),
         )

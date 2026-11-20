@@ -1152,6 +1152,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'Couldn\'t sign in. Check your connection and try again.';
 
   @override
+  String get signInNotInvited =>
+      'Cloud sync is in a closed beta, and this account isn\'t on the list yet. LecCheck keeps working on this device without it.';
+
+  @override
   String get syncSignedOutTitle => 'You\'re signed out';
 
   @override
